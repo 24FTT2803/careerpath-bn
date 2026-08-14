@@ -309,9 +309,9 @@
         <!-- STATS -->
         <section class="stats">
             <div class="wrap stats-grid">
-                <div class="stat"><div class="n">20</div><div class="l">ICT job roles mapped</div></div>
+                <div class="stat"><div class="n">3</div><div class="l">ICT job roles mapped</div></div>
                 <div class="stat"><div class="n">10</div><div class="l">Competencies referenced</div></div>
-                <div class="stat"><div class="n">6</div><div class="l">ICT subsectors covered</div></div>
+                <div class="stat"><div class="n">2</div><div class="l">ICT subsectors covered</div></div>
                 <div class="stat"><div class="n">1</div><div class="l">Framework: BIICF (AITI)</div></div>
             </div>
         </section>
@@ -448,9 +448,9 @@
                     <div class="biicf-panel">
                         <div class="row"><span class="k">Framework</span><span class="v">BIICF</span></div>
                         <div class="row"><span class="k">Issuing body</span><span class="v">AITI</span></div>
-                        <div class="row"><span class="k">Job roles</span><span class="v">20</span></div>
+                        <div class="row"><span class="k">Job roles</span><span class="v">3</span></div>
                         <div class="row"><span class="k">Competencies</span><span class="v">10</span></div>
-                        <div class="row"><span class="k">Subsectors</span><span class="v">6</span></div>
+                        <div class="row"><span class="k">Subsectors</span><span class="v">2</span></div>
                         <div class="row"><span class="k">Pilot programme</span><span class="v">ICT</span></div>
                         <p class="src">Source: AITI — ICT Industry Competency Framework</p>
                     </div>
