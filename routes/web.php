@@ -48,27 +48,54 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
 });
 
 // ============================================
-// ADMIN ROUTES (Lecturer + Admin Access)
+// ADMIN ROUTES - Using Direct Middleware Classes
 // ============================================
-Route::middleware(['auth', 'lecturer'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     // Dashboard
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+        ->name('dashboard')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
     // Students (Read-Only)
-    Route::get('/students', [AdminStudentController::class, 'index'])->name('students.index');
-    Route::get('/students/{id}', [AdminStudentController::class, 'show'])->name('students.show');
+    Route::get('/students', [AdminStudentController::class, 'index'])
+        ->name('students.index')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    Route::get('/students/{id}', [AdminStudentController::class, 'show'])
+        ->name('students.show')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
     // Careers (Read-Only)
-    Route::get('/careers', [AdminCareerController::class, 'index'])->name('careers.index');
-    Route::get('/careers/{id}', [AdminCareerController::class, 'show'])->name('careers.show');
+    Route::get('/careers', [AdminCareerController::class, 'index'])
+        ->name('careers.index')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    Route::get('/careers/{id}', [AdminCareerController::class, 'show'])
+        ->name('careers.show')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
     // Users (Admin Only - Full CRUD)
-    Route::middleware(['admin'])->group(function () {
-        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
-        Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
-        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
-        Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
-        Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('users.update');
-        Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
-    });
+    Route::get('/users', [AdminUserController::class, 'index'])
+        ->name('users.index')
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    Route::get('/users/create', [AdminUserController::class, 'create'])
+        ->name('users.create')
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    Route::post('/users', [AdminUserController::class, 'store'])
+        ->name('users.store')
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])
+        ->name('users.edit')
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    Route::put('/users/{id}', [AdminUserController::class, 'update'])
+        ->name('users.update')
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+
+    Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
+        ->name('users.destroy')
+        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
 });

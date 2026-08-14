@@ -26,6 +26,15 @@
         @endif
     </div>
 
+    <!-- Database Status -->
+    @if($topRecommendations->isEmpty())
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded text-sm">
+            <i class="fas fa-info-circle"></i> 
+            <strong>Database Setup in Progress:</strong> 
+            Career recommendations data is not yet available. This is expected while the database team is working on it.
+        </div>
+    @endif
+
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Student Info -->
         <div class="lg:col-span-1">
@@ -86,8 +95,8 @@
                         <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:shadow transition">
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <h4 class="font-semibold">{{ $rec->career->job_title }}</h4>
-                                    <p class="text-sm text-gray-500">{{ $rec->career->subsector }}</p>
+                                    <h4 class="font-semibold">{{ $rec->career->job_title ?? 'N/A' }}</h4>
+                                    <p class="text-sm text-gray-500">{{ $rec->career->subsector ?? '' }}</p>
                                 </div>
                                 <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
                                     {{ $rec->match_score }}% Match
@@ -109,7 +118,10 @@
                         </div>
                     @endforeach
                 @else
-                    <p class="text-gray-500 text-center py-4">No career recommendations yet.</p>
+                    <p class="text-gray-500 text-center py-4">
+                        <i class="fas fa-info-circle"></i> 
+                        No career recommendations yet. This will appear once the database team adds the data.
+                    </p>
                 @endif
             </div>
 
@@ -126,8 +138,9 @@
                         @endforeach
                     </div>
                 @else
-                    <p class="text-green-600 text-center py-4">
-                        <i class="fas fa-check-circle"></i> No competency gaps found.
+                    <p class="text-gray-500 text-center py-4">
+                        <i class="fas fa-info-circle"></i> 
+                        No competency gaps identified yet.
                     </p>
                 @endif
             </div>

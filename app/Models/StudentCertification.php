@@ -6,5 +6,24 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudentCertification extends Model
 {
-    //
+    protected $fillable = [
+        'user_id',          // ← ADD THIS
+        'certification_name',
+        'issuing_organization',
+        'issue_date',
+        'expiry_date',
+        'credential_id',
+        'credential_url',
+        'description',
+    ];
+
+    protected $casts = [
+        'issue_date' => 'date',
+        'expiry_date' => 'date',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

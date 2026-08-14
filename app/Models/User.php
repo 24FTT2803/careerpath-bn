@@ -114,6 +114,11 @@ class User extends Authenticatable
         return $this->hasMany(StudentMilestone::class);
     }
 
+    public function careerRecommendations()
+    {
+        return $this->hasMany(CareerRecommendation::class);
+    }
+
     // ============================================
     // HELPER METHODS
     // ============================================

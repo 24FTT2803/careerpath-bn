@@ -7,6 +7,33 @@
     <h1 class="text-2xl font-bold text-gray-800 mb-2">📊 Dashboard</h1>
     <p class="text-gray-600 mb-6">Welcome back, {{ auth()->user()->name }}!</p>
 
+    <!-- Data Status Message -->
+    @if(!$stats['has_careers'] || !$stats['has_recommendations'])
+        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-info-circle text-yellow-400"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm text-yellow-700">
+                        <strong>⏳ Database Setup in Progress:</strong> 
+                        @if(!$stats['has_careers'])
+                            BIICF careers data
+                        @endif
+                        @if(!$stats['has_careers'] && !$stats['has_recommendations'])
+                            and
+                        @endif
+                        @if(!$stats['has_recommendations'])
+                            career recommendations
+                        @endif
+                        are not yet available. 
+                        This is expected while the database team is working on it.
+                    </p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div class="bg-white rounded-lg shadow p-4 admin-card">
@@ -36,7 +63,7 @@
         <div class="bg-white rounded-lg shadow p-4 admin-card">
             <div class="flex items-center justify-between">
                 <div>
-                    <p class="text-sm text-gray-500">Careers</p>
+                    <p class="text-sm text-gray-500">BIICF Careers</p>
                     <p class="text-2xl font-bold text-purple-600">{{ $stats['total_careers'] }}</p>
                 </div>
                 <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
@@ -70,10 +97,10 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Students by Programme -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">📊 Students by Programme</h3>
+    <!-- Students by Programme -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h3 class="font-semibold text-gray-800 mb-4">📊 Students by Programme</h3>
+        @if($studentsByProgramme->count() > 0)
             @foreach($studentsByProgramme as $prog)
                 <div class="mb-3">
                     <div class="flex justify-between text-sm">
@@ -86,43 +113,60 @@
                     </div>
                 </div>
             @endforeach
-        </div>
+        @else
+            <p class="text-gray-500 text-center py-4">No students registered yet.</p>
+        @endif
+    </div>
 
+    <!-- Two Column Layout for Top Careers and Skill Gaps -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Top Career Matches -->
         <div class="bg-white rounded-lg shadow p-6">
             <h3 class="font-semibold text-gray-800 mb-4">🏆 Top Career Matches</h3>
-            @foreach($topCareers as $career)
-                <div class="mb-3">
-                    <div class="flex justify-between text-sm">
-                        <span>{{ $career->career->job_title ?? 'N/A' }}</span>
-                        <span>{{ number_format($career->avg_score, 1) }}%</span>
+            @if($topCareers->count() > 0)
+                @foreach($topCareers as $career)
+                    <div class="mb-3">
+                        <div class="flex justify-between text-sm">
+                            <span>{{ $career->career->job_title ?? 'N/A' }}</span>
+                            <span>{{ number_format($career->avg_score, 1) }}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-green-500 h-2 rounded-full progress-bar-animated" 
+                                 style="width: {{ $career->avg_score }}%"></div>
+                        </div>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-green-500 h-2 rounded-full progress-bar-animated" 
-                             style="width: {{ $career->avg_score }}%"></div>
-                    </div>
-                </div>
-            @endforeach
+                @endforeach
+            @else
+                <p class="text-gray-500 text-center py-4">
+                    <i class="fas fa-info-circle"></i> 
+                    No career recommendations yet. This data will appear once students complete profiles.
+                </p>
+            @endif
         </div>
-    </div>
 
-    <!-- Common Competency Gaps -->
-    <div class="bg-white rounded-lg shadow p-6 mt-6">
-        <h3 class="font-semibold text-gray-800 mb-4">📚 Common Competency Gaps</h3>
-        @forelse($skillGaps as $skill => $count)
-            <div class="mb-3">
-                <div class="flex justify-between text-sm">
-                    <span>{{ $skill }}</span>
-                    <span>{{ $count }} students</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-2">
-                    <div class="bg-red-500 h-2 rounded-full progress-bar-animated" 
-                         style="width: {{ min(($count / $stats['total_students']) * 100, 100) }}%"></div>
-                </div>
-            </div>
-        @empty
-            <p class="text-gray-500 text-center py-4">No competency gaps recorded yet.</p>
-        @endforelse
+        <!-- Competency Gaps -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h3 class="font-semibold text-gray-800 mb-4">📚 Common Competency Gaps</h3>
+            @if(count($skillGaps) > 0)
+                @foreach($skillGaps as $skill => $count)
+                    <div class="mb-3">
+                        <div class="flex justify-between text-sm">
+                            <span>{{ $skill }}</span>
+                            <span>{{ $count }} students</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-red-500 h-2 rounded-full progress-bar-animated" 
+                                 style="width: {{ min(($count / max($stats['total_students'], 1)) * 100, 100) }}%"></div>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <p class="text-gray-500 text-center py-4">
+                    <i class="fas fa-info-circle"></i> 
+                    No competency gaps identified yet.
+                </p>
+            @endif
+        </div>
     </div>
 
     <!-- Recent Students -->

@@ -6,5 +6,16 @@ use Illuminate\Database\Eloquent\Model;
 
 class StudentInterest extends Model
 {
-    //
+    protected $fillable = [
+        'user_id',          // ← ADD THIS
+        'interest_name',
+        'category',
+        'priority',
+        'description',
+    ];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

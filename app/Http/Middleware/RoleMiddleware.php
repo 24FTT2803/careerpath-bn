@@ -14,7 +14,6 @@ class RoleMiddleware
             return redirect()->route('login');
         }
 
-        // Check if user's role matches any of the allowed roles
         foreach ($roles as $role) {
             if (Auth::user()->role === $role) {
                 return $next($request);

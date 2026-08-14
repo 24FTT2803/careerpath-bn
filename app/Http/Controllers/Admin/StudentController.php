@@ -50,13 +50,14 @@ class StudentController extends Controller
     }
 
     /**
-     * View single student profile (Read-Only)
+     * View single student profile (Read-Only) - WITH ERROR HANDLING
      */
     public function show($id)
     {
         $user = Auth::user();
         $isAdmin = $user->role === 'admin';
 
+        // Load student with relationships
         $student = User::where('role', 'student')
             ->with([
                 'profile',
@@ -66,34 +67,49 @@ class StudentController extends Controller
                 'projects',
                 'certifications',
                 'aspirations',
-                'careerRecommendations.career',
                 'milestones'
             ])
             ->findOrFail($id);
 
-        // Get top recommendations
-        $topRecommendations = $student->careerRecommendations()
-            ->with('career')
-            ->orderBy('match_score', 'desc')
-            ->limit(3)
-            ->get();
-
-        // Calculate readiness score
-        $readinessScore = $student->careerRecommendations()
-            ->first()
-            ->career_readiness_score ?? 0;
-
-        // Get competency gaps
+        // ============================================
+        // SAFELY LOAD CAREER RECOMMENDATIONS
+        // ============================================
+        $topRecommendations = collect();
+        $readinessScore = 0;
         $skillGaps = [];
-        $recommendation = $student->careerRecommendations()->first();
-        if ($recommendation) {
-            $skillGaps = $recommendation->skill_gaps ?? [];
-        }
-
-        // Get matched skills
         $matchedSkills = [];
-        if ($recommendation) {
-            $matchedSkills = $recommendation->matched_skills ?? [];
+
+        try {
+            // Check if table exists first
+            $hasTable = \Illuminate\Support\Facades\DB::table('information_schema.tables')
+                ->where('table_schema', env('DB_DATABASE'))
+                ->where('table_name', 'career_recommendations')
+                ->exists();
+
+            if ($hasTable) {
+                // Load career recommendations
+                $student->load(['careerRecommendations.career']);
+                
+                $topRecommendations = $student->careerRecommendations()
+                    ->with('career')
+                    ->orderBy('match_score', 'desc')
+                    ->limit(3)
+                    ->get();
+
+                // Get readiness score
+                $firstRec = $student->careerRecommendations()->first();
+                if ($firstRec) {
+                    $readinessScore = $firstRec->career_readiness_score ?? 0;
+                    $skillGaps = $firstRec->skill_gaps ?? [];
+                    $matchedSkills = $firstRec->matched_skills ?? [];
+                }
+            }
+        } catch (\Exception $e) {
+            // Table doesn't exist or other error - just use defaults
+            $topRecommendations = collect();
+            $readinessScore = 0;
+            $skillGaps = [];
+            $matchedSkills = [];
         }
 
         return view('admin.students.show', compact(
@@ -104,14 +120,5 @@ class StudentController extends Controller
             'matchedSkills',
             'isAdmin'
         ));
-    }
-
-    /**
-     * Export student data (Optional)
-     */
-    public function export()
-    {
-        // This would export student data as CSV
-        // For future implementation
     }
 }
