@@ -4,21 +4,23 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="cpbn-head">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">👤 Student Profile</h1>
-            <p class="text-gray-600">View student details and career progress</p>
+            <h1>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                Student Profile
+            </h1>
+            <p class="sub">View student details and career progress</p>
         </div>
-        <div class="flex gap-2">
-            <a href="{{ route('admin.students.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition">
-                <i class="fas fa-arrow-left"></i> Back
-            </a>
-        </div>
+        <a href="{{ route('admin.students.index') }}" class="cpbn-btn cpbn-btn-muted">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
+        </a>
     </div>
 
     <!-- Read-Only Notice -->
-    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-6 rounded text-sm">
-        <i class="fas fa-info-circle"></i> 
+    <div class="cpbn-alert cpbn-alert-info">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
         @if($isAdmin)
             You have read-only access to student profiles.
         @else
@@ -28,144 +30,144 @@
 
     <!-- Database Status -->
     @if($topRecommendations->isEmpty())
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 mb-6 rounded text-sm">
-            <i class="fas fa-info-circle"></i> 
-            <strong>Database Setup in Progress:</strong> 
-            Career recommendations data is not yet available. This is expected while the database team is working on it.
+        <div class="cpbn-alert cpbn-alert-info">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span><strong>Database Setup in Progress:</strong> Career recommendations data is not yet available. This is expected while the database team is working on it.</span>
         </div>
     @endif
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div style="display:grid;grid-template-columns:1fr 2fr;gap:20px">
         <!-- Student Info -->
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-lg shadow p-6">
-                <div class="text-center mb-4">
-                    <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mx-auto">
-                        {{ substr($student->name, 0, 1) }}
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-800 mt-3">{{ $student->name }}</h2>
-                    <p class="text-gray-500 text-sm">{{ $student->programme ?? 'Programme not set' }}</p>
+        <div>
+            <div class="cpbn-card">
+                <div style="text-align:center;margin-bottom:16px">
+                    <div class="cpbn-avatar-lg">{{ substr($student->name, 0, 1) }}</div>
+                    <h2 style="font-family:var(--font-display);font-weight:600;font-size:19px;margin-top:12px">{{ $student->name }}</h2>
+                    <p style="color:var(--ink-dim);font-size:13.5px">{{ $student->programme ?? 'Programme not set' }}</p>
                 </div>
-
-                <div class="border-t border-gray-200 pt-4">
-                    <div class="flex justify-between py-2 text-sm">
-                        <span class="text-gray-500">Student ID</span>
-                        <span class="font-medium">{{ $student->student_id ?? '-' }}</span>
-                    </div>
-                    <div class="flex justify-between py-2 text-sm border-t border-gray-100">
-                        <span class="text-gray-500">Email</span>
-                        <span class="font-medium">{{ $student->email }}</span>
-                    </div>
-                    <div class="flex justify-between py-2 text-sm border-t border-gray-100">
-                        <span class="text-gray-500">CGPA</span>
-                        <span class="font-medium">{{ $student->cgpa ?? '-' }}</span>
-                    </div>
-                    <div class="flex justify-between py-2 text-sm border-t border-gray-100">
-                        <span class="text-gray-500">Readiness Score</span>
-                        <span class="font-medium text-green-600">{{ $readinessScore }}%</span>
-                    </div>
+                <div>
+                    <div class="cpbn-profile-row"><span>Student ID</span><span>{{ $student->student_id ?? '-' }}</span></div>
+                    <div class="cpbn-profile-row"><span>Email</span><span>{{ $student->email }}</span></div>
+                    <div class="cpbn-profile-row"><span>CGPA</span><span>{{ $student->cgpa ?? '-' }}</span></div>
+                    <div class="cpbn-profile-row"><span>Readiness Score</span><span style="color:var(--green)">{{ $readinessScore }}%</span></div>
                 </div>
             </div>
 
             <!-- Skills -->
-            <div class="bg-white rounded-lg shadow p-6 mt-6">
-                <h3 class="font-semibold text-gray-800 mb-3">🛠️ Skills & Competencies</h3>
+            <div class="cpbn-card">
+                <h3 class="cpbn-card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    Skills &amp; Competencies
+                </h3>
                 @if($student->competencies->count() > 0)
-                    <div class="flex flex-wrap gap-2">
+                    <div>
                         @foreach($student->competencies as $skill)
-                            <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">
+                            <span class="cpbn-tag pill-gold">
                                 {{ $skill->skill_name }}
-                                <span class="text-xs text-blue-500">({{ $skill->proficiency_level }})</span>
+                                <small style="opacity:.75">({{ $skill->proficiency_level }})</small>
                             </span>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-gray-500 text-sm">No skills recorded.</p>
+                    <p style="color:var(--ink-dim);font-size:13.5px">No skills recorded.</p>
                 @endif
             </div>
         </div>
 
         <!-- Recommendations & Gaps -->
-        <div class="lg:col-span-2">
+        <div>
             <!-- Career Recommendations -->
-            <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="font-semibold text-gray-800 mb-3">🎯 Career Recommendations</h3>
+            <div class="cpbn-card">
+                <h3 class="cpbn-card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/></svg>
+                    Career Recommendations
+                </h3>
                 @if($topRecommendations->count() > 0)
                     @foreach($topRecommendations as $rec)
-                        <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:shadow transition">
-                            <div class="flex justify-between items-center">
+                        <div style="border:1px solid var(--line);border-radius:6px;padding:16px;margin-bottom:12px">
+                            <div style="display:flex;justify-content:space-between;align-items:center">
                                 <div>
-                                    <h4 class="font-semibold">{{ $rec->career->job_title ?? 'N/A' }}</h4>
-                                    <p class="text-sm text-gray-500">{{ $rec->career->subsector ?? '' }}</p>
+                                    <h4 style="font-weight:600;font-size:15px">{{ $rec->career->job_title ?? 'N/A' }}</h4>
+                                    <p style="font-size:13px;color:var(--ink-dim)">{{ $rec->career->subsector ?? '' }}</p>
                                 </div>
-                                <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
-                                    {{ $rec->match_score }}% Match
-                                </span>
+                                <span class="cpbn-pill pill-green">{{ $rec->match_score }}% Match</span>
                             </div>
-                            <div class="mt-2 text-sm">
-                                <span class="text-gray-500">Matched Skills:</span>
+                            <div style="margin-top:10px;font-size:13px">
+                                <span style="color:var(--ink-dim)">Matched Skills:</span>
                                 @php
                                     $matched = is_array($rec->matched_skills) ? $rec->matched_skills : [];
                                 @endphp
                                 @if(count($matched) > 0)
                                     @foreach($matched as $skill)
-                                        <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded text-xs">{{ $skill }}</span>
+                                        <span class="cpbn-pill pill-green" style="margin-left:4px">{{ $skill }}</span>
                                     @endforeach
                                 @else
-                                    <span class="text-gray-400">None</span>
+                                    <span style="color:var(--ink-dim)">None</span>
                                 @endif
                             </div>
                         </div>
                     @endforeach
                 @else
-                    <p class="text-gray-500 text-center py-4">
-                        <i class="fas fa-info-circle"></i> 
+                    <p class="cpbn-empty-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                         No career recommendations yet. This will appear once the database team adds the data.
                     </p>
                 @endif
             </div>
 
             <!-- Competency Gaps -->
-            <div class="bg-white rounded-lg shadow p-6 mt-6">
-                <h3 class="font-semibold text-gray-800 mb-3">⚠️ Competency Gaps</h3>
+            <div class="cpbn-card">
+                <h3 class="cpbn-card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
+                    Competency Gaps
+                </h3>
                 @if(count($skillGaps) > 0)
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                         @foreach($skillGaps as $gap)
-                            <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                                <span class="text-red-700 font-medium">{{ $gap }}</span>
-                                <div class="text-xs text-red-500 mt-1">Needs development</div>
+                            <div style="background:var(--rose-wash);border:1px solid rgba(198,91,78,0.25);border-radius:6px;padding:11px 14px">
+                                <span style="color:#8f3a30;font-weight:500;font-size:13.5px">{{ $gap }}</span>
+                                <div style="font-size:11.5px;color:#a85a4f;margin-top:2px">Needs development</div>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="text-gray-500 text-center py-4">
-                        <i class="fas fa-info-circle"></i> 
+                    <p class="cpbn-empty-note">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                         No competency gaps identified yet.
                     </p>
                 @endif
             </div>
 
             <!-- Milestones -->
-            <div class="bg-white rounded-lg shadow p-6 mt-6">
-                <h3 class="font-semibold text-gray-800 mb-3">🏆 Milestones</h3>
+            <div class="cpbn-card">
+                <h3 class="cpbn-card-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4"/><path d="M4 4h14l-3 4 3 4H4"/></svg>
+                    Milestones
+                </h3>
                 @if($student->milestones->count() > 0)
                     @foreach($student->milestones as $milestone)
-                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:1px solid var(--line)">
                             <div>
-                                <span class="font-medium">{{ $milestone->title }}</span>
-                                <span class="text-xs text-gray-500 ml-2">{{ $milestone->category }}</span>
+                                <span style="font-weight:500;font-size:13.5px">{{ $milestone->title }}</span>
+                                <span class="cpbn-pill pill-neutral" style="margin-left:8px">{{ $milestone->category }}</span>
                             </div>
                             <div>
                                 @if($milestone->is_completed)
-                                    <span class="text-green-600 text-sm"><i class="fas fa-check-circle"></i> Completed</span>
+                                    <span style="color:var(--green);font-size:13px;display:flex;align-items:center;gap:5px">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><path d="M20 6 9 17l-5-5"/></svg>
+                                        Completed
+                                    </span>
                                 @else
-                                    <span class="text-yellow-600 text-sm"><i class="fas fa-clock"></i> In Progress</span>
+                                    <span style="color:#8a6420;font-size:13px;display:flex;align-items:center;gap:5px">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                                        In Progress
+                                    </span>
                                 @endif
                             </div>
                         </div>
                     @endforeach
                 @else
-                    <p class="text-gray-500 text-center py-4">No milestones recorded.</p>
+                    <p class="cpbn-empty-note">No milestones recorded.</p>
                 @endif
             </div>
         </div>

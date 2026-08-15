@@ -4,99 +4,101 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="cpbn-head">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">📋 Career Details</h1>
-            <p class="text-gray-600">{{ $career->job_title }}</p>
+            <h1>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/></svg>
+                Career Details
+            </h1>
+            <p class="sub">{{ $career->job_title }}</p>
         </div>
-        <a href="{{ route('admin.careers.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition">
-            <i class="fas fa-arrow-left"></i> Back
+        <a href="{{ route('admin.careers.index') }}" class="cpbn-btn cpbn-btn-muted">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            Back
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
         <!-- Career Info -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="font-semibold text-gray-800 mb-3">📋 Job Information</h3>
-            <div class="space-y-3">
-                <div class="flex justify-between py-2 border-b border-gray-100">
-                    <span class="text-gray-500">Job Title</span>
-                    <span class="font-medium">{{ $career->job_title }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-gray-100">
-                    <span class="text-gray-500">Subsector</span>
-                    <span class="font-medium">{{ $career->subsector }}</span>
-                </div>
-                <div class="flex justify-between py-2 border-b border-gray-100">
-                    <span class="text-gray-500">Demand Level</span>
-                    <span class="font-medium">{{ $career->demand_level ?? 'Medium' }}</span>
-                </div>
-                <div class="py-2">
-                    <span class="text-gray-500">Description</span>
-                    <p class="mt-1 text-gray-700">{{ $career->job_description ?? 'No description available.' }}</p>
-                </div>
+        <div class="cpbn-card">
+            <h3 class="cpbn-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                Job Information
+            </h3>
+            <div class="cpbn-profile-row"><span>Job Title</span><span>{{ $career->job_title }}</span></div>
+            <div class="cpbn-profile-row"><span>Subsector</span><span>{{ $career->subsector }}</span></div>
+            <div class="cpbn-profile-row"><span>Demand Level</span><span>{{ $career->demand_level ?? 'Medium' }}</span></div>
+            <div style="padding-top:14px">
+                <span style="color:var(--ink-dim);font-size:13px">Description</span>
+                <p style="margin-top:6px;font-size:14px">{{ $career->job_description ?? 'No description available.' }}</p>
             </div>
         </div>
 
         <!-- Skills -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="font-semibold text-gray-800 mb-3">🛠️ Required Skills</h3>
-            
+        <div class="cpbn-card">
+            <h3 class="cpbn-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                Required Skills
+            </h3>
+
             @php
                 $technicalSkills = is_array($career->technical_skills) ? $career->technical_skills : json_decode($career->technical_skills ?? '[]', true);
                 $softSkills = is_array($career->soft_skills) ? $career->soft_skills : json_decode($career->soft_skills ?? '[]', true);
             @endphp
 
-            <div class="mb-4">
-                <h4 class="text-sm font-medium text-gray-700 mb-2">Technical Skills</h4>
-                <div class="flex flex-wrap gap-2">
+            <div style="margin-bottom:16px">
+                <h4 style="font-size:12.5px;font-weight:600;color:var(--ink-dim);margin-bottom:8px">Technical Skills</h4>
+                <div>
                     @forelse($technicalSkills as $skill)
-                        <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">{{ $skill }}</span>
+                        <span class="cpbn-tag pill-gold">{{ $skill }}</span>
                     @empty
-                        <span class="text-gray-400 text-sm">No technical skills listed</span>
+                        <span style="color:var(--ink-dim);font-size:13px">No technical skills listed</span>
                     @endforelse
                 </div>
             </div>
 
             <div>
-                <h4 class="text-sm font-medium text-gray-700 mb-2">Soft Skills</h4>
-                <div class="flex flex-wrap gap-2">
+                <h4 style="font-size:12.5px;font-weight:600;color:var(--ink-dim);margin-bottom:8px">Soft Skills</h4>
+                <div>
                     @forelse($softSkills as $skill)
-                        <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">{{ $skill }}</span>
+                        <span class="cpbn-tag pill-green">{{ $skill }}</span>
                     @empty
-                        <span class="text-gray-400 text-sm">No soft skills listed</span>
+                        <span style="color:var(--ink-dim);font-size:13px">No soft skills listed</span>
                     @endforelse
                 </div>
             </div>
         </div>
 
         <!-- Training & Certifications -->
-        <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
-            <h3 class="font-semibold text-gray-800 mb-3">📚 Training & Certifications</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="cpbn-card" style="grid-column:1 / -1">
+            <h3 class="cpbn-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+                Training &amp; Certifications
+            </h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
                 <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Recommended Training</h4>
+                    <h4 style="font-size:12.5px;font-weight:600;color:var(--ink-dim);margin-bottom:8px">Recommended Training</h4>
                     @php
                         $training = is_array($career->recommended_training) ? $career->recommended_training : json_decode($career->recommended_training ?? '[]', true);
                     @endphp
-                    <ul class="list-disc list-inside text-sm text-gray-700">
+                    <ul style="list-style:disc;padding-left:18px;font-size:13.5px">
                         @forelse($training as $item)
-                            <li>{{ $item }}</li>
+                            <li style="margin-bottom:4px">{{ $item }}</li>
                         @empty
-                            <li class="text-gray-400">No training listed</li>
+                            <li style="color:var(--ink-dim);list-style:none;margin-left:-18px">No training listed</li>
                         @endforelse
                     </ul>
                 </div>
                 <div>
-                    <h4 class="text-sm font-medium text-gray-700 mb-2">Recommended Certifications</h4>
+                    <h4 style="font-size:12.5px;font-weight:600;color:var(--ink-dim);margin-bottom:8px">Recommended Certifications</h4>
                     @php
                         $certs = is_array($career->certifications) ? $career->certifications : json_decode($career->certifications ?? '[]', true);
                     @endphp
-                    <ul class="list-disc list-inside text-sm text-gray-700">
+                    <ul style="list-style:disc;padding-left:18px;font-size:13.5px">
                         @forelse($certs as $cert)
-                            <li>{{ $cert }}</li>
+                            <li style="margin-bottom:4px">{{ $cert }}</li>
                         @empty
-                            <li class="text-gray-400">No certifications listed</li>
+                            <li style="color:var(--ink-dim);list-style:none;margin-left:-18px">No certifications listed</li>
                         @endforelse
                     </ul>
                 </div>

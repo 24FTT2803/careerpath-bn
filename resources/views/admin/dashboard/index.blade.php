@@ -4,165 +4,161 @@
 
 @section('content')
 <div>
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">📊 Dashboard</h1>
-    <p class="text-gray-600 mb-6">Welcome back, {{ auth()->user()->name }}!</p>
+    <div class="cpbn-head" style="margin-bottom:8px">
+        <div>
+            <h1>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-6 3 3 5-8"/></svg>
+                Dashboard
+            </h1>
+            <p class="sub">Welcome back, {{ auth()->user()->name }}!</p>
+        </div>
+    </div>
 
     <!-- Data Status Message -->
     @if(!$stats['has_careers'] || !$stats['has_recommendations'])
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-info-circle text-yellow-400"></i>
-                </div>
-                <div class="ml-3">
-                    <p class="text-sm text-yellow-700">
-                        <strong>⏳ Database Setup in Progress:</strong> 
-                        @if(!$stats['has_careers'])
-                            BIICF careers data
-                        @endif
-                        @if(!$stats['has_careers'] && !$stats['has_recommendations'])
-                            and
-                        @endif
-                        @if(!$stats['has_recommendations'])
-                            career recommendations
-                        @endif
-                        are not yet available. 
-                        This is expected while the database team is working on it.
-                    </p>
-                </div>
-            </div>
+        <div class="cpbn-alert cpbn-alert-info" style="margin-top:16px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
+            <span>
+                <strong>Database setup in progress:</strong>
+                @if(!$stats['has_careers'])
+                    BIICF careers data
+                @endif
+                @if(!$stats['has_careers'] && !$stats['has_recommendations'])
+                    and
+                @endif
+                @if(!$stats['has_recommendations'])
+                    career recommendations
+                @endif
+                are not yet available. This is expected while the database team is working on it.
+            </span>
         </div>
     @endif
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        <div class="bg-white rounded-lg shadow p-4 admin-card">
-            <div class="flex items-center justify-between">
+    <div class="cpbn-stats" style="margin-top:20px">
+        <div class="cpbn-stat">
+            <div class="cpbn-stat-top">
                 <div>
-                    <p class="text-sm text-gray-500">Students</p>
-                    <p class="text-2xl font-bold text-blue-600">{{ $stats['total_students'] }}</p>
+                    <p class="cpbn-stat-label">Students</p>
+                    <p class="cpbn-stat-num">{{ $stats['total_students'] }}</p>
                 </div>
-                <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-users text-blue-600 text-xl"></i>
+                <div class="cpbn-icon-badge ib-gold">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M16 4.2a3.5 3.5 0 0 1 0 6.8"/><path d="M22 21c0-3-2-5.5-4.5-6.6"/></svg>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-4 admin-card">
-            <div class="flex items-center justify-between">
+        <div class="cpbn-stat">
+            <div class="cpbn-stat-top">
                 <div>
-                    <p class="text-sm text-gray-500">Lecturers</p>
-                    <p class="text-2xl font-bold text-green-600">{{ $stats['total_lecturers'] }}</p>
+                    <p class="cpbn-stat-label">Lecturers</p>
+                    <p class="cpbn-stat-num">{{ $stats['total_lecturers'] }}</p>
                 </div>
-                <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-chalkboard-teacher text-green-600 text-xl"></i>
+                <div class="cpbn-icon-badge ib-green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-4 admin-card">
-            <div class="flex items-center justify-between">
+        <div class="cpbn-stat">
+            <div class="cpbn-stat-top">
                 <div>
-                    <p class="text-sm text-gray-500">BIICF Careers</p>
-                    <p class="text-2xl font-bold text-purple-600">{{ $stats['total_careers'] }}</p>
+                    <p class="cpbn-stat-label">BIICF Careers</p>
+                    <p class="cpbn-stat-num">{{ $stats['total_careers'] }}</p>
                 </div>
-                <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-briefcase text-purple-600 text-xl"></i>
+                <div class="cpbn-icon-badge ib-purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-4 admin-card">
-            <div class="flex items-center justify-between">
+        <div class="cpbn-stat">
+            <div class="cpbn-stat-top">
                 <div>
-                    <p class="text-sm text-gray-500">Recommendations</p>
-                    <p class="text-2xl font-bold text-orange-600">{{ $stats['total_recommendations'] }}</p>
+                    <p class="cpbn-stat-label">Recommendations</p>
+                    <p class="cpbn-stat-num">{{ $stats['total_recommendations'] }}</p>
                 </div>
-                <div class="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-bullseye text-orange-600 text-xl"></i>
+                <div class="cpbn-icon-badge ib-rose">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>
                 </div>
             </div>
         </div>
-
-        <div class="bg-white rounded-lg shadow p-4 admin-card">
-            <div class="flex items-center justify-between">
+        <div class="cpbn-stat">
+            <div class="cpbn-stat-top">
                 <div>
-                    <p class="text-sm text-gray-500">Avg Readiness</p>
-                    <p class="text-2xl font-bold text-teal-600">{{ $stats['avg_readiness'] }}%</p>
+                    <p class="cpbn-stat-label">Avg Readiness</p>
+                    <p class="cpbn-stat-num">{{ $stats['avg_readiness'] }}%</p>
                 </div>
-                <div class="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
-                    <i class="fas fa-chart-line text-teal-600 text-xl"></i>
+                <div class="cpbn-icon-badge ib-ink">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Students by Programme -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-4">📊 Students by Programme</h3>
+    <div class="cpbn-card">
+        <h3 class="cpbn-card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-6 3 3 5-8"/></svg>
+            Students by Programme
+        </h3>
         @if($studentsByProgramme->count() > 0)
             @foreach($studentsByProgramme as $prog)
-                <div class="mb-3">
-                    <div class="flex justify-between text-sm">
+                <div class="cpbn-prog-row">
+                    <div class="cpbn-prog-top">
                         <span>{{ $prog->programme ?? 'Not Set' }}</span>
                         <span>{{ $prog->count }}</span>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-600 h-2 rounded-full progress-bar-animated" 
-                             style="width: {{ ($prog->count / $stats['total_students']) * 100 }}%"></div>
-                    </div>
+                    <div class="cpbn-bar"><div class="cpbn-bar-fill fill-gold" style="width: {{ ($prog->count / $stats['total_students']) * 100 }}%"></div></div>
                 </div>
             @endforeach
         @else
-            <p class="text-gray-500 text-center py-4">No students registered yet.</p>
+            <p class="cpbn-empty-note">No students registered yet.</p>
         @endif
     </div>
 
     <!-- Two Column Layout for Top Careers and Skill Gaps -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:20px">
         <!-- Top Career Matches -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">🏆 Top Career Matches</h3>
+        <div class="cpbn-card">
+            <h3 class="cpbn-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/></svg>
+                Top Career Matches
+            </h3>
             @if($topCareers->count() > 0)
                 @foreach($topCareers as $career)
-                    <div class="mb-3">
-                        <div class="flex justify-between text-sm">
+                    <div class="cpbn-prog-row">
+                        <div class="cpbn-prog-top">
                             <span>{{ $career->career->job_title ?? 'N/A' }}</span>
                             <span>{{ number_format($career->avg_score, 1) }}%</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-green-500 h-2 rounded-full progress-bar-animated" 
-                                 style="width: {{ $career->avg_score }}%"></div>
-                        </div>
+                        <div class="cpbn-bar"><div class="cpbn-bar-fill fill-green" style="width: {{ $career->avg_score }}%"></div></div>
                     </div>
                 @endforeach
             @else
-                <p class="text-gray-500 text-center py-4">
-                    <i class="fas fa-info-circle"></i> 
+                <p class="cpbn-empty-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                     No career recommendations yet. This data will appear once students complete profiles.
                 </p>
             @endif
         </div>
 
         <!-- Competency Gaps -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h3 class="font-semibold text-gray-800 mb-4">📚 Common Competency Gaps</h3>
+        <div class="cpbn-card">
+            <h3 class="cpbn-card-title">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
+                Common Competency Gaps
+            </h3>
             @if(count($skillGaps) > 0)
                 @foreach($skillGaps as $skill => $count)
-                    <div class="mb-3">
-                        <div class="flex justify-between text-sm">
+                    <div class="cpbn-prog-row">
+                        <div class="cpbn-prog-top">
                             <span>{{ $skill }}</span>
                             <span>{{ $count }} students</span>
                         </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-red-500 h-2 rounded-full progress-bar-animated" 
-                                 style="width: {{ min(($count / max($stats['total_students'], 1)) * 100, 100) }}%"></div>
-                        </div>
+                        <div class="cpbn-bar"><div class="cpbn-bar-fill fill-rose" style="width: {{ min(($count / max($stats['total_students'], 1)) * 100, 100) }}%"></div></div>
                     </div>
                 @endforeach
             @else
-                <p class="text-gray-500 text-center py-4">
-                    <i class="fas fa-info-circle"></i> 
+                <p class="cpbn-empty-note">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
                     No competency gaps identified yet.
                 </p>
             @endif
@@ -170,37 +166,36 @@
     </div>
 
     <!-- Recent Students -->
-    <div class="bg-white rounded-lg shadow p-6 mt-6">
-        <div class="flex justify-between items-center mb-4">
-            <h3 class="font-semibold text-gray-800">👨‍🎓 Recent Students</h3>
-            <a href="{{ route('admin.students.index') }}" class="text-sm text-blue-600 hover:underline">View All</a>
+    <div class="cpbn-card" style="margin-top:20px">
+        <div class="cpbn-head" style="margin-bottom:14px">
+            <h3 class="cpbn-card-title" style="margin-bottom:0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>
+                Recent Students
+            </h3>
+            <a href="{{ route('admin.students.index') }}" style="font-size:12.5px;color:#8a6420">View All</a>
         </div>
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
+        <div class="cpbn-table-wrap" style="border:none">
+            <table class="cpbn-table">
+                <thead>
                     <tr>
-                        <th class="text-left py-2 px-3">Name</th>
-                        <th class="text-left py-2 px-3">Student ID</th>
-                        <th class="text-left py-2 px-3">Programme</th>
-                        <th class="text-left py-2 px-3">CGPA</th>
+                        <th>Name</th>
+                        <th>Student ID</th>
+                        <th>Programme</th>
+                        <th>CGPA</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($recentStudents as $student)
-                        <tr class="border-t border-gray-100">
-                            <td class="py-2 px-3">
-                                <a href="{{ route('admin.students.show', $student) }}" class="text-blue-600 hover:underline">
-                                    {{ $student->name }}
-                                </a>
+                        <tr>
+                            <td>
+                                <a href="{{ route('admin.students.show', $student) }}" class="link">{{ $student->name }}</a>
                             </td>
-                            <td class="py-2 px-3">{{ $student->student_id ?? '-' }}</td>
-                            <td class="py-2 px-3">{{ $student->programme ?? '-' }}</td>
-                            <td class="py-2 px-3">{{ $student->cgpa ?? '-' }}</td>
+                            <td>{{ $student->student_id ?? '-' }}</td>
+                            <td>{{ $student->programme ?? '-' }}</td>
+                            <td>{{ $student->cgpa ?? '-' }}</td>
                         </tr>
                     @empty
-                        <tr>
-                            <td colspan="4" class="text-center py-4 text-gray-500">No students registered yet.</td>
-                        </tr>
+                        <tr><td colspan="4" class="cpbn-empty-row">No students registered yet.</td></tr>
                     @endforelse
                 </tbody>
             </table>

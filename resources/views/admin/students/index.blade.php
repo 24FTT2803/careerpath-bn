@@ -4,13 +4,16 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="cpbn-head">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">👨‍🎓 Students</h1>
-            <p class="text-gray-600">View and manage student profiles (Read-Only)</p>
+            <h1>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/><path d="M16 4.2a3.5 3.5 0 0 1 0 6.8"/><path d="M22 21c0-3-2-5.5-4.5-6.6"/></svg>
+                Students
+            </h1>
+            <p class="sub">View and manage student profiles (Read-Only)</p>
         </div>
-        <div class="text-sm text-gray-500">
-            <i class="fas fa-info-circle"></i> 
+        <div class="cpbn-note">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>
             @if($isAdmin)
                 Administrators can view all student details.
             @else
@@ -20,89 +23,77 @@
     </div>
 
     <!-- Search and Filter -->
-    <div class="bg-white rounded-lg shadow p-4 mb-6">
-        <form method="GET" class="flex flex-wrap gap-4">
-            <div class="flex-1 min-w-[200px]">
-                <input type="text" name="search" value="{{ request('search') }}" 
-                       placeholder="Search by name, email or student ID..."
-                       class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
-            </div>
-            <div>
-                <select name="programme" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
-                    <option value="">All Programmes</option>
-                    @foreach($programmes as $prog)
-                        <option value="{{ $prog }}" {{ request('programme') == $prog ? 'selected' : '' }}>
-                            {{ $prog }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
-            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
-                <i class="fas fa-search"></i> Filter
-            </button>
-            <a href="{{ route('admin.students.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition">
-                <i class="fas fa-undo"></i> Reset
-            </a>
-        </form>
-    </div>
+    <form method="GET" class="cpbn-filterbar">
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search by name, email or student ID...">
+        <select name="programme">
+            <option value="">All Programmes</option>
+            @foreach($programmes as $prog)
+                <option value="{{ $prog }}" {{ request('programme') == $prog ? 'selected' : '' }}>{{ $prog }}</option>
+            @endforeach
+        </select>
+        <button type="submit" class="cpbn-btn cpbn-btn-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+            Filter
+        </button>
+        <a href="{{ route('admin.students.index') }}" class="cpbn-btn cpbn-btn-muted">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 4v6h6"/></svg>
+            Reset
+        </a>
+    </form>
 
     <!-- Students Table -->
-    <div class="bg-white rounded-lg shadow overflow-hidden">
-        <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-                <thead class="bg-gray-50">
+    <div class="cpbn-table-wrap">
+        <table class="cpbn-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Name</th>
+                    <th>Student ID</th>
+                    <th>Programme</th>
+                    <th>CGPA</th>
+                    <th>Skills</th>
+                    <th class="center">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($students as $index => $student)
                     <tr>
-                        <th class="text-left py-3 px-4 font-semibold text-gray-600">#</th>
-                        <th class="text-left py-3 px-4 font-semibold text-gray-600">Name</th>
-                        <th class="text-left py-3 px-4 font-semibold text-gray-600">Student ID</th>
-                        <th class="text-left py-3 px-4 font-semibold text-gray-600">Programme</th>
-                        <th class="text-left py-3 px-4 font-semibold text-gray-600">CGPA</th>
-                        <th class="text-left py-3 px-4 font-semibold text-gray-600">Skills</th>
-                        <th class="text-center py-3 px-4 font-semibold text-gray-600">Action</th>
+                        <td>{{ $students->firstItem() + $index }}</td>
+                        <td style="font-weight:500">{{ $student->name }}</td>
+                        <td>{{ $student->student_id ?? '-' }}</td>
+                        <td>{{ $student->programme ?? '-' }}</td>
+                        <td>{{ $student->cgpa ?? '-' }}</td>
+                        <td>
+                            @php
+                                $skills = $student->competencies->pluck('skill_name')->toArray();
+                            @endphp
+                            @if(count($skills) > 0)
+                                <span class="cpbn-pill pill-gold">{{ count($skills) }} skills</span>
+                            @else
+                                <span class="cpbn-pill pill-neutral">No skills</span>
+                            @endif
+                        </td>
+                        <td class="center">
+                            <a href="{{ route('admin.students.show', $student) }}" class="link">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;display:inline;vertical-align:-1px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                View
+                            </a>
+                        </td>
                     </tr>
-                </thead>
-                <tbody>
-                    @forelse($students as $index => $student)
-                        <tr class="border-t border-gray-100 hover:bg-gray-50">
-                            <td class="py-3 px-4">{{ $students->firstItem() + $index }}</td>
-                            <td class="py-3 px-4 font-medium">{{ $student->name }}</td>
-                            <td class="py-3 px-4">{{ $student->student_id ?? '-' }}</td>
-                            <td class="py-3 px-4">{{ $student->programme ?? '-' }}</td>
-                            <td class="py-3 px-4">{{ $student->cgpa ?? '-' }}</td>
-                            <td class="py-3 px-4">
-                                @php
-                                    $skills = $student->competencies->pluck('skill_name')->toArray();
-                                @endphp
-                                @if(count($skills) > 0)
-                                    <span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                                        {{ count($skills) }} skills
-                                    </span>
-                                @else
-                                    <span class="text-xs text-gray-400">No skills</span>
-                                @endif
-                            </td>
-                            <td class="text-center py-3 px-4">
-                                <a href="{{ route('admin.students.show', $student) }}" 
-                                   class="text-blue-600 hover:text-blue-800 hover:underline text-sm">
-                                    <i class="fas fa-eye"></i> View
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="7" class="text-center py-8 text-gray-500">
-                                <i class="fas fa-users text-4xl text-gray-300 block mb-2"></i>
-                                No students found.
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr>
+                        <td colspan="7" class="cpbn-empty-row">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="9" cy="8" r="3.5"/><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7"/></svg>
+                            No students found.
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 
     <!-- Pagination -->
-    <div class="mt-4">
+    <div class="cpbn-pagination">
         {{ $students->withQueryString()->links() }}
     </div>
 </div>
