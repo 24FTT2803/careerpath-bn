@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Student\CareerRecommendationController;
 
 // ============================================
 // HOME ROUTE
@@ -45,6 +46,7 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
     Route::get('/notifications', [ProfileController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{id}/read', [ProfileController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [ProfileController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::post('/recommendations/generate', [CareerRecommendationController::class, 'generate'])->name('recommendations.generate');
 });
 
 // ============================================
