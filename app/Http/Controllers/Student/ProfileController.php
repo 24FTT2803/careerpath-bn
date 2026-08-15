@@ -16,15 +16,23 @@ use App\Models\StudentMilestone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use App\Services\AI\CareerRecommendationService;
 
 class ProfileController extends Controller
 {
+    public function __construct(
+        private CareerRecommendationService $recommendationService
+    ) {
+    }
+
     /**
      * Display the student's profile.
      */
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
+
         $user->load([
             'profile',
             'academicRecords',
@@ -45,7 +53,9 @@ class ProfileController extends Controller
      */
     public function edit()
     {
+        /** @var User $user */
         $user = Auth::user();
+
         $user->load([
             'profile',
             'academicRecords',
@@ -66,6 +76,7 @@ class ProfileController extends Controller
      */
     public function update(Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
 
         $request->validate([
@@ -135,7 +146,9 @@ class ProfileController extends Controller
         $user->aspirations()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'career_goals' => $request->filled('career_goals_text') ? [$request->career_goals_text] : [],
+                'career_goals' => $request->filled('career_goals_text')
+                    ? [$request->career_goals_text]
+                    : [],
                 'vision_statement' => $request->vision_statement,
                 'long_term_goals' => $request->long_term_goals,
             ]
@@ -143,10 +156,23 @@ class ProfileController extends Controller
 
         // Update profile completion
         $completionPercentage = $user->profile_completion;
+        $profileIsComplete = $completionPercentage >= 70;
+
         $user->profile()->update([
             'completion_percentage' => $completionPercentage,
-            'profile_complete' => $completionPercentage >= 70,
+            'profile_complete' => $profileIsComplete,
         ]);
+
+        // Generate the student's first career recommendations
+        // once their profile reaches the existing completion threshold.
+        if (
+            $profileIsComplete
+            && ! $user->careerRecommendations()->exists()
+        ) {
+            $user->refresh();
+
+            $this->recommendationService->generateFor($user);
+        }
 
         return redirect()->route('student.profile')
             ->with('success', 'Profile updated successfully!');
@@ -157,11 +183,14 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request)
     {
+        /** @var User $user */
         $user = Auth::user();
+
         Auth::logout();
         $user->delete();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/');
     }
 
@@ -174,7 +203,9 @@ class ProfileController extends Controller
      */
     public function settings()
     {
+        /** @var User $user */
         $user = Auth::user();
+
         return view('student.settings.index', compact('user'));
     }
 
@@ -188,7 +219,9 @@ class ProfileController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
 
+        /** @var User $user */
         $user = Auth::user();
+
         $user->update([
             'password' => Hash::make($request->password),
         ]);
@@ -206,7 +239,9 @@ class ProfileController extends Controller
      */
     public function notifications()
     {
+        /** @var User $user */
         $user = Auth::user();
+
         $notifications = $user->notifications()
             ->orderBy('created_at', 'desc')
             ->paginate(20);
@@ -223,7 +258,7 @@ class ProfileController extends Controller
     {
         $notification = Notification::where('user_id', Auth::id())
             ->findOrFail($id);
-        
+
         $notification->update([
             'is_read' => true,
             'read_at' => now(),
@@ -256,7 +291,9 @@ class ProfileController extends Controller
      */
     public function milestones()
     {
+        /** @var User $user */
         $user = Auth::user();
+
         $milestones = $user->milestones()
             ->orderBy('is_completed')
             ->orderBy('target_date')
@@ -296,7 +333,7 @@ class ProfileController extends Controller
     {
         $milestone = StudentMilestone::where('user_id', Auth::id())
             ->findOrFail($id);
-        
+
         $milestone->update([
             'is_completed' => true,
             'completed_date' => now(),
@@ -313,7 +350,7 @@ class ProfileController extends Controller
     {
         $milestone = StudentMilestone::where('user_id', Auth::id())
             ->findOrFail($id);
-        
+
         $milestone->delete();
 
         return redirect()->route('student.milestones')
@@ -327,9 +364,10 @@ class ProfileController extends Controller
     /**
      * Sync skills/competencies.
      */
-    private function syncSkills($user, $skills)
+    private function syncSkills(User $user, array $skills)
     {
         $user->competencies()->delete();
+
         foreach ($skills as $skill) {
             $user->competencies()->create([
                 'skill_name' => $skill,
@@ -342,9 +380,10 @@ class ProfileController extends Controller
     /**
      * Sync interests.
      */
-    private function syncInterests($user, $interests)
+    private function syncInterests(User $user, array $interests)
     {
         $user->interests()->delete();
+
         foreach ($interests as $interest) {
             $user->interests()->create([
                 'interest_name' => $interest,
@@ -356,9 +395,10 @@ class ProfileController extends Controller
     /**
      * Sync projects.
      */
-    private function syncProjects($user, $projectTitles)
+    private function syncProjects(User $user, array $projectTitles)
     {
         $user->projects()->delete();
+
         foreach ($projectTitles as $title) {
             $user->projects()->create([
                 'title' => $title,
@@ -370,9 +410,10 @@ class ProfileController extends Controller
     /**
      * Sync certifications.
      */
-    private function syncCertifications($user, $certNames)
+    private function syncCertifications(User $user, array $certNames)
     {
         $user->certifications()->delete();
+
         foreach ($certNames as $name) {
             $user->certifications()->create([
                 'certification_name' => $name,
