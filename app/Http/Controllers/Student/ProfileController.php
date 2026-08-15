@@ -360,7 +360,10 @@ class ProfileController extends Controller
     {
         $user->projects()->delete();
         foreach ($projectTitles as $title) {
-            $user->projects()->create(['title' => $title]);
+            $user->projects()->create([
+                'title' => $title,
+                'description' => '',
+            ]);
         }
     }
 
