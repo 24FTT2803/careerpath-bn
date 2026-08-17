@@ -165,14 +165,30 @@ class ProfileController extends Controller
 
         // Generate or refresh career recommendations
         // once the profile reaches the existing completion threshold.
+        $recommendationWarning = null;
+
         if ($profileIsComplete) {
             $user->refresh();
 
-            $this->recommendationService->generateFor($user);
+            try {
+                $this->recommendationService->generateFor($user);
+            } catch (\Throwable $exception) {
+                report($exception);
+
+                $recommendationWarning = $user->careerRecommendations()->exists()
+                    ? 'Your profile was updated, but career recommendations could not be refreshed. Your previous recommendations are still available.'
+                    : 'Your profile was updated, but career recommendations could not be generated. Please try again later.';
+            }
         }
 
-        return redirect()->route('student.profile')
+        $response = redirect()->route('student.profile')
             ->with('success', 'Profile updated successfully!');
+
+        if ($recommendationWarning) {
+            $response->with('warning', $recommendationWarning);
+        }
+
+        return $response;
     }
 
     /**

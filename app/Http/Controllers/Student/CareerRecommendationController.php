@@ -23,7 +23,18 @@ class CareerRecommendationController extends Controller
         /** @var User $student */
         $student = Auth::user();
 
-        $this->recommendationService->generateFor($student);
+        try {
+            $this->recommendationService->generateFor($student);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return redirect()
+                ->route('student.dashboard')
+                ->with(
+                    'warning',
+                    'Career recommendations could not be generated. Please try again later.'
+                );
+        }
 
         return redirect()
             ->route('student.dashboard')

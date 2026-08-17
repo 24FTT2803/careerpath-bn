@@ -29,6 +29,14 @@
 
             <!-- Page Content -->
             <main>
+                @if (session('warning'))
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+                        <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded-lg">
+                            {{ session('warning') }}
+                        </div>
+                    </div>
+                @endif
+
                 @yield('content')
             </main>
         </div>
