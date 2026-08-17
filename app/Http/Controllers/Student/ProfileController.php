@@ -163,12 +163,9 @@ class ProfileController extends Controller
             'profile_complete' => $profileIsComplete,
         ]);
 
-        // Generate the student's first career recommendations
-        // once their profile reaches the existing completion threshold.
-        if (
-            $profileIsComplete
-            && ! $user->careerRecommendations()->exists()
-        ) {
+        // Generate or refresh career recommendations
+        // once the profile reaches the existing completion threshold.
+        if ($profileIsComplete) {
             $user->refresh();
 
             $this->recommendationService->generateFor($user);
