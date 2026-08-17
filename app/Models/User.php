@@ -144,27 +144,48 @@ class User extends Authenticatable
      */
     public function getProfileCompletionAttribute()
     {
-        $completed = 0;
-        $total = 0;
+        $profile = $this->profile;
+        $aspiration = $this->aspirations;
+
+        $hasPersonalProfile = $profile && (
+            filled($profile->phone)
+            || filled($profile->address)
+            || $profile->date_of_birth
+            || filled($profile->nationality)
+            || filled($profile->bio)
+        );
+
+        $hasAcademicInformation = (
+            filled($this->programme)
+            && $this->cgpa !== null
+        );
+
+        $hasMeaningfulAspirations = $aspiration && (
+            ! empty($aspiration->career_goals)
+            || ! empty($aspiration->preferred_industries)
+            || ! empty($aspiration->preferred_work_activities)
+            || filled($aspiration->vision_statement)
+            || filled($aspiration->mission_statement)
+            || filled($aspiration->long_term_goals)
+        );
 
         $sections = [
-            'profile' => $this->profile && $this->profile->profile_complete,
-            'academic' => $this->academicRecords()->exists(),
+            'profile' => $hasPersonalProfile,
+            'academic' => $hasAcademicInformation,
             'competencies' => $this->competencies()->exists(),
             'interests' => $this->interests()->exists(),
             'projects' => $this->projects()->exists(),
             'certifications' => $this->certifications()->exists(),
-            'aspirations' => $this->aspirations()->exists(),
+            'aspirations' => $hasMeaningfulAspirations,
         ];
 
-        foreach ($sections as $completed_flag) {
-            $total++;
-            if ($completed_flag) {
-                $completed++;
-            }
-        }
+        $completed = count(
+            array_filter($sections)
+        );
 
-        return $total > 0 ? round(($completed / $total) * 100) : 0;
+        return round(
+            ($completed / count($sections)) * 100
+        );
     }
 
     /**

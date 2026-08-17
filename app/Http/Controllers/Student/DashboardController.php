@@ -15,7 +15,7 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         // Profile completion
-        $profileCompletion = $this->calculateProfileCompletion($user);
+        $profileCompletion = $user->profile_completion;
 
         // Career recommendations
         $recommendations = $user->careerRecommendations()
@@ -45,31 +45,6 @@ class DashboardController extends Controller
             'milestoneCount',
             'recentActivities'
         ));
-    }
-
-    private function calculateProfileCompletion($user)
-    {
-        $completed = 0;
-        $total = 0;
-
-        $sections = [
-            'profile' => $user->profile && $user->profile->profile_complete,
-            'academic' => $user->academicRecords()->exists(),
-            'competencies' => $user->competencies()->exists(),
-            'interests' => $user->interests()->exists(),
-            'projects' => $user->projects()->exists(),
-            'certifications' => $user->certifications()->exists(),
-            'aspirations' => $user->aspirations()->exists(),
-        ];
-
-        foreach ($sections as $completed_flag) {
-            $total++;
-            if ($completed_flag) {
-                $completed++;
-            }
-        }
-
-        return $total > 0 ? round(($completed / $total) * 100) : 0;
     }
 
     private function calculateReadinessScore($user)

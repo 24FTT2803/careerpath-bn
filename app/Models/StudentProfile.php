@@ -7,23 +7,23 @@ use Illuminate\Database\Eloquent\Model;
 class StudentProfile extends Model
 {
     protected $fillable = [
-        'user_id',          // ← ADD THIS
-        'title',
-        'description',
-        'technologies_used',
-        'team_members',
-        'role',
-        'project_url',
-        'start_date',
-        'end_date',
-        'achievements',
+        'user_id',
+        'phone',
+        'address',
+        'date_of_birth',
+        'nationality',
+        'profile_picture',
+        'social_links',
+        'bio',
+        'profile_complete',
+        'completion_percentage',
     ];
 
     protected $casts = [
-        'technologies_used' => 'array',
-        'team_members' => 'array',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'date_of_birth' => 'date',
+        'social_links' => 'array',
+        'profile_complete' => 'boolean',
+        'completion_percentage' => 'integer',
     ];
 
     public function user()
