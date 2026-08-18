@@ -5,19 +5,25 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
 
 class DashboardController extends Controller
 {
     public function index()
     {
+        /** @var User $user */
         $user = Auth::user();
 
         // Profile completion
-        $profileCompletion = $this->calculateProfileCompletion($user);
+        $profileCompletion = $user->profile_completion;
 
-        // Recommendations (placeholder - Developer 2 will provide)
-        $recommendations = collect([]);
-        $recommendationCount = 0;
+        // Career recommendations
+        $recommendations = $user->careerRecommendations()
+            ->with('career')
+            ->orderBy('rank')
+            ->get();
+
+        $recommendationCount = $recommendations->count();
 
         // Readiness score
         $readinessScore = $this->calculateReadinessScore($user);
@@ -39,31 +45,6 @@ class DashboardController extends Controller
             'milestoneCount',
             'recentActivities'
         ));
-    }
-
-    private function calculateProfileCompletion($user)
-    {
-        $completed = 0;
-        $total = 0;
-
-        $sections = [
-            'profile' => $user->profile && $user->profile->profile_complete,
-            'academic' => $user->academicRecords()->exists(),
-            'competencies' => $user->competencies()->exists(),
-            'interests' => $user->interests()->exists(),
-            'projects' => $user->projects()->exists(),
-            'certifications' => $user->certifications()->exists(),
-            'aspirations' => $user->aspirations()->exists(),
-        ];
-
-        foreach ($sections as $completed_flag) {
-            $total++;
-            if ($completed_flag) {
-                $completed++;
-            }
-        }
-
-        return $total > 0 ? round(($completed / $total) * 100) : 0;
     }
 
     private function calculateReadinessScore($user)

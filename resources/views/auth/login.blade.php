@@ -48,7 +48,6 @@
         @keyframes reveal{to{opacity:1;transform:translateY(0)}}
         @media (prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}}
 
-        /* header */
         header.site{
             border-bottom:1px solid var(--line);
             background:rgba(13,26,43,0.86);
@@ -61,7 +60,6 @@
         .nav-actions a{font-size:14px;color:var(--paper-dim);transition:color .2s}
         .nav-actions a:hover{color:var(--paper)}
 
-        /* auth section */
         .auth-main{flex:1;display:flex;align-items:center;justify-content:center;padding:64px 20px}
         .auth-card{
             width:100%;max-width:420px;
@@ -113,6 +111,24 @@
         .form-foot{margin-top:22px;text-align:center;font-size:13.5px;color:var(--paper-dim)}
         .form-foot a{color:var(--gold-bright);border-bottom:1px solid transparent;transition:border-color .2s}
         .form-foot a:hover{border-color:var(--gold-bright)}
+
+        /* Back button */
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--paper-dim);
+            font-size: 13px;
+            transition: color .2s;
+            margin-bottom: 16px;
+        }
+        .back-link:hover {
+            color: var(--paper);
+        }
+        .back-link svg {
+            width: 16px;
+            height: 16px;
+        }
     </style>
 </head>
 <body>
@@ -127,16 +143,18 @@
                 </svg>
                 <span>CareerPath BN<small>Politeknik Brunei</small></span>
             </a>
-            <div class="nav-actions">
-                @if (Route::has('register'))
-                    <a href="{{ route('register') }}">Need an account? Sign up</a>
-                @endif
-            </div>
+            <div class="nav-actions"></div>
         </div>
     </header>
 
     <main class="auth-main">
         <div class="auth-card reveal">
+            <!-- Back Button -->
+            <a href="{{ url('/') }}" class="back-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                Back to Home
+            </a>
+
             <span class="eyebrow">Welcome back</span>
             <h1>Log in</h1>
             <p class="lede">Pick up right where your career plan left off.</p>
@@ -172,11 +190,9 @@
 
                 <button type="submit" class="btn btn-gold">Log in</button>
 
-                @if (Route::has('register'))
-                    <div class="form-foot">
-                        Don't have an account? <a href="{{ route('register') }}">Sign up</a>
-                    </div>
-                @endif
+                <div class="form-foot">
+                    Don't have an account? <a href="{{ route('register') }}">Sign up</a>
+                </div>
             </form>
         </div>
     </main>

@@ -30,6 +30,9 @@ class BIICFCareer extends Model
 
     public function recommendations()
     {
-        return $this->hasMany(CareerRecommendation::class);
+        return $this->hasMany(
+            CareerRecommendation::class,
+            'biicf_career_id'
+        );
     }
 }

@@ -17,6 +17,17 @@ Route::get('/', function () {
 });
 
 // ============================================
+// PRIVACY POLICY & TERMS OF SERVICE
+// ============================================
+Route::get('/terms', function () {
+    return view('pages.terms');
+})->name('terms');
+
+Route::get('/privacy', function () {
+    return view('pages.privacy');
+})->name('privacy');
+
+// ============================================
 // DASHBOARD SHORTCUT
 // ============================================
 Route::get('/dashboard', function () {
@@ -48,15 +59,13 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
 });
 
 // ============================================
-// ADMIN ROUTES - Using Direct Middleware Classes
+// ADMIN ROUTES
 // ============================================
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    // Dashboard
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])
         ->name('dashboard')
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
-    // Students (Read-Only)
     Route::get('/students', [AdminStudentController::class, 'index'])
         ->name('students.index')
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
@@ -65,7 +74,6 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('students.show')
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
-    // Careers (Read-Only)
     Route::get('/careers', [AdminCareerController::class, 'index'])
         ->name('careers.index')
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
@@ -74,7 +82,7 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->name('careers.show')
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
-    // Users (Admin Only - Full CRUD)
+    // Admin ONLY routes
     Route::get('/users', [AdminUserController::class, 'index'])
         ->name('users.index')
         ->middleware(\App\Http\Middleware\AdminMiddleware::class);
