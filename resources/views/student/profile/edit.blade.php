@@ -29,7 +29,6 @@
     .cpbn-back:hover{color:var(--ink)}
     .cpbn-back svg{width:14px;height:14px}
 
-    /* progress card */
     .cpbn-progress-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:18px 20px;margin-bottom:24px}
     .cpbn-progress-top{display:flex;justify-content:space-between;align-items:center;font-size:13.5px}
     .cpbn-progress-top span:first-child{font-weight:500}
@@ -38,7 +37,6 @@
     .cpbn-bar-fill{height:100%;background:var(--gold);border-radius:100px}
     .cpbn-progress-note{font-size:12px;color:var(--ink-dim);margin-top:8px}
 
-    /* section cards */
     .cpbn-section{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:18px}
     .cpbn-section h3{
         font-family:var(--font-display);font-size:17px;font-weight:600;margin-bottom:18px;
@@ -107,7 +105,7 @@
             </div>
             <div class="cpbn-bar"><div class="cpbn-bar-fill" style="width: {{ $profileCompletion ?? 0 }}%"></div></div>
             <p class="cpbn-progress-note">
-                {{ $profileCompletion >= 70 ? 'Profile complete — ready for career matching!' : 'Complete all sections for better recommendations' }}
+                {{ $profileCompletion >= 70 ? '✅ Profile complete — ready for career matching!' : 'Complete all sections for better recommendations' }}
             </p>
         </div>
 
@@ -123,8 +121,12 @@
                 </h3>
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
-                        <label>Full Name <span class="req">*</span></label>
-                        <input type="text" name="name" value="{{ old('name', $user->name) }}" required>
+                        <label>First Name <span class="req">*</span></label>
+                        <input type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required>
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Last Name <span class="req">*</span></label>
+                        <input type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required>
                     </div>
                     <div class="cpbn-field">
                         <label>Email <span class="req">*</span></label>
@@ -132,7 +134,7 @@
                     </div>
                     <div class="cpbn-field">
                         <label>Student ID <span class="req">*</span></label>
-                        <input type="text" value="{{ $user->student_id }}" disabled>
+                        <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" required>
                     </div>
                     <div class="cpbn-field">
                         <label>Phone Number</label>

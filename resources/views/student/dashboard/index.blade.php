@@ -36,7 +36,6 @@
     .cpbn-dash a{text-decoration:none;color:inherit}
     .cpbn-wrap{max-width:1180px;margin-inline:auto}
 
-    /* header */
     .cpbn-head{
         display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;
         margin-bottom:32px;
@@ -57,7 +56,6 @@
     .cpbn-chip-green{background:var(--green-wash);color:var(--green)}
     .cpbn-chip-rose{background:var(--rose-wash);color:var(--rose)}
 
-    /* stat cards */
     .cpbn-stats{
         display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;
     }
@@ -81,7 +79,6 @@
     .cpbn-bar{width:100%;background:#eee9db;border-radius:100px;height:6px;margin-top:14px;overflow:hidden}
     .cpbn-bar-fill{height:100%;background:var(--gold);border-radius:100px}
 
-    /* quick actions */
     .cpbn-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px}
     .cpbn-btn{
         display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:5px;
@@ -93,7 +90,6 @@
     .cpbn-btn-outline{background:var(--card);border-color:var(--line);color:var(--ink)}
     .cpbn-btn-outline:hover{border-color:var(--gold);color:#8a6420}
 
-    /* two column */
     .cpbn-cols{display:grid;grid-template-columns:2fr 1fr;gap:20px}
     .cpbn-panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px}
     .cpbn-panel + .cpbn-panel{margin-top:20px}
@@ -105,7 +101,6 @@
     .cpbn-panel-head a{font-size:12.5px;color:var(--ink-dim);display:flex;align-items:center;gap:5px}
     .cpbn-panel-head a:hover{color:var(--ink)}
 
-    /* recommendation item */
     .cpbn-rec{
         border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:12px;transition:border-color .15s;
     }
@@ -123,18 +118,15 @@
     .cpbn-rec-links a:hover{color:#8a6420}
     .cpbn-rec-links svg{width:12px;height:12px}
 
-    /* empty state */
     .cpbn-empty{text-align:center;padding:40px 20px}
     .cpbn-empty svg{width:34px;height:34px;color:var(--gold);margin-inline:auto;margin-bottom:14px}
     .cpbn-empty p.t{color:var(--ink);font-size:14.5px;font-weight:500}
     .cpbn-empty p.s{color:var(--ink-dim);font-size:13px;margin-top:4px}
     .cpbn-empty .cpbn-btn{margin-top:16px}
 
-    /* profile status */
     .cpbn-prow{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-dim);margin-bottom:6px}
     .cpbn-prow span:last-child{font-weight:600;color:var(--ink);font-family:var(--font-mono)}
 
-    /* activity */
     .cpbn-activity{padding-block:11px;border-bottom:1px solid var(--line)}
     .cpbn-activity:last-child{border-bottom:none;padding-bottom:0}
     .cpbn-activity:first-child{padding-top:0}
@@ -157,7 +149,7 @@
         <!-- Welcome Header -->
         <div class="cpbn-head">
             <div>
-                <h1>Welcome back, {{ Auth::user()->name }} 👋</h1>
+                <h1>Welcome back, {{ Auth::user()->first_name ?? Auth::user()->name }} 👋</h1>
                 <p class="sub">{{ Auth::user()->programme ?? 'Complete your profile to get started' }}</p>
             </div>
             <div class="cpbn-badges">

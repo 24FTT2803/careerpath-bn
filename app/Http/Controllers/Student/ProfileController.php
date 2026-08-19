@@ -80,7 +80,9 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255'],
+            'last_name' => ['required', 'string', 'max:255'],
+            'student_id' => ['nullable', 'string', 'max:50', 'unique:users,student_id,' . $user->id],
             'phone' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
@@ -97,9 +99,15 @@ class ProfileController extends Controller
             'long_term_goals' => ['nullable', 'string', 'max:500'],
         ]);
 
-        // Update User
+        // Combine first and last name into full name
+        $fullName = $request->first_name . ' ' . $request->last_name;
+
+        // Update User - WITH FIRST & LAST NAME
         $user->update([
-            'name' => $request->name,
+            'first_name' => $request->first_name,
+            'last_name' => $request->last_name,
+            'name' => $fullName,
+            'student_id' => $request->student_id,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
         ]);

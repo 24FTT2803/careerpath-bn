@@ -41,9 +41,9 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-center mb-4">
                     <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mx-auto">
-                        {{ substr($student->name, 0, 1) }}
+                        {{ substr($student->first_name ?? $student->name, 0, 1) }}
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800 mt-3">{{ $student->name }}</h2>
+                    <h2 class="text-xl font-bold text-gray-800 mt-3">{{ $student->first_name ?? $student->name }} {{ $student->last_name ?? '' }}</h2>
                     <p class="text-gray-500 text-sm">{{ $student->programme ?? 'Programme not set' }}</p>
                 </div>
 
