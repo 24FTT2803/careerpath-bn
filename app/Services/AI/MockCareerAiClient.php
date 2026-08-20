@@ -163,6 +163,10 @@ class MockCareerAiClient implements CareerAiClient
     /**
      * Build the temporary fake recommendation response
      * for a BIICF career.
+     *
+     * Competency levels in this mock are illustrative
+     * only. They are not authoritative BIICF career
+     * requirements.
      */
     private function recommendationFor(
         int $careerId,
@@ -184,13 +188,33 @@ class MockCareerAiClient implements CareerAiClient
                 'skill_gaps' => [
                     [
                         'skill_name' => 'Software Testing',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Assist',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 1,
                     ],
                     [
                         'skill_name' => 'Cloud Deployment',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Follow',
+                        'current_level_value' => 1,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 2,
+                    ],
+                    [
+                        'skill_name' => 'Communication',
+                        'skill_type' => 'soft',
+                        'current_level' => 'Intermediate',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Advanced',
+                        'required_level' => 3,
+                        'required_label' => 'Advanced',
+                        'gap' => 1,
                     ],
                 ],
 
@@ -219,13 +243,33 @@ class MockCareerAiClient implements CareerAiClient
                 'skill_gaps' => [
                     [
                         'skill_name' => 'Network Configuration',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Assist',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 1,
                     ],
                     [
                         'skill_name' => 'Network Security',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Follow',
+                        'current_level_value' => 1,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 2,
+                    ],
+                    [
+                        'skill_name' => 'Documentation',
+                        'skill_type' => 'soft',
+                        'current_level' => 'Intermediate',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Advanced',
+                        'required_level' => 3,
+                        'required_label' => 'Advanced',
+                        'gap' => 1,
                     ],
                 ],
 
@@ -254,13 +298,33 @@ class MockCareerAiClient implements CareerAiClient
                 'skill_gaps' => [
                     [
                         'skill_name' => 'Data Visualisation',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Assist',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 1,
                     ],
                     [
                         'skill_name' => 'Statistical Analysis',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Follow',
+                        'current_level_value' => 1,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 2,
+                    ],
+                    [
+                        'skill_name' => 'Communication',
+                        'skill_type' => 'soft',
+                        'current_level' => 'Intermediate',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Advanced',
+                        'required_level' => 3,
+                        'required_label' => 'Advanced',
+                        'gap' => 1,
                     ],
                 ],
 
@@ -289,13 +353,33 @@ class MockCareerAiClient implements CareerAiClient
                 'skill_gaps' => [
                     [
                         'skill_name' => 'Security Monitoring',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Assist',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 1,
                     ],
                     [
                         'skill_name' => 'Incident Response',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Follow',
+                        'current_level_value' => 1,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 2,
+                    ],
+                    [
+                        'skill_name' => 'Attention to Detail',
+                        'skill_type' => 'soft',
+                        'current_level' => 'Intermediate',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Advanced',
+                        'required_level' => 3,
+                        'required_label' => 'Advanced',
+                        'gap' => 1,
                     ],
                 ],
 
@@ -324,13 +408,33 @@ class MockCareerAiClient implements CareerAiClient
                 'skill_gaps' => [
                     [
                         'skill_name' => 'Cloud Architecture',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Assist',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 1,
                     ],
                     [
                         'skill_name' => 'Infrastructure Automation',
-                        'current_level' => 'beginner',
-                        'recommended_level' => 'intermediate',
+                        'skill_type' => 'technical',
+                        'current_level' => 'Follow',
+                        'current_level_value' => 1,
+                        'recommended_level' => 'Apply',
+                        'required_level' => 3,
+                        'required_label' => 'Apply',
+                        'gap' => 2,
+                    ],
+                    [
+                        'skill_name' => 'Adaptability',
+                        'skill_type' => 'soft',
+                        'current_level' => 'Intermediate',
+                        'current_level_value' => 2,
+                        'recommended_level' => 'Advanced',
+                        'required_level' => 3,
+                        'required_label' => 'Advanced',
+                        'gap' => 1,
                     ],
                 ],
 
