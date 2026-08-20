@@ -58,18 +58,36 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
         '/recommendations/generate',
         [CareerRecommendationController::class, 'generate']
     )->name('recommendations.generate');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    Route::get(
+        '/certifications/{certification}/evidence',
+        [ProfileController::class, 'certificationEvidence']
+    )->name('certifications.evidence');
+
     Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones');
+
     Route::post('/milestones', [MilestoneController::class, 'store'])->name('milestones.store');
+
     Route::put('/milestones/{milestone}', [MilestoneController::class, 'complete'])->name('milestones.complete');
+
     Route::delete('/milestones/{milestone}', [MilestoneController::class, 'destroy'])->name('milestones.destroy');
+
     Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
+
     Route::put('/settings/password', [ProfileController::class, 'updatePassword'])->name('settings.password');
+
     Route::get('/notifications', [ProfileController::class, 'notifications'])->name('notifications');
+
     Route::post('/notifications/{id}/read', [ProfileController::class, 'markAsRead'])->name('notifications.read');
+
     Route::post('/notifications/read-all', [ProfileController::class, 'markAllAsRead'])->name('notifications.read-all');
 });
 

@@ -99,6 +99,7 @@ class ProfileController extends Controller
             'certifications.*.id' => [
                 'nullable',
                 'integer',
+                'distinct',
             ],
             'certifications.*.certification_name' => [
                 'required',
@@ -119,6 +120,14 @@ class ProfileController extends Controller
                 'nullable',
                 File::types(['pdf', 'jpg', 'jpeg', 'png'])
                     ->max('5mb'),
+            ],
+            'removed_certification_ids' => [
+                'nullable',
+                'array',
+            ],
+            'removed_certification_ids.*' => [
+                'integer',
+                'distinct',
             ],
             'career_goals_text' => ['nullable', 'string'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
@@ -214,6 +223,37 @@ class ProfileController extends Controller
         }
 
         return $response;
+    }
+
+    /**
+     * Display a student's uploaded certification evidence.
+     */
+    public function certificationEvidence($certification)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $certification = $user->certifications()
+            ->whereKey($certification)
+            ->firstOrFail();
+
+        $filePath = $certification->certificate_file_path;
+
+        abort_unless(
+            $filePath
+            && Storage::disk('local')->exists($filePath),
+            404
+        );
+
+        $fileName = $certification->certificate_original_name
+            ?: basename($filePath);
+
+        return Storage::disk('local')->response(
+            $filePath,
+            $fileName,
+            [],
+            'inline'
+        );
     }
 
     /**
@@ -450,8 +490,6 @@ class ProfileController extends Controller
      */
     private function syncCertifications(User $user, Request $request): void
     {
-        $submittedIds = [];
-
         foreach ($request->input('certifications', []) as $index => $data) {
             $certification = null;
 
@@ -459,63 +497,112 @@ class ProfileController extends Controller
                 $certification = $user->certifications()
                     ->whereKey($data['id'])
                     ->firstOrFail();
-
-                $submittedIds[] = $certification->id;
             }
 
-            $filePath = $certification?->certificate_file_path;
+            $oldFilePath = $certification?->certificate_file_path;
+            $oldOriginalName = $certification?->certificate_original_name;
 
-            if ($request->hasFile("certifications.$index.certificate_file")) {
-                if ($filePath) {
-                    Storage::disk('local')->delete($filePath);
-                }
+            $newFilePath = null;
+            $newOriginalName = null;
 
-                $filePath = $request
-                    ->file("certifications.$index.certificate_file")
-                    ->store(
+            try {
+                if ($request->hasFile("certifications.$index.certificate_file")) {
+                    $uploadedFile = $request->file(
+                        "certifications.$index.certificate_file"
+                    );
+
+                    $newOriginalName = $uploadedFile
+                        ->getClientOriginalName();
+
+                    $newFilePath = $uploadedFile->store(
                         "certifications/{$user->id}",
                         'local'
                     );
+
+                    if (! $newFilePath) {
+                        throw new \RuntimeException(
+                            'The certificate evidence could not be stored.'
+                        );
+                    }
+                }
+
+                $values = [
+                    'certification_name' =>
+                        $data['certification_name'],
+
+                    'issuing_organization' =>
+                        $data['issuing_organization'] ?? null,
+
+                    'issue_date' =>
+                        $data['issue_date'] ?? null,
+
+                    'certificate_file_path' =>
+                        $newFilePath ?? $oldFilePath,
+
+                    'certificate_original_name' =>
+                        $newFilePath
+                            ? $newOriginalName
+                            : $oldOriginalName,
+                ];
+
+                if ($certification) {
+                    $certification->update($values);
+                } else {
+                    $user->certifications()->create($values);
+                }
+            } catch (\Throwable $exception) {
+                if ($newFilePath) {
+                    Storage::disk('local')->delete($newFilePath);
+                }
+
+                throw $exception;
             }
 
-            $values = [
-                'certification_name' =>
-                    $data['certification_name'],
-
-                'issuing_organization' =>
-                    $data['issuing_organization'] ?? null,
-
-                'issue_date' =>
-                    $data['issue_date'] ?? null,
-
-                'certificate_file_path' =>
-                    $filePath,
-            ];
-
-            if ($certification) {
-                $certification->update($values);
-            } else {
-                $certification = $user->certifications()
-                    ->create($values);
-
-                $submittedIds[] = $certification->id;
+            // The new evidence is safely stored and recorded
+            // before the previous evidence is deleted.
+            if (
+                $newFilePath
+                && $oldFilePath
+                && $newFilePath !== $oldFilePath
+            ) {
+                Storage::disk('local')->delete($oldFilePath);
             }
         }
 
-        $certificationsToDelete = empty($submittedIds)
-            ? $user->certifications()->get()
-            : $user->certifications()
-                ->whereNotIn('id', $submittedIds)
-                ->get();
+        /*
+         * Existing certifications are deleted only when the
+         * browser explicitly submits their IDs for removal.
+         */
+        $removedIds = array_values(
+            array_unique(
+                array_map(
+                    'intval',
+                    $request->input('removed_certification_ids', [])
+                )
+            )
+        );
+
+        if (empty($removedIds)) {
+            return;
+        }
+
+        $certificationsToDelete = $user->certifications()
+            ->whereIn('id', $removedIds)
+            ->get();
 
         foreach ($certificationsToDelete as $certification) {
-            if ($certification->certificate_file_path) {
-                Storage::disk('local')->delete(
-                    $certification->certificate_file_path
-                );
-            }
+            $filePath = $certification->certificate_file_path;
 
+            /*
+             * Delete the database record first. If physical
+             * deletion fails, an orphaned private file is safer
+             * than a certification pointing to missing evidence.
+             */
             $certification->delete();
+
+            if ($filePath) {
+                Storage::disk('local')->delete($filePath);
+            }
         }
     }
 }

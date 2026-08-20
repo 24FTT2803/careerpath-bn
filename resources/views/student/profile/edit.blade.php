@@ -25,14 +25,67 @@
     }
 
     .cpbn-file-existing {
-        display: inline-block;
+        display: block;
         margin-top: 8px;
-        padding: 5px 9px;
+        padding: 8px 10px;
         background: #edf7ed;
         color: #477a47;
         border-radius: 4px;
         font-size: 12px;
         font-weight: 500;
+    }
+
+    .cpbn-file-existing-name {
+        display: block;
+        margin-top: 4px;
+        font-weight: 400;
+        overflow-wrap: anywhere;
+    }
+
+    .cpbn-file-view {
+        display: inline-block;
+        margin-top: 7px;
+        color: #386747;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: underline !important;
+    }
+
+    .cpbn-file-missing {
+        display: block;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: var(--rose-wash);
+        color: #9a453c;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .cpbn-file-selected {
+        display: block;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: var(--gold-wash);
+        color: #76551c;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .cpbn-clear-file {
+        display: inline-block;
+        margin-top: 7px;
+        border: 0;
+        background: transparent;
+        color: #8a6420;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0;
+    }
+
+    .cpbn-clear-file:hover {
+        text-decoration: underline;
     }
 
     .cpbn-add-certification {
@@ -254,7 +307,7 @@
                     <div class="cpbn-field">
                         <label>CGPA</label>
                         <input type="number" name="cgpa" step="0.01" min="0" max="4"
-                            value="{{ old('cgpa', $user->cgpa) }}">
+                               value="{{ old('cgpa', $user->cgpa) }}">
                     </div>
                 </div>
             </div>
@@ -360,9 +413,19 @@
                     }
 
                     $nextCertificationIndex = empty($certificationRows)
-                    ? 0
-                    : max(array_map('intval', array_keys($certificationRows))) + 1;
+                        ? 0
+                        : max(array_map('intval', array_keys($certificationRows))) + 1;
                 @endphp
+
+                <div id="removed-certification-fields">
+                    @foreach(old('removed_certification_ids', []) as $removedCertificationId)
+                        <input
+                            type="hidden"
+                            name="removed_certification_ids[]"
+                            value="{{ $removedCertificationId }}"
+                        >
+                    @endforeach
+                </div>
 
                 <div
                     id="certification-list"
@@ -376,9 +439,18 @@
                                     (int) $certification['id']
                                 )
                                 : null;
+
+                            $existingEvidenceAvailable =
+                                $existingCertification?->certificate_file_path
+                                && \Illuminate\Support\Facades\Storage::disk('local')->exists(
+                                    $existingCertification->certificate_file_path
+                                );
                         @endphp
 
-                        <div class="cpbn-certification-card">
+                        <div
+                            class="cpbn-certification-card"
+                            data-has-existing-evidence="{{ $existingEvidenceAvailable ? '1' : '0' }}"
+                        >
                             @if (! empty($certification['id']))
                                 <input
                                     type="hidden"
@@ -430,6 +502,7 @@
 
                                     <input
                                         type="file"
+                                        class="cpbn-certificate-file"
                                         name="certifications[{{ $index }}][certificate_file]"
                                         accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                                     >
@@ -438,11 +511,60 @@
                                         PDF, JPG, JPEG or PNG · Maximum 5 MB
                                     </small>
 
-                                    @if ($existingCertification?->certificate_file_path)
+                                    @if ($existingEvidenceAvailable)
                                         <div class="cpbn-file-existing">
-                                            ✓ Evidence uploaded
+                                            ✓ Existing evidence verified
+
+                                            @if ($existingCertification->certificate_original_name)
+                                                <span class="cpbn-file-existing-name">
+                                                    Current file:
+                                                    {{ $existingCertification->certificate_original_name }}
+                                                </span>
+                                            @else
+                                                <span class="cpbn-file-existing-name">
+                                                    Original filename unavailable for this older upload.
+                                                </span>
+                                            @endif
+
+                                            <a
+                                                href="{{ route(
+                                                    'student.certifications.evidence',
+                                                    $existingCertification->id
+                                                ) }}"
+                                                target="_blank"
+                                                rel="noopener"
+                                                class="cpbn-file-view"
+                                            >
+                                                View Evidence
+                                            </a>
                                         </div>
+
+                                        <small class="cpbn-file-note">
+                                            Current evidence will be kept unless a replacement is successfully saved.
+                                        </small>
+                                    @elseif ($existingCertification?->certificate_file_path)
+                                        <div class="cpbn-file-missing">
+                                            ⚠ An evidence record exists, but the stored file could not be found.
+                                        </div>
+
+                                        <small class="cpbn-file-note">
+                                            You may upload a replacement, but the previous evidence is currently unavailable.
+                                        </small>
                                     @endif
+
+                                    <div
+                                        class="cpbn-file-selected"
+                                        hidden
+                                    ></div>
+
+                                    <button
+                                        type="button"
+                                        class="cpbn-clear-file"
+                                        onclick="clearSelectedCertificateFile(this)"
+                                        hidden
+                                    >
+                                        Clear selected file
+                                    </button>
                                 </div>
                             </div>
 
@@ -500,9 +622,28 @@
 
     </div>
 </div>
+
 <script>
-    const certificationList = document.getElementById('certification-list');
-    let certificationIndex = Number(certificationList.dataset.nextIndex);
+    const certificationList =
+        document.getElementById('certification-list');
+
+    const removedCertificationFields =
+        document.getElementById(
+            'removed-certification-fields'
+        );
+
+    let certificationIndex =
+        Number(certificationList.dataset.nextIndex);
+
+    const maximumCertificateSize =
+        5 * 1024 * 1024;
+
+    const allowedCertificateExtensions = [
+        'pdf',
+        'jpg',
+        'jpeg',
+        'png'
+    ];
 
     document
         .getElementById('add-certification')
@@ -511,6 +652,7 @@
             const card = document.createElement('div');
 
             card.className = 'cpbn-certification-card';
+            card.dataset.hasExistingEvidence = '0';
 
             card.innerHTML = `
                 <div class="cpbn-fgrid">
@@ -553,6 +695,7 @@
 
                         <input
                             type="file"
+                            class="cpbn-certificate-file"
                             name="certifications[${certificationIndex}][certificate_file]"
                             accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
                         >
@@ -560,6 +703,20 @@
                         <small class="cpbn-file-note">
                             PDF, JPG, JPEG or PNG · Maximum 5 MB
                         </small>
+
+                        <div
+                            class="cpbn-file-selected"
+                            hidden
+                        ></div>
+
+                        <button
+                            type="button"
+                            class="cpbn-clear-file"
+                            onclick="clearSelectedCertificateFile(this)"
+                            hidden
+                        >
+                            Clear selected file
+                        </button>
                     </div>
                 </div>
 
@@ -574,12 +731,313 @@
 
             certificationList.appendChild(card);
 
+            initialiseCertificateFileInput(
+                card.querySelector(
+                    '.cpbn-certificate-file'
+                )
+            );
+
             certificationIndex++;
         });
 
-    function removeCertification(button) {
-        button.closest('.cpbn-certification-card').remove();
+    function certificateFileError(file) {
+        const extension = file.name
+            .split('.')
+            .pop()
+            .toLowerCase();
+
+        if (
+            ! allowedCertificateExtensions
+                .includes(extension)
+        ) {
+            return 'Certificate evidence must be a PDF, JPG, JPEG or PNG file.';
+        }
+
+        if (
+            file.size
+            > maximumCertificateSize
+        ) {
+            return 'Certificate evidence must not exceed 5 MB.';
+        }
+
+        return null;
     }
+
+    function restoreCertificateFile(
+        input,
+        file
+    ) {
+        if (! file) {
+            return false;
+        }
+
+        try {
+            const transfer =
+                new DataTransfer();
+
+            transfer.items.add(file);
+
+            input.files =
+                transfer.files;
+
+            return true;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    function updateCertificateFileStatus(input) {
+        const field =
+            input.closest('.cpbn-field');
+
+        const status =
+            field.querySelector(
+                '.cpbn-file-selected'
+            );
+
+        const clearButton =
+            field.querySelector(
+                '.cpbn-clear-file'
+            );
+
+        const file =
+            input.files[0] ?? null;
+
+        if (! file) {
+            status.hidden = true;
+            status.textContent = '';
+
+            clearButton.hidden = true;
+
+            return;
+        }
+
+        const card =
+            input.closest(
+                '.cpbn-certification-card'
+            );
+
+        const hasExistingEvidence =
+            card.dataset
+                .hasExistingEvidence
+                === '1';
+
+        status.textContent =
+            hasExistingEvidence
+                ? `Selected replacement: ${file.name}. Existing evidence remains safe until this profile is successfully saved.`
+                : `Selected file: ${file.name}`;
+
+        status.hidden = false;
+        clearButton.hidden = false;
+    }
+
+    function initialiseCertificateFileInput(
+        input
+    ) {
+        if (! input) {
+            return;
+        }
+
+        input._cpbnPreviousFile =
+            input.files[0] ?? null;
+
+        input.addEventListener(
+            'click',
+            function () {
+                input._cpbnPreviousFile =
+                    input.files[0]
+                    ?? input._cpbnPreviousFile
+                    ?? null;
+
+                window.addEventListener(
+                    'focus',
+                    function () {
+                        setTimeout(
+                            function () {
+                                if (
+                                    ! input.files.length
+                                    && input
+                                        ._cpbnPreviousFile
+                                ) {
+                                    restoreCertificateFile(
+                                        input,
+                                        input
+                                            ._cpbnPreviousFile
+                                    );
+                                }
+
+                                updateCertificateFileStatus(
+                                    input
+                                );
+                            },
+                            0
+                        );
+                    },
+                    {
+                        once: true
+                    }
+                );
+            }
+        );
+
+        input.addEventListener(
+            'change',
+            function () {
+                const selectedFile =
+                    input.files[0]
+                    ?? null;
+
+                if (! selectedFile) {
+                    if (
+                        input._cpbnPreviousFile
+                    ) {
+                        restoreCertificateFile(
+                            input,
+                            input._cpbnPreviousFile
+                        );
+                    }
+
+                    updateCertificateFileStatus(
+                        input
+                    );
+
+                    return;
+                }
+
+                const error =
+                    certificateFileError(
+                        selectedFile
+                    );
+
+                if (error) {
+                    window.alert(error);
+
+                    if (
+                        ! restoreCertificateFile(
+                            input,
+                            input
+                                ._cpbnPreviousFile
+                        )
+                    ) {
+                        input.value = '';
+                    }
+
+                    updateCertificateFileStatus(
+                        input
+                    );
+
+                    return;
+                }
+
+                input._cpbnPreviousFile =
+                    selectedFile;
+
+                updateCertificateFileStatus(
+                    input
+                );
+            }
+        );
+
+        updateCertificateFileStatus(
+            input
+        );
+    }
+
+    function clearSelectedCertificateFile(
+        button
+    ) {
+        const field =
+            button.closest(
+                '.cpbn-field'
+            );
+
+        const input =
+            field.querySelector(
+                '.cpbn-certificate-file'
+            );
+
+        input._cpbnPreviousFile = null;
+        input.value = '';
+
+        updateCertificateFileStatus(
+            input
+        );
+    }
+
+    function removeCertification(button) {
+        const card =
+            button.closest(
+                '.cpbn-certification-card'
+            );
+
+        const nameInput =
+            card.querySelector(
+                'input[name$="[certification_name]"]'
+            );
+
+        const certificationName =
+            nameInput?.value.trim()
+            || 'this certification';
+
+        const hasExistingEvidence =
+            card.dataset
+                .hasExistingEvidence
+                === '1';
+
+        let message =
+            `Remove "${certificationName}" from your profile?`;
+
+        if (hasExistingEvidence) {
+            message +=
+                '\n\nIts uploaded evidence will also be deleted when you save the profile.';
+        } else {
+            message +=
+                '\n\nThis change will take effect when you save the profile.';
+        }
+
+        if (! window.confirm(message)) {
+            return;
+        }
+
+        const idInput =
+            card.querySelector(
+                'input[name$="[id]"]'
+            );
+
+        if (
+            idInput
+            && idInput.value
+        ) {
+            const removalField =
+                document.createElement(
+                    'input'
+                );
+
+            removalField.type =
+                'hidden';
+
+            removalField.name =
+                'removed_certification_ids[]';
+
+            removalField.value =
+                idInput.value;
+
+            removedCertificationFields
+                .appendChild(
+                    removalField
+                );
+        }
+
+        card.remove();
+    }
+
+    document
+        .querySelectorAll(
+            '.cpbn-certificate-file'
+        )
+        .forEach(
+            initialiseCertificateFileInput
+        );
 </script>
 
 @endsection
