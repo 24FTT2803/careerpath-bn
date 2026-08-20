@@ -21,6 +21,7 @@ class MockCareerAiClient implements CareerAiClient
 
         $primaryCareerId = $rankedCareerIds[0] ?? 1;
         $secondaryCareerId = $rankedCareerIds[1] ?? 5;
+        $tertiaryCareerId = $rankedCareerIds[2] ?? 3;
 
         return [
             'schema_version' => '1.0',
@@ -35,6 +36,11 @@ class MockCareerAiClient implements CareerAiClient
                 $this->recommendationFor(
                     $secondaryCareerId,
                     2
+                ),
+
+                $this->recommendationFor(
+                    $tertiaryCareerId,
+                    3
                 ),
             ],
         ];
@@ -346,9 +352,14 @@ class MockCareerAiClient implements CareerAiClient
             'biicf_career_id' => $careerId,
             'rank' => $rank,
 
-            'match_score' => $rank === 1
-                ? $template['primary_match_score']
-                : $template['secondary_match_score'],
+            'match_score' => match ($rank) {
+                1 => $template['primary_match_score'],
+                2 => $template['secondary_match_score'],
+                default => max(
+                    $template['secondary_match_score'] - 10,
+                    0
+                ),
+            },
 
             'matched_skills' =>
                 $template['matched_skills'],
@@ -359,9 +370,14 @@ class MockCareerAiClient implements CareerAiClient
             'development_plan' =>
                 $template['development_plan'],
 
-            'career_readiness_score' => $rank === 1
-                ? $template['primary_readiness']
-                : $template['secondary_readiness'],
+            'career_readiness_score' => match ($rank) {
+                1 => $template['primary_readiness'],
+                2 => $template['secondary_readiness'],
+                default => max(
+                    $template['secondary_readiness'] - 10,
+                    0
+                ),
+            },
 
             'explanation' =>
                 $template['explanation'],

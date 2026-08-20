@@ -88,3 +88,37 @@ test('mock career AI returns cloud engineer for cloud profile', function () {
         $response['recommendations'][0]['biicf_career_id']
     )->toBe(5);
 });
+
+test('mock career AI returns exactly three ranked recommendations', function () {
+    $client = new MockCareerAiClient();
+
+    $response = $client->recommend([
+        'student_profile' => [
+            'programme' => 'Application Development',
+            'competencies' => [
+                'Java',
+                'SQL',
+                'Git',
+            ],
+            'interests' => [
+                'Programming',
+                'Data Analysis',
+            ],
+        ],
+    ]);
+
+    $recommendations = $response['recommendations'];
+
+    expect($recommendations)
+        ->toHaveCount(3)
+        ->and(array_column(
+            $recommendations,
+            'rank'
+        ))
+        ->toBe([1, 2, 3])
+        ->and(array_unique(array_column(
+            $recommendations,
+            'biicf_career_id'
+        )))
+        ->toHaveCount(3);
+});

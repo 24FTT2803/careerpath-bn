@@ -81,19 +81,21 @@ class CareerRecommendationService
             'recommendations' => [
                 'required',
                 'array',
-                'min:1',
+                'size:3',
             ],
 
             'recommendations.*.biicf_career_id' => [
                 'required',
                 'integer',
+                'distinct',
                 'exists:biicf_careers,id',
             ],
 
             'recommendations.*.rank' => [
                 'required',
                 'integer',
-                'min:1',
+                'between:1,3',
+                'distinct',
             ],
 
             'recommendations.*.match_score' => [
