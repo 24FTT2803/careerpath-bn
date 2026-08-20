@@ -64,9 +64,28 @@ class CareerRecommendationController extends Controller
             ->with('career')
             ->findOrFail($recommendation);
 
+        $career = $careerRecommendation->career;
+
+        $careerDetails = [
+            'entry_requirements' => $this->normaliseList(
+                $career?->entry_requirements
+            ),
+
+            'recommended_training' => $this->normaliseList(
+                $career?->recommended_training
+            ),
+
+            'certifications' => $this->normaliseList(
+                $career?->certifications
+            ),
+        ];
+
         return view(
             'student.recommendations.analysis',
-            compact('careerRecommendation')
+            compact(
+                'careerRecommendation',
+                'careerDetails'
+            )
         );
     }
 
@@ -97,5 +116,47 @@ class CareerRecommendationController extends Controller
                 'success',
                 'Career recommendations generated successfully.'
             );
+    }
+
+    /**
+     * Convert BIICF list fields into a consistent array.
+     *
+     * This also supports the currently seeded values that
+     * were JSON encoded before being stored in JSON columns.
+     */
+    private function normaliseList(mixed $value): array
+    {
+        if (is_array($value)) {
+            return $value;
+        }
+
+        if (
+            ! is_string($value)
+            || trim($value) === ''
+        ) {
+            return [];
+        }
+
+        $decoded = json_decode(
+            $value,
+            true
+        );
+
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        if (is_string($decoded)) {
+            $decodedAgain = json_decode(
+                $decoded,
+                true
+            );
+
+            if (is_array($decodedAgain)) {
+                return $decodedAgain;
+            }
+        }
+
+        return [$value];
     }
 }
