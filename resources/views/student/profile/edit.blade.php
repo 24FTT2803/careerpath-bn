@@ -9,6 +9,61 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
+    .cpbn-certification-card {
+        border: 1px solid var(--line);
+        background: #faf8f1;
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+
+    .cpbn-file-note {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: var(--ink-dim);
+    }
+
+    .cpbn-file-existing {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 5px 9px;
+        background: #edf7ed;
+        color: #477a47;
+        border-radius: 4px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .cpbn-add-certification {
+        border: 1px dashed var(--gold);
+        background: transparent;
+        color: #8a6420;
+        padding: 10px 16px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 13.5px;
+        font-weight: 500;
+    }
+
+    .cpbn-add-certification:hover {
+        background: rgba(207, 154, 61, 0.08);
+    }
+
+    .cpbn-remove-certification {
+        margin-top: 12px;
+        border: 0;
+        background: transparent;
+        color: #b45353;
+        cursor: pointer;
+        font-size: 12.5px;
+        padding: 0;
+    }
+
+    .cpbn-remove-certification:hover {
+        text-decoration: underline;
+    }
+
     .cpbn-dash{
         --ink:#0d1a2b; --ink-dim:#5b6675; --paper:#faf8f2; --card:#ffffff; --line:#e7e2d4;
         --gold:#cf9a3d; --gold-bright:#e9b95a; --gold-wash:#fbf1de;
@@ -103,7 +158,12 @@
                 <span>Profile Completion</span>
                 <span>{{ $profileCompletion ?? 0 }}%</span>
             </div>
-            <div class="cpbn-bar"><div class="cpbn-bar-fill" style="width: {{ $profileCompletion ?? 0 }}%"></div></div>
+            <div class="cpbn-bar">
+                <div
+                    class="cpbn-bar-fill"
+                    @style(['width: ' . ($profileCompletion ?? 0) . '%'])
+                ></div>
+            </div>
             <p class="cpbn-progress-note">
                 {{ $profileCompletion >= 70 ? '✅ Profile complete — ready for career matching!' : 'Complete all sections for better recommendations' }}
             </p>
@@ -162,7 +222,11 @@
             <!-- SECTION 2: Academic Information -->
             <div class="cpbn-section">
                 <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 10v6"/>
+                        <path d="M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
                     Academic Information
                 </h3>
                 <div class="cpbn-fgrid">
@@ -267,22 +331,147 @@
             <!-- SECTION 6: Certifications -->
             <div class="cpbn-section">
                 <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="9" r="6"/><path d="M9 14.5 7 22l5-3 5 3-2-7.5"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="9" r="6"/>
+                        <path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>
+                    </svg>
                     Certifications
                 </h3>
-                <p class="desc">List your certifications (comma separated)</p>
-                <div class="cpbn-field">
-                    <label>Certifications</label>
-                    <input type="text" name="certifications_text"
-                           value="{{ old('certifications_text', implode(', ', $user->certifications->pluck('certification_name')->toArray())) }}"
-                           placeholder="e.g. AWS Certified, CCNA, CompTIA Security+">
+
+                <p class="desc">
+                    Add any academic, professional, training or course certifications you have completed.
+                </p>
+
+                @php
+                    $certificationRows = old('certifications');
+
+                    if ($certificationRows === null) {
+                        $certificationRows = $user->certifications
+                            ->map(function ($certification) {
+                                return [
+                                    'id' => $certification->id,
+                                    'certification_name' => $certification->certification_name,
+                                    'issuing_organization' => $certification->issuing_organization,
+                                    'issue_date' => $certification->issue_date?->format('Y-m-d'),
+                                ];
+                            })
+                            ->values()
+                            ->all();
+                    }
+
+                    $nextCertificationIndex = empty($certificationRows)
+                    ? 0
+                    : max(array_map('intval', array_keys($certificationRows))) + 1;
+                @endphp
+
+                <div
+                    id="certification-list"
+                    data-next-index="{{ $nextCertificationIndex }}"
+                >
+                    @foreach ($certificationRows as $index => $certification)
+                        @php
+                            $existingCertification = ! empty($certification['id'])
+                                ? $user->certifications->firstWhere(
+                                    'id',
+                                    (int) $certification['id']
+                                )
+                                : null;
+                        @endphp
+
+                        <div class="cpbn-certification-card">
+                            @if (! empty($certification['id']))
+                                <input
+                                    type="hidden"
+                                    name="certifications[{{ $index }}][id]"
+                                    value="{{ $certification['id'] }}"
+                                >
+                            @endif
+
+                            <div class="cpbn-fgrid">
+                                <div class="cpbn-field">
+                                    <label>
+                                        Certification Name
+                                        <span class="req">*</span>
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="certifications[{{ $index }}][certification_name]"
+                                        value="{{ $certification['certification_name'] ?? '' }}"
+                                        placeholder="e.g. AWS Cloud Practitioner"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Issuing Organisation</label>
+
+                                    <input
+                                        type="text"
+                                        name="certifications[{{ $index }}][issuing_organization]"
+                                        value="{{ $certification['issuing_organization'] ?? '' }}"
+                                        placeholder="e.g. AWS, Cisco, Politeknik Brunei"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Issue Date</label>
+
+                                    <input
+                                        type="date"
+                                        name="certifications[{{ $index }}][issue_date]"
+                                        value="{{ $certification['issue_date'] ?? '' }}"
+                                        max="{{ now()->format('Y-m-d') }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Certificate File</label>
+
+                                    <input
+                                        type="file"
+                                        name="certifications[{{ $index }}][certificate_file]"
+                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                    >
+
+                                    <small class="cpbn-file-note">
+                                        PDF, JPG, JPEG or PNG · Maximum 5 MB
+                                    </small>
+
+                                    @if ($existingCertification?->certificate_file_path)
+                                        <div class="cpbn-file-existing">
+                                            ✓ Evidence uploaded
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="cpbn-remove-certification"
+                                onclick="removeCertification(this)"
+                            >
+                                Remove Certification
+                            </button>
+                        </div>
+                    @endforeach
                 </div>
+
+                <button
+                    type="button"
+                    id="add-certification"
+                    class="cpbn-add-certification"
+                >
+                    + Add Certification
+                </button>
             </div>
 
             <!-- SECTION 7: Career Aspirations -->
             <div class="cpbn-section">
                 <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/>
+                    </svg>
                     Career Aspirations
                 </h3>
                 <div class="cpbn-field full" style="margin-bottom:16px">
@@ -311,5 +500,86 @@
 
     </div>
 </div>
+<script>
+    const certificationList = document.getElementById('certification-list');
+    let certificationIndex = Number(certificationList.dataset.nextIndex);
+
+    document
+        .getElementById('add-certification')
+        .addEventListener('click', function () {
+
+            const card = document.createElement('div');
+
+            card.className = 'cpbn-certification-card';
+
+            card.innerHTML = `
+                <div class="cpbn-fgrid">
+                    <div class="cpbn-field">
+                        <label>
+                            Certification Name
+                            <span class="req">*</span>
+                        </label>
+
+                        <input
+                            type="text"
+                            name="certifications[${certificationIndex}][certification_name]"
+                            placeholder="e.g. AWS Cloud Practitioner"
+                            required
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Issuing Organisation</label>
+
+                        <input
+                            type="text"
+                            name="certifications[${certificationIndex}][issuing_organization]"
+                            placeholder="e.g. AWS, Cisco, Politeknik Brunei"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Issue Date</label>
+
+                        <input
+                            type="date"
+                            name="certifications[${certificationIndex}][issue_date]"
+                            max="{{ now()->format('Y-m-d') }}"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Certificate File</label>
+
+                        <input
+                            type="file"
+                            name="certifications[${certificationIndex}][certificate_file]"
+                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                        >
+
+                        <small class="cpbn-file-note">
+                            PDF, JPG, JPEG or PNG · Maximum 5 MB
+                        </small>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="cpbn-remove-certification"
+                    onclick="removeCertification(this)"
+                >
+                    Remove Certification
+                </button>
+            `;
+
+            certificationList.appendChild(card);
+
+            certificationIndex++;
+        });
+
+    function removeCertification(button) {
+        button.closest('.cpbn-certification-card').remove();
+    }
+</script>
 
 @endsection

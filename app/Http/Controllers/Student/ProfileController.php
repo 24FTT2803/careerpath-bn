@@ -17,6 +17,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Services\AI\CareerRecommendationService;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\File;
 
 class ProfileController extends Controller
 {
@@ -93,7 +95,31 @@ class ProfileController extends Controller
             'skills' => ['nullable', 'array'],
             'interests' => ['nullable', 'array'],
             'projects_text' => ['nullable', 'string'],
-            'certifications_text' => ['nullable', 'string'],
+            'certifications' => ['nullable', 'array'],
+            'certifications.*.id' => [
+                'nullable',
+                'integer',
+            ],
+            'certifications.*.certification_name' => [
+                'required',
+                'string',
+                'max:255',
+            ],
+            'certifications.*.issuing_organization' => [
+                'nullable',
+                'string',
+                'max:255',
+            ],
+            'certifications.*.issue_date' => [
+                'nullable',
+                'date',
+                'before_or_equal:today',
+            ],
+            'certifications.*.certificate_file' => [
+                'nullable',
+                File::types(['pdf', 'jpg', 'jpeg', 'png'])
+                    ->max('5mb'),
+            ],
             'career_goals_text' => ['nullable', 'string'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
@@ -142,13 +168,8 @@ class ProfileController extends Controller
             $user->projects()->delete();
         }
 
-        // Process Certifications (comma separated)
-        if ($request->filled('certifications_text')) {
-            $certNames = array_filter(array_map('trim', explode(',', $request->certifications_text)));
-            $this->syncCertifications($user, $certNames);
-        } else {
-            $user->certifications()->delete();
-        }
+        // Process Certifications
+        $this->syncCertifications($user, $request);
 
         // Update Aspirations
         $user->aspirations()->updateOrCreate(
@@ -429,18 +450,76 @@ class ProfileController extends Controller
     }
 
     /**
-     * Sync certifications.
+     * Sync the student's certifications and uploaded evidence.
      */
-    private function syncCertifications(User $user, array $certNames)
+    private function syncCertifications(User $user, Request $request): void
     {
-        $user->certifications()->delete();
+        $submittedIds = [];
 
-        foreach ($certNames as $name) {
-            $user->certifications()->create([
-                'certification_name' => $name,
-                'issuing_organization' => 'Not specified',
-                'issue_date' => now(),
-            ]);
+        foreach ($request->input('certifications', []) as $index => $data) {
+            $certification = null;
+
+            if (! empty($data['id'])) {
+                $certification = $user->certifications()
+                    ->whereKey($data['id'])
+                    ->firstOrFail();
+
+                $submittedIds[] = $certification->id;
+            }
+
+            $filePath = $certification?->certificate_file_path;
+
+            if ($request->hasFile("certifications.$index.certificate_file")) {
+                if ($filePath) {
+                    Storage::disk('local')->delete($filePath);
+                }
+
+                $filePath = $request
+                    ->file("certifications.$index.certificate_file")
+                    ->store(
+                        "certifications/{$user->id}",
+                        'local'
+                    );
+            }
+
+            $values = [
+                'certification_name' =>
+                    $data['certification_name'],
+
+                'issuing_organization' =>
+                    $data['issuing_organization'] ?? null,
+
+                'issue_date' =>
+                    $data['issue_date'] ?? null,
+
+                'certificate_file_path' =>
+                    $filePath,
+            ];
+
+            if ($certification) {
+                $certification->update($values);
+            } else {
+                $certification = $user->certifications()
+                    ->create($values);
+
+                $submittedIds[] = $certification->id;
+            }
+        }
+
+        $certificationsToDelete = empty($submittedIds)
+            ? $user->certifications()->get()
+            : $user->certifications()
+                ->whereNotIn('id', $submittedIds)
+                ->get();
+
+        foreach ($certificationsToDelete as $certification) {
+            if ($certification->certificate_file_path) {
+                Storage::disk('local')->delete(
+                    $certification->certificate_file_path
+                );
+            }
+
+            $certification->delete();
         }
     }
 }
