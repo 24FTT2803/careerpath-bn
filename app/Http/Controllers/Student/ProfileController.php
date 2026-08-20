@@ -90,8 +90,8 @@ class ProfileController extends Controller
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:1000'],
-            'programme' => ['required', 'string', 'max:255'],
-            'cgpa' => ['required', 'numeric', 'min:0', 'max:4'],
+            'programme' => ['nullable', 'string', 'max:255'],
+            'cgpa' => ['nullable', 'numeric', 'min:0', 'max:4'],
             'skills' => ['nullable', 'array'],
             'interests' => ['nullable', 'array'],
             'projects_text' => ['nullable', 'string'],
@@ -151,14 +151,10 @@ class ProfileController extends Controller
         );
 
         // Process Skills
-        if ($request->has('skills')) {
-            $this->syncSkills($user, $request->skills);
-        }
+        $this->syncSkills($user, $request->input('skills', []));
 
         // Process Interests
-        if ($request->has('interests')) {
-            $this->syncInterests($user, $request->interests);
-        }
+        $this->syncInterests($user, $request->input('interests', []));
 
         // Process Projects (comma separated)
         if ($request->filled('projects_text')) {

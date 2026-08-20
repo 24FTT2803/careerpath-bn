@@ -165,7 +165,7 @@
                 ></div>
             </div>
             <p class="cpbn-progress-note">
-                {{ $profileCompletion >= 70 ? '✅ Profile complete — ready for career matching!' : 'Complete all sections for better recommendations' }}
+                {{ $profileCompletion >= 70 ? '✅ Profile complete — ready for career matching!' : 'Your progress can be saved now and completed later.' }}
             </p>
         </div>
 
@@ -231,8 +231,8 @@
                 </h3>
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
-                        <label>Programme <span class="req">*</span></label>
-                        <select name="programme" required>
+                        <label>Programme</label>
+                        <select name="programme">
                             <option value="">Select your programme</option>
                             <option value="Diploma in ICT (Application Development)" {{ old('programme', $user->programme) == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
                                 Diploma in ICT (Application Development) - DADT
@@ -252,9 +252,9 @@
                         </select>
                     </div>
                     <div class="cpbn-field">
-                        <label>CGPA <span class="req">*</span></label>
+                        <label>CGPA</label>
                         <input type="number" name="cgpa" step="0.01" min="0" max="4"
-                               value="{{ old('cgpa', $user->cgpa) }}" required>
+                            value="{{ old('cgpa', $user->cgpa) }}">
                     </div>
                 </div>
             </div>
