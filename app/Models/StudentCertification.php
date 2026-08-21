@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class StudentCertification extends Model
 {
     protected $fillable = [
-        'user_id',          // ← ADD THIS
+        'user_id',
         'certification_name',
         'issuing_organization',
         'issue_date',
