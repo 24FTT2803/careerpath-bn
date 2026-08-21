@@ -12,6 +12,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
     <style>
         :root{
             --ink:#0d1a2b;
@@ -45,7 +48,7 @@
         .wrap{max-width:1180px;margin-inline:auto;padding-inline:28px}
         section{position:relative}
 
-        /* ---------- utility: reveal on load ---------- */
+        /* utility: reveal on load */
         .reveal{opacity:0;transform:translateY(14px);animation:reveal .8s cubic-bezier(.2,.7,.2,1) forwards}
         @keyframes reveal{to{opacity:1;transform:translateY(0)}}
         @media (prefers-reduced-motion:reduce){
@@ -53,7 +56,7 @@
             html{scroll-behavior:auto}
         }
 
-        /* ---------- header ---------- */
+        /* header */
         header.site{
             position:sticky;top:0;z-index:50;
             background:rgba(13,26,43,0.86);
@@ -84,7 +87,7 @@
         .btn-gold:hover{background:var(--gold-bright)}
         .nav-toggle{display:none}
 
-        /* ---------- hero ---------- */
+        /* hero */
         .hero{padding-top:88px;padding-bottom:40px;overflow:hidden}
         .hero-inner{display:grid;grid-template-columns:1fr;gap:24px;text-align:left;max-width:760px}
         .eyebrow{
@@ -118,7 +121,7 @@
             text-transform:uppercase;
         }
 
-        /* ---------- stats strip ---------- */
+        /* stats strip */
         .stats{
             border-top:1px solid var(--line);border-bottom:1px solid var(--line);
             background:var(--ink-2);
@@ -133,7 +136,7 @@
         .stat .n{font-family:var(--font-mono);font-size:clamp(24px,3vw,34px);color:var(--gold-bright);font-weight:500}
         .stat .l{font-size:12.5px;color:var(--paper-dim);margin-top:4px;letter-spacing:.02em}
 
-        /* ---------- section headers ---------- */
+        /* section headers */
         .section{padding-block:96px}
         .section-head{max-width:620px;margin-bottom:56px}
         .section-head .eyebrow{margin-bottom:14px}
@@ -144,7 +147,7 @@
         }
         .section-head p{color:var(--paper-dim);margin-top:14px;font-size:16px}
 
-        /* ---------- problem section ---------- */
+        /* problem section */
         .problem{background:var(--ink)}
         .problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
         .problem-copy p{color:var(--paper-dim);margin-bottom:16px;font-size:16px}
@@ -156,7 +159,7 @@
         .quote-card p{font-family:var(--font-display);font-size:19px;font-style:italic;color:var(--paper);line-height:1.5}
         .quote-card span{display:block;margin-top:14px;font-family:var(--font-mono);font-size:11.5px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.08em}
 
-        /* ---------- how it works ---------- */
+        /* how it works */
         .how{background:var(--ink-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
         .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
         .step{background:var(--ink-2);padding:32px 26px;position:relative}
@@ -164,7 +167,7 @@
         .step h3{font-family:var(--font-display);font-size:21px;font-weight:600;margin-top:14px;margin-bottom:10px}
         .step p{font-size:14.5px;color:var(--paper-dim)}
 
-        /* ---------- features ---------- */
+        /* features */
         .features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
         .feat{background:var(--ink);padding:28px 24px;transition:background .2s}
         .feat:hover{background:var(--ink-2)}
@@ -172,7 +175,7 @@
         .feat h3{font-size:16px;font-weight:600;margin-bottom:8px;font-family:var(--font-body)}
         .feat p{font-size:13.5px;color:var(--paper-dim);line-height:1.55}
 
-        /* ---------- BIICF section ---------- */
+        /* BIICF section */
         .biicf{background:var(--ink-3);position:relative}
         .biicf-inner{display:grid;grid-template-columns:1.1fr 0.9fr;gap:56px;align-items:center}
         .biicf-copy p{color:var(--paper-dim);margin-bottom:16px}
@@ -190,7 +193,7 @@
         .biicf-panel .row .v{font-family:var(--font-mono);color:var(--gold-bright);font-size:15px}
         .biicf-panel .src{margin-top:20px;font-size:11.5px;color:var(--paper-dim);font-family:var(--font-mono)}
 
-        /* ---------- CTA banner ---------- */
+        /* CTA banner */
         .cta{
             background:linear-gradient(135deg, var(--ink-3), var(--ink));
             border-top:1px solid var(--line);
@@ -200,15 +203,68 @@
         .cta p{color:var(--paper-dim);margin-top:16px;max-width:480px;margin-inline:auto}
         .cta .hero-ctas{justify-content:center;margin-top:32px}
 
-        /* ---------- footer ---------- */
-        footer{border-top:1px solid var(--line);padding-block:48px}
-        .foot-grid{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
-        .foot-note{font-size:13px;color:var(--paper-dim)}
-        .foot-links{display:flex;gap:24px}
-        .foot-links a{font-size:13px;color:var(--paper-dim);transition:color .2s}
-        .foot-links a:hover{color:var(--paper)}
+        /* ============================================ */
+        /* FOOTER STYLES                                */
+        /* ============================================ */
+        footer {
+            border-top: 1px solid var(--line);
+            padding-block: 48px;
+            background: var(--ink-2);
+        }
 
-        /* ---------- responsive ---------- */
+        .foot-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 40px;
+        }
+
+        .foot-about {
+            max-width: 400px;
+        }
+
+        .foot-links {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 30px;
+        }
+
+        .foot-links a {
+            color: var(--paper-dim);
+            font-size: 13px;
+            transition: color 0.2s;
+        }
+
+        .foot-links a:hover {
+            color: var(--gold-bright);
+        }
+
+        .foot-links li {
+            margin-bottom: 8px;
+        }
+
+        .foot-links i {
+            width: 20px;
+            margin-right: 8px;
+        }
+
+        .foot-bottom {
+            border-top: 1px solid var(--line);
+            margin-top: 32px;
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        .foot-bottom p {
+            color: var(--paper-dim);
+            font-size: 12px;
+        }
+
+        .foot-bottom p:last-child {
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        /* responsive */
         @media (max-width:960px){
             .stats-grid{grid-template-columns:repeat(2,1fr)}
             .stat:nth-child(2){border-right:none}
@@ -216,6 +272,13 @@
             .steps{grid-template-columns:repeat(2,1fr)}
             .features-grid{grid-template-columns:repeat(2,1fr)}
             .biicf-inner{grid-template-columns:1fr}
+            .foot-grid {
+                grid-template-columns: 1fr;
+                gap: 30px;
+            }
+            .foot-links {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
         @media (max-width:680px){
             nav.links{display:none}
@@ -223,6 +286,10 @@
             .steps{grid-template-columns:1fr}
             .features-grid{grid-template-columns:1fr}
             .section{padding-block:64px}
+            .foot-links {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
         }
     </style>
 </head>
@@ -471,16 +538,77 @@
         </section>
     </main>
 
+    <!-- ============================================ -->
+    <!-- FOOTER                                       -->
+    <!-- ============================================ -->
     <footer>
-        <div class="wrap foot-grid">
-            <div class="foot-note">CareerPath BN — a Final Year Project at Politeknik Brunei, aligned with AITI's BIICF.</div>
-            <div class="foot-links">
-                <a href="#how">How it works</a>
-                <a href="#features">Platform</a>
-                <a href="#biicf">BIICF</a>
-                @if (Route::has('login'))
-                    <a href="{{ route('login') }}">Log in</a>
-                @endif
+        <div class="wrap">
+            <div class="foot-grid">
+                <!-- About -->
+                <div class="foot-about">
+                    <div style="display:flex;align-items:center;gap:3px;margin-bottom:16px;">
+                        <svg class="brand-mark" viewBox="0 0 32 32" fill="none" style="width:32px;height:32px;">
+                            <circle cx="16" cy="16" r="15" stroke="#cf9a3d" stroke-width="1.4"/>
+                            <path d="M16 6 L19 15 L16 26 L13 15 Z" fill="#e9b95a"/>
+                            <circle cx="16" cy="16" r="2" fill="#0d1a2b"/>
+                        </svg>
+                        <span style="font-family:var(--font-display);font-size:20px;font-weight:600;color:var(--paper);">
+                            CareerPath <span style="color:var(--gold-bright);">BN</span>
+                        </span>
+                    </div>
+                    <p style="color:var(--paper-dim);font-size:13px;max-width:340px;line-height:1.7;">
+                        AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).
+                    </p>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:18px;flex-wrap:wrap;">
+                        <a href="https://www.pb.edu.bn" target="_blank" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);padding:8px 16px;border-radius:6px;border:1px solid var(--line);transition:all 0.2s;color:var(--paper);font-size:13px;text-decoration:none;">
+                            <i class="fas fa-university" style="color:var(--gold-bright);"></i>
+                            Politeknik Brunei
+                        </a>
+                        <a href="https://www.biicf.bn" target="_blank" style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);padding:8px 16px;border-radius:6px;border:1px solid var(--line);transition:all 0.2s;color:var(--paper);font-size:13px;text-decoration:none;">
+                            <i class="fas fa-certificate" style="color:var(--gold-bright);"></i>
+                            BIICF
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Links -->
+                <div class="foot-links">
+                    <div>
+                        <h4 style="color:var(--paper);font-weight:600;font-size:14px;margin-bottom:16px;">Quick Links</h4>
+                        <ul style="list-style:none;padding:0;">
+                            <li style="margin-bottom:8px;"><a href="#how">How it works</a></li>
+                            <li style="margin-bottom:8px;"><a href="#features">Platform</a></li>
+                            <li style="margin-bottom:8px;"><a href="#biicf">BIICF Alignment</a></li>
+                            @if (Route::has('login'))
+                                <li style="margin-bottom:8px;"><a href="{{ route('login') }}">Log in</a></li>
+                            @endif
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--paper);font-weight:600;font-size:14px;margin-bottom:16px;">Resources</h4>
+                        <ul style="list-style:none;padding:0;">
+                            <li style="margin-bottom:8px;"><a href="#">BIICF Framework</a></li>
+                            <li style="margin-bottom:8px;"><a href="#">ICT Sub-Sectors</a></li>
+                            <li style="margin-bottom:8px;"><a href="#">Competencies</a></li>
+                            <li style="margin-bottom:8px;"><a href="#">Career Guide</a></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="color:var(--paper);font-weight:600;font-size:14px;margin-bottom:16px;">Contact</h4>
+                        <ul style="list-style:none;padding:0;color:var(--paper-dim);font-size:13px;">
+                            <li style="margin-bottom:8px;"><i class="fas fa-university" style="width:20px;color:var(--gold-bright);margin-right:8px;"></i> Politeknik Brunei</li>
+                            <li style="margin-bottom:8px;"><i class="fas fa-map-marker-alt" style="width:20px;color:var(--gold-bright);margin-right:8px;"></i> Jalan Ong Sum Ping, BSB</li>
+                            <li style="margin-bottom:8px;"><i class="fas fa-envelope" style="width:20px;color:var(--gold-bright);margin-right:8px;"></i> sict@pb.edu.bn</li>
+                            <li style="margin-bottom:8px;"><i class="fas fa-phone" style="width:20px;color:var(--gold-bright);margin-right:8px;"></i> +673 123 4567</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Bar -->
+            <div class="foot-bottom">
+                <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
+                <p>In collaboration with AITI - Brunei ICT Industry Competency Framework (BIICF)</p>
             </div>
         </div>
     </footer>

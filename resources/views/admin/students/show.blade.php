@@ -41,9 +41,9 @@
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-center mb-4">
                     <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mx-auto">
-                        {{ substr($student->first_name ?? $student->name, 0, 1) }}
+                        {{ substr($student->name, 0, 1) }}
                     </div>
-                    <h2 class="text-xl font-bold text-gray-800 mt-3">{{ $student->first_name ?? $student->name }} {{ $student->last_name ?? '' }}</h2>
+                    <h2 class="text-xl font-bold text-gray-800 mt-3">{{ $student->name }}</h2>
                     <p class="text-gray-500 text-sm">{{ $student->programme ?? 'Programme not set' }}</p>
                 </div>
 
@@ -125,14 +125,16 @@
                 @endif
             </div>
 
-            <!-- Competency Gaps -->
+            <!-- Competency Gaps - FIXED -->
             <div class="bg-white rounded-lg shadow p-6 mt-6">
                 <h3 class="font-semibold text-gray-800 mb-3">⚠️ Competency Gaps</h3>
                 @if(count($skillGaps) > 0)
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                         @foreach($skillGaps as $gap)
                             <div class="bg-red-50 border border-red-200 rounded-lg p-3">
-                                <span class="text-red-700 font-medium">{{ $gap }}</span>
+                                <span class="text-red-700 font-medium">
+                                    {{ is_array($gap) ? ($gap['skill_name'] ?? json_encode($gap)) : $gap }}
+                                </span>
                                 <div class="text-xs text-red-500 mt-1">Needs development</div>
                             </div>
                         @endforeach

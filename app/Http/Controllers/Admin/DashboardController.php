@@ -111,6 +111,10 @@ class DashboardController extends Controller
         ));
     }
 
+    /**
+     * Get common skill gaps across all students
+     * Handles both JSON strings and arrays
+     */
     private function getCommonSkillGaps()
     {
         try {
@@ -118,10 +122,38 @@ class DashboardController extends Controller
             $recommendations = CareerRecommendation::whereNotNull('skill_gaps')->get();
 
             foreach ($recommendations as $rec) {
-                $skillGaps = $rec->skill_gaps ?? [];
-                if (is_array($skillGaps)) {
-                    foreach ($skillGaps as $skill) {
-                        $gaps[$skill] = ($gaps[$skill] ?? 0) + 1;
+                // Get skill_gaps - could be array or JSON string
+                $skillGaps = $rec->skill_gaps;
+                
+                // If it's a JSON string, decode it
+                if (is_string($skillGaps)) {
+                    $skillGaps = json_decode($skillGaps, true);
+                }
+                
+                // If it's not an array or empty, skip
+                if (!is_array($skillGaps) || empty($skillGaps)) {
+                    continue;
+                }
+
+                // Process each gap
+                foreach ($skillGaps as $gap) {
+                    // If gap is an array with 'skill_name', use that
+                    if (is_array($gap) && isset($gap['skill_name'])) {
+                        $skillName = $gap['skill_name'];
+                    } 
+                    // If gap is a string, use it directly
+                    else if (is_string($gap)) {
+                        $skillName = $gap;
+                    }
+                    // Skip if invalid
+                    else {
+                        continue;
+                    }
+                    
+                    // Count the gap
+                    if (is_string($skillName) || is_numeric($skillName)) {
+                        $skillName = (string) $skillName;
+                        $gaps[$skillName] = ($gaps[$skillName] ?? 0) + 1;
                     }
                 }
             }
@@ -129,6 +161,7 @@ class DashboardController extends Controller
             arsort($gaps);
             return array_slice($gaps, 0, 10);
         } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error getting skill gaps: ' . $e->getMessage());
             return [];
         }
     }
