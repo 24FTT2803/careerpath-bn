@@ -75,25 +75,34 @@ class CareerRecommendationService
     private function validateResponse(array $response): array
     {
         return Validator::make($response, [
-            'schema_version' => ['required', 'string'],
-            'status' => ['required', 'in:completed'],
+            'schema_version' => [
+                'required',
+                'string',
+            ],
+
+            'status' => [
+                'required',
+                'in:completed',
+            ],
 
             'recommendations' => [
                 'required',
                 'array',
-                'min:1',
+                'size:3',
             ],
 
             'recommendations.*.biicf_career_id' => [
                 'required',
                 'integer',
+                'distinct',
                 'exists:biicf_careers,id',
             ],
 
             'recommendations.*.rank' => [
                 'required',
                 'integer',
-                'min:1',
+                'between:1,3',
+                'distinct',
             ],
 
             'recommendations.*.match_score' => [
@@ -121,14 +130,42 @@ class CareerRecommendationService
                 'string',
             ],
 
+            'recommendations.*.skill_gaps.*.skill_type' => [
+                'required',
+                'in:technical,soft',
+            ],
+
             'recommendations.*.skill_gaps.*.current_level' => [
-                'nullable',
+                'required',
                 'string',
             ],
 
+            'recommendations.*.skill_gaps.*.current_level_value' => [
+                'required',
+                'integer',
+                'between:1,5',
+            ],
+
             'recommendations.*.skill_gaps.*.recommended_level' => [
-                'nullable',
+                'required',
                 'string',
+            ],
+
+            'recommendations.*.skill_gaps.*.required_level' => [
+                'required',
+                'integer',
+                'between:1,5',
+            ],
+
+            'recommendations.*.skill_gaps.*.required_label' => [
+                'required',
+                'string',
+            ],
+
+            'recommendations.*.skill_gaps.*.gap' => [
+                'required',
+                'integer',
+                'between:0,4',
             ],
 
             'recommendations.*.development_plan' => [

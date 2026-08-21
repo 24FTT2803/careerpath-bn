@@ -21,6 +21,7 @@ class DashboardController extends Controller
         $recommendations = $user->careerRecommendations()
             ->with('career')
             ->orderBy('rank')
+            ->limit(3)
             ->get();
 
         $recommendationCount = $recommendations->count();

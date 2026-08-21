@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Student\CareerRecommendationController;
 
 // ============================================
 // HOME ROUTE
@@ -43,6 +44,20 @@ require __DIR__.'/auth.php';
 // STUDENT ROUTES (Developer 1)
 // ============================================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
+    Route::get(
+        '/career-assessment',
+        [CareerRecommendationController::class, 'assessment']
+    )->name('recommendations.assessment');
+
+    Route::get(
+        '/career-analysis/{recommendation}',
+        [CareerRecommendationController::class, 'analysis']
+    )->name('recommendations.analysis');
+
+    Route::post(
+        '/recommendations/generate',
+        [CareerRecommendationController::class, 'generate']
+    )->name('recommendations.generate');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');

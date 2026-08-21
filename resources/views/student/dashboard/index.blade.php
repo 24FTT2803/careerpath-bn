@@ -226,7 +226,7 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                 Update Profile
             </a>
-            <a href="#" class="cpbn-btn cpbn-btn-outline">
+            <a href="{{ route('student.recommendations.assessment') }}" class="cpbn-btn cpbn-btn-outline">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
                 Career Assessment
             </a>
@@ -249,8 +249,8 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/></svg>
                         Top Career Matches
                     </h3>
-                    <a href="#">
-                        View all
+                    <a href="{{ route('student.recommendations.assessment') }}">
+                        Career Assessment
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
                     </a>
                 </div>
@@ -260,7 +260,11 @@
                         <div class="cpbn-rec">
                             <div class="cpbn-rec-top">
                                 <div>
-                                    <div class="cpbn-rec-title">{{ $rec->career->job_title ?? 'Career' }}</div>
+                                    <div class="cpbn-rec-title">
+                                        <a href="{{ route('student.recommendations.analysis', $rec->id) }}">
+                                            {{ $rec->career->job_title ?? 'Career' }}
+                                        </a>
+                                    </div>
                                     <div class="cpbn-rec-sub">
                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m4 0h1m-6 4h1m4 0h1"/></svg>
                                         {{ $rec->career->subsector ?? '' }}
@@ -269,17 +273,12 @@
                                 <span class="cpbn-match">{{ $rec->match_score ?? 0 }}% Match</span>
                             </div>
                             <div class="cpbn-rec-links">
-                                <a href="#">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg>
-                                    Details
-                                </a>
-                                <a href="#">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-                                    Skill Gaps
-                                </a>
-                                <a href="#">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4"/><path d="M4 4h14l-3 4 3 4H4"/></svg>
-                                    Development Plan
+                                <a href="{{ route('student.recommendations.analysis', $rec->id) }}">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="9"/>
+                                        <path d="M12 16v-5M12 8h.01"/>
+                                    </svg>
+                                    View Career Analysis
                                 </a>
                             </div>
                         </div>

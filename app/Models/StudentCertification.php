@@ -15,6 +15,7 @@ class StudentCertification extends Model
         'credential_id',
         'credential_url',
         'description',
+        'certificate_file_path',
     ];
 
     protected $casts = [
