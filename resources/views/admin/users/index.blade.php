@@ -68,8 +68,7 @@
                                 Edit
                             </a>
                             @if($user->id !== auth()->id())
-                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display:inline"
-                                      onsubmit="return confirm('Are you sure you want to delete this user?')">
+                                <form action="{{ route('admin.users.destroy', $user) }}" method="POST" style="display:inline" data-confirm-delete data-item-name="{{ $user->name }}">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" style="background:none;border:none;color:var(--rose);cursor:pointer;font-size:13px;font-family:inherit">
@@ -96,4 +95,35 @@
         {{ $users->withQueryString()->links() }}
     </div>
 </div>
+
+<!-- Confirmation Styles -->
+<style>
+    .cpbn-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:22px}
+    .cpbn-head h1{font-family:var(--font-display);font-weight:600;font-size:24px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+    .cpbn-head h1 svg{width:22px;height:22px;color:var(--gold)}
+    .cpbn-head p.sub{color:var(--ink-dim);margin-top:4px;font-size:14.5px}
+    .cpbn-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:5px;font-size:14px;font-weight:500;border:none;cursor:pointer;transition:background .15s;text-decoration:none;font-family:inherit}
+    .cpbn-btn svg{width:14px;height:14px}
+    .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
+    .cpbn-btn-primary:hover{background:var(--gold-bright)}
+    .cpbn-btn-muted{background:#eee9db;color:var(--ink)}
+    .cpbn-btn-muted:hover{background:#e4dfcd}
+    .cpbn-filterbar{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:20px;align-items:center}
+    .cpbn-filterbar input,.cpbn-filterbar select{padding:10px 13px;border:1px solid var(--line);border-radius:4px;background:#fff;font-size:14px;font-family:var(--font-body);min-width:180px}
+    .cpbn-filterbar input:focus,.cpbn-filterbar select:focus{outline:none;border-color:var(--gold)}
+    .cpbn-table-wrap{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+    .cpbn-table{width:100%;border-collapse:collapse;font-size:14px}
+    .cpbn-table th{text-align:left;padding:12px 16px;background:#f4f1e7;font-weight:600;color:var(--ink-dim)}
+    .cpbn-table td{padding:12px 16px;border-top:1px solid var(--line)}
+    .cpbn-table .center{text-align:center}
+    .cpbn-pill{display:inline-block;padding:3px 12px;border-radius:100px;font-size:11.5px;font-weight:500}
+    .pill-green{background:var(--green-wash);color:var(--green)}
+    .pill-gold{background:var(--gold-wash);color:#8a6420}
+    .pill-rose{background:var(--rose-wash);color:var(--rose)}
+    .cpbn-empty-row{text-align:center;padding:48px 20px;color:var(--ink-dim)}
+    .cpbn-empty-row svg{width:32px;height:32px;margin-inline:auto;margin-bottom:10px;display:block}
+    .cpbn-pagination{margin-top:16px;font-size:13.5px;color:var(--ink-dim)}
+    .link{color:#8a6420;text-decoration:none;display:inline-flex;align-items:center;gap:4px}
+    .link:hover{color:var(--gold)}
+</style>
 @endsection

@@ -83,7 +83,7 @@
             </div>
             <div class="cpbn-head-actions">
                 @if($unreadCount > 0)
-                    <form action="{{ route('student.notifications.read-all') }}" method="POST">
+                    <form action="{{ route('student.notifications.read-all') }}" method="POST" data-confirm-update data-item-name="all notifications">
                         @csrf
                         <button type="submit" class="cpbn-btn cpbn-btn-primary">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 7 17l-5-5"/><path d="M22 10 12.5 19.5 11 18"/></svg>
@@ -154,7 +154,6 @@
             @endforelse
         </div>
 
-        <!-- Pagination -->
         <div class="cpbn-pagination">
             {{ $notifications->links() }}
         </div>

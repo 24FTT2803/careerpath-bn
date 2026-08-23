@@ -9,61 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 
 <style>
-    .cpbn-certification-card {
-        border: 1px solid var(--line);
-        background: #faf8f1;
-        border-radius: 6px;
-        padding: 20px;
-        margin-bottom: 16px;
-    }
-
-    .cpbn-file-note {
-        display: block;
-        margin-top: 6px;
-        font-size: 12px;
-        color: var(--ink-dim);
-    }
-
-    .cpbn-file-existing {
-        display: inline-block;
-        margin-top: 8px;
-        padding: 5px 9px;
-        background: #edf7ed;
-        color: #477a47;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: 500;
-    }
-
-    .cpbn-add-certification {
-        border: 1px dashed var(--gold);
-        background: transparent;
-        color: #8a6420;
-        padding: 10px 16px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 13.5px;
-        font-weight: 500;
-    }
-
-    .cpbn-add-certification:hover {
-        background: rgba(207, 154, 61, 0.08);
-    }
-
-    .cpbn-remove-certification {
-        margin-top: 12px;
-        border: 0;
-        background: transparent;
-        color: #b45353;
-        cursor: pointer;
-        font-size: 12.5px;
-        padding: 0;
-    }
-
-    .cpbn-remove-certification:hover {
-        text-decoration: underline;
-    }
-
     .cpbn-dash{
         --ink:#0d1a2b; --ink-dim:#5b6675; --paper:#faf8f2; --card:#ffffff; --line:#e7e2d4;
         --gold:#cf9a3d; --gold-bright:#e9b95a; --gold-wash:#fbf1de;
@@ -158,12 +103,7 @@
                 <span>Profile Completion</span>
                 <span>{{ $profileCompletion ?? 0 }}%</span>
             </div>
-            <div class="cpbn-bar">
-                <div
-                    class="cpbn-bar-fill"
-                    @style(['width: ' . ($profileCompletion ?? 0) . '%'])
-                ></div>
-            </div>
+            <div class="cpbn-bar"><div class="cpbn-bar-fill" style="width: {{ $profileCompletion ?? 0 }}%"></div></div>
             <p class="cpbn-progress-note">
                 {{ $profileCompletion >= 70 ? '✅ Profile complete — ready for career matching!' : 'Complete all sections for better recommendations' }}
             </p>
@@ -179,6 +119,7 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
                     Personal Information
                 </h3>
+
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
                         <label>First Name <span class="req">*</span></label>
@@ -490,16 +431,21 @@
                 </div>
             </div>
 
+            <!-- ============================================ -->
+            <!-- SUBMIT BUTTON - NO data-confirm-save         -->
+            <!-- ============================================ -->
             <div class="cpbn-submit-row">
                 <button type="submit" class="cpbn-btn cpbn-btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
                     Save Profile
                 </button>
             </div>
+
         </form>
 
     </div>
 </div>
+
 <script>
     const certificationList = document.getElementById('certification-list');
     let certificationIndex = Number(certificationList.dataset.nextIndex);

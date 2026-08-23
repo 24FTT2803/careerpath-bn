@@ -28,7 +28,7 @@
                         </div>
                     </a>
                     <!-- BIICF Logo -->
-                    <a href="#" target="_blank" class="inline-block">
+                    <a href="https://biicf.bn" target="_blank" class="inline-block">
                         <img src="{{ asset('images/biicf-logo.png') }}" 
                              alt="BIICF" 
                              class="h-12 w-auto hover:opacity-80 transition-opacity"

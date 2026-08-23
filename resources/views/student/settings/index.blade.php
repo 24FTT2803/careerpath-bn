@@ -83,6 +83,8 @@
     .cpbn-btn svg{width:14px;height:14px}
     .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
     .cpbn-btn-primary:hover{background:var(--gold-bright)}
+    .cpbn-btn-danger{background:var(--rose);color:#fff}
+    .cpbn-btn-danger:hover{background:#a84338}
 
     @media (max-width:820px){
         .cpbn-cols-settings{grid-template-columns:1fr}
@@ -94,7 +96,7 @@
 
         <div class="cpbn-head">
             <div>
-                <h1>Settings</h1>
+                <h1>⚙️ Settings</h1>
                 <p class="sub">Manage your account settings and preferences</p>
             </div>
             <a href="{{ route('student.dashboard') }}" class="cpbn-back">
@@ -168,7 +170,7 @@
                     </a>
                 </div>
 
-                <!-- Change Password -->
+                <!-- Change Password with Update Confirmation -->
                 <div class="cpbn-card">
                     <h3 class="cpbn-panel-title">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
@@ -192,7 +194,7 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('student.settings.password') }}">
+                    <form method="POST" action="{{ route('student.settings.password') }}" data-confirm-update data-item-name="your password">
                         @csrf
                         @method('PUT')
 
@@ -210,9 +212,30 @@
                             <input type="password" name="password_confirmation" required>
                         </div>
 
-                        <button type="submit" class="cpbn-btn cpbn-btn-primary">
+                        <button type="submit" class="cpbn-btn cpbn-btn-primary" data-confirm-update data-item-name="your password">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
                             Update Password
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Delete Account with Delete Confirmation -->
+                <div class="cpbn-card" style="border-color:var(--rose);border-width:2px;">
+                    <h3 class="cpbn-panel-title" style="color:var(--rose);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg>
+                        Delete Account
+                    </h3>
+                    <p style="color:var(--ink-dim);font-size:13.5px;margin-bottom:14px;line-height:1.6;">
+                        ⚠️ Once you delete your account, all your data will be permanently removed from the system. 
+                        This includes your profile, career recommendations, milestones, and all associated data. 
+                        <strong style="color:var(--rose);">This action cannot be undone.</strong>
+                    </p>
+                    <form method="POST" action="{{ route('student.profile.destroy') }}" data-confirm-delete data-item-name="your account">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="cpbn-btn cpbn-btn-danger" style="display:inline-flex;align-items:center;gap:8px;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16"/></svg>
+                            Delete Account
                         </button>
                     </form>
                 </div>

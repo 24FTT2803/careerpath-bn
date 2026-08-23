@@ -1,3 +1,129 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* ============================================
+   CONFIRMATION MODAL STYLES
+   ============================================ */
+
+.cpbn-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: cpbn-modal-fade-in 0.3s ease;
+}
+
+@keyframes cpbn-modal-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.cpbn-modal {
+    background: #ffffff;
+    border-radius: 12px;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+    animation: cpbn-modal-slide-up 0.3s ease;
+}
+
+@keyframes cpbn-modal-slide-up {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.cpbn-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.cpbn-modal-header h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin: 0;
+}
+
+.cpbn-modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #9ca3af;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.cpbn-modal-close:hover {
+    color: #1a1a2e;
+    background: #f3f4f6;
+}
+
+.cpbn-modal-body {
+    padding: 20px 24px;
+}
+
+.cpbn-modal-body p {
+    font-size: 15px;
+    color: #374151;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.cpbn-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 24px 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.cpbn-modal-btn {
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.cpbn-modal-btn-cancel {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.cpbn-modal-btn-cancel:hover {
+    background: #e5e7eb;
+}
+
+.cpbn-modal-btn-confirm {
+    background: #2563eb;
+    color: white;
+}
+
+.cpbn-modal-btn-confirm:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+}
+
+/* Danger variant for delete */
+.cpbn-modal-btn-confirm.danger {
+    background: #ef4444;
+}
+
+.cpbn-modal-btn-confirm.danger:hover {
+    background: #dc2626;
+}
