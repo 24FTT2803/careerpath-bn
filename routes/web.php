@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\BiicfExplorerController;
 
 // ============================================
 // HOME ROUTE
@@ -58,6 +59,7 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
         '/recommendations/generate',
         [CareerRecommendationController::class, 'generate']
     )->name('recommendations.generate');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -71,6 +73,15 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
     Route::get('/notifications', [ProfileController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{id}/read', [ProfileController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [ProfileController::class, 'markAllAsRead'])->name('notifications.read-all');
+
+    // --- BIICF Explorer (added) ---
+    Route::prefix('biicf-explorer')->name('biicf-explorer.')->group(function () {
+        Route::get('/', [BiicfExplorerController::class, 'index'])->name('index');
+        Route::get('/sub-sectors/{subSector:slug}/roles', [BiicfExplorerController::class, 'subSectorRoles'])->name('sub-sector.roles');
+        Route::get('/job-roles/{jobRole:slug}', [BiicfExplorerController::class, 'jobRole'])->name('job-role.show');
+        Route::get('/job-roles/{jobRole:slug}/compare', [BiicfExplorerController::class, 'compareToMe'])->name('job-role.compare');
+        Route::get('/competencies', [BiicfExplorerController::class, 'competencies'])->name('competencies');
+    });
 });
 
 // ============================================
