@@ -306,6 +306,57 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================
+    // MILESTONE FORM VALIDATION
+    // ============================================
+    
+    const milestoneForm = document.getElementById('milestone-form');
+    const titleInput = document.getElementById('milestone-title');
+    const titleError = document.getElementById('title-error');
+    
+    if (milestoneForm && titleInput) {
+        // Validate on submit
+        milestoneForm.addEventListener('submit', function(e) {
+            const title = titleInput.value.trim();
+            
+            if (title === '') {
+                e.preventDefault();
+                titleInput.classList.add('error-input');
+                if (titleError) {
+                    titleError.style.display = 'block';
+                }
+                titleInput.focus();
+                return false;
+            }
+            
+            titleInput.classList.remove('error-input');
+            if (titleError) {
+                titleError.style.display = 'none';
+            }
+            return true;
+        });
+
+        // Clear error on input
+        titleInput.addEventListener('input', function() {
+            if (this.value.trim() !== '') {
+                this.classList.remove('error-input');
+                if (titleError) {
+                    titleError.style.display = 'none';
+                }
+            }
+        });
+
+        // Clear error on focus
+        titleInput.addEventListener('focus', function() {
+            if (this.value.trim() !== '') {
+                this.classList.remove('error-input');
+                if (titleError) {
+                    titleError.style.display = 'none';
+                }
+            }
+        });
+    }
+
+    // ============================================
     // DYNAMIC PROJECTS - Add/Remove
     // ============================================
 

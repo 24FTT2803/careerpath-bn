@@ -36,6 +36,8 @@
     .cpbn-btn-sm{padding:7px 13px;font-size:12.5px}
     .cpbn-btn-green{background:var(--green);color:#fff}
     .cpbn-btn-green:hover{background:#3f7657}
+    .cpbn-btn-rose{background:var(--rose);color:#fff}
+    .cpbn-btn-rose:hover{background:#a84338}
 
     /* Add form */
     .cpbn-addform{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;margin-bottom:22px;display:none}
@@ -44,11 +46,14 @@
     .cpbn-field{margin-bottom:0}
     .cpbn-field.full{grid-column:1 / -1}
     .cpbn-field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+    .cpbn-field label .req{color:var(--rose)}
     .cpbn-field input,.cpbn-field select,.cpbn-field textarea{
         width:100%;padding:10px 13px;border-radius:4px;border:1px solid var(--line);background:#fff;
         font-family:var(--font-body);font-size:14px;color:var(--ink);
     }
     .cpbn-field input:focus,.cpbn-field select:focus,.cpbn-field textarea:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,154,61,0.15)}
+    .cpbn-field .error-input{border-color:var(--rose) !important;box-shadow:0 0 0 3px rgba(198,91,78,0.15) !important}
+    .cpbn-field .error-text{color:var(--rose);font-size:11px;margin-top:4px;display:block}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 
     /* Stats */
@@ -63,21 +68,29 @@
     .cpbn-mrow{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:14px;transition:background .15s}
     .cpbn-mrow:last-child{border-bottom:none}
     .cpbn-mrow:hover{background:#faf8f0}
-    .cpbn-mrow-left{display:flex;align-items:center;gap:14px}
+    .cpbn-mrow-left{display:flex;align-items:center;gap:14px;flex:1}
     .cpbn-micon{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
     .cpbn-micon svg{width:18px;height:18px}
     .mi-done{background:var(--green-wash);color:var(--green)}
     .mi-pending{background:var(--gold-wash);color:#8a6420}
+    .mi-overdue{background:var(--rose-wash);color:var(--rose)}
+    .mi-past{background:var(--purple-wash);color:var(--purple)}
     .cpbn-mtitle{font-weight:500;font-size:14.5px}
     .cpbn-mtitle.done{text-decoration:line-through;color:var(--ink-dim)}
     .cpbn-mmeta{display:flex;align-items:center;gap:10px;margin-top:5px;flex-wrap:wrap}
     .cpbn-cat{font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;background:#eef1f5;color:var(--ink-dim);padding:3px 9px;border-radius:100px}
     .cpbn-mmeta span.date{font-size:11.5px;color:var(--ink-dim)}
+    .cpbn-mmeta span.overdue{font-size:11.5px;color:var(--rose);display:flex;align-items:center;gap:4px}
+    .cpbn-mmeta span.overdue svg{width:12px;height:12px}
+    .cpbn-mmeta span.past{font-size:11.5px;color:var(--purple);display:flex;align-items:center;gap:4px}
+    .cpbn-mmeta span.past svg{width:12px;height:12px}
     .cpbn-mmeta span.done-date{font-size:11.5px;color:var(--green);display:flex;align-items:center;gap:4px}
     .cpbn-mmeta span.done-date svg{width:11px;height:11px}
     .cpbn-mrow-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
     .cpbn-chip-done{font-family:var(--font-mono);font-size:11.5px;background:var(--green-wash);color:var(--green);padding:6px 12px;border-radius:100px;display:flex;align-items:center;gap:5px}
     .cpbn-chip-done svg{width:12px;height:12px}
+    .cpbn-chip-past{font-family:var(--font-mono);font-size:11.5px;background:var(--purple-wash);color:var(--purple);padding:6px 12px;border-radius:100px;display:flex;align-items:center;gap:5px}
+    .cpbn-chip-past svg{width:12px;height:12px}
     .cpbn-del{background:none;border:none;color:var(--rose);cursor:pointer;padding:6px}
     .cpbn-del svg{width:16px;height:16px}
     .cpbn-del:hover{color:#8f3a30}
@@ -112,17 +125,18 @@
 
         <!-- Add Milestone Form -->
         <div id="addMilestoneForm" class="cpbn-addform">
-            <!-- REMOVED data-confirm-save from form -->
-            <form action="{{ route('student.milestones.store') }}" method="POST">
+            <form action="{{ route('student.milestones.store') }}" method="POST" id="milestone-form">
                 @csrf
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
-                        <label>Title</label>
-                        <input type="text" name="title" required>
+                        <label>Title <span class="req">*</span></label>
+                        <input type="text" name="title" id="milestone-title" required>
+                        <small class="error-text" id="title-error" style="display:none;color:var(--rose);">Please enter a title</small>
+                        @error('title')<small class="error-text">{{ $message }}</small>@enderror
                     </div>
                     <div class="cpbn-field">
-                        <label>Category</label>
-                        <select name="category">
+                        <label>Category <span class="req">*</span></label>
+                        <select name="category" required>
                             <option value="academic">Academic</option>
                             <option value="career">Career</option>
                             <option value="personal">Personal</option>
@@ -131,19 +145,21 @@
                     </div>
                     <div class="cpbn-field full">
                         <label>Description</label>
-                        <textarea name="description" rows="2"></textarea>
+                        <textarea name="description" rows="2" placeholder="Describe this milestone..."></textarea>
                     </div>
                     <div class="cpbn-field">
                         <label>Target Date</label>
                         <input type="date" name="target_date">
+                        <small class="cpbn-file-note">
+                            💡 Past dates will be auto-marked as completed
+                        </small>
                     </div>
                 </div>
                 <div class="cpbn-form-actions">
                     <button type="button" onclick="document.getElementById('addMilestoneForm').classList.toggle('open')" class="cpbn-btn cpbn-btn-muted">
                         Cancel
                     </button>
-                    <!-- KEEP data-confirm-save ONLY on submit button -->
-                    <button type="submit" class="cpbn-btn cpbn-btn-primary" data-confirm-save>
+                    <button type="submit" class="cpbn-btn cpbn-btn-primary" id="submit-milestone">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                         Add Milestone
                     </button>
@@ -178,11 +194,18 @@
             <div class="cpbn-list-head">All Milestones</div>
 
             @forelse($milestones as $milestone)
+                @php
+                    $isOverdue = $milestone->is_overdue ?? false;
+                    $isPast = $milestone->is_past ?? false;
+                @endphp
+
                 <div class="cpbn-mrow">
                     <div class="cpbn-mrow-left">
-                        <div class="cpbn-micon {{ $milestone->is_completed ? 'mi-done' : 'mi-pending' }}">
+                        <div class="cpbn-micon {{ $milestone->is_completed ? 'mi-done' : ($isOverdue ? 'mi-overdue' : ($isPast ? 'mi-past' : 'mi-pending')) }}">
                             @if($milestone->is_completed)
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
+                            @elseif($isOverdue)
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
                             @else
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
                             @endif
@@ -193,6 +216,17 @@
                                 <span class="cpbn-cat">{{ $milestone->category }}</span>
                                 @if($milestone->target_date)
                                     <span class="date">Target: {{ $milestone->target_date->format('d M Y') }}</span>
+                                    @if($isOverdue)
+                                        <span class="overdue">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                                            Overdue
+                                        </span>
+                                    @elseif($isPast && !$milestone->is_completed)
+                                        <span class="past">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                                            Past Due
+                                        </span>
+                                    @endif
                                 @endif
                                 @if($milestone->is_completed && $milestone->completed_date)
                                     <span class="done-date">
@@ -205,12 +239,12 @@
                     </div>
                     <div class="cpbn-mrow-right">
                         @if(!$milestone->is_completed)
-                            <form action="{{ route('student.milestones.complete', $milestone) }}" method="POST" data-confirm-update data-item-name="{{ $milestone->title }}">
+                            <form action="{{ route('student.milestones.complete', $milestone) }}" method="POST">
                                 @csrf
                                 @method('PUT')
-                                <button type="submit" class="cpbn-btn cpbn-btn-green cpbn-btn-sm">
+                                <button type="submit" class="cpbn-btn cpbn-btn-green cpbn-btn-sm" data-confirm-update data-item-name="{{ $milestone->title }}">
                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-                                    Complete
+                                    {{ $isPast ? 'Mark Completed' : 'Complete' }}
                                 </button>
                             </form>
                         @else
@@ -219,10 +253,10 @@
                                 Done
                             </span>
                         @endif
-                        <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST" data-confirm-delete data-item-name="{{ $milestone->title }}">
+                        <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST">
                             @csrf
                             @method('DELETE')
-                            <button type="submit" class="cpbn-del" title="Delete">
+                            <button type="submit" class="cpbn-del" title="Delete" data-confirm-delete data-item-name="{{ $milestone->title }}">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                             </button>
                         </form>
@@ -239,5 +273,6 @@
 
     </div>
 </div>
+
 
 @endsection
