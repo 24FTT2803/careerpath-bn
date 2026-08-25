@@ -85,7 +85,7 @@ class ProfileController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'student_id' => ['nullable', 'string', 'max:50', 'unique:users,student_id,' . $user->id],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => User::getPhoneValidationRules(),
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
@@ -94,31 +94,15 @@ class ProfileController extends Controller
             'cgpa' => ['required', 'numeric', 'min:0', 'max:4'],
             'skills' => ['nullable', 'array'],
             'interests' => ['nullable', 'array'],
-            'projects_text' => ['nullable', 'string'],
+            'projects' => ['nullable', 'array'],
             'certifications' => ['nullable', 'array'],
-            'certifications.*.id' => [
-                'nullable',
-                'integer',
-            ],
-            'certifications.*.certification_name' => [
-                'required',
-                'string',
-                'max:255',
-            ],
-            'certifications.*.issuing_organization' => [
-                'nullable',
-                'string',
-                'max:255',
-            ],
-            'certifications.*.issue_date' => [
-                'nullable',
-                'date',
-                'before_or_equal:today',
-            ],
+            'certifications.*.id' => ['nullable', 'integer'],
+            'certifications.*.certification_name' => ['required', 'string', 'max:255'],
+            'certifications.*.issuing_organization' => ['nullable', 'string', 'max:255'],
+            'certifications.*.issue_date' => ['nullable', 'date', 'before_or_equal:today'],
             'certifications.*.certificate_file' => [
                 'nullable',
-                File::types(['pdf', 'jpg', 'jpeg', 'png'])
-                    ->max('5mb'),
+                File::types(['pdf', 'jpg', 'jpeg', 'png'])->max('5mb'),
             ],
             'career_goals_text' => ['nullable', 'string'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
@@ -128,7 +112,7 @@ class ProfileController extends Controller
         // Combine first and last name into full name
         $fullName = $request->first_name . ' ' . $request->last_name;
 
-        // Update User - WITH FIRST & LAST NAME
+        // Update User
         $user->update([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -136,6 +120,7 @@ class ProfileController extends Controller
             'student_id' => $request->student_id,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
+            'phone' => $request->phone,
         ]);
 
         // Update Profile
@@ -160,12 +145,12 @@ class ProfileController extends Controller
             $this->syncInterests($user, $request->interests);
         }
 
-        // Process Projects (comma separated)
+        // Process Projects
         if ($request->has('projects') && is_array($request->projects)) {
-        $this->syncProjects($user, $request->projects);
-    } else {
-        $user->projects()->delete();
-    }
+            $this->syncProjects($user, $request->projects);
+        } else {
+            $user->projects()->delete();
+        }
 
         // Process Certifications
         $this->syncCertifications($user, $request);
@@ -192,7 +177,6 @@ class ProfileController extends Controller
         ]);
 
         // Generate or refresh career recommendations
-        // once the profile reaches the existing completion threshold.
         $recommendationWarning = null;
 
         if ($profileIsComplete) {
@@ -434,73 +418,73 @@ class ProfileController extends Controller
     }
 
     /**
- * Sync projects.
- */
-private function syncProjects(User $user, array $projects)
-{
-    $existingIds = [];
-    
-    foreach ($projects as $projectData) {
-        // If project has an ID, update existing
-        if (isset($projectData['id']) && !empty($projectData['id'])) {
-            $project = StudentProject::where('user_id', $user->id)
-                ->find($projectData['id']);
+     * Sync projects.
+     */
+    private function syncProjects(User $user, array $projects)
+    {
+        $existingIds = [];
+        
+        foreach ($projects as $projectData) {
+            // If project has an ID, update existing
+            if (isset($projectData['id']) && !empty($projectData['id'])) {
+                $project = StudentProject::where('user_id', $user->id)
+                    ->find($projectData['id']);
+                
+                if ($project) {
+                    $project->update([
+                        'title' => $projectData['title'] ?? '',
+                        'description' => $projectData['description'] ?? '',
+                        'technologies_used' => $this->processCommaList($projectData['technologies_used'] ?? ''),
+                        'role' => $projectData['role'] ?? '',
+                        'project_url' => $projectData['project_url'] ?? '',
+                        'start_date' => $projectData['start_date'] ?? null,
+                        'end_date' => $projectData['end_date'] ?? null,
+                        'achievements' => $projectData['achievements'] ?? '',
+                    ]);
+                    $existingIds[] = $project->id;
+                    continue;
+                }
+            }
             
-            if ($project) {
-                $project->update([
-                    'title' => $projectData['title'] ?? '',
-                    'description' => $projectData['description'] ?? '',
-                    'technologies_used' => $this->processCommaList($projectData['technologies_used'] ?? ''),
-                    'role' => $projectData['role'] ?? '',
-                    'project_url' => $projectData['project_url'] ?? '',
-                    'start_date' => $projectData['start_date'] ?? null,
-                    'end_date' => $projectData['end_date'] ?? null,
-                    'achievements' => $projectData['achievements'] ?? '',
-                ]);
-                $existingIds[] = $project->id;
+            // Create new project (skip if title is empty)
+            if (empty($projectData['title'])) {
                 continue;
             }
+            
+            $project = StudentProject::create([
+                'user_id' => $user->id,
+                'title' => $projectData['title'],
+                'description' => $projectData['description'] ?? '',
+                'technologies_used' => $this->processCommaList($projectData['technologies_used'] ?? ''),
+                'role' => $projectData['role'] ?? '',
+                'project_url' => $projectData['project_url'] ?? '',
+                'start_date' => $projectData['start_date'] ?? null,
+                'end_date' => $projectData['end_date'] ?? null,
+                'achievements' => $projectData['achievements'] ?? '',
+            ]);
+            $existingIds[] = $project->id;
         }
         
-        // Create new project (skip if title is empty)
-        if (empty($projectData['title'])) {
-            continue;
+        // Delete removed projects
+        if (!empty($existingIds)) {
+            StudentProject::where('user_id', $user->id)
+                ->whereNotIn('id', $existingIds)
+                ->delete();
+        } else {
+            $user->projects()->delete();
         }
-        
-        $project = StudentProject::create([
-            'user_id' => $user->id,
-            'title' => $projectData['title'],
-            'description' => $projectData['description'] ?? '',
-            'technologies_used' => $this->processCommaList($projectData['technologies_used'] ?? ''),
-            'role' => $projectData['role'] ?? '',
-            'project_url' => $projectData['project_url'] ?? '',
-            'start_date' => $projectData['start_date'] ?? null,
-            'end_date' => $projectData['end_date'] ?? null,
-            'achievements' => $projectData['achievements'] ?? '',
-        ]);
-        $existingIds[] = $project->id;
     }
-    
-    // Delete removed projects
-    if (!empty($existingIds)) {
-        StudentProject::where('user_id', $user->id)
-            ->whereNotIn('id', $existingIds)
-            ->delete();
-    } else {
-        $user->projects()->delete();
-    }
-}
 
-/**
- * Helper: Process comma-separated list to array
- */
-private function processCommaList($input)
-{
-    if (empty($input)) {
-        return [];
+    /**
+     * Helper: Process comma-separated list to array
+     */
+    private function processCommaList($input)
+    {
+        if (empty($input)) {
+            return [];
+        }
+        return array_filter(array_map('trim', explode(',', $input)));
     }
-    return array_filter(array_map('trim', explode(',', $input)));
-}
 
     /**
      * Sync the student's certifications and uploaded evidence.
@@ -536,42 +520,28 @@ private function processCommaList($input)
             }
 
             $values = [
-                'certification_name' =>
-                    $data['certification_name'],
-
-                'issuing_organization' =>
-                    $data['issuing_organization'] ?? null,
-
-                'issue_date' =>
-                    $data['issue_date'] ?? null,
-
-                'certificate_file_path' =>
-                    $filePath,
+                'certification_name' => $data['certification_name'],
+                'issuing_organization' => $data['issuing_organization'] ?? null,
+                'issue_date' => $data['issue_date'] ?? null,
+                'certificate_file_path' => $filePath,
             ];
 
             if ($certification) {
                 $certification->update($values);
             } else {
-                $certification = $user->certifications()
-                    ->create($values);
-
+                $certification = $user->certifications()->create($values);
                 $submittedIds[] = $certification->id;
             }
         }
 
         $certificationsToDelete = empty($submittedIds)
             ? $user->certifications()->get()
-            : $user->certifications()
-                ->whereNotIn('id', $submittedIds)
-                ->get();
+            : $user->certifications()->whereNotIn('id', $submittedIds)->get();
 
         foreach ($certificationsToDelete as $certification) {
             if ($certification->certificate_file_path) {
-                Storage::disk('local')->delete(
-                    $certification->certificate_file_path
-                );
+                Storage::disk('local')->delete($certification->certificate_file_path);
             }
-
             $certification->delete();
         }
     }

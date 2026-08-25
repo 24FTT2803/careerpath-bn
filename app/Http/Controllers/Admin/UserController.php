@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\StudentProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -16,12 +17,10 @@ class UserController extends Controller
     {
         $query = User::query();
 
-        // Filter by role
         if ($request->has('role') && $request->role) {
             $query->where('role', $request->role);
         }
 
-        // Search
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -49,22 +48,43 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:8|confirmed',
             'role' => 'required|in:student,lecturer,admin',
-            'student_id' => 'nullable|unique:users',
-            'programme' => 'nullable|string',
-        ]);
+            'password' => 'required|min:8|confirmed',
+        ];
 
-        User::create([
+        // Email validation with role-based domains
+        $rules['email'] = User::getEmailValidationRules($request->role);
+        $rules['email'][] = 'unique:users';
+
+        // Phone validation
+        $rules['phone'] = User::getPhoneValidationRules();
+
+        // Only require student_id and programme if role is student
+        if ($request->role === 'student') {
+            $rules['student_id'] = 'required|unique:users';
+            $rules['programme'] = 'required|string';
+        } else {
+            $rules['student_id'] = 'nullable|unique:users';
+            $rules['programme'] = 'nullable|string';
+        }
+
+        $request->validate($rules);
+
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'student_id' => $request->student_id,
             'programme' => $request->programme,
+        ]);
+
+        // Create student profile with phone number if provided
+        StudentProfile::create([
+            'user_id' => $user->id,
         ]);
 
         return redirect()->route('admin.users.index')
@@ -76,7 +96,7 @@ class UserController extends Controller
      */
     public function edit($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with('profile')->findOrFail($id);
         return view('admin.users.edit', compact('user'));
     }
 
@@ -85,22 +105,38 @@ class UserController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $user = User::findOrFail($id);
+        $user = User::with('profile')->findOrFail($id);
 
-        $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
             'role' => 'required|in:student,lecturer,admin',
-            'student_id' => 'nullable|unique:users,student_id,' . $id,
-            'programme' => 'nullable|string',
-        ]);
+        ];
+
+        // Email validation with role-based domains
+        $rules['email'] = User::getEmailValidationRules($request->role);
+        $rules['email'][] = 'unique:users,email,' . $id;
+
+        // Phone validation
+        $rules['phone'] = User::getPhoneValidationRules();
+
+        // Only require student_id and programme if role is student
+        if ($request->role === 'student') {
+            $rules['student_id'] = 'required|unique:users,student_id,' . $id;
+            $rules['programme'] = 'required|string';
+        } else {
+            $rules['student_id'] = 'nullable|unique:users,student_id,' . $id;
+            $rules['programme'] = 'nullable|string';
+        }
+
+        $request->validate($rules);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $request->phone,
             'role' => $request->role,
-            'student_id' => $request->student_id,
-            'programme' => $request->programme,
+            'student_id' => $request->role === 'student' ? $request->student_id : null,
+            'programme' => $request->role === 'student' ? $request->programme : null,
         ];
 
         if ($request->filled('password')) {
@@ -121,7 +157,6 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
 
-        // Prevent deleting self
         if ($user->id === auth()->id()) {
             return redirect()->route('admin.users.index')
                 ->with('error', 'You cannot delete your own account.');

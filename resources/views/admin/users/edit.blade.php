@@ -32,7 +32,26 @@
             <div class="cpbn-field">
                 <label>Email <span class="req">*</span></label>
                 <input type="email" name="email" value="{{ old('email', $user->email) }}" required>
+                <p class="cpbn-hint">
+                    Allowed domains: 
+                    <strong>gmail.com</strong>, 
+                    <strong>pb.edu.bn</strong>, 
+                    <strong>student.pb.edu.bn</strong>
+                    <br>
+                    <span style="color:var(--rose);font-size:11px;">
+                        Students: gmail.com, student.pb.edu.bn, pb.edu.bn
+                        <br>
+                        Lecturers & Admins: gmail.com, pb.edu.bn
+                    </span>
+                </p>
                 @error('email')<p class="err">{{ $message }}</p>@enderror
+            </div>
+
+            <div class="cpbn-field">
+                <label>Phone Number</label>
+                <input type="text" name="phone" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 4567">
+                <p class="cpbn-hint">Only digits, +, -, spaces, and parentheses allowed (7-20 characters)</p>
+                @error('phone')<p class="err">{{ $message }}</p>@enderror
             </div>
 
             <div class="cpbn-field">
@@ -49,7 +68,7 @@
 
             <div class="cpbn-field">
                 <label>Role <span class="req">*</span></label>
-                <select name="role" required>
+                <select name="role" id="role-select" required onchange="toggleStudentFields()">
                     <option value="student" {{ old('role', $user->role) == 'student' ? 'selected' : '' }}>Student</option>
                     <option value="lecturer" {{ old('role', $user->role) == 'lecturer' ? 'selected' : '' }}>Lecturer</option>
                     <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
@@ -57,26 +76,36 @@
                 @error('role')<p class="err">{{ $message }}</p>@enderror
             </div>
 
-            <div class="cpbn-field">
-                <label>Student ID</label>
-                <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}">
-                @error('student_id')<p class="err">{{ $message }}</p>@enderror
-            </div>
+            <!-- Student-specific fields -->
+            <div id="student-fields" style="{{ old('role', $user->role) == 'student' ? 'display:block' : 'display:none' }}">
+                <div class="cpbn-field">
+                    <label>Student ID <span class="req">*</span></label>
+                    <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" 
+                           {{ old('role', $user->role) == 'student' ? 'required' : '' }}>
+                    @error('student_id')<p class="err">{{ $message }}</p>@enderror
+                </div>
 
-            <div class="cpbn-field" style="margin-bottom:0">
-                <label>Programme</label>
-                <select name="programme">
-                    <option value="">Select programme</option>
-                    <option value="Diploma in ICT (Application Development)" {{ old('programme', $user->programme) == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
-                        DADT - Application Development
-                    </option>
-                    <option value="Diploma in ICT (Data Analytics)" {{ old('programme', $user->programme) == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
-                        DDAT - Data Analytics
-                    </option>
-                    <option value="Diploma in ICT (Cloud Networking)" {{ old('programme', $user->programme) == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
-                        DCNG - Cloud Networking
-                    </option>
-                </select>
+                <div class="cpbn-field" style="margin-bottom:0">
+                    <label>Programme <span class="req">*</span></label>
+                    <select name="programme" {{ old('role', $user->role) == 'student' ? 'required' : '' }}>
+                        <option value="">Select programme</option>
+                        <option value="Diploma in ICT (Application Development)" {{ old('programme', $user->programme) == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
+                            DADT - Application Development
+                        </option>
+                        <option value="Diploma in ICT (Data Analytics)" {{ old('programme', $user->programme) == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
+                            DDAT - Data Analytics
+                        </option>
+                        <option value="Diploma in ICT (Cloud Networking)" {{ old('programme', $user->programme) == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
+                            DCNG - Cloud Networking
+                        </option>
+                        <option value="Diploma in Business Information Systems" {{ old('programme', $user->programme) == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
+                            DBIS - Business Information Systems
+                        </option>
+                        <option value="Others" {{ old('programme', $user->programme) == 'Others' ? 'selected' : '' }}>
+                            Others
+                        </option>
+                    </select>
+                </div>
             </div>
 
             <div class="cpbn-form-actions">
@@ -110,4 +139,27 @@
     .err{color:var(--rose);font-size:12px;margin-top:4px}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 </style>
+
+<script>
+    function toggleStudentFields() {
+        const roleSelect = document.getElementById('role-select');
+        const studentFields = document.getElementById('student-fields');
+        const studentIdInput = studentFields.querySelector('input[name="student_id"]');
+        const programmeSelect = studentFields.querySelector('select[name="programme"]');
+        
+        if (roleSelect.value === 'student') {
+            studentFields.style.display = 'block';
+            studentIdInput.setAttribute('required', 'required');
+            programmeSelect.setAttribute('required', 'required');
+        } else {
+            studentFields.style.display = 'none';
+            studentIdInput.removeAttribute('required');
+            programmeSelect.removeAttribute('required');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        toggleStudentFields();
+    });
+</script>
 @endsection
