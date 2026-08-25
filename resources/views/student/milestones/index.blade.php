@@ -112,6 +112,7 @@
 
         <!-- Add Milestone Form -->
         <div id="addMilestoneForm" class="cpbn-addform">
+            <!-- REMOVED data-confirm-save from form -->
             <form action="{{ route('student.milestones.store') }}" method="POST">
                 @csrf
                 <div class="cpbn-fgrid">
@@ -141,7 +142,8 @@
                     <button type="button" onclick="document.getElementById('addMilestoneForm').classList.toggle('open')" class="cpbn-btn cpbn-btn-muted">
                         Cancel
                     </button>
-                    <button type="submit" class="cpbn-btn cpbn-btn-primary">
+                    <!-- KEEP data-confirm-save ONLY on submit button -->
+                    <button type="submit" class="cpbn-btn cpbn-btn-primary" data-confirm-save>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
                         Add Milestone
                     </button>
@@ -203,7 +205,7 @@
                     </div>
                     <div class="cpbn-mrow-right">
                         @if(!$milestone->is_completed)
-                            <form action="{{ route('student.milestones.complete', $milestone) }}" method="POST">
+                            <form action="{{ route('student.milestones.complete', $milestone) }}" method="POST" data-confirm-update data-item-name="{{ $milestone->title }}">
                                 @csrf
                                 @method('PUT')
                                 <button type="submit" class="cpbn-btn cpbn-btn-green cpbn-btn-sm">
@@ -217,7 +219,7 @@
                                 Done
                             </span>
                         @endif
-                        <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST" onsubmit="return confirm('Delete this milestone?')">
+                        <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST" data-confirm-delete data-item-name="{{ $milestone->title }}">
                             @csrf
                             @method('DELETE')
                             <button type="submit" class="cpbn-del" title="Delete">

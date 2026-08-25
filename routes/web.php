@@ -45,6 +45,7 @@ require __DIR__.'/auth.php';
 // STUDENT ROUTES (Developer 1)
 // ============================================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
+    // Career Recommendations
     Route::get(
         '/career-assessment',
         [CareerRecommendationController::class, 'assessment']
@@ -60,16 +61,30 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
         [CareerRecommendationController::class, 'generate']
     )->name('recommendations.generate');
 
+    // Dashboard
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Profile
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+
+    // ============================================
+    // ADD THIS MISSING ROUTE
+    // ============================================
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Milestones
     Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones');
     Route::post('/milestones', [MilestoneController::class, 'store'])->name('milestones.store');
     Route::put('/milestones/{milestone}', [MilestoneController::class, 'complete'])->name('milestones.complete');
     Route::delete('/milestones/{milestone}', [MilestoneController::class, 'destroy'])->name('milestones.destroy');
+
+    // Settings
     Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
     Route::put('/settings/password', [ProfileController::class, 'updatePassword'])->name('settings.password');
+
+    // Notifications
     Route::get('/notifications', [ProfileController::class, 'notifications'])->name('notifications');
     Route::post('/notifications/{id}/read', [ProfileController::class, 'markAsRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [ProfileController::class, 'markAllAsRead'])->name('notifications.read-all');
@@ -109,27 +124,89 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
     // Admin ONLY routes
-    Route::get('/users', [AdminUserController::class, 'index'])
-        ->name('users.index')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+    Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+    });
+});
+<<<<<<< HEAD
 
-    Route::get('/users/create', [AdminUserController::class, 'create'])
-        ->name('users.create')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+=======
+    
+    // Dashboard
+>>>>>>> bd6d99ebfbc2aad510e05b3d654923fb7e857b1b
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    
+    // Profile
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    
+    // ============================================
+    // ADD THIS MISSING ROUTE
+    // ============================================
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::post('/users', [AdminUserController::class, 'store'])
-        ->name('users.store')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+    // Milestones
+    Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones');
+    Route::post('/milestones', [MilestoneController::class, 'store'])->name('milestones.store');
+    Route::put('/milestones/{milestone}', [MilestoneController::class, 'complete'])->name('milestones.complete');
+    Route::delete('/milestones/{milestone}', [MilestoneController::class, 'destroy'])->name('milestones.destroy');
+    
+    // Settings
+    Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
+    Route::put('/settings/password', [ProfileController::class, 'updatePassword'])->name('settings.password');
+    
+    // Notifications
+    Route::get('/notifications', [ProfileController::class, 'notifications'])->name('notifications');
+    Route::post('/notifications/{id}/read', [ProfileController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [ProfileController::class, 'markAllAsRead'])->name('notifications.read-all');
 
-    Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])
-        ->name('users.edit')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+    // --- BIICF Explorer (added) ---
+    Route::prefix('biicf-explorer')->name('biicf-explorer.')->group(function () {
+        Route::get('/', [BiicfExplorerController::class, 'index'])->name('index');
+        Route::get('/sub-sectors/{subSector:slug}/roles', [BiicfExplorerController::class, 'subSectorRoles'])->name('sub-sector.roles');
+        Route::get('/job-roles/{jobRole:slug}', [BiicfExplorerController::class, 'jobRole'])->name('job-role.show');
+        Route::get('/job-roles/{jobRole:slug}/compare', [BiicfExplorerController::class, 'compareToMe'])->name('job-role.compare');
+        Route::get('/competencies', [BiicfExplorerController::class, 'competencies'])->name('competencies');
+    });
+});
 
-    Route::put('/users/{id}', [AdminUserController::class, 'update'])
-        ->name('users.update')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+// ============================================
+// ADMIN ROUTES
+// ============================================
+Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])
+        ->name('dashboard')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
-    Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
-        ->name('users.destroy')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+    Route::get('/students', [AdminStudentController::class, 'index'])
+        ->name('students.index')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    Route::get('/students/{id}', [AdminStudentController::class, 'show'])
+        ->name('students.show')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    Route::get('/careers', [AdminCareerController::class, 'index'])
+        ->name('careers.index')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    Route::get('/careers/{id}', [AdminCareerController::class, 'show'])
+        ->name('careers.show')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    // Admin ONLY routes
+    Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+        Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
+        Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+    });
 });

@@ -19,7 +19,7 @@
     </div>
 
     <div class="cpbn-card" style="max-width:640px">
-        <form method="POST" action="{{ route('admin.users.update', $user) }}">
+        <form method="POST" action="{{ route('admin.users.update', $user) }}" data-confirm-update data-item-name="{{ $user->name }}">
             @csrf
             @method('PUT')
 
@@ -80,7 +80,7 @@
             </div>
 
             <div class="cpbn-form-actions">
-                <button type="submit" class="cpbn-btn cpbn-btn-primary">
+                <button type="submit" class="cpbn-btn cpbn-btn-primary" data-confirm-update data-item-name="{{ $user->name }}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
                     Update User
                 </button>
@@ -88,4 +88,26 @@
         </form>
     </div>
 </div>
+
+<style>
+    .cpbn-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:22px}
+    .cpbn-head h1{font-family:var(--font-display);font-weight:600;font-size:24px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+    .cpbn-head h1 svg{width:22px;height:22px;color:var(--gold)}
+    .cpbn-head p.sub{color:var(--ink-dim);margin-top:4px;font-size:14.5px}
+    .cpbn-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:5px;font-size:14px;font-weight:500;border:none;cursor:pointer;transition:background .15s;text-decoration:none;font-family:inherit}
+    .cpbn-btn svg{width:14px;height:14px}
+    .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
+    .cpbn-btn-primary:hover{background:var(--gold-bright)}
+    .cpbn-btn-muted{background:#eee9db;color:var(--ink)}
+    .cpbn-btn-muted:hover{background:#e4dfcd}
+    .cpbn-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px}
+    .cpbn-field{margin-bottom:16px}
+    .cpbn-field label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+    .cpbn-field label .req{color:var(--rose)}
+    .cpbn-field input,.cpbn-field select{width:100%;padding:10px 13px;border-radius:4px;border:1px solid var(--line);background:#fff;font-size:14px;font-family:var(--font-body)}
+    .cpbn-field input:focus,.cpbn-field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,154,61,0.15)}
+    .cpbn-hint{font-size:11.5px;color:var(--ink-dim);margin-top:4px}
+    .err{color:var(--rose);font-size:12px;margin-top:4px}
+    .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
+</style>
 @endsection
