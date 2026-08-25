@@ -54,6 +54,8 @@
     .cpbn-field input[type="email"],
     .cpbn-field input[type="number"],
     .cpbn-field input[type="date"],
+    .cpbn-field input[type="url"],
+    .cpbn-field input[type="tel"],
     .cpbn-field select,
     .cpbn-field textarea{
         width:100%;padding:10px 13px;border-radius:4px;border:1px solid var(--line);background:#fff;
@@ -75,6 +77,125 @@
     .cpbn-btn svg{width:14px;height:14px}
     .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
     .cpbn-btn-primary:hover{background:var(--gold-bright)}
+    .cpbn-btn-muted{background:#eee9db;color:var(--ink)}
+    .cpbn-btn-muted:hover{background:#e4dfcd}
+
+    /* ============================================
+       DYNAMIC FORM STYLES - Projects & Certifications
+       ============================================ */
+    .cpbn-project-card,
+    .cpbn-certification-card {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 20px;
+        margin-bottom: 16px;
+        position: relative;
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .cpbn-project-card:hover,
+    .cpbn-certification-card:hover {
+        border-color: var(--gold);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .cpbn-project-card .cpbn-fgrid,
+    .cpbn-certification-card .cpbn-fgrid {
+        gap: 12px;
+    }
+
+    .cpbn-remove-project,
+    .cpbn-remove-certification {
+        background: var(--rose-wash);
+        color: var(--rose);
+        border: 1px solid transparent;
+        padding: 6px 14px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s;
+        margin-top: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-family: var(--font-body);
+    }
+
+    .cpbn-remove-project:hover,
+    .cpbn-remove-certification:hover {
+        background: var(--rose);
+        color: white;
+    }
+
+    .cpbn-add-project,
+    .cpbn-add-certification {
+        background: var(--gold-wash);
+        color: #8a6420;
+        border: 1px dashed var(--gold);
+        padding: 10px 18px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        justify-content: center;
+        font-family: var(--font-body);
+    }
+
+    .cpbn-add-project:hover,
+    .cpbn-add-certification:hover {
+        background: var(--gold);
+        color: var(--ink);
+        border-style: solid;
+    }
+
+    .cpbn-file-note {
+        display: block;
+        font-size: 11px;
+        color: var(--ink-dim);
+        margin-top: 4px;
+    }
+
+    .cpbn-file-existing {
+        font-size: 12px;
+        color: var(--green);
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .cpbn-project-number {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--ink-dim);
+        background: #eef1f5;
+        padding: 2px 10px;
+        border-radius: 100px;
+        display: inline-block;
+        margin-bottom: 12px;
+    }
+
+    /* Error messages */
+    .err {
+        color: var(--rose);
+        font-size: 12px;
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .err svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+    }
 
     @media (max-width:720px){
         .cpbn-fgrid{grid-template-columns:1fr}
@@ -109,69 +230,84 @@
             </p>
         </div>
 
-        <form method="POST" action="{{ route('student.profile.update') }}" enctype="multipart/form-data">
+        <form method="POST" action="{{ route('student.profile.update') }}" enctype="multipart/form-data" id="profile-form">
             @csrf
             @method('PUT')
 
             <!-- SECTION 1: Personal Information -->
-<div class="cpbn-section">
-    <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-        Personal Information
-    </h3>
+            <div class="cpbn-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    Personal Information
+                </h3>
 
-    <div class="cpbn-fgrid">
-        <div class="cpbn-field">
-            <label>First Name <span class="req">*</span></label>
-            <input type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required>
-        </div>
-        <div class="cpbn-field">
-            <label>Last Name <span class="req">*</span></label>
-            <input type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required>
-        </div>
-        <div class="cpbn-field">
-            <label>Email <span class="req">*</span></label>
-            <input type="email" value="{{ $user->email }}" disabled>
-        </div>
-        <div class="cpbn-field">
-            <label>Student ID <span class="req">*</span></label>
-            <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" required>
-        </div>
-        <div class="cpbn-field">
-            <label>Phone Number</label>
-            <input type="text" name="phone" value="{{ old('phone', $user->profile->phone ?? '') }}">
-        </div>
-        <div class="cpbn-field">
-            <label>Date of Birth</label>
-            <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}">
-        </div>
-        <div class="cpbn-field">
-            <label>Nationality</label>
-            <select name="nationality" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
-                <option value="">Select your nationality</option>
-                <option value="Brunei Darussalam" {{ old('nationality', $user->profile->nationality ?? '') == 'Brunei Darussalam' ? 'selected' : '' }}>🇧🇳 Brunei Darussalam</option>
-                <option value="Cambodia" {{ old('nationality', $user->profile->nationality ?? '') == 'Cambodia' ? 'selected' : '' }}>🇰🇭 Cambodia</option>
-                <option value="Indonesia" {{ old('nationality', $user->profile->nationality ?? '') == 'Indonesia' ? 'selected' : '' }}>🇮🇩 Indonesia</option>
-                <option value="Laos" {{ old('nationality', $user->profile->nationality ?? '') == 'Laos' ? 'selected' : '' }}>🇱🇦 Laos</option>
-                <option value="Malaysia" {{ old('nationality', $user->profile->nationality ?? '') == 'Malaysia' ? 'selected' : '' }}>🇲🇾 Malaysia</option>
-                <option value="Myanmar" {{ old('nationality', $user->profile->nationality ?? '') == 'Myanmar' ? 'selected' : '' }}>🇲🇲 Myanmar</option>
-                <option value="Philippines" {{ old('nationality', $user->profile->nationality ?? '') == 'Philippines' ? 'selected' : '' }}>🇵🇭 Philippines</option>
-                <option value="Singapore" {{ old('nationality', $user->profile->nationality ?? '') == 'Singapore' ? 'selected' : '' }}>🇸🇬 Singapore</option>
-                <option value="Thailand" {{ old('nationality', $user->profile->nationality ?? '') == 'Thailand' ? 'selected' : '' }}>🇹🇭 Thailand</option>
-                <option value="Timor-Leste" {{ old('nationality', $user->profile->nationality ?? '') == 'Timor-Leste' ? 'selected' : '' }}>🇹🇱 Timor-Leste</option>
-                <option value="Vietnam" {{ old('nationality', $user->profile->nationality ?? '') == 'Vietnam' ? 'selected' : '' }}>🇻🇳 Vietnam</option>
-            </select>
-        </div>
-        <div class="cpbn-field full">
-            <label>Address</label>
-            <textarea name="address" rows="2">{{ old('address', $user->profile->address ?? '') }}</textarea>
-        </div>
-        <div class="cpbn-field full">
-            <label>Bio / About You</label>
-            <textarea name="bio" rows="3">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
-        </div>
-    </div>
-</div>
+                <div class="cpbn-fgrid">
+                    <div class="cpbn-field">
+                        <label>First Name <span class="req">*</span></label>
+                        <input type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required>
+                        @error('first_name')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Last Name <span class="req">*</span></label>
+                        <input type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required>
+                        @error('last_name')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Email <span class="req">*</span></label>
+                        <input type="email" value="{{ $user->email }}" disabled>
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Student ID <span class="req">*</span></label>
+                        <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" required>
+                        @error('student_id')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Phone Number</label>
+                        <input type="tel" 
+                               name="phone" 
+                               value="{{ old('phone', $user->phone ?? '') }}" 
+                               placeholder="+673 123 4567"
+                               pattern="[\+\d\s\-\(\)]{7,20}"
+                               title="Only digits, +, -, spaces, and parentheses allowed (7-20 characters)"
+                               maxlength="20">
+                        <small class="cpbn-file-note">Only digits, +, -, spaces, and parentheses allowed (7-20 characters)</small>
+                        @error('phone')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Date of Birth</label>
+                        <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}">
+                        @error('date_of_birth')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field">
+                        <label>Nationality</label>
+                        <select name="nationality">
+                            <option value="">Select your nationality</option>
+                            <option value="Brunei Darussalam" {{ old('nationality', $user->profile->nationality ?? '') == 'Brunei Darussalam' ? 'selected' : '' }}>🇧🇳 Brunei Darussalam</option>
+                            <option value="Cambodia" {{ old('nationality', $user->profile->nationality ?? '') == 'Cambodia' ? 'selected' : '' }}>🇰🇭 Cambodia</option>
+                            <option value="Indonesia" {{ old('nationality', $user->profile->nationality ?? '') == 'Indonesia' ? 'selected' : '' }}>🇮🇩 Indonesia</option>
+                            <option value="Laos" {{ old('nationality', $user->profile->nationality ?? '') == 'Laos' ? 'selected' : '' }}>🇱🇦 Laos</option>
+                            <option value="Malaysia" {{ old('nationality', $user->profile->nationality ?? '') == 'Malaysia' ? 'selected' : '' }}>🇲🇾 Malaysia</option>
+                            <option value="Myanmar" {{ old('nationality', $user->profile->nationality ?? '') == 'Myanmar' ? 'selected' : '' }}>🇲🇲 Myanmar</option>
+                            <option value="Philippines" {{ old('nationality', $user->profile->nationality ?? '') == 'Philippines' ? 'selected' : '' }}>🇵🇭 Philippines</option>
+                            <option value="Singapore" {{ old('nationality', $user->profile->nationality ?? '') == 'Singapore' ? 'selected' : '' }}>🇸🇬 Singapore</option>
+                            <option value="Thailand" {{ old('nationality', $user->profile->nationality ?? '') == 'Thailand' ? 'selected' : '' }}>🇹🇭 Thailand</option>
+                            <option value="Timor-Leste" {{ old('nationality', $user->profile->nationality ?? '') == 'Timor-Leste' ? 'selected' : '' }}>🇹🇱 Timor-Leste</option>
+                            <option value="Vietnam" {{ old('nationality', $user->profile->nationality ?? '') == 'Vietnam' ? 'selected' : '' }}>🇻🇳 Vietnam</option>
+                        </select>
+                        @error('nationality')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field full">
+                        <label>Address</label>
+                        <textarea name="address" rows="2">{{ old('address', $user->profile->address ?? '') }}</textarea>
+                        @error('address')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                    <div class="cpbn-field full">
+                        <label>Bio / About You</label>
+                        <textarea name="bio" rows="3">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
+                        @error('bio')<p class="err">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </div>
 
             <!-- SECTION 2: Academic Information -->
             <div class="cpbn-section">
@@ -204,11 +340,13 @@
                                 Others
                             </option>
                         </select>
+                        @error('programme')<p class="err">{{ $message }}</p>@enderror
                     </div>
                     <div class="cpbn-field">
                         <label>CGPA <span class="req">*</span></label>
                         <input type="number" name="cgpa" step="0.01" min="0" max="4"
                                value="{{ old('cgpa', $user->cgpa) }}" required>
+                        @error('cgpa')<p class="err">{{ $message }}</p>@enderror
                     </div>
                 </div>
             </div>
@@ -237,6 +375,7 @@
                         </label>
                     @endforeach
                 </div>
+                @error('skills')<p class="err">{{ $message }}</p>@enderror
                 <p class="cpbn-check-note">Select all that apply. More skills = better career matching.</p>
             </div>
 
@@ -265,166 +404,180 @@
                         </label>
                     @endforeach
                 </div>
+                @error('interests')<p class="err">{{ $message }}</p>@enderror
             </div>
 
-            <!-- SECTION 5: Projects & Experience -->
-<div class="cpbn-section">
-    <h3>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-        Projects &amp; Experience
-    </h3>
+            <!-- ============================================ -->
+            <!-- SECTION 5: Projects & Experience - DYNAMIC    -->
+            <!-- ============================================ -->
+            <div class="cpbn-section">
+                <h3>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    Projects &amp; Experience
+                </h3>
 
-    <p class="desc">Add your projects and experience</p>
+                <p class="desc">Add your projects and experience</p>
 
-    @php
-        $projectRows = old('projects');
+                @php
+                    $projectRows = old('projects');
 
-        if ($projectRows === null) {
-            $projectRows = $user->projects
-                ->map(function ($project) {
-                    return [
-                        'id' => $project->id,
-                        'title' => $project->title,
-                        'description' => $project->description,
-                        'technologies_used' => $project->technologies_used,
-                        'role' => $project->role,
-                        'start_date' => $project->start_date?->format('Y-m-d'),
-                        'end_date' => $project->end_date?->format('Y-m-d'),
-                        'project_url' => $project->project_url,
-                        'achievements' => $project->achievements,
-                    ];
-                })
-                ->values()
-                ->all();
-        }
+                    if ($projectRows === null) {
+                        $projectRows = $user->projects
+                            ->map(function ($project) {
+                                return [
+                                    'id' => $project->id,
+                                    'title' => $project->title,
+                                    'description' => $project->description,
+                                    'technologies_used' => $project->technologies_used ?? [],
+                                    'role' => $project->role,
+                                    'project_url' => $project->project_url,
+                                    'start_date' => $project->start_date?->format('Y-m-d'),
+                                    'end_date' => $project->end_date?->format('Y-m-d'),
+                                    'achievements' => $project->achievements,
+                                ];
+                            })
+                            ->values()
+                            ->all();
+                    }
 
-        $nextProjectIndex = empty($projectRows)
-            ? 0
-            : max(array_map('intval', array_keys($projectRows))) + 1;
-    @endphp
+                    // FIX: Check if $projectRows is null or empty before using array_keys
+                    $nextProjectIndex = 0;
+                    if (!empty($projectRows) && is_array($projectRows)) {
+                        $nextProjectIndex = max(array_map('intval', array_keys($projectRows))) + 1;
+                    }
+                @endphp
 
-    <div
-        id="project-list"
-        data-next-index="{{ $nextProjectIndex }}"
-    >
-        @foreach ($projectRows as $index => $project)
-            @php
-                $existingProject = ! empty($project['id'])
-                    ? $user->projects->firstWhere('id', (int) $project['id'])
-                    : null;
-            @endphp
+                <div id="project-list" data-next-index="{{ $nextProjectIndex }}">
+                    @if(empty($projectRows) || !is_array($projectRows) || count($projectRows) === 0)
+                        <!-- Show one empty project card if no projects exist -->
+                        <div class="cpbn-project-card">
+                            <span class="cpbn-project-number">Project #1</span>
+                            <div class="cpbn-fgrid">
+                                <div class="cpbn-field">
+                                    <label>Project Title <span class="req">*</span></label>
+                                    <input type="text" name="projects[0][title]" placeholder="e.g. Hobbee Apps" required>
+                                </div>
+                                <div class="cpbn-field">
+                                    <label>Your Role</label>
+                                    <input type="text" name="projects[0][role]" placeholder="e.g. Lead Developer">
+                                </div>
+                                <div class="cpbn-field">
+                                    <label>Project URL (Optional)</label>
+                                    <input type="url" name="projects[0][project_url]" placeholder="https://github.com/your-project-name">
+                                </div>
+                                <div class="cpbn-field full">
+                                    <label>Description</label>
+                                    <textarea name="projects[0][description]" rows="2" placeholder="Brief description of the project"></textarea>
+                                </div>
+                                <div class="cpbn-field full">
+                                    <label>Technologies Used</label>
+                                    <input type="text" name="projects[0][technologies_used]" placeholder="e.g. Python, React, MySQL">
+                                    <small class="cpbn-file-note">Separate technologies with commas</small>
+                                </div>
+                                <div class="cpbn-field">
+                                    <label>Start Date</label>
+                                    <input type="date" name="projects[0][start_date]">
+                                </div>
+                                <div class="cpbn-field">
+                                    <label>End Date</label>
+                                    <input type="date" name="projects[0][end_date]">
+                                </div>
+                                <div class="cpbn-field full">
+                                    <label>Achievements</label>
+                                    <textarea name="projects[0][achievements]" rows="2" placeholder="What did you accomplish?"></textarea>
+                                </div>
+                            </div>
+                            <button type="button" class="cpbn-remove-project" onclick="removeProject(this)" style="display:none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
+                                Remove Project
+                            </button>
+                        </div>
+                    @else
+                        @foreach ($projectRows as $index => $project)
+                            @php
+                                // FIX: Handle null technologies_used
+                                $techArray = $project['technologies_used'] ?? [];
+                                if (!is_array($techArray)) {
+                                    $techArray = [];
+                                }
+                                $technologies = implode(', ', $techArray);
+                            @endphp
 
-            <div class="cpbn-project-card" style="border:1px solid var(--line);background:#faf8f1;border-radius:6px;padding:20px;margin-bottom:16px;">
-                @if (! empty($project['id']))
-                    <input
-                        type="hidden"
-                        name="projects[{{ $index }}][id]"
-                        value="{{ $project['id'] }}"
-                    >
-                @endif
+                            <div class="cpbn-project-card">
+                                @if (! empty($project['id']))
+                                    <input type="hidden" name="projects[{{ $index }}][id]" value="{{ $project['id'] }}">
+                                @endif
 
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>
-                            Project Title <span class="req">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="projects[{{ $index }}][title]"
-                            value="{{ $project['title'] ?? '' }}"
-                            placeholder="e.g. E-Commerce Website"
-                            required
-                        >
-                    </div>
+                                <span class="cpbn-project-number">Project #{{ $loop->iteration }}</span>
 
-                    <div class="cpbn-field">
-                        <label>Your Role</label>
-                        <input
-                            type="text"
-                            name="projects[{{ $index }}][role]"
-                            value="{{ $project['role'] ?? '' }}"
-                            placeholder="e.g. Lead Developer"
-                        >
-                    </div>
+                                <div class="cpbn-fgrid">
+                                    <div class="cpbn-field">
+                                        <label>Project Title <span class="req">*</span></label>
+                                        <input type="text" name="projects[{{ $index }}][title]"
+                                               value="{{ $project['title'] ?? '' }}"
+                                               placeholder="e.g. Hobbee Apps" required>
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>Your Role</label>
+                                        <input type="text" name="projects[{{ $index }}][role]"
+                                               value="{{ $project['role'] ?? '' }}"
+                                               placeholder="e.g. Lead Developer">
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>Project URL (Optional)</label>
+                                        <input type="url" name="projects[{{ $index }}][project_url]"
+                                               value="{{ $project['project_url'] ?? '' }}"
+                                               placeholder="https://github.com/your-project-name">
+                                    </div>
+                                    <div class="cpbn-field full">
+                                        <label>Description</label>
+                                        <textarea name="projects[{{ $index }}][description]" rows="2"
+                                                  placeholder="Brief description of the project">{{ $project['description'] ?? '' }}</textarea>
+                                    </div>
+                                    <div class="cpbn-field full">
+                                        <label>Technologies Used</label>
+                                        <input type="text" name="projects[{{ $index }}][technologies_used]"
+                                               value="{{ $technologies }}"
+                                               placeholder="e.g. Python, React, MySQL">
+                                        <small class="cpbn-file-note">Separate technologies with commas</small>
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>Start Date</label>
+                                        <input type="date" name="projects[{{ $index }}][start_date]"
+                                               value="{{ $project['start_date'] ?? '' }}">
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>End Date</label>
+                                        <input type="date" name="projects[{{ $index }}][end_date]"
+                                               value="{{ $project['end_date'] ?? '' }}">
+                                    </div>
+                                    <div class="cpbn-field full">
+                                        <label>Achievements</label>
+                                        <textarea name="projects[{{ $index }}][achievements]" rows="2"
+                                                  placeholder="What did you accomplish?">{{ $project['achievements'] ?? '' }}</textarea>
+                                    </div>
+                                </div>
 
-                    <div class="cpbn-field full">
-                        <label>Description</label>
-                        <textarea
-                            name="projects[{{ $index }}][description]"
-                            rows="2"
-                            placeholder="Brief description of the project"
-                        >{{ $project['description'] ?? '' }}</textarea>
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Technologies Used</label>
-                        <input
-                            type="text"
-                            name="projects[{{ $index }}][technologies_used]"
-                            value="{{ is_array($project['technologies_used'] ?? null) ? implode(', ', $project['technologies_used']) : ($project['technologies_used'] ?? '') }}"
-                            placeholder="e.g. Python, React, MySQL"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Project URL (Optional)</label>
-                        <input
-                            type="url"
-                            name="projects[{{ $index }}][project_url]"
-                            value="{{ $project['project_url'] ?? '' }}"
-                            placeholder="https://github.com/your-project"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Start Date</label>
-                        <input
-                            type="date"
-                            name="projects[{{ $index }}][start_date]"
-                            value="{{ $project['start_date'] ?? '' }}"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>End Date</label>
-                        <input
-                            type="date"
-                            name="projects[{{ $index }}][end_date]"
-                            value="{{ $project['end_date'] ?? '' }}"
-                        >
-                    </div>
-
-                    <div class="cpbn-field full">
-                        <label>Achievements</label>
-                        <textarea
-                            name="projects[{{ $index }}][achievements]"
-                            rows="2"
-                            placeholder="What did you accomplish?"
-                        >{{ $project['achievements'] ?? '' }}</textarea>
-                    </div>
+                                <button type="button" class="cpbn-remove-project" onclick="removeProject(this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                    </svg>
+                                    Remove Project
+                                </button>
+                            </div>
+                        @endforeach
+                    @endif
                 </div>
 
-                <button
-                    type="button"
-                    class="cpbn-remove-project"
-                    onclick="removeProject(this)"
-                    style="margin-top:12px;border:0;background:transparent;color:#b45353;cursor:pointer;font-size:12.5px;padding:0;"
-                >
-                    Remove Project
+                <button type="button" id="add-project" class="cpbn-add-project">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Add Another Project
                 </button>
             </div>
-        @endforeach
-    </div>
-
-    <button
-        type="button"
-        id="add-project"
-        class="cpbn-add-project"
-        style="border:1px dashed var(--gold);background:transparent;color:#8a6420;padding:10px 16px;border-radius:5px;cursor:pointer;font-size:13.5px;font-weight:500;"
-    >
-        + Add Project
-    </button>
-</div>
 
             <!-- SECTION 6: Certifications -->
             <div class="cpbn-section">
@@ -458,109 +611,104 @@
                     }
 
                     $nextCertificationIndex = empty($certificationRows)
-                    ? 0
-                    : max(array_map('intval', array_keys($certificationRows))) + 1;
+                        ? 0
+                        : max(array_map('intval', array_keys($certificationRows))) + 1;
                 @endphp
 
-                <div
-                    id="certification-list"
-                    data-next-index="{{ $nextCertificationIndex }}"
-                >
-                    @foreach ($certificationRows as $index => $certification)
-                        @php
-                            $existingCertification = ! empty($certification['id'])
-                                ? $user->certifications->firstWhere(
-                                    'id',
-                                    (int) $certification['id']
-                                )
-                                : null;
-                        @endphp
-
+                <div id="certification-list" data-next-index="{{ $nextCertificationIndex }}">
+                    @if(empty($certificationRows) || !is_array($certificationRows) || count($certificationRows) === 0)
+                        <!-- Show one empty certification card -->
                         <div class="cpbn-certification-card">
-                            @if (! empty($certification['id']))
-                                <input
-                                    type="hidden"
-                                    name="certifications[{{ $index }}][id]"
-                                    value="{{ $certification['id'] }}"
-                                >
-                            @endif
-
                             <div class="cpbn-fgrid">
                                 <div class="cpbn-field">
-                                    <label>
-                                        Certification Name
-                                        <span class="req">*</span>
-                                    </label>
-
-                                    <input
-                                        type="text"
-                                        name="certifications[{{ $index }}][certification_name]"
-                                        value="{{ $certification['certification_name'] ?? '' }}"
-                                        placeholder="e.g. AWS Cloud Practitioner"
-                                        required
-                                    >
+                                    <label>Certification Name <span class="req">*</span></label>
+                                    <input type="text" name="certifications[0][certification_name]" 
+                                           placeholder="e.g. AWS Cloud Practitioner" required>
                                 </div>
-
                                 <div class="cpbn-field">
                                     <label>Issuing Organisation</label>
-
-                                    <input
-                                        type="text"
-                                        name="certifications[{{ $index }}][issuing_organization]"
-                                        value="{{ $certification['issuing_organization'] ?? '' }}"
-                                        placeholder="e.g. AWS, Cisco, Politeknik Brunei"
-                                    >
+                                    <input type="text" name="certifications[0][issuing_organization]" 
+                                           placeholder="e.g. AWS, Cisco, Politeknik Brunei">
                                 </div>
-
                                 <div class="cpbn-field">
                                     <label>Issue Date</label>
-
-                                    <input
-                                        type="date"
-                                        name="certifications[{{ $index }}][issue_date]"
-                                        value="{{ $certification['issue_date'] ?? '' }}"
-                                        max="{{ now()->format('Y-m-d') }}"
-                                    >
+                                    <input type="date" name="certifications[0][issue_date]" 
+                                           max="{{ now()->format('Y-m-d') }}">
                                 </div>
-
                                 <div class="cpbn-field">
                                     <label>Certificate File</label>
-
-                                    <input
-                                        type="file"
-                                        name="certifications[{{ $index }}][certificate_file]"
-                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                    >
-
-                                    <small class="cpbn-file-note">
-                                        PDF, JPG, JPEG or PNG · Maximum 5 MB
-                                    </small>
-
-                                    @if ($existingCertification?->certificate_file_path)
-                                        <div class="cpbn-file-existing">
-                                            ✓ Evidence uploaded
-                                        </div>
-                                    @endif
+                                    <input type="file" name="certifications[0][certificate_file]"
+                                           accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                    <small class="cpbn-file-note">PDF, JPG, JPEG or PNG · Maximum 5 MB</small>
                                 </div>
                             </div>
-
-                            <button
-                                type="button"
-                                class="cpbn-remove-certification"
-                                onclick="removeCertification(this)"
-                            >
+                            <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)" style="display:none;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                                    <path d="M18 6L6 18M6 6l12 12"/>
+                                </svg>
                                 Remove Certification
                             </button>
                         </div>
-                    @endforeach
+                    @else
+                        @foreach ($certificationRows as $index => $certification)
+                            @php
+                                $existingCertification = ! empty($certification['id'])
+                                    ? $user->certifications->firstWhere('id', (int) $certification['id'])
+                                    : null;
+                            @endphp
+
+                            <div class="cpbn-certification-card">
+                                @if (! empty($certification['id']))
+                                    <input type="hidden" name="certifications[{{ $index }}][id]" value="{{ $certification['id'] }}">
+                                @endif
+
+                                <div class="cpbn-fgrid">
+                                    <div class="cpbn-field">
+                                        <label>Certification Name <span class="req">*</span></label>
+                                        <input type="text" name="certifications[{{ $index }}][certification_name]"
+                                               value="{{ $certification['certification_name'] ?? '' }}"
+                                               placeholder="e.g. AWS Cloud Practitioner" required>
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>Issuing Organisation</label>
+                                        <input type="text" name="certifications[{{ $index }}][issuing_organization]"
+                                               value="{{ $certification['issuing_organization'] ?? '' }}"
+                                               placeholder="e.g. AWS, Cisco, Politeknik Brunei">
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>Issue Date</label>
+                                        <input type="date" name="certifications[{{ $index }}][issue_date]"
+                                               value="{{ $certification['issue_date'] ?? '' }}"
+                                               max="{{ now()->format('Y-m-d') }}">
+                                    </div>
+                                    <div class="cpbn-field">
+                                        <label>Certificate File</label>
+                                        <input type="file" name="certifications[{{ $index }}][certificate_file]"
+                                               accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png">
+                                        <small class="cpbn-file-note">PDF, JPG, JPEG or PNG · Maximum 5 MB</small>
+
+                                        @if ($existingCertification?->certificate_file_path)
+                                            <div class="cpbn-file-existing">✓ Evidence uploaded</div>
+                                        @endif
+                                    </div>
+                                </div>
+
+                                <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                                        <path d="M18 6L6 18M6 6l12 12"/>
+                                    </svg>
+                                    Remove Certification
+                                </button>
+                            </div>
+                        @endforeach
+                    @endif
                 </div>
 
-                <button
-                    type="button"
-                    id="add-certification"
-                    class="cpbn-add-certification"
-                >
-                    + Add Certification
+                <button type="button" id="add-certification" class="cpbn-add-certification">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Add Certification
                 </button>
             </div>
 
@@ -577,20 +725,20 @@
                     <input type="text" name="career_goals_text"
                            value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}"
                            placeholder="e.g. Software Engineer, Data Scientist">
+                    @error('career_goals_text')<p class="err">{{ $message }}</p>@enderror
                 </div>
                 <div class="cpbn-field full" style="margin-bottom:16px">
                     <label>Your Vision Statement</label>
                     <textarea name="vision_statement" rows="2">{{ old('vision_statement', $user->aspirations->vision_statement ?? '') }}</textarea>
+                    @error('vision_statement')<p class="err">{{ $message }}</p>@enderror
                 </div>
                 <div class="cpbn-field full">
                     <label>Long Term Goals</label>
                     <textarea name="long_term_goals" rows="2">{{ old('long_term_goals', $user->aspirations->long_term_goals ?? '') }}</textarea>
+                    @error('long_term_goals')<p class="err">{{ $message }}</p>@enderror
                 </div>
             </div>
 
-            <!-- ============================================ -->
-            <!-- SUBMIT BUTTON - NO data-confirm-save         -->
-            <!-- ============================================ -->
             <div class="cpbn-submit-row">
                 <button type="submit" class="cpbn-btn cpbn-btn-primary">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
@@ -603,192 +751,12 @@
     </div>
 </div>
 
-<script>
-    const certificationList = document.getElementById('certification-list');
-    let certificationIndex = Number(certificationList.dataset.nextIndex);
-
-    document
-        .getElementById('add-certification')
-        .addEventListener('click', function () {
-
-            const card = document.createElement('div');
-
-            card.className = 'cpbn-certification-card';
-
-            card.innerHTML = `
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>
-                            Certification Name
-                            <span class="req">*</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            name="certifications[${certificationIndex}][certification_name]"
-                            placeholder="e.g. AWS Cloud Practitioner"
-                            required
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Issuing Organisation</label>
-
-                        <input
-                            type="text"
-                            name="certifications[${certificationIndex}][issuing_organization]"
-                            placeholder="e.g. AWS, Cisco, Politeknik Brunei"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Issue Date</label>
-
-                        <input
-                            type="date"
-                            name="certifications[${certificationIndex}][issue_date]"
-                            max="{{ now()->format('Y-m-d') }}"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Certificate File</label>
-
-                        <input
-                            type="file"
-                            name="certifications[${certificationIndex}][certificate_file]"
-                            accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                        >
-
-                        <small class="cpbn-file-note">
-                            PDF, JPG, JPEG or PNG · Maximum 5 MB
-                        </small>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    class="cpbn-remove-certification"
-                    onclick="removeCertification(this)"
-                >
-                    Remove Certification
-                </button>
-            `;
-
-            certificationList.appendChild(card);
-
-            certificationIndex++;
-        });
-
-    function removeCertification(button) {
-        button.closest('.cpbn-certification-card').remove();
-    }
-
-     const projectList = document.getElementById('project-list');
-    let projectIndex = Number(projectList.dataset.nextIndex);
-
-    document
-        .getElementById('add-project')
-        .addEventListener('click', function () {
-            const card = document.createElement('div');
-            card.className = 'cpbn-project-card';
-            card.style.cssText = 'border:1px solid var(--line);background:#faf8f1;border-radius:6px;padding:20px;margin-bottom:16px;';
-
-            card.innerHTML = `
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>
-                            Project Title <span class="req">*</span>
-                        </label>
-                        <input
-                            type="text"
-                            name="projects[${projectIndex}][title]"
-                            placeholder="e.g. E-Commerce Website"
-                            required
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Your Role</label>
-                        <input
-                            type="text"
-                            name="projects[${projectIndex}][role]"
-                            placeholder="e.g. Lead Developer"
-                        >
-                    </div>
-
-                    <div class="cpbn-field full">
-                        <label>Description</label>
-                        <textarea
-                            name="projects[${projectIndex}][description]"
-                            rows="2"
-                            placeholder="Brief description of the project"
-                        ></textarea>
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Technologies Used</label>
-                        <input
-                            type="text"
-                            name="projects[${projectIndex}][technologies_used]"
-                            placeholder="e.g. Python, React, MySQL"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Project URL (Optional)</label>
-                        <input
-                            type="url"
-                            name="projects[${projectIndex}][project_url]"
-                            placeholder="https://github.com/your-project"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Start Date</label>
-                        <input
-                            type="date"
-                            name="projects[${projectIndex}][start_date]"
-                        >
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>End Date</label>
-                        <input
-                            type="date"
-                            name="projects[${projectIndex}][end_date]"
-                        >
-                    </div>
-
-                    <div class="cpbn-field full">
-                        <label>Achievements</label>
-                        <textarea
-                            name="projects[${projectIndex}][achievements]"
-                            rows="2"
-                            placeholder="What did you accomplish?"
-                        ></textarea>
-                    </div>
-                </div>
-
-                <button
-                    type="button"
-                    class="cpbn-remove-project"
-                    onclick="removeProject(this)"
-                    style="margin-top:12px;border:0;background:transparent;color:#b45353;cursor:pointer;font-size:12.5px;padding:0;"
-                >
-                    Remove Project
-                </button>
-            `;
-
-            projectList.appendChild(card);
-            projectIndex++;
-        });
-
-    function removeProject(button) {
-        button.closest('.cpbn-project-card').remove();
-    }
-</script>
-
-</script>
+<!-- 
+    ============================================
+    JAVASCRIPT IS IN app.js
+    ============================================
+    All dynamic functionality (projects, certifications, 
+    phone validation, modals) is handled in resources/js/app.js
+-->
 
 @endsection

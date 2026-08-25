@@ -117,7 +117,7 @@ class UserController extends Controller
         $rules['email'][] = 'unique:users,email,' . $id;
 
         // Phone validation
-        $rules['phone'] = User::getPhoneValidationRules();
+        $rules['phone'] = ['nullable', 'string', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'];
 
         // Only require student_id and programme if role is student
         if ($request->role === 'student') {
