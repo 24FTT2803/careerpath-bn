@@ -161,12 +161,11 @@ class ProfileController extends Controller
         }
 
         // Process Projects (comma separated)
-        if ($request->filled('projects_text')) {
-            $projectTitles = array_filter(array_map('trim', explode(',', $request->projects_text)));
-            $this->syncProjects($user, $projectTitles);
-        } else {
-            $user->projects()->delete();
-        }
+        if ($request->has('projects') && is_array($request->projects)) {
+        $this->syncProjects($user, $request->projects);
+    } else {
+        $user->projects()->delete();
+    }
 
         // Process Certifications
         $this->syncCertifications($user, $request);
@@ -435,19 +434,73 @@ class ProfileController extends Controller
     }
 
     /**
-     * Sync projects.
-     */
-    private function syncProjects(User $user, array $projectTitles)
-    {
-        $user->projects()->delete();
-
-        foreach ($projectTitles as $title) {
-            $user->projects()->create([
-                'title' => $title,
-                'description' => '',
-            ]);
+ * Sync projects.
+ */
+private function syncProjects(User $user, array $projects)
+{
+    $existingIds = [];
+    
+    foreach ($projects as $projectData) {
+        // If project has an ID, update existing
+        if (isset($projectData['id']) && !empty($projectData['id'])) {
+            $project = StudentProject::where('user_id', $user->id)
+                ->find($projectData['id']);
+            
+            if ($project) {
+                $project->update([
+                    'title' => $projectData['title'] ?? '',
+                    'description' => $projectData['description'] ?? '',
+                    'technologies_used' => $this->processCommaList($projectData['technologies_used'] ?? ''),
+                    'role' => $projectData['role'] ?? '',
+                    'project_url' => $projectData['project_url'] ?? '',
+                    'start_date' => $projectData['start_date'] ?? null,
+                    'end_date' => $projectData['end_date'] ?? null,
+                    'achievements' => $projectData['achievements'] ?? '',
+                ]);
+                $existingIds[] = $project->id;
+                continue;
+            }
         }
+        
+        // Create new project (skip if title is empty)
+        if (empty($projectData['title'])) {
+            continue;
+        }
+        
+        $project = StudentProject::create([
+            'user_id' => $user->id,
+            'title' => $projectData['title'],
+            'description' => $projectData['description'] ?? '',
+            'technologies_used' => $this->processCommaList($projectData['technologies_used'] ?? ''),
+            'role' => $projectData['role'] ?? '',
+            'project_url' => $projectData['project_url'] ?? '',
+            'start_date' => $projectData['start_date'] ?? null,
+            'end_date' => $projectData['end_date'] ?? null,
+            'achievements' => $projectData['achievements'] ?? '',
+        ]);
+        $existingIds[] = $project->id;
     }
+    
+    // Delete removed projects
+    if (!empty($existingIds)) {
+        StudentProject::where('user_id', $user->id)
+            ->whereNotIn('id', $existingIds)
+            ->delete();
+    } else {
+        $user->projects()->delete();
+    }
+}
+
+/**
+ * Helper: Process comma-separated list to array
+ */
+private function processCommaList($input)
+{
+    if (empty($input)) {
+        return [];
+    }
+    return array_filter(array_map('trim', explode(',', $input)));
+}
 
     /**
      * Sync the student's certifications and uploaded evidence.

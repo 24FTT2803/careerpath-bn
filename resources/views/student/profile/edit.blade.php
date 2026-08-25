@@ -268,19 +268,163 @@
             </div>
 
             <!-- SECTION 5: Projects & Experience -->
-            <div class="cpbn-section">
-                <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                    Projects &amp; Experience
-                </h3>
-                <p class="desc">Add your projects (comma separated)</p>
-                <div class="cpbn-field">
-                    <label>Project Titles</label>
-                    <input type="text" name="projects_text"
-                           value="{{ old('projects_text', implode(', ', $user->projects->pluck('title')->toArray())) }}"
-                           placeholder="e.g. E-Commerce Website, Mobile Banking App">
+<div class="cpbn-section">
+    <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Projects &amp; Experience
+    </h3>
+
+    <p class="desc">Add your projects and experience</p>
+
+    @php
+        $projectRows = old('projects');
+
+        if ($projectRows === null) {
+            $projectRows = $user->projects
+                ->map(function ($project) {
+                    return [
+                        'id' => $project->id,
+                        'title' => $project->title,
+                        'description' => $project->description,
+                        'technologies_used' => $project->technologies_used,
+                        'role' => $project->role,
+                        'start_date' => $project->start_date?->format('Y-m-d'),
+                        'end_date' => $project->end_date?->format('Y-m-d'),
+                        'project_url' => $project->project_url,
+                        'achievements' => $project->achievements,
+                    ];
+                })
+                ->values()
+                ->all();
+        }
+
+        $nextProjectIndex = empty($projectRows)
+            ? 0
+            : max(array_map('intval', array_keys($projectRows))) + 1;
+    @endphp
+
+    <div
+        id="project-list"
+        data-next-index="{{ $nextProjectIndex }}"
+    >
+        @foreach ($projectRows as $index => $project)
+            @php
+                $existingProject = ! empty($project['id'])
+                    ? $user->projects->firstWhere('id', (int) $project['id'])
+                    : null;
+            @endphp
+
+            <div class="cpbn-project-card" style="border:1px solid var(--line);background:#faf8f1;border-radius:6px;padding:20px;margin-bottom:16px;">
+                @if (! empty($project['id']))
+                    <input
+                        type="hidden"
+                        name="projects[{{ $index }}][id]"
+                        value="{{ $project['id'] }}"
+                    >
+                @endif
+
+                <div class="cpbn-fgrid">
+                    <div class="cpbn-field">
+                        <label>
+                            Project Title <span class="req">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="projects[{{ $index }}][title]"
+                            value="{{ $project['title'] ?? '' }}"
+                            placeholder="e.g. E-Commerce Website"
+                            required
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Your Role</label>
+                        <input
+                            type="text"
+                            name="projects[{{ $index }}][role]"
+                            value="{{ $project['role'] ?? '' }}"
+                            placeholder="e.g. Lead Developer"
+                        >
+                    </div>
+
+                    <div class="cpbn-field full">
+                        <label>Description</label>
+                        <textarea
+                            name="projects[{{ $index }}][description]"
+                            rows="2"
+                            placeholder="Brief description of the project"
+                        >{{ $project['description'] ?? '' }}</textarea>
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Technologies Used</label>
+                        <input
+                            type="text"
+                            name="projects[{{ $index }}][technologies_used]"
+                            value="{{ is_array($project['technologies_used'] ?? null) ? implode(', ', $project['technologies_used']) : ($project['technologies_used'] ?? '') }}"
+                            placeholder="e.g. Python, React, MySQL"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Project URL (Optional)</label>
+                        <input
+                            type="url"
+                            name="projects[{{ $index }}][project_url]"
+                            value="{{ $project['project_url'] ?? '' }}"
+                            placeholder="https://github.com/your-project"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Start Date</label>
+                        <input
+                            type="date"
+                            name="projects[{{ $index }}][start_date]"
+                            value="{{ $project['start_date'] ?? '' }}"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>End Date</label>
+                        <input
+                            type="date"
+                            name="projects[{{ $index }}][end_date]"
+                            value="{{ $project['end_date'] ?? '' }}"
+                        >
+                    </div>
+
+                    <div class="cpbn-field full">
+                        <label>Achievements</label>
+                        <textarea
+                            name="projects[{{ $index }}][achievements]"
+                            rows="2"
+                            placeholder="What did you accomplish?"
+                        >{{ $project['achievements'] ?? '' }}</textarea>
+                    </div>
                 </div>
+
+                <button
+                    type="button"
+                    class="cpbn-remove-project"
+                    onclick="removeProject(this)"
+                    style="margin-top:12px;border:0;background:transparent;color:#b45353;cursor:pointer;font-size:12.5px;padding:0;"
+                >
+                    Remove Project
+                </button>
             </div>
+        @endforeach
+    </div>
+
+    <button
+        type="button"
+        id="add-project"
+        class="cpbn-add-project"
+        style="border:1px dashed var(--gold);background:transparent;color:#8a6420;padding:10px 16px;border-radius:5px;cursor:pointer;font-size:13.5px;font-weight:500;"
+    >
+        + Add Project
+    </button>
+</div>
 
             <!-- SECTION 6: Certifications -->
             <div class="cpbn-section">
@@ -539,6 +683,112 @@
     function removeCertification(button) {
         button.closest('.cpbn-certification-card').remove();
     }
+
+     const projectList = document.getElementById('project-list');
+    let projectIndex = Number(projectList.dataset.nextIndex);
+
+    document
+        .getElementById('add-project')
+        .addEventListener('click', function () {
+            const card = document.createElement('div');
+            card.className = 'cpbn-project-card';
+            card.style.cssText = 'border:1px solid var(--line);background:#faf8f1;border-radius:6px;padding:20px;margin-bottom:16px;';
+
+            card.innerHTML = `
+                <div class="cpbn-fgrid">
+                    <div class="cpbn-field">
+                        <label>
+                            Project Title <span class="req">*</span>
+                        </label>
+                        <input
+                            type="text"
+                            name="projects[${projectIndex}][title]"
+                            placeholder="e.g. E-Commerce Website"
+                            required
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Your Role</label>
+                        <input
+                            type="text"
+                            name="projects[${projectIndex}][role]"
+                            placeholder="e.g. Lead Developer"
+                        >
+                    </div>
+
+                    <div class="cpbn-field full">
+                        <label>Description</label>
+                        <textarea
+                            name="projects[${projectIndex}][description]"
+                            rows="2"
+                            placeholder="Brief description of the project"
+                        ></textarea>
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Technologies Used</label>
+                        <input
+                            type="text"
+                            name="projects[${projectIndex}][technologies_used]"
+                            placeholder="e.g. Python, React, MySQL"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Project URL (Optional)</label>
+                        <input
+                            type="url"
+                            name="projects[${projectIndex}][project_url]"
+                            placeholder="https://github.com/your-project"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>Start Date</label>
+                        <input
+                            type="date"
+                            name="projects[${projectIndex}][start_date]"
+                        >
+                    </div>
+
+                    <div class="cpbn-field">
+                        <label>End Date</label>
+                        <input
+                            type="date"
+                            name="projects[${projectIndex}][end_date]"
+                        >
+                    </div>
+
+                    <div class="cpbn-field full">
+                        <label>Achievements</label>
+                        <textarea
+                            name="projects[${projectIndex}][achievements]"
+                            rows="2"
+                            placeholder="What did you accomplish?"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    class="cpbn-remove-project"
+                    onclick="removeProject(this)"
+                    style="margin-top:12px;border:0;background:transparent;color:#b45353;cursor:pointer;font-size:12.5px;padding:0;"
+                >
+                    Remove Project
+                </button>
+            `;
+
+            projectList.appendChild(card);
+            projectIndex++;
+        });
+
+    function removeProject(button) {
+        button.closest('.cpbn-project-card').remove();
+    }
+</script>
+
 </script>
 
 @endsection
