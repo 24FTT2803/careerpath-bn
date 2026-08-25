@@ -114,51 +114,64 @@
             @method('PUT')
 
             <!-- SECTION 1: Personal Information -->
-            <div class="cpbn-section">
-                <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                    Personal Information
-                </h3>
+<div class="cpbn-section">
+    <h3>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+        Personal Information
+    </h3>
 
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>First Name <span class="req">*</span></label>
-                        <input type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required>
-                    </div>
-                    <div class="cpbn-field">
-                        <label>Last Name <span class="req">*</span></label>
-                        <input type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required>
-                    </div>
-                    <div class="cpbn-field">
-                        <label>Email <span class="req">*</span></label>
-                        <input type="email" value="{{ $user->email }}" disabled>
-                    </div>
-                    <div class="cpbn-field">
-                        <label>Student ID <span class="req">*</span></label>
-                        <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" required>
-                    </div>
-                    <div class="cpbn-field">
-                        <label>Phone Number</label>
-                        <input type="text" name="phone" value="{{ old('phone', $user->profile->phone ?? '') }}">
-                    </div>
-                    <div class="cpbn-field">
-                        <label>Date of Birth</label>
-                        <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}">
-                    </div>
-                    <div class="cpbn-field">
-                        <label>Nationality</label>
-                        <input type="text" name="nationality" value="{{ old('nationality', $user->profile->nationality ?? '') }}">
-                    </div>
-                    <div class="cpbn-field full">
-                        <label>Address</label>
-                        <textarea name="address" rows="2">{{ old('address', $user->profile->address ?? '') }}</textarea>
-                    </div>
-                    <div class="cpbn-field full">
-                        <label>Bio / About You</label>
-                        <textarea name="bio" rows="3">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
-                    </div>
-                </div>
-            </div>
+    <div class="cpbn-fgrid">
+        <div class="cpbn-field">
+            <label>First Name <span class="req">*</span></label>
+            <input type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required>
+        </div>
+        <div class="cpbn-field">
+            <label>Last Name <span class="req">*</span></label>
+            <input type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required>
+        </div>
+        <div class="cpbn-field">
+            <label>Email <span class="req">*</span></label>
+            <input type="email" value="{{ $user->email }}" disabled>
+        </div>
+        <div class="cpbn-field">
+            <label>Student ID <span class="req">*</span></label>
+            <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" required>
+        </div>
+        <div class="cpbn-field">
+            <label>Phone Number</label>
+            <input type="text" name="phone" value="{{ old('phone', $user->profile->phone ?? '') }}">
+        </div>
+        <div class="cpbn-field">
+            <label>Date of Birth</label>
+            <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}">
+        </div>
+        <div class="cpbn-field">
+            <label>Nationality</label>
+            <select name="nationality" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200">
+                <option value="">Select your nationality</option>
+                <option value="Brunei Darussalam" {{ old('nationality', $user->profile->nationality ?? '') == 'Brunei Darussalam' ? 'selected' : '' }}>🇧🇳 Brunei Darussalam</option>
+                <option value="Cambodia" {{ old('nationality', $user->profile->nationality ?? '') == 'Cambodia' ? 'selected' : '' }}>🇰🇭 Cambodia</option>
+                <option value="Indonesia" {{ old('nationality', $user->profile->nationality ?? '') == 'Indonesia' ? 'selected' : '' }}>🇮🇩 Indonesia</option>
+                <option value="Laos" {{ old('nationality', $user->profile->nationality ?? '') == 'Laos' ? 'selected' : '' }}>🇱🇦 Laos</option>
+                <option value="Malaysia" {{ old('nationality', $user->profile->nationality ?? '') == 'Malaysia' ? 'selected' : '' }}>🇲🇾 Malaysia</option>
+                <option value="Myanmar" {{ old('nationality', $user->profile->nationality ?? '') == 'Myanmar' ? 'selected' : '' }}>🇲🇲 Myanmar</option>
+                <option value="Philippines" {{ old('nationality', $user->profile->nationality ?? '') == 'Philippines' ? 'selected' : '' }}>🇵🇭 Philippines</option>
+                <option value="Singapore" {{ old('nationality', $user->profile->nationality ?? '') == 'Singapore' ? 'selected' : '' }}>🇸🇬 Singapore</option>
+                <option value="Thailand" {{ old('nationality', $user->profile->nationality ?? '') == 'Thailand' ? 'selected' : '' }}>🇹🇭 Thailand</option>
+                <option value="Timor-Leste" {{ old('nationality', $user->profile->nationality ?? '') == 'Timor-Leste' ? 'selected' : '' }}>🇹🇱 Timor-Leste</option>
+                <option value="Vietnam" {{ old('nationality', $user->profile->nationality ?? '') == 'Vietnam' ? 'selected' : '' }}>🇻🇳 Vietnam</option>
+            </select>
+        </div>
+        <div class="cpbn-field full">
+            <label>Address</label>
+            <textarea name="address" rows="2">{{ old('address', $user->profile->address ?? '') }}</textarea>
+        </div>
+        <div class="cpbn-field full">
+            <label>Bio / About You</label>
+            <textarea name="bio" rows="3">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
+        </div>
+    </div>
+</div>
 
             <!-- SECTION 2: Academic Information -->
             <div class="cpbn-section">

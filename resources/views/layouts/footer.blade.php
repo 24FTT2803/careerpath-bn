@@ -28,7 +28,7 @@
                         </div>
                     </a>
                     <!-- BIICF Logo -->
-                    <a href="https://biicf.bn" target="_blank" class="inline-block">
+                    <a href="https://www.biicf.bn" target="_blank" class="inline-block">
                         <img src="{{ asset('images/biicf-logo.png') }}" 
                              alt="BIICF" 
                              class="h-12 w-auto hover:opacity-80 transition-opacity"
@@ -49,7 +49,7 @@
                     <li><a href="{{ route('student.dashboard') }}" class="text-gray-300 hover:text-amber-400 transition">Dashboard</a></li>
                     <li><a href="{{ route('student.profile') }}" class="text-gray-300 hover:text-amber-400 transition">Profile</a></li>
                     <li><a href="{{ route('student.milestones') }}" class="text-gray-300 hover:text-amber-400 transition">Milestones</a></li>
-                    <li><a href="#" class="text-gray-300 hover:text-amber-400 transition">About BIICF</a></li>
+                    <li><a href="{{ route('student.biicf-explorer.index') }}" class="text-gray-300 hover:text-amber-400 transition">About BIICF</a></li>
                 </ul>
             </div>
 
@@ -57,9 +57,9 @@
             <div>
                 <h4 class="font-semibold text-white mb-4">Resources</h4>
                 <ul class="space-y-2 text-sm">
-                    <li><a href="#" class="text-gray-300 hover:text-amber-400 transition">BIICF Framework</a></li>
-                    <li><a href="#" class="text-gray-300 hover:text-amber-400 transition">ICT Sub-Sectors</a></li>
-                    <li><a href="#" class="text-gray-300 hover:text-amber-400 transition">Competencies</a></li>
+                    <li><a href="{{ route('student.biicf-explorer.index') }}" class="text-gray-300 hover:text-amber-400 transition">BIICF Framework</a></li>
+                    <li><a href="{{ route('student.biicf-explorer.index') }}" class="text-gray-300 hover:text-amber-400 transition">ICT Sub-Sectors</a></li>
+                    <li><a href="{{ route('student.biicf-explorer.index') }}" class="text-gray-300 hover:text-amber-400 transition">Competencies</a></li>
                     <li><a href="#" class="text-gray-300 hover:text-amber-400 transition">Career Guide</a></li>
                 </ul>
             </div>
