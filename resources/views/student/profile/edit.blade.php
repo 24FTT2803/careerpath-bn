@@ -613,26 +613,55 @@
             </div>
 
             <!-- SECTION 4: Interests -->
-            <div class="section">
-                <div class="title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
-                    Interests &amp; Preferences
-                </div>
-                <p class="desc">What are you interested in?</p>
-                @php
-                    $interestOptions = ['Problem Solving', 'Teamwork', 'Communication', 'Leadership', 'Creativity', 'Analytical Thinking', 'Research', 'Writing', 'Public Speaking', 'Programming', 'Data Analysis', 'Networking', 'Cybersecurity', 'Cloud Computing', 'Project Management'];
-                    $savedInterests = $user->interests->pluck('interest_name')->toArray();
-                @endphp
-                <div class="cpbn-checks">
-                    @foreach($interestOptions as $interest)
-                        <label class="cpbn-check">
-                            <input type="checkbox" name="interests[]" value="{{ $interest }}" {{ in_array($interest, $savedInterests) ? 'checked' : '' }}>
-                            <span>{{ $interest }}</span>
-                        </label>
-                    @endforeach
-                </div>
-                @error('interests')<div class="error">{{ $message }}</div>@enderror
-            </div>
+<div class="section">
+    <div class="title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
+        Interests &amp; Preferences
+    </div>
+    <p class="desc">What are you interested in?</p>
+    @php
+        $interestOptions = ['Problem Solving', 'Teamwork', 'Communication', 'Leadership', 'Creativity', 'Analytical Thinking', 'Research', 'Writing', 'Public Speaking', 'Programming', 'Data Analysis', 'Networking', 'Cybersecurity', 'Cloud Computing', 'Project Management'];
+        $savedInterests = $user->interests->pluck('interest_name')->toArray();
+        $savedInterestNames = $savedInterests;
+        
+        // Check if there are custom interests (not in the predefined list)
+        $customInterests = [];
+        $hasOtherInterest = false;
+        foreach ($savedInterests as $interest) {
+            if (!in_array($interest, $interestOptions)) {
+                $customInterests[] = $interest;
+                $hasOtherInterest = true;
+            }
+        }
+        $otherInterestText = $hasOtherInterest ? implode(', ', $customInterests) : '';
+    @endphp
+    <div class="cpbn-checks">
+        @foreach($interestOptions as $interest)
+            <label class="cpbn-check">
+                <input type="checkbox" name="interests[]" value="{{ $interest }}" {{ in_array($interest, $savedInterests) ? 'checked' : '' }}>
+                <span>{{ $interest }}</span>
+            </label>
+        @endforeach
+        <!-- Others Option -->
+        <label class="cpbn-check">
+            <input type="checkbox" name="interests[]" id="interest-others" value="others" {{ $hasOtherInterest ? 'checked' : '' }} onchange="toggleInterestOtherField()">
+            <span>Others</span>
+        </label>
+    </div>
+    <!-- Others Text Field -->
+    <div id="interest-others-field" style="{{ $hasOtherInterest ? 'display:block' : 'display:none' }}; margin-top:12px;">
+        <div class="cpbn-field">
+            <label>Please specify your other interests <span class="req">*</span></label>
+            <input type="text" name="interest_others_text" id="interest-others-text" 
+                   value="{{ old('interest_others_text', $otherInterestText) }}" 
+                   placeholder="e.g. AI, Machine Learning, Graphic Design (separate with commas)"
+                   {{ $hasOtherInterest ? 'required' : '' }}>
+            <span class="hint">Separate multiple interests with commas</span>
+        </div>
+    </div>
+    @error('interests')<div class="error">{{ $message }}</div>@enderror
+    @error('interest_others_text')<div class="error">{{ $message }}</div>@enderror
+</div>
 
             <!-- SECTION 5: Projects -->
             <div class="section">

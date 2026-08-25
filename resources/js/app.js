@@ -617,8 +617,37 @@ document.addEventListener('DOMContentLoaded', function() {
             card.remove();
         };
     }
-
 });
+
+// ============================================
+// INTERESTS - Others Toggle
+// ============================================
+
+function toggleInterestOtherField() {
+    const checkbox = document.getElementById('interest-others');
+    const field = document.getElementById('interest-others-field');
+    const textInput = document.getElementById('interest-others-text');
+    
+    if (checkbox.checked) {
+        field.style.display = 'block';
+        textInput.setAttribute('required', 'required');
+        textInput.focus();
+    } else {
+        field.style.display = 'none';
+        textInput.removeAttribute('required');
+        textInput.value = '';
+    }
+}
+
+// Attach event listener on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const otherCheckbox = document.getElementById('interest-others');
+    if (otherCheckbox) {
+        otherCheckbox.addEventListener('change', toggleInterestOtherField);
+    }
+});
+
+
 
 // ============================================
 // START ALPINE.JS

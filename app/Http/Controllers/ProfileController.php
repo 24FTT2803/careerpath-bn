@@ -107,9 +107,23 @@ class ProfileController extends Controller
         }
 
         // Process Interests
-        if ($request->has('interests')) {
-            $this->syncInterests($user, $request->interests);
+    if ($request->has('interests')) {
+        $interests = $request->interests;
+        
+        // Check if "others" is selected and add custom interests
+        if (in_array('others', $interests) && $request->filled('interest_others_text')) {
+            // Remove "others" from the array
+            $interests = array_filter($interests, function($item) {
+                return $item !== 'others';
+            });
+            
+            // Add custom interests from the text field
+            $customInterests = array_filter(array_map('trim', explode(',', $request->interest_others_text)));
+            $interests = array_merge($interests, $customInterests);
         }
+        
+        $this->syncInterests($user, $interests);
+    }
 
         // Process Projects (comma separated)
         if ($request->filled('projects_text')) {
@@ -177,16 +191,25 @@ class ProfileController extends Controller
         }
     }
 
-    private function syncInterests($user, $interests)
-    {
-        $user->interests()->delete();
-        foreach ($interests as $interest) {
-            $user->interests()->create([
-                'interest_name' => $interest,
-                'category' => 'career',
-            ]);
-        }
+    /**
+ * Sync interests.
+ */
+private function syncInterests(User $user, array $interests)
+{
+    $user->interests()->delete();
+    
+    // Filter out "others" from the interests array
+    $filteredInterests = array_filter($interests, function($interest) {
+        return $interest !== 'others';
+    });
+    
+    foreach ($filteredInterests as $interest) {
+        $user->interests()->create([
+            'interest_name' => $interest,
+            'category' => 'career',
+        ]);
     }
+}
 
     /**
  * Sync projects.
