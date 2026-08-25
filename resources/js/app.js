@@ -156,7 +156,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // DELETE CONFIRMATION - FORMS & BUTTONS
     // ============================================
     
-    // Handle forms with data-confirm-delete
     document.querySelectorAll('form[data-confirm-delete]').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             const itemName = this.dataset.itemName || 'this item';
@@ -181,12 +180,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle buttons with data-confirm-delete (including dynamically created ones)
     document.querySelectorAll('[data-confirm-delete]').forEach(function(element) {
-        // Skip if it's a form (already handled above)
         if (element.tagName === 'FORM') return;
         
-        // For buttons and links
         element.addEventListener('click', function(e) {
             const itemName = this.dataset.itemName || 'this item';
             e.preventDefault();
@@ -201,18 +197,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 cancelText: 'Cancel',
                 type: 'danger',
                 onConfirm: function() {
-                    // If it's a link, navigate
                     if (elementRef.tagName === 'A') {
                         window.location.href = elementRef.href;
-                    }
-                    // If it's a button, find the form and submit
-                    else if (elementRef.tagName === 'BUTTON') {
+                    } else if (elementRef.tagName === 'BUTTON') {
                         const form = elementRef.closest('form');
                         if (form) {
                             form.submit();
-                        } else {
-                            // If no form, just trigger the click
-                            elementRef.click();
                         }
                     }
                 },
@@ -224,10 +214,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ============================================
-    // UPDATE CONFIRMATION - FORMS & BUTTONS
+    // UPDATE CONFIRMATION
     // ============================================
     
-    // Handle forms with data-confirm-update
     document.querySelectorAll('form[data-confirm-update]').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             const itemName = this.dataset.itemName || 'this item';
@@ -252,7 +241,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Handle buttons with data-confirm-update
     document.querySelectorAll('[data-confirm-update]').forEach(function(element) {
         if (element.tagName === 'FORM') return;
         
@@ -316,27 +304,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // ============================================
     
     function validatePhone(input) {
-        // Store original value
         const originalValue = input.value;
-        
-        // Remove any character that is not allowed
         const cleaned = originalValue.replace(/[^\d\+\s\-\(\)]/g, '');
         
-        // Update the input if it changed
         if (cleaned !== originalValue) {
             input.value = cleaned;
         }
         
-        // Check if the cleaned value meets the requirements
         const isValid = /^[\+\d\s\-\(\)]{7,20}$/.test(cleaned);
         
-        // Update input styling
         if (cleaned.length > 0) {
             if (!isValid) {
                 input.style.borderColor = '#c65b4e';
                 input.style.boxShadow = '0 0 0 3px rgba(198,91,78,0.15)';
                 
-                // Show inline error message if not already shown
                 let errorMsg = input.parentElement.querySelector('.phone-error');
                 if (!errorMsg) {
                     errorMsg = document.createElement('small');
@@ -349,7 +330,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.style.borderColor = '#4c8a68';
                 input.style.boxShadow = '0 0 0 3px rgba(76,138,104,0.15)';
                 
-                // Remove error message if valid
                 const errorMsg = input.parentElement.querySelector('.phone-error');
                 if (errorMsg) {
                     errorMsg.remove();
@@ -359,7 +339,6 @@ document.addEventListener('DOMContentLoaded', function() {
             input.style.borderColor = '';
             input.style.boxShadow = '';
             
-            // Remove error message if empty
             const errorMsg = input.parentElement.querySelector('.phone-error');
             if (errorMsg) {
                 errorMsg.remove();
@@ -367,15 +346,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Auto-attach phone validation
     const phoneInputs = document.querySelectorAll('input[name="phone"], input[type="tel"]');
     phoneInputs.forEach(input => {
-        // Validate on input (typing)
         input.addEventListener('input', function() {
             validatePhone(this);
         });
-        
-        // Validate on blur (leaving the field)
         input.addEventListener('blur', function() {
             validatePhone(this);
         });
@@ -390,7 +365,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const titleError = document.getElementById('title-error');
     
     if (milestoneForm && titleInput) {
-        // Validate on submit
         milestoneForm.addEventListener('submit', function(e) {
             const title = titleInput.value.trim();
             
@@ -411,7 +385,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return true;
         });
 
-        // Clear error on input
         titleInput.addEventListener('input', function() {
             if (this.value.trim() !== '') {
                 this.classList.remove('error-input');
@@ -421,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Clear error on focus
         titleInput.addEventListener('focus', function() {
             if (this.value.trim() !== '') {
                 this.classList.remove('error-input');
@@ -441,7 +413,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (projectList) {
         let projectIndex = Number(projectList.dataset.nextIndex) || 0;
 
-        // If there are existing projects, find the highest index
         const existingProjectCards = projectList.querySelectorAll('.cpbn-project-card');
         if (existingProjectCards.length > 0) {
             let highestIndex = 0;
@@ -457,7 +428,6 @@ document.addEventListener('DOMContentLoaded', function() {
             projectIndex = highestIndex + 1;
         }
 
-        // Add Project
         const addProjectBtn = document.getElementById('add-project');
         if (addProjectBtn) {
             addProjectBtn.addEventListener('click', function() {
@@ -468,7 +438,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 card.innerHTML = `
                     <span class="cpbn-project-number">Project #${iteration}</span>
-
                     <div class="cpbn-fgrid">
                         <div class="cpbn-field">
                             <label>Project Title <span class="req">*</span></label>
@@ -510,43 +479,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                       placeholder="What did you accomplish?"></textarea>
                         </div>
                     </div>
-
                     <button type="button" class="cpbn-remove-project" onclick="removeProject(this)" data-confirm-delete data-item-name="this new project">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                        Remove Project
+                        <i class="fas fa-trash-alt"></i> Remove
                     </button>
                 `;
 
                 projectList.appendChild(card);
                 projectIndex++;
-            });
-        }
-
-        // Remove Project - Make it global so onclick works
-        window.removeProject = function(button) {
-            const card = button.closest('.cpbn-project-card');
-            // Don't remove if it's the last one
-            if (projectList.children.length <= 1) {
-                // Just clear the inputs instead of removing
-                const inputs = card.querySelectorAll('input, textarea');
-                inputs.forEach(input => {
-                    input.value = '';
-                });
-                return;
-            }
-            card.remove();
-
-            // Renumber remaining projects
-            const cards = projectList.querySelectorAll('.cpbn-project-card');
-            cards.forEach((card, index) => {
-                const numberSpan = card.querySelector('.cpbn-project-number');
-                if (numberSpan) {
-                    numberSpan.textContent = `Project #${index + 1}`;
+                
+                // Mark form as changed when adding a project
+                if (typeof window.setFormChanged === 'function') {
+                    window.setFormChanged(true);
                 }
             });
-        };
+        }
     }
 
     // ============================================
@@ -558,7 +504,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (certificationList) {
         let certificationIndex = Number(certificationList.dataset.nextIndex) || 0;
 
-        // Add Certification
         const addCertBtn = document.getElementById('add-certification');
         if (addCertBtn) {
             addCertBtn.addEventListener('click', function() {
@@ -589,65 +534,208 @@ document.addEventListener('DOMContentLoaded', function() {
                             <small class="cpbn-file-note">PDF, JPG, JPEG or PNG · Maximum 5 MB</small>
                         </div>
                     </div>
-
                     <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)" data-confirm-delete data-item-name="this new certification">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
-                            <path d="M18 6L6 18M6 6l12 12"/>
-                        </svg>
-                        Remove Certification
+                        <i class="fas fa-trash-alt"></i> Remove
                     </button>
                 `;
 
                 certificationList.appendChild(card);
                 certificationIndex++;
+                
+                // Mark form as changed when adding a certification
+                if (typeof window.setFormChanged === 'function') {
+                    window.setFormChanged(true);
+                }
             });
         }
+    }
 
-        // Remove Certification - Make it global
-        window.removeCertification = function(button) {
-            const card = button.closest('.cpbn-certification-card');
-            if (certificationList.children.length <= 1) {
-                // Just clear the inputs instead of removing
-                const inputs = card.querySelectorAll('input, textarea');
-                inputs.forEach(input => {
-                    input.value = '';
-                });
-                return;
+    // ============================================
+    // INTERESTS - Others Toggle
+    // ============================================
+
+    const otherCheckbox = document.getElementById('interest-others');
+    if (otherCheckbox) {
+        otherCheckbox.addEventListener('change', function() {
+            const field = document.getElementById('interest-others-field');
+            const textInput = document.getElementById('interest-others-text');
+            
+            if (this.checked) {
+                field.style.display = 'block';
+                textInput.setAttribute('required', 'required');
+                textInput.focus();
+            } else {
+                field.style.display = 'none';
+                textInput.removeAttribute('required');
+                textInput.value = '';
             }
-            card.remove();
+            
+            // Mark form as changed
+            if (typeof window.setFormChanged === 'function') {
+                window.setFormChanged(true);
+            }
+        });
+    }
+
+    // ============================================
+    // UNSAVED CHANGES WARNING - FIXED
+    // ============================================
+
+    const form = document.getElementById('profile-form') || document.querySelector('form');
+    if (form) {
+        let formChanged = false;
+        const formInputs = form.querySelectorAll('input, select, textarea');
+
+        // Track all initial inputs
+        formInputs.forEach(function(input) {
+            input.addEventListener('change', function() {
+                formChanged = true;
+            });
+            input.addEventListener('input', function() {
+                formChanged = true;
+            });
+        });
+
+        // Track dynamically added inputs using MutationObserver
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1 && node.querySelectorAll) {
+                        const newInputs = node.querySelectorAll('input, select, textarea');
+                        newInputs.forEach(function(input) {
+                            input.addEventListener('change', function() {
+                                formChanged = true;
+                            });
+                            input.addEventListener('input', function() {
+                                formChanged = true;
+                            });
+                        });
+                        if (newInputs.length > 0) {
+                            formChanged = true;
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(form, {
+            childList: true,
+            subtree: true
+        });
+
+        // Checkboxes
+        const checkboxes = form.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.addEventListener('click', function() {
+                formChanged = true;
+            });
+        });
+
+        // ============================================
+        // FIX: Reset flag BEFORE form submission
+        // ============================================
+        form.addEventListener('submit', function() {
+            formChanged = false;
+            if (typeof window.setFormChanged === 'function') {
+                window.setFormChanged(false);
+            }
+        });
+
+        // Also reset on click of submit button (before form submits)
+        form.querySelectorAll('button[type="submit"]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                formChanged = false;
+                if (typeof window.setFormChanged === 'function') {
+                    window.setFormChanged(false);
+                }
+            });
+        });
+
+        // Warn before leaving the page (browser tab/refresh)
+        window.addEventListener('beforeunload', function(e) {
+            if (formChanged) {
+                const message = 'You have unsaved changes. Are you sure you want to leave?';
+                e.preventDefault();
+                e.returnValue = message;
+                return message;
+            }
+        });
+
+        // Warn before clicking on "Back" or navigation links
+        const navLinks = document.querySelectorAll('.back, a[href*="profile"], a[href*="dashboard"], .nav-link, .nav-brand');
+        navLinks.forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                if (formChanged) {
+                    const confirmLeave = confirm('⚠️ You have unsaved changes. Are you sure you want to leave?');
+                    if (!confirmLeave) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        return false;
+                    }
+                }
+            });
+        });
+
+        // Make formChanged globally accessible
+        window.formChanged = formChanged;
+        window.setFormChanged = function(value) {
+            formChanged = value;
+            window.formChanged = value;
         };
     }
 });
 
 // ============================================
-// INTERESTS - Others Toggle
+// GLOBAL REMOVE FUNCTIONS (for onclick)
 // ============================================
 
-function toggleInterestOtherField() {
-    const checkbox = document.getElementById('interest-others');
-    const field = document.getElementById('interest-others-field');
-    const textInput = document.getElementById('interest-others-text');
+window.removeProject = function(button) {
+    const card = button.closest('.cpbn-project-card');
+    const projectList = document.getElementById('project-list');
     
-    if (checkbox.checked) {
-        field.style.display = 'block';
-        textInput.setAttribute('required', 'required');
-        textInput.focus();
-    } else {
-        field.style.display = 'none';
-        textInput.removeAttribute('required');
-        textInput.value = '';
+    if (!projectList) return;
+    
+    if (projectList.children.length <= 1) {
+        const inputs = card.querySelectorAll('input, textarea');
+        inputs.forEach(input => input.value = '');
+        return;
     }
-}
-
-// Attach event listener on page load
-document.addEventListener('DOMContentLoaded', function() {
-    const otherCheckbox = document.getElementById('interest-others');
-    if (otherCheckbox) {
-        otherCheckbox.addEventListener('change', toggleInterestOtherField);
+    
+    card.remove();
+    
+    // Mark as changed
+    if (typeof window.setFormChanged === 'function') {
+        window.setFormChanged(true);
     }
-});
+    
+    const cards = projectList.querySelectorAll('.cpbn-project-card');
+    cards.forEach((card, index) => {
+        const numberSpan = card.querySelector('.cpbn-project-number');
+        if (numberSpan) {
+            numberSpan.textContent = `Project #${index + 1}`;
+        }
+    });
+};
 
-
+window.removeCertification = function(button) {
+    const card = button.closest('.cpbn-certification-card');
+    const certList = document.getElementById('certification-list');
+    
+    if (!certList) return;
+    
+    if (certList.children.length <= 1) {
+        const inputs = card.querySelectorAll('input, textarea');
+        inputs.forEach(input => input.value = '');
+        return;
+    }
+    
+    card.remove();
+    
+    // Mark as changed
+    if (typeof window.setFormChanged === 'function') {
+        window.setFormChanged(true);
+    }
+};
 
 // ============================================
 // START ALPINE.JS

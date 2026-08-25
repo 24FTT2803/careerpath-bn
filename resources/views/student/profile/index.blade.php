@@ -393,10 +393,6 @@
                     <span class="label">CGPA</span>
                     <span class="value">{{ $user->cgpa ?? 'Not set' }}</span>
                 </div>
-                <div class="info-row">
-                    <span class="label">Academic Records</span>
-                    <span class="value">{{ $user->academicRecords->count() ?? 0 }} records</span>
-                </div>
                 @if($user->profile->date_of_birth ?? false)
                     <div class="info-row">
                         <span class="label">Date of Birth</span>

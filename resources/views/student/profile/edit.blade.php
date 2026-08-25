@@ -867,41 +867,4 @@
             });
         };
 
-        // ============================================
-        // CERTIFICATIONS - Dynamic Add/Remove
-        // ============================================
-
-        const certList = document.getElementById('certification-list');
-        let certIndex = Number(certList.dataset.nextIndex) || 0;
-
-        document.getElementById('add-certification').addEventListener('click', function() {
-            const card = document.createElement('div');
-            card.className = 'cpbn-certification-card';
-            card.innerHTML = `
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field"><label>Certification Name <span class="req">*</span></label><input type="text" name="certifications[${certIndex}][certification_name]" placeholder="e.g. AWS Cloud Practitioner" required></div>
-                    <div class="cpbn-field"><label>Issuing Organisation</label><input type="text" name="certifications[${certIndex}][issuing_organization]" placeholder="e.g. AWS, Cisco"></div>
-                    <div class="cpbn-field"><label>Issue Date</label><input type="date" name="certifications[${certIndex}][issue_date]" max="{{ now()->format('Y-m-d') }}"></div>
-                    <div class="cpbn-field"><label>Certificate File</label><input type="file" name="certifications[${certIndex}][certificate_file]" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><span class="cpbn-file-note">PDF, JPG, JPEG or PNG · Max 5MB</span></div>
-                </div>
-                <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)" data-confirm-delete data-item-name="this new certification">
-                    <i class="fas fa-trash-alt"></i> Remove
-                </button>
-            `;
-            certList.appendChild(card);
-            certIndex++;
-        });
-
-        window.removeCertification = function(button) {
-            const card = button.closest('.cpbn-certification-card');
-            if (certList.children.length <= 1) {
-                const inputs = card.querySelectorAll('input, textarea');
-                inputs.forEach(input => input.value = '');
-                return;
-            }
-            card.remove();
-        };
-    });
-</script>
-
 @endsection
