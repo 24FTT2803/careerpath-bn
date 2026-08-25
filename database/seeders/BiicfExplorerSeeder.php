@@ -262,4 +262,8 @@ class BiicfExplorerSeeder extends Seeder
         $securityEngineer->trainings()->syncWithoutDetaching([$trainings['Certified Information Systems Security Professional (CISSP)']->id]);
         $cyberRiskAnalyst->trainings()->syncWithoutDetaching([$trainings['Certified Information Systems Security Professional (CISSP)']->id]);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 2a879682c27da0b39a676c867247c0aa1bc1a111
