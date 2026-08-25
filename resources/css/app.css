@@ -127,3 +127,592 @@
 .cpbn-modal-btn-confirm.danger:hover {
     background: #dc2626;
 }
+
+/* ============================================
+   USER DROPDOWN - CLICK TOGGLE ONLY (NO HOVER)
+   ============================================ */
+
+.nav-user-wrapper {
+    position: relative !important;
+    display: inline-block !important;
+    z-index: 1000 !important;
+}
+
+.nav-user {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 4px 12px 4px 4px !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: background 0.2s ease !important;
+    user-select: none !important;
+}
+
+.nav-user:hover {
+    background: #f4f6f9 !important;
+}
+
+.nav-user .avatar {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, #1a3a5c, #2a5a8c) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+}
+
+.nav-user .name {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #1a1a2e !important;
+}
+
+.nav-user .chevron {
+    font-size: 12px !important;
+    color: #6b7280 !important;
+    transition: transform 0.3s ease !important;
+}
+
+.nav-user.active .chevron {
+    transform: rotate(180deg) !important;
+}
+
+/* Dropdown - hidden by default (NO HOVER) */
+.nav-user-wrapper .dropdown {
+    display: none !important;
+    position: absolute !important;
+    top: calc(100% + 4px) !important;
+    right: 0 !important;
+    min-width: 220px !important;
+    z-index: 9999 !important;
+}
+
+/* IMPORTANT: NO hover rules for dropdown */
+/* NO .nav-user-wrapper:hover .dropdown */
+/* NO .nav-user:hover .dropdown */
+
+/* Show dropdown ONLY when active class is added */
+.nav-user-wrapper.active .dropdown {
+    display: block !important;
+}
+
+.nav-user-wrapper .dropdown .dropdown-menu {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 40px rgba(26, 58, 92, 0.15) !important;
+    padding: 6px !important;
+}
+
+.dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    border-radius: 6px !important;
+    color: #1a1a2e !important;
+    text-decoration: none !important;
+    font-size: 13px !important;
+    transition: background 0.2s ease !important;
+    font-family: 'Inter', -apple-system, sans-serif !important;
+    cursor: pointer !important;
+    width: 100% !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.dropdown-item:hover {
+    background: #f4f6f9 !important;
+}
+
+.dropdown-item i {
+    width: 18px !important;
+    color: #6b7280 !important;
+    font-size: 14px !important;
+}
+
+.dropdown-divider {
+    height: 1px !important;
+    background: #e5e7eb !important;
+    margin: 4px 8px !important;
+}
+
+.dropdown-item.danger {
+    color: #c0392b !important;
+}
+
+.dropdown-item.danger i {
+    color: #c0392b !important;
+}
+
+.dropdown-item.danger:hover {
+    background: rgba(192, 57, 43, 0.08) !important;
+}
+
+.dropdown-item .badge-count {
+    background: #c0392b !important;
+    color: white !important;
+    font-size: 10px !important;
+    padding: 1px 8px !important;
+    border-radius: 100px !important;
+    margin-left: auto !important;
+}
+
+/* ============================================
+   GLOBAL STYLES
+   ============================================ */
+
+body {
+    font-family: 'Inter', -apple-system, sans-serif !important;
+    background: #f4f6f9 !important;
+    color: #1a1a2e !important;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ============================================
+   EDIT PROFILE PAGE STYLES
+   ============================================ */
+
+.edit-profile {
+    padding: 20px 0 40px;
+    font-family: 'Inter', -apple-system, sans-serif;
+}
+
+.edit-profile .wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+.edit-profile .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.edit-profile .head h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a3a5c;
+    margin: 0;
+}
+
+.edit-profile .head h1 span {
+    color: #c9a84c;
+}
+
+.edit-profile .head .sub {
+    color: #6b7280;
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+.edit-profile .back {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13.5px;
+    color: #6b7280;
+    text-decoration: none;
+}
+
+.edit-profile .back:hover {
+    color: #1a3a5c;
+}
+
+.edit-profile .back svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Progress Card */
+.edit-profile .progress-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 18px 20px;
+    margin-bottom: 24px;
+}
+
+.edit-profile .progress-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13.5px;
+}
+
+.edit-profile .progress-top span:last-child {
+    font-weight: 600;
+    color: #c9a84c;
+}
+
+.edit-profile .bar {
+    width: 100%;
+    background: #e5e7eb;
+    border-radius: 100px;
+    height: 8px;
+    margin-top: 9px;
+    overflow: hidden;
+}
+
+.edit-profile .bar .fill {
+    height: 100%;
+    background: #c9a84c;
+    border-radius: 100px;
+    transition: width 0.6s ease;
+}
+
+.edit-profile .progress-note {
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 8px;
+}
+
+/* Sections */
+.edit-profile .section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 18px;
+}
+
+.edit-profile .section .title {
+    font-size: 17px;
+    font-weight: 600;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #1a3a5c;
+}
+
+.edit-profile .section .title svg {
+    width: 17px;
+    height: 17px;
+    color: #c9a84c;
+}
+
+.edit-profile .section .desc {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: -10px;
+    margin-bottom: 16px;
+}
+
+/* Grid */
+.edit-profile .cpbn-fgrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.edit-profile .cpbn-fgrid .full {
+    grid-column: 1 / -1;
+}
+
+/* Form Fields */
+.edit-profile .cpbn-field {
+    margin-bottom: 0;
+}
+
+.edit-profile .cpbn-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
+}
+
+.edit-profile .cpbn-field label .req {
+    color: #c0392b;
+}
+
+.edit-profile .cpbn-field input,
+.edit-profile .cpbn-field select,
+.edit-profile .cpbn-field textarea {
+    width: 100%;
+    padding: 10px 13px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #fff;
+    color: #1a1a2e;
+    transition: border-color 0.2s;
+}
+
+.edit-profile .cpbn-field input:focus,
+.edit-profile .cpbn-field select:focus,
+.edit-profile .cpbn-field textarea:focus {
+    outline: none;
+    border-color: #1a3a5c;
+    box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.08);
+}
+
+.edit-profile .cpbn-field input:disabled {
+    background: #f3f4f6;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+.edit-profile .cpbn-field textarea {
+    resize: vertical;
+    min-height: 60px;
+}
+
+.edit-profile .cpbn-field .hint {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.edit-profile .cpbn-field .error {
+    color: #c0392b;
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+/* Checkbox Grid */
+.edit-profile .cpbn-checks {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.edit-profile .cpbn-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.edit-profile .cpbn-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #1a3a5c;
+    cursor: pointer;
+}
+
+.edit-profile .cpbn-check-note {
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 12px;
+}
+
+/* Project & Certification Cards */
+.edit-profile .cpbn-project-card,
+.edit-profile .cpbn-certification-card {
+    background: #f8f6f0;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s;
+}
+
+.edit-profile .cpbn-project-card:hover,
+.edit-profile .cpbn-certification-card:hover {
+    border-color: #c9a84c;
+}
+
+.edit-profile .cpbn-project-number {
+    font-family: monospace;
+    font-size: 11px;
+    color: #6b7280;
+    background: #fff;
+    padding: 2px 12px;
+    border-radius: 100px;
+    display: inline-block;
+    margin-bottom: 12px;
+}
+
+/* Remove Buttons */
+.edit-profile .cpbn-remove-project,
+.edit-profile .cpbn-remove-certification {
+    background: rgba(192, 57, 43, 0.08);
+    color: #c0392b;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: inherit;
+}
+
+.edit-profile .cpbn-remove-project:hover,
+.edit-profile .cpbn-remove-certification:hover {
+    background: #c0392b;
+    color: #fff;
+}
+
+.edit-profile .cpbn-remove-project svg,
+.edit-profile .cpbn-remove-certification svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Add Buttons */
+.edit-profile .cpbn-add-project,
+.edit-profile .cpbn-add-certification {
+    background: rgba(201, 168, 76, 0.12);
+    color: #a88830;
+    border: 2px dashed #c9a84c;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    justify-content: center;
+    font-family: inherit;
+}
+
+.edit-profile .cpbn-add-project:hover,
+.edit-profile .cpbn-add-certification:hover {
+    background: #c9a84c;
+    color: #0d1f33;
+    border-style: solid;
+}
+
+.edit-profile .cpbn-add-project svg,
+.edit-profile .cpbn-add-certification svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* File Upload Helpers */
+.edit-profile .cpbn-file-note {
+    display: block;
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+
+.edit-profile .cpbn-file-existing {
+    font-size: 12px;
+    color: #2d8f5c;
+    margin-top: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Submit Buttons */
+.edit-profile .cpbn-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 11px 22px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    font-family: inherit;
+}
+
+.edit-profile .cpbn-btn-primary {
+    background: #1a3a5c;
+    color: #fff;
+}
+
+.edit-profile .cpbn-btn-primary:hover {
+    background: #2a5a8c;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(26, 58, 92, 0.25);
+}
+
+.edit-profile .cpbn-btn-muted {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.edit-profile .cpbn-btn-muted:hover {
+    background: #e5e7eb;
+}
+
+.edit-profile .submit-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+/* Error States */
+.edit-profile .cpbn-field .error-input {
+    border-color: #c0392b !important;
+    box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.08) !important;
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 720px) {
+    .edit-profile .cpbn-fgrid {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-profile .cpbn-fgrid .full {
+        grid-column: auto;
+    }
+
+    .edit-profile .cpbn-checks {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .edit-profile .head h1 {
+        font-size: 20px;
+    }
+
+    .edit-profile .submit-row {
+        flex-direction: column;
+    }
+
+    .edit-profile .submit-row .cpbn-btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .edit-profile .cpbn-checks {
+        grid-template-columns: 1fr;
+    }
+
+    .edit-profile .head {
+        flex-direction: column;
+    }
+}
+

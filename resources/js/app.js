@@ -153,9 +153,11 @@ function closeModal() {
 document.addEventListener('DOMContentLoaded', function() {
     
     // ============================================
-    // DELETE CONFIRMATION
+    // DELETE CONFIRMATION - FORMS & BUTTONS
     // ============================================
-    document.querySelectorAll('[data-confirm-delete]').forEach(function(form) {
+    
+    // Handle forms with data-confirm-delete
+    document.querySelectorAll('form[data-confirm-delete]').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             const itemName = this.dataset.itemName || 'this item';
             e.preventDefault();
@@ -178,11 +180,55 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     });
+    
+    // Handle buttons with data-confirm-delete (including dynamically created ones)
+    document.querySelectorAll('[data-confirm-delete]').forEach(function(element) {
+        // Skip if it's a form (already handled above)
+        if (element.tagName === 'FORM') return;
+        
+        // For buttons and links
+        element.addEventListener('click', function(e) {
+            const itemName = this.dataset.itemName || 'this item';
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const elementRef = this;
+            
+            showConfirmModal({
+                title: 'Confirm Delete',
+                message: `Are you sure you want to delete "${itemName}"? This action cannot be undone.`,
+                confirmText: 'Yes, Delete',
+                cancelText: 'Cancel',
+                type: 'danger',
+                onConfirm: function() {
+                    // If it's a link, navigate
+                    if (elementRef.tagName === 'A') {
+                        window.location.href = elementRef.href;
+                    }
+                    // If it's a button, find the form and submit
+                    else if (elementRef.tagName === 'BUTTON') {
+                        const form = elementRef.closest('form');
+                        if (form) {
+                            form.submit();
+                        } else {
+                            // If no form, just trigger the click
+                            elementRef.click();
+                        }
+                    }
+                },
+                onCancel: function() {
+                    // Just close modal, do nothing
+                }
+            });
+        });
+    });
 
     // ============================================
-    // UPDATE CONFIRMATION
+    // UPDATE CONFIRMATION - FORMS & BUTTONS
     // ============================================
-    document.querySelectorAll('[data-confirm-update]').forEach(function(form) {
+    
+    // Handle forms with data-confirm-update
+    document.querySelectorAll('form[data-confirm-update]').forEach(function(form) {
         form.addEventListener('submit', function(e) {
             const itemName = this.dataset.itemName || 'this item';
             e.preventDefault();
@@ -198,6 +244,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 type: 'warning',
                 onConfirm: function() {
                     formRef.submit();
+                },
+                onCancel: function() {
+                    // Just close modal, do nothing
+                }
+            });
+        });
+    });
+    
+    // Handle buttons with data-confirm-update
+    document.querySelectorAll('[data-confirm-update]').forEach(function(element) {
+        if (element.tagName === 'FORM') return;
+        
+        element.addEventListener('click', function(e) {
+            const itemName = this.dataset.itemName || 'this item';
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const elementRef = this;
+            
+            showConfirmModal({
+                title: 'Confirm Update',
+                message: `Are you sure you want to update "${itemName}"?`,
+                confirmText: 'Yes, Update',
+                cancelText: 'Cancel',
+                type: 'warning',
+                onConfirm: function() {
+                    const form = elementRef.closest('form');
+                    if (form) {
+                        form.submit();
+                    }
                 },
                 onCancel: function() {
                     // Just close modal, do nothing
@@ -435,7 +511,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
 
-                    <button type="button" class="cpbn-remove-project" onclick="removeProject(this)">
+                    <button type="button" class="cpbn-remove-project" onclick="removeProject(this)" data-confirm-delete data-item-name="this new project">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
                             <path d="M18 6L6 18M6 6l12 12"/>
                         </svg>
@@ -514,7 +590,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         </div>
                     </div>
 
-                    <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)">
+                    <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)" data-confirm-delete data-item-name="this new certification">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
                             <path d="M18 6L6 18M6 6l12 12"/>
                         </svg>

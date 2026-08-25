@@ -4,159 +4,378 @@
 
 @section('content')
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-    .cpbn-dash{
-        --ink:#0d1a2b; --ink-dim:#5b6675; --paper:#faf8f2; --card:#ffffff; --line:#e7e2d4;
-        --gold:#cf9a3d; --gold-bright:#e9b95a; --gold-wash:#fbf1de;
-        --rose:#c65b4e; --rose-wash:#fbeceb; --green:#4c8a68; --green-wash:#e9f3ee;
-        --purple:#7a5ea8; --purple-wash:#f1ecf7;
-        --font-display:'Fraunces', Georgia, serif; --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-        --font-mono:'IBM Plex Mono', ui-monospace, monospace;
-        background:var(--paper); color:var(--ink); font-family:var(--font-body);
-        margin:-24px -16px 0; padding:32px 20px 56px;
+    .notif-page {
+        padding: 24px 0 40px;
     }
-    .cpbn-dash *{box-sizing:border-box}
-    .cpbn-dash a{text-decoration:none;color:inherit}
-    .cpbn-wrap{max-width:900px;margin-inline:auto}
 
-    .cpbn-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:22px}
-    .cpbn-head h1{font-family:var(--font-display);font-weight:600;font-size:24px;letter-spacing:-.01em}
-    .cpbn-head p.sub{color:var(--ink-dim);margin-top:4px;font-size:14.5px}
-    .cpbn-head-actions{display:flex;align-items:center;gap:14px}
-    .cpbn-back{display:flex;align-items:center;gap:6px;font-size:13.5px;color:var(--ink-dim)}
-    .cpbn-back:hover{color:var(--ink)}
-    .cpbn-back svg{width:14px;height:14px}
-
-    .cpbn-btn{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:5px;font-size:13.5px;font-weight:500;border:none;cursor:pointer;transition:background .15s}
-    .cpbn-btn svg{width:13px;height:13px}
-    .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
-    .cpbn-btn-primary:hover{background:var(--gold-bright)}
-
-    .cpbn-banner{
-        background:var(--gold-wash);border:1px solid rgba(207,154,61,0.3);color:#8a6420;
-        padding:13px 16px;border-radius:5px;font-size:14px;margin-bottom:22px;display:flex;align-items:center;gap:9px;
+    .notif-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
     }
-    .cpbn-banner svg{width:16px;height:16px;flex-shrink:0}
-    .cpbn-banner strong{font-weight:700}
 
-    .cpbn-list{background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden}
-    .cpbn-notif{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:14px;transition:background .15s}
-    .cpbn-notif:last-child{border-bottom:none}
-    .cpbn-notif.unread{background:var(--gold-wash)}
-    .cpbn-notif-top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-    .cpbn-dot{width:7px;height:7px;border-radius:50%;background:var(--gold);flex-shrink:0}
-    .cpbn-notif-title{font-size:14.5px;font-weight:600}
-    .cpbn-type{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;padding:3px 9px;border-radius:100px}
-    .type-recommendation{background:var(--green-wash);color:#2e5c43}
-    .type-milestone{background:var(--purple-wash);color:#5a4180}
-    .type-reminder{background:var(--gold-wash);color:#8a6420}
-    .type-default{background:#eef1f5;color:var(--ink-dim)}
-    .cpbn-notif-msg{font-size:13.5px;color:var(--ink-dim);margin-top:6px}
-    .cpbn-notif-meta{display:flex;align-items:center;gap:16px;margin-top:9px}
-    .cpbn-notif-meta span{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-dim);display:flex;align-items:center;gap:5px}
-    .cpbn-notif-meta span svg{width:12px;height:12px}
-    .cpbn-notif-meta a{font-size:11.5px;color:#8a6420;display:flex;align-items:center;gap:5px}
-    .cpbn-notif-meta a svg{width:11px;height:11px}
-    .cpbn-mark{background:none;border:none;color:var(--gold);cursor:pointer;padding:6px;flex-shrink:0}
-    .cpbn-mark svg{width:18px;height:18px}
-    .cpbn-mark:hover{color:var(--gold-bright)}
+    .notif-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary);
+    }
 
-    .cpbn-empty{padding:56px 20px;text-align:center}
-    .cpbn-empty svg{width:34px;height:34px;color:var(--gold);margin-inline:auto;margin-bottom:14px}
-    .cpbn-empty p.t{font-weight:500;font-size:14.5px}
-    .cpbn-empty p.s{font-size:13px;color:var(--ink-dim);margin-top:4px}
+    .notif-header h1 span {
+        color: var(--accent);
+    }
 
-    .cpbn-pagination{margin-top:18px;font-size:13.5px;color:var(--ink-dim)}
+    .notif-header .subtitle {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin-top: 2px;
+    }
+
+    .notif-header .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-light);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(26, 58, 92, 0.25);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-sm {
+        padding: 6px 14px;
+        font-size: 12px;
+    }
+
+    .notif-banner {
+        background: rgba(26, 58, 92, 0.04);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 12px 20px;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        color: var(--text);
+    }
+
+    .notif-banner i {
+        color: var(--accent);
+        font-size: 18px;
+    }
+
+    .notif-banner strong {
+        color: var(--primary);
+    }
+
+    .notif-list {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        overflow: hidden;
+    }
+
+    .notif-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border);
+        transition: var(--transition);
+    }
+
+    .notif-item:last-child {
+        border-bottom: none;
+    }
+
+    .notif-item:hover {
+        background: var(--bg);
+    }
+
+    .notif-item.unread {
+        background: rgba(201, 168, 76, 0.04);
+        border-left: 3px solid var(--accent);
+    }
+
+    .notif-item .content {
+        flex: 1;
+    }
+
+    .notif-item .top {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .notif-item .top .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex-shrink: 0;
+    }
+
+    .notif-item .top .title {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--primary);
+    }
+
+    .notif-item .top .type {
+        font-size: 10px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 2px 10px;
+        border-radius: 100px;
+    }
+
+    .notif-item .top .type.recommendation {
+        background: rgba(45, 143, 92, 0.12);
+        color: var(--success);
+    }
+
+    .notif-item .top .type.milestone {
+        background: rgba(201, 168, 76, 0.12);
+        color: var(--accent-dark);
+    }
+
+    .notif-item .top .type.reminder {
+        background: rgba(230, 126, 34, 0.12);
+        color: var(--warning);
+    }
+
+    .notif-item .top .type.system {
+        background: rgba(26, 58, 92, 0.06);
+        color: var(--primary);
+    }
+
+    .notif-item .message {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 4px;
+        line-height: 1.6;
+    }
+
+    .notif-item .meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-top: 8px;
+    }
+
+    .notif-item .meta .time {
+        font-size: 12px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .notif-item .meta .link {
+        font-size: 12px;
+        color: var(--accent-dark);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        transition: var(--transition);
+    }
+
+    .notif-item .meta .link:hover {
+        color: var(--accent);
+    }
+
+    .notif-item .actions {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .notif-item .actions .mark-read {
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: var(--transition);
+        font-size: 14px;
+    }
+
+    .notif-item .actions .mark-read:hover {
+        color: var(--accent);
+        background: var(--bg);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: var(--text-muted);
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: var(--border);
+        margin-bottom: 16px;
+    }
+
+    .empty-state h4 {
+        font-size: 18px;
+        color: var(--primary);
+        margin-bottom: 4px;
+    }
+
+    .empty-state p {
+        font-size: 14px;
+    }
+
+    .pagination-wrap {
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+    }
+
+    @media (max-width: 480px) {
+        .notif-item {
+            flex-direction: column;
+        }
+        .notif-item .actions {
+            align-self: flex-end;
+        }
+        .notif-header .actions {
+            flex-direction: column;
+            width: 100%;
+        }
+        .notif-header .actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
+    }
 </style>
 
-<div class="cpbn-dash">
-    <div class="cpbn-wrap">
+<div class="notif-page">
+    <div class="container">
 
-        <div class="cpbn-head">
+        <div class="notif-header">
             <div>
-                <h1>Notifications</h1>
-                <p class="sub">Stay updated with your career progress</p>
+                <h1>Notifications <span>📬</span></h1>
+                <p class="subtitle">Stay updated with your career progress</p>
             </div>
-            <div class="cpbn-head-actions">
+            <div class="actions">
                 @if($unreadCount > 0)
-                    <form action="{{ route('student.notifications.read-all') }}" method="POST" data-confirm-update data-item-name="all notifications">
+                    <form action="{{ route('student.notifications.read-all') }}" method="POST">
                         @csrf
-                        <button type="submit" class="cpbn-btn cpbn-btn-primary">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 7 17l-5-5"/><path d="M22 10 12.5 19.5 11 18"/></svg>
-                            Mark All Read
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-check-double"></i> Mark All Read
                         </button>
                     </form>
                 @endif
-                <a href="{{ route('student.dashboard') }}" class="cpbn-back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                    Back
+                <a href="{{ route('student.dashboard') }}" class="btn btn-outline btn-sm">
+                    <i class="fas fa-arrow-left"></i> Back
                 </a>
             </div>
         </div>
 
-        <!-- Unread Count -->
-        <div class="cpbn-banner">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
-            You have <strong>{{ $unreadCount }}</strong> unread notification(s)
-        </div>
+        @if($unreadCount > 0)
+            <div class="notif-banner">
+                <i class="fas fa-bell"></i>
+                You have <strong>{{ $unreadCount }}</strong> unread notification(s)
+            </div>
+        @endif
 
-        <!-- Notification List -->
-        <div class="cpbn-list">
+        <div class="notif-list">
             @forelse($notifications as $notification)
-                <div class="cpbn-notif {{ !$notification->is_read ? 'unread' : '' }}">
-                    <div style="flex:1">
-                        <div class="cpbn-notif-top">
+                <div class="notif-item {{ !$notification->is_read ? 'unread' : '' }}">
+                    <div class="content">
+                        <div class="top">
                             @if(!$notification->is_read)
-                                <span class="cpbn-dot"></span>
+                                <span class="dot"></span>
                             @endif
-                            <span class="cpbn-notif-title">{{ $notification->title }}</span>
-                            <span class="cpbn-type
-                                {{ $notification->type == 'recommendation' ? 'type-recommendation' :
-                                   ($notification->type == 'milestone' ? 'type-milestone' :
-                                   ($notification->type == 'reminder' ? 'type-reminder' :
-                                   'type-default')) }}">
+                            <span class="title">{{ $notification->title }}</span>
+                            <span class="type {{ $notification->type }}">
                                 {{ ucfirst($notification->type) }}
                             </span>
                         </div>
-                        <p class="cpbn-notif-msg">{{ $notification->message }}</p>
-                        <div class="cpbn-notif-meta">
-                            <span>
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+                        <p class="message">{{ $notification->message }}</p>
+                        <div class="meta">
+                            <span class="time">
+                                <i class="fas fa-clock"></i>
                                 {{ $notification->created_at->diffForHumans() }}
                             </span>
                             @if($notification->link)
-                                <a href="{{ $notification->link }}">
-                                    View Details
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                                <a href="{{ $notification->link }}" class="link">
+                                    View Details <i class="fas fa-arrow-right"></i>
                                 </a>
                             @endif
                         </div>
                     </div>
                     @if(!$notification->is_read)
-                        <form action="{{ route('student.notifications.read', $notification) }}" method="POST">
-                            @csrf
-                            <button type="submit" class="cpbn-mark" title="Mark as read">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-                            </button>
-                        </form>
+                        <div class="actions">
+                            <form action="{{ route('student.notifications.read', $notification) }}" method="POST">
+                                @csrf
+                                <button type="submit" class="mark-read" title="Mark as read">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                            </form>
+                        </div>
                     @endif
                 </div>
             @empty
-                <div class="cpbn-empty">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path d="M3 3l18 18"/></svg>
-                    <p class="t">No notifications yet</p>
-                    <p class="s">We'll notify you when there are updates</p>
+                <div class="empty-state">
+                    <i class="fas fa-bell-slash"></i>
+                    <h4>No notifications yet</h4>
+                    <p>We'll notify you when there are updates about your career journey.</p>
                 </div>
             @endforelse
         </div>
 
-        <div class="cpbn-pagination">
-            {{ $notifications->links() }}
-        </div>
+        @if($notifications->hasPages())
+            <div class="pagination-wrap">
+                {{ $notifications->links() }}
+            </div>
+        @endif
 
     </div>
 </div>
