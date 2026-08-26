@@ -61,9 +61,32 @@
         box-shadow: 0 8px 24px rgba(26, 58, 92, 0.25);
     }
 
+    .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
     .btn-sm {
         padding: 8px 16px;
         font-size: 12px;
+    }
+
+    .btn-success {
+        background: #2d8f5c;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #1e6b44;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(45, 143, 92, 0.3);
     }
 
     .profile-grid {
@@ -306,6 +329,12 @@
         gap: 4px;
     }
 
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
     @media (max-width: 768px) {
         .profile-grid {
             grid-template-columns: 1fr;
@@ -319,6 +348,13 @@
         .completion-card .top .percentage {
             font-size: 22px;
         }
+        .action-buttons {
+            width: 100%;
+        }
+        .action-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
     }
 </style>
 
@@ -330,9 +366,14 @@
                 <h1>My <span>Profile</span></h1>
                 <p class="subtitle">View and manage your personal information</p>
             </div>
-            <a href="{{ route('student.profile.edit') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-edit"></i> Edit Profile
-            </a>
+            <div class="action-buttons">
+                <a href="{{ route('student.profile.export') }}" class="btn btn-success btn-sm" target="_blank">
+                    <i class="fas fa-file-pdf"></i> Download PDF
+                </a>
+                <a href="{{ route('student.profile.edit') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-edit"></i> Edit Profile
+                </a>
+            </div>
         </div>
 
         <!-- Completion Card -->

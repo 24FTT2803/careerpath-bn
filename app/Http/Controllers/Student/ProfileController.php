@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Services\AI\CareerRecommendationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
-use App\Helpers\NotificationHelper; // ADD THIS
+use App\Helpers\NotificationHelper;
 
 class ProfileController extends Controller
 {
@@ -86,7 +86,13 @@ class ProfileController extends Controller
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
             'student_id' => ['nullable', 'string', 'max:50', 'unique:users,student_id,' . $user->id],
-            'phone' => User::getPhoneValidationRules(),
+            'phone' => [
+                'nullable',
+                'string',
+                'max:20',
+                'regex:/^[\+\d\s\-\(\)]{7,20}$/',
+                'unique:users,phone,' . $user->id,
+            ],
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
@@ -109,9 +115,12 @@ class ProfileController extends Controller
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
         ], [
-            // Custom error messages for phone
             'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
             'phone.max' => 'The phone number cannot exceed 20 characters.',
+            'phone.unique' => 'This phone number is already registered to another account.',
+            'student_id.unique' => 'This Student ID is already taken.',
+            'cgpa.min' => 'CGPA must be at least 0.',
+            'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
 
         // Combine first and last name into full name
@@ -234,6 +243,79 @@ class ProfileController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Export student profile as PDF (for students)
+     */
+    public function export()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user->isStudent()) {
+            abort(403, 'Only students can export profiles.');
+        }
+
+        $user->load([
+            'profile',
+            'academicRecords',
+            'competencies',
+            'interests',
+            'projects',
+            'certifications',
+            'aspirations',
+            'milestones',
+            'careerRecommendations.career'
+        ]);
+
+        $profileCompletion = $user->profile_completion;
+        $readinessScore = $user->readiness_score ?? 0;
+
+        return view('student.profile.export', compact(
+            'user',
+            'profileCompletion',
+            'readinessScore'
+        ));
+    }
+
+    /**
+     * Export student profile as PDF (for admin/lecturer)
+     */
+    public function exportAdmin($userId)
+    {
+        $user = User::findOrFail($userId);
+        $currentUser = Auth::user();
+        
+        // Only allow admins and lecturers to view other students' profiles
+        if ($currentUser->id !== $user->id && !in_array($currentUser->role, ['admin', 'lecturer'])) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        if (!$user->isStudent()) {
+            abort(403, 'Only students can export profiles.');
+        }
+
+        $user->load([
+            'profile',
+            'academicRecords',
+            'competencies',
+            'interests',
+            'projects',
+            'certifications',
+            'aspirations',
+            'milestones',
+            'careerRecommendations.career'
+        ]);
+
+        $profileCompletion = $user->profile_completion;
+        $readinessScore = $user->readiness_score ?? 0;
+
+        return view('student.profile.export', compact(
+            'user',
+            'profileCompletion',
+            'readinessScore'
+        ));
     }
 
     // ============================================

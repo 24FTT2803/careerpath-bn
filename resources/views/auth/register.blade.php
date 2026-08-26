@@ -157,10 +157,14 @@
             color: #c0392b;
         }
 
-        .field input,
-        .field select {
+        .field .input-wrapper {
+            position: relative;
+        }
+
+        .field .input-wrapper input,
+        .field .input-wrapper select {
             width: 100%;
-            padding: 10px 14px;
+            padding: 10px 44px 10px 14px;
             border: 2px solid var(--border);
             border-radius: 8px;
             font-size: 14px;
@@ -171,18 +175,40 @@
             -webkit-appearance: none;
         }
 
-        .field input:focus,
-        .field select:focus {
+        .field .input-wrapper input:focus,
+        .field .input-wrapper select:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.08);
         }
 
-        .field input::placeholder {
+        .field .input-wrapper input::placeholder {
             color: #9ca3af;
         }
 
-        .field select { cursor: pointer; }
+        .field .input-wrapper select { cursor: pointer; }
+
+        .field .input-wrapper .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .field .input-wrapper .toggle-password:hover {
+            color: var(--primary);
+        }
+
+        .field .input-wrapper .toggle-password i {
+            pointer-events: none;
+        }
 
         .field .error {
             color: #c0392b;
@@ -335,9 +361,11 @@
                     <div class="name-row">
                         <div class="field">
                             <label>First Name <span class="required">*</span></label>
-                            <input type="text" name="first_name" value="{{ old('first_name') }}"
-                                   placeholder="Ahmad" required
-                                   class="{{ $errors->has('first_name') ? 'error-input' : '' }}">
+                            <div class="input-wrapper">
+                                <input type="text" name="first_name" value="{{ old('first_name') }}"
+                                       placeholder="Ahmad" required
+                                       class="{{ $errors->has('first_name') ? 'error-input' : '' }}">
+                            </div>
                             @error('first_name')
                                 <div class="error">{{ $message }}</div>
                             @enderror
@@ -345,9 +373,11 @@
 
                         <div class="field">
                             <label>Last Name <span class="required">*</span></label>
-                            <input type="text" name="last_name" value="{{ old('last_name') }}"
-                                   placeholder="Bin Abdullah" required
-                                   class="{{ $errors->has('last_name') ? 'error-input' : '' }}">
+                            <div class="input-wrapper">
+                                <input type="text" name="last_name" value="{{ old('last_name') }}"
+                                       placeholder="Bin Abdullah" required
+                                       class="{{ $errors->has('last_name') ? 'error-input' : '' }}">
+                            </div>
                             @error('last_name')
                                 <div class="error">{{ $message }}</div>
                             @enderror
@@ -356,9 +386,11 @@
 
                     <div class="field">
                         <label>Email <span class="required">*</span></label>
-                        <input type="email" name="email" value="{{ old('email') }}"
-                               placeholder="you@pb.edu.bn" required
-                               class="{{ $errors->has('email') ? 'error-input' : '' }}">
+                        <div class="input-wrapper">
+                            <input type="email" name="email" value="{{ old('email') }}"
+                                   placeholder="you@pb.edu.bn" required
+                                   class="{{ $errors->has('email') ? 'error-input' : '' }}">
+                        </div>
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
                             <i class="fas fa-info-circle"></i>
                             Use your gmail.com, pb.edu.bn, or student.pb.edu.bn email
@@ -370,24 +402,26 @@
 
                     <div class="field">
                         <label>Programme <span class="required">*</span></label>
-                        <select name="programme" required class="{{ $errors->has('programme') ? 'error-input' : '' }}">
-                            <option value="">Select your programme</option>
-                            <option value="Diploma in ICT (Application Development)" {{ old('programme') == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
-                                DADT - Application Development
-                            </option>
-                            <option value="Diploma in ICT (Data Analytics)" {{ old('programme') == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
-                                DDAT - Data Analytics
-                            </option>
-                            <option value="Diploma in ICT (Cloud Networking)" {{ old('programme') == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
-                                DCNG - Cloud Networking
-                            </option>
-                            <option value="Diploma in Business Information Systems" {{ old('programme') == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
-                                DBIS - Business Information Systems
-                            </option>
-                            <option value="Others" {{ old('programme') == 'Others' ? 'selected' : '' }}>
-                                Others
-                            </option>
-                        </select>
+                        <div class="input-wrapper">
+                            <select name="programme" required class="{{ $errors->has('programme') ? 'error-input' : '' }}">
+                                <option value="">Select your programme</option>
+                                <option value="Diploma in ICT (Application Development)" {{ old('programme') == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
+                                    DADT - Application Development
+                                </option>
+                                <option value="Diploma in ICT (Data Analytics)" {{ old('programme') == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
+                                    DDAT - Data Analytics
+                                </option>
+                                <option value="Diploma in ICT (Cloud Networking)" {{ old('programme') == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
+                                    DCNG - Cloud Networking
+                                </option>
+                                <option value="Diploma in Business Information Systems" {{ old('programme') == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
+                                    DBIS - Business Information Systems
+                                </option>
+                                <option value="Others" {{ old('programme') == 'Others' ? 'selected' : '' }}>
+                                    Others
+                                </option>
+                            </select>
+                        </div>
                         @error('programme')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -395,8 +429,14 @@
 
                     <div class="field">
                         <label>Password <span class="required">*</span></label>
-                        <input type="password" name="password" placeholder="Min. 8 characters" required
-                               class="{{ $errors->has('password') ? 'error-input' : '' }}">
+                        <div class="input-wrapper">
+                            <input type="password" name="password" id="password" 
+                                   placeholder="Min. 8 characters" required
+                                   class="{{ $errors->has('password') ? 'error-input' : '' }}">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -404,7 +444,13 @@
 
                     <div class="field">
                         <label>Confirm Password <span class="required">*</span></label>
-                        <input type="password" name="password_confirmation" placeholder="Confirm your password" required>
+                        <div class="input-wrapper">
+                            <input type="password" name="password_confirmation" id="password_confirmation" 
+                                   placeholder="Confirm your password" required>
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password_confirmation', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="checkbox-field">
@@ -430,6 +476,23 @@
             </div>
         </div>
     </main>
+
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 
 </body>
 </html>

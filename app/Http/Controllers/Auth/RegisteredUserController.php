@@ -27,10 +27,25 @@ class RegisteredUserController extends Controller
         $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'email' => User::getEmailValidationRules('student'),
+            'email' => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                'unique:users,email', // This ensures email is unique
+                'regex:/^[a-zA-Z0-9._%+-]+@(gmail\.com|pb\.edu\.bn|student\.pb\.edu\.bn)$/',
+            ],
             'programme' => ['required', 'string', 'max:255'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'terms' => ['required', 'accepted'],
+        ], [
+            'email.unique' => 'This email is already registered. Please use a different email address.',
+            'email.regex' => 'Please use a valid email address from gmail.com, pb.edu.bn, or student.pb.edu.bn',
+            'email.required' => 'Email address is required.',
+            'password.required' => 'Password is required.',
+            'password.min' => 'Password must be at least 8 characters.',
+            'terms.required' => 'You must agree to the Terms of Service.',
         ]);
 
         // Combine first and last name
@@ -56,9 +71,7 @@ class RegisteredUserController extends Controller
             'user_id' => $user->id,
         ]);
 
-        // ============================================
-        // LOG ACTIVITY - New student registration
-        // ============================================
+        // Log activity - New student registration
         NotificationHelper::logStudentRegistration($user->id, $fullName);
 
         event(new Registered($user));

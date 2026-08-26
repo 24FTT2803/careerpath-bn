@@ -135,6 +135,7 @@
                 <h3><i class="fas fa-bolt"></i> Recent Activity</h3>
                 <span class="badge">Live</span>
             </div>
+            <!-- FIXED: Added max-height and scroll -->
             <div class="activity-list">
                 @forelse($recentActivities as $activity)
                     <div class="activity-item">
@@ -340,7 +341,6 @@
 
 </div>
 
-<!-- Styles -->
 <style>
     .admin-dashboard {
         padding: 0 4px;
@@ -696,21 +696,44 @@
         margin-bottom: 20px;
     }
 
-    /* Activity Feed */
-    .activity-list {
+    /* Activity Feed - FIXED: Scrollable */
+    .activity-feed .activity-list {
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        gap: 8px;
+        max-height: 320px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    /* Custom scrollbar for activity feed */
+    .activity-feed .activity-list::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .activity-feed .activity-list::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    .activity-feed .activity-list::-webkit-scrollbar-thumb {
+        background: #c9a84c;
+        border-radius: 4px;
+    }
+
+    .activity-feed .activity-list::-webkit-scrollbar-thumb:hover {
+        background: #b8973a;
     }
 
     .activity-item {
         display: flex;
         align-items: flex-start;
-        gap: 14px;
-        padding: 12px;
+        gap: 12px;
+        padding: 10px 12px;
         border-radius: 8px;
         background: #faf8f2;
         transition: all 0.3s ease;
+        flex-shrink: 0;
     }
 
     .activity-item:hover {
@@ -718,13 +741,13 @@
     }
 
     .activity-icon {
-        width: 36px;
-        height: 36px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 14px;
+        font-size: 13px;
         flex-shrink: 0;
     }
 
@@ -735,17 +758,22 @@
 
     .activity-content {
         flex: 1;
+        min-width: 0;
     }
 
     .activity-message {
         font-size: 13px;
         color: #1a1a2e;
         margin: 0;
+        line-height: 1.4;
+        word-break: break-word;
     }
 
     .activity-time {
         font-size: 11px;
         color: #6b7280;
+        display: block;
+        margin-top: 2px;
     }
 
     /* Quick Actions */
@@ -1100,6 +1128,9 @@
             flex: 1;
             justify-content: center;
         }
+        .activity-feed .activity-list {
+            max-height: 250px;
+        }
     }
 
     @media (max-width: 480px) {
@@ -1117,6 +1148,9 @@
         }
         .greeting h1 {
             font-size: 18px;
+        }
+        .activity-feed .activity-list {
+            max-height: 200px;
         }
     }
 </style>

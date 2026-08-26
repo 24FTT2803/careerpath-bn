@@ -42,7 +42,7 @@ Route::get('/dashboard', function () {
 require __DIR__.'/auth.php';
 
 // ============================================
-// STUDENT ROUTES (Developer 1)
+// STUDENT ROUTES
 // ============================================
 Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
     // Career Recommendations
@@ -69,6 +69,10 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
     Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // Profile Export (PDF)
+    Route::get('/profile/export', [ProfileController::class, 'export'])->name('profile.export');
+    Route::get('/profile/export/{userId}', [ProfileController::class, 'exportAdmin'])->name('profile.export.admin');
 
     // Milestones
     Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones');

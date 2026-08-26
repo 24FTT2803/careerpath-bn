@@ -5,11 +5,11 @@
 @section('content')
 <div class="students-page">
 
-    <!-- Header with Stats -->
+    <!-- Page Header -->
     <div class="page-header">
         <div class="header-left">
             <h1>
-                <i class="fas fa-user-graduate" style="color: #c9a84c;"></i> 
+                <i class="fas fa-user-graduate" style="color: #c9a84c;"></i>
                 Students
             </h1>
             <p class="subtitle">Manage and monitor student progress</p>
@@ -68,7 +68,7 @@
         </div>
     </div>
 
-    <!-- Students Grid View -->
+    <!-- Students Grid -->
     <div class="students-grid">
         @forelse($students as $student)
             <div class="student-card">
@@ -91,6 +91,7 @@
                         </span>
                     </div>
                 </div>
+
                 <div class="student-card-body">
                     <div class="student-metrics">
                         <div class="metric">
@@ -112,6 +113,7 @@
                             <span class="metric-value">{{ $student->milestones->where('is_completed', true)->count() }}/{{ $student->milestones->count() }}</span>
                         </div>
                     </div>
+
                     <div class="student-progress">
                         <div class="progress-item">
                             <span class="progress-label">Profile Completion</span>
@@ -121,6 +123,7 @@
                             </div>
                         </div>
                     </div>
+
                     <div class="student-tags">
                         @foreach($student->competencies->take(3) as $skill)
                             <span class="tag tag-blue">{{ $skill->skill_name }}</span>
@@ -130,6 +133,7 @@
                         @endif
                     </div>
                 </div>
+
                 <div class="student-card-footer">
                     <a href="{{ route('admin.students.show', $student) }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-eye"></i> View Profile
@@ -246,7 +250,7 @@
     .filter-field {
         position: relative;
         flex: 1;
-        min-width: 200px;
+        min-width: 180px;
     }
 
     .filter-field i {
@@ -327,7 +331,7 @@
 
     .students-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
         gap: 20px;
         margin-bottom: 24px;
     }
@@ -338,6 +342,8 @@
         border: 1px solid #e5e7eb;
         overflow: hidden;
         transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
     }
 
     .student-card:hover {
@@ -371,6 +377,7 @@
 
     .student-card-info {
         flex: 1;
+        min-width: 0;
     }
 
     .student-card-info h4 {
@@ -402,8 +409,13 @@
         display: block;
     }
 
+    .student-card-status {
+        flex-shrink: 0;
+    }
+
     .student-card-body {
         padding: 16px 20px;
+        flex: 1;
     }
 
     .student-metrics {
@@ -508,11 +520,13 @@
         padding: 12px 20px;
         border-top: 1px solid #e5e7eb;
         background: #faf8f2;
+        flex-wrap: wrap;
     }
 
     .student-card-footer .btn {
         flex: 1;
         justify-content: center;
+        min-width: 80px;
     }
 
     .status-badge {
@@ -604,7 +618,7 @@
 
     @media (max-width: 1024px) {
         .students-grid {
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         }
         .student-metrics {
             grid-template-columns: repeat(2, 1fr);
@@ -653,6 +667,9 @@
         }
         .student-metrics {
             grid-template-columns: 1fr 1fr;
+        }
+        .student-card-header {
+            flex-wrap: wrap;
         }
     }
 </style>

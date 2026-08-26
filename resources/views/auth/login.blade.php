@@ -44,7 +44,6 @@
 
         .container { max-width: 440px; margin: 0 auto; padding: 0 24px; }
 
-        /* Header */
         .auth-header {
             padding: 24px 0;
             background: white;
@@ -85,7 +84,6 @@
 
         .logo-text span { color: var(--accent); }
 
-        /* Main */
         .auth-main {
             flex: 1;
             display: flex;
@@ -156,9 +154,17 @@
             margin-bottom: 6px;
         }
 
-        .field input {
+        .field label .required {
+            color: #c0392b;
+        }
+
+        .field .input-wrapper {
+            position: relative;
+        }
+
+        .field .input-wrapper input {
             width: 100%;
-            padding: 12px 14px;
+            padding: 12px 44px 12px 14px;
             border: 2px solid var(--border);
             border-radius: 8px;
             font-size: 14px;
@@ -167,14 +173,36 @@
             background: white;
         }
 
-        .field input:focus {
+        .field .input-wrapper input:focus {
             outline: none;
             border-color: var(--primary);
             box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.08);
         }
 
-        .field input::placeholder {
+        .field .input-wrapper input::placeholder {
             color: #9ca3af;
+        }
+
+        .field .input-wrapper .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 4px;
+            font-size: 16px;
+            transition: var(--transition);
+        }
+
+        .field .input-wrapper .toggle-password:hover {
+            color: var(--primary);
+        }
+
+        .field .input-wrapper .toggle-password i {
+            pointer-events: none;
         }
 
         .field .error {
@@ -270,7 +298,6 @@
 
         .auth-footer a:hover { color: var(--accent); }
 
-        /* Status message */
         .status {
             padding: 12px 16px;
             border-radius: 8px;
@@ -335,20 +362,27 @@
                     @csrf
 
                     <div class="field">
-                        <label for="email">Email</label>
-                        <input id="email" type="email" name="email" value="{{ old('email') }}"
-                               placeholder="you@pb.edu.bn" required autofocus
-                               class="{{ $errors->has('email') ? 'error-input' : '' }}">
+                        <label for="email">Email <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input id="email" type="email" name="email" value="{{ old('email') }}"
+                                   placeholder="you@pb.edu.bn" required autofocus
+                                   class="{{ $errors->has('email') ? 'error-input' : '' }}">
+                        </div>
                         @error('email')
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="field">
-                        <label for="password">Password</label>
-                        <input id="password" type="password" name="password"
-                               placeholder="••••••••" required
-                               class="{{ $errors->has('password') ? 'error-input' : '' }}">
+                        <label for="password">Password <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input id="password" type="password" name="password"
+                                   placeholder="••••••••" required
+                                   class="{{ $errors->has('password') ? 'error-input' : '' }}">
+                            <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
                         @error('password')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -375,6 +409,23 @@
             </div>
         </div>
     </main>
+
+    <script>
+        function togglePasswordVisibility(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+    </script>
 
 </body>
 </html>
