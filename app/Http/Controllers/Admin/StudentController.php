@@ -20,7 +20,7 @@ class StudentController extends Controller
         $isAdmin = $user->role === 'admin';
 
         $query = User::where('role', 'student')
-            ->with(['profile', 'competencies']);
+            ->with(['profile', 'competencies', 'milestones']); // Add milestones
 
         // Filter by programme
         if ($request->has('programme') && $request->programme) {
@@ -46,7 +46,25 @@ class StudentController extends Controller
             ->filter()
             ->values();
 
-        return view('admin.students.index', compact('students', 'programmes', 'isAdmin'));
+        // Calculate stats for header
+        $totalStudents = User::where('role', 'student')->count();
+        $completedProfiles = User::where('role', 'student')->get()
+            ->filter(function($student) {
+                return ($student->profile_completion ?? 0) >= 70;
+            })->count();
+        $completionRate = $totalStudents > 0 ? round(($completedProfiles / $totalStudents) * 100) : 0;
+        $atRiskStudents = User::where('role', 'student')->get()
+            ->filter(function($student) {
+                return ($student->readiness_score ?? 0) < 40;
+            })->count();
+
+        return view('admin.students.index', compact(
+            'students',
+            'programmes',
+            'isAdmin',
+            'completionRate',
+            'atRiskStudents'
+        ));
     }
 
     /**

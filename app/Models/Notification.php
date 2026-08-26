@@ -33,4 +33,36 @@ class Notification extends Model
             'read_at' => now(),
         ]);
     }
+
+    /**
+     * Get recent activities for admin/lecturer dashboard
+     * Uses the existing notifications table
+     */
+    public static function getDashboardActivities($limit = 10)
+    {
+        return self::with('user')
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get()
+            ->map(function($notification) {
+                $iconMap = [
+                    'system' => 'bell',
+                    'recommendation' => 'star',
+                    'milestone' => 'flag-checkered',
+                    'reminder' => 'clock',
+                    'user' => 'user-plus',
+                    'profile' => 'user-edit',
+                    'career' => 'briefcase',
+                ];
+                
+                return [
+                    'type' => $notification->type,
+                    'icon' => $iconMap[$notification->type] ?? 'bell',
+                    'message' => $notification->title . ': ' . $notification->message,
+                    'time' => $notification->created_at->diffForHumans(),
+                    'user_name' => $notification->user?->name ?? 'System',
+                    'link' => $notification->link,
+                ];
+            });
+    }
 }

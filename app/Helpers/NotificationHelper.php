@@ -30,7 +30,7 @@ class NotificationHelper
             'system',
             'Profile Complete! 🎉',
             'Your profile is now complete. Run a career assessment to get personalized recommendations!',
-            route('student.assessment', absolute: false)
+            route('student.recommendations.assessment', absolute: false)
         );
     }
 
@@ -44,7 +44,7 @@ class NotificationHelper
             'recommendation',
             'New Career Recommendation',
             "We found a great match for you: {$careerName}. Check it out!",
-            route('student.recommendations', absolute: false)
+            route('student.recommendations.assessment', absolute: false)
         );
     }
 
@@ -85,7 +85,85 @@ class NotificationHelper
             'system',
             'Skill Gap Update',
             "For {$careerName}, you need to develop {$gapCount} more skill(s). Check your development plan!",
-            route('student.recommendations', absolute: false)
+            route('student.recommendations.assessment', absolute: false)
+        );
+    }
+
+    /**
+     * Log student registration activity (for admin dashboard)
+     */
+    public static function logStudentRegistration($userId, $name)
+    {
+        return self::create(
+            $userId,
+            'user',
+            'New Student Registered',
+            "{$name} has joined the platform",
+            route('admin.students.show', $userId, absolute: false)
+        );
+    }
+
+    /**
+     * Log profile update activity (for admin dashboard)
+     */
+    public static function logProfileUpdate($userId, $name)
+    {
+        return self::create(
+            $userId,
+            'profile',
+            'Profile Updated',
+            "{$name} updated their profile information",
+            route('student.profile', absolute: false)
+        );
+    }
+
+    /**
+     * Log career recommendation generation activity (for admin dashboard)
+     */
+    public static function logCareerRecommendation($userId, $name, $count)
+    {
+        return self::create(
+            $userId,
+            'career',
+            'Career Recommendations Generated',
+            "{$count} new career recommendations generated for {$name}",
+            route('student.recommendations.assessment', absolute: false)
+        );
+    }
+
+    /**
+     * Log milestone activity (for admin dashboard)
+     */
+    public static function logMilestoneActivity($userId, $milestoneName, $action = 'completed')
+    {
+        $actionMap = [
+            'completed' => 'Completed Milestone',
+            'added' => 'Added Milestone',
+            'deleted' => 'Deleted Milestone',
+        ];
+
+        $actionLabel = $actionMap[$action] ?? ucfirst($action) . ' Milestone';
+
+        return self::create(
+            $userId,
+            'milestone',
+            $actionLabel,
+            "{$actionLabel}: {$milestoneName}",
+            route('student.milestones', absolute: false)
+        );
+    }
+
+    /**
+     * Log generic system activity
+     */
+    public static function logSystemActivity($userId, $title, $message, $link = null)
+    {
+        return self::create(
+            $userId,
+            'system',
+            $title,
+            $message,
+            $link
         );
     }
 }

@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Services\AI\CareerRecommendationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
+use App\Helpers\NotificationHelper; // ADD THIS
 
 class ProfileController extends Controller
 {
@@ -107,6 +108,10 @@ class ProfileController extends Controller
             'career_goals_text' => ['nullable', 'string'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
+        ], [
+            // Custom error messages for phone
+            'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
+            'phone.max' => 'The phone number cannot exceed 20 characters.',
         ]);
 
         // Combine first and last name into full name
@@ -176,6 +181,11 @@ class ProfileController extends Controller
             'profile_complete' => $profileIsComplete,
         ]);
 
+        // ============================================
+        // LOG ACTIVITY - Profile updated
+        // ============================================
+        NotificationHelper::logProfileUpdate($user->id, $user->name);
+
         // Generate or refresh career recommendations
         $recommendationWarning = null;
 
@@ -183,7 +193,14 @@ class ProfileController extends Controller
             $user->refresh();
 
             try {
-                $this->recommendationService->generateFor($user);
+                $recommendations = $this->recommendationService->generateFor($user);
+                
+                // Log career recommendations generated
+                NotificationHelper::logCareerRecommendation(
+                    $user->id,
+                    $user->name,
+                    $recommendations->count()
+                );
             } catch (\Throwable $exception) {
                 report($exception);
 
@@ -347,6 +364,13 @@ class ProfileController extends Controller
             'target_date' => $request->target_date,
         ]);
 
+        // Log milestone added
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $request->title,
+            'added'
+        );
+
         return redirect()->route('student.milestones')
             ->with('success', 'Milestone added successfully!');
     }
@@ -364,6 +388,13 @@ class ProfileController extends Controller
             'completed_date' => now(),
         ]);
 
+        // Log milestone completed
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $milestone->title,
+            'completed'
+        );
+
         return redirect()->route('student.milestones')
             ->with('success', '🎉 Milestone completed!');
     }
@@ -375,6 +406,13 @@ class ProfileController extends Controller
     {
         $milestone = StudentMilestone::where('user_id', Auth::id())
             ->findOrFail($id);
+
+        // Log milestone deleted
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $milestone->title,
+            'deleted'
+        );
 
         $milestone->delete();
 

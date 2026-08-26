@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CareerRecommendation;
 use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -98,7 +99,16 @@ class CareerRecommendationController extends Controller
         $student = Auth::user();
 
         try {
-            $this->recommendationService->generateFor($student);
+            $recommendations = $this->recommendationService->generateFor($student);
+            
+            // ============================================
+            // LOG ACTIVITY - Career recommendations generated
+            // ============================================
+            NotificationHelper::logCareerRecommendation(
+                $student->id,
+                $student->name,
+                $recommendations->count()
+            );
         } catch (\Throwable $exception) {
             report($exception);
 
