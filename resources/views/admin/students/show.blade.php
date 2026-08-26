@@ -10,6 +10,9 @@
             <p class="text-gray-600">View student details and career progress</p>
         </div>
         <div class="flex gap-2">
+            <a href="{{ route('student.profile.export.admin', $student->id) }}" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition" target="_blank">
+                <i class="fas fa-file-pdf"></i> Download Profile
+            </a>
             <a href="{{ route('admin.students.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -125,7 +128,7 @@
                 @endif
             </div>
 
-            <!-- Competency Gaps - FIXED -->
+            <!-- Competency Gaps -->
             <div class="bg-white rounded-lg shadow p-6 mt-6">
                 <h3 class="font-semibold text-gray-800 mb-3">⚠️ Competency Gaps</h3>
                 @if(count($skillGaps) > 0)

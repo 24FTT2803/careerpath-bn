@@ -106,15 +106,15 @@ class User extends Authenticatable
     }
 
     /**
- * Get custom validation messages for phone
- */
-public static function getPhoneValidationMessages(): array
-{
-    return [
-        'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
-        'phone.max' => 'The phone number cannot exceed 20 characters.',
-    ];
-}
+     * Get custom validation messages for phone
+     */
+    public static function getPhoneValidationMessages(): array
+    {
+        return [
+            'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
+            'phone.max' => 'The phone number cannot exceed 20 characters.',
+        ];
+    }
 
     // ============================================
     // RELATIONSHIPS
@@ -225,6 +225,14 @@ public static function getPhoneValidationMessages(): array
     public function isStudent()
     {
         return $this->role === 'student';
+    }
+
+    /**
+     * Check if user is a lecturer.
+     */
+    public function isLecturer()
+    {
+        return $this->role === 'lecturer';
     }
 
     /**

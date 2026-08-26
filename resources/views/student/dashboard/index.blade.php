@@ -591,9 +591,6 @@
             <a href="{{ route('student.profile') }}" class="btn btn-primary">
                 <i class="fas fa-user-edit"></i> Update Profile
             </a>
-            <a href="{{ route('student.recommendations.assessment') }}" class="btn btn-accent">
-                <i class="fas fa-rocket"></i> Career Assessment
-            </a>
             <a href="{{ route('student.milestones') }}" class="btn btn-outline">
                 <i class="fas fa-flag-checkered"></i> Track Milestones
             </a>
@@ -608,9 +605,6 @@
             <div class="panel">
                 <div class="panel-header">
                     <h3><i class="fas fa-star"></i> Top Career Matches</h3>
-                    <a href="{{ route('student.recommendations.assessment') }}">
-                        View All <i class="fas fa-arrow-right"></i>
-                    </a>
                 </div>
 
                 @if(isset($recommendations) && count($recommendations) > 0)
@@ -632,7 +626,7 @@
                     <div class="empty-state">
                         <i class="fas fa-compass"></i>
                         <h4>No Recommendations Yet</h4>
-                        <p>Complete your profile and run a career assessment.</p>
+                        <p>Complete your profile to receive personalised career recommendations.</p>
                         <a href="{{ route('student.profile') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-user-edit"></i> Complete Profile
                         </a>

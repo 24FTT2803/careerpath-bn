@@ -2,8 +2,10 @@
 // IMPORT ALPINE.JS
 // ============================================
 import Alpine from 'alpinejs';
+import { distance as levenshteinDistance } from 'fastest-levenshtein';
 
 window.Alpine = Alpine;
+window.cpbnLevenshteinDistance = levenshteinDistance;
 
 // ============================================
 // CONFIRMATION MODAL

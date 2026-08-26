@@ -19,9 +19,89 @@ use Illuminate\Support\Facades\Hash;
 use App\Services\AI\CareerRecommendationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Str;
+use App\Helpers\NotificationHelper;
 
 class ProfileController extends Controller
 {
+    private const PREDEFINED_SKILLS = [
+        'Python',
+        'JavaScript',
+        'SQL',
+        'Java',
+        'PHP',
+        'HTML/CSS',
+        'React',
+        'Node.js',
+        'Git',
+        'Linux',
+        'Docker',
+        'AWS',
+        'C++',
+        'C#',
+        'Ruby',
+    ];
+
+    private const SKILL_ALIAS_GROUPS = [
+        ['JavaScript', 'JS'],
+        ['TypeScript', 'TS'],
+        ['Python', 'Py'],
+        ['Kubernetes', 'K8s'],
+        ['Amazon Web Services', 'AWS'],
+        ['Node.js', 'NodeJS', 'Node JS'],
+        ['HTML/CSS', 'HTML CSS'],
+        ['C++', 'CPP', 'C Plus Plus'],
+        ['C#', 'C Sharp'],
+    ];
+
+    private const PREDEFINED_INTERESTS = [
+        'Problem Solving',
+        'Teamwork',
+        'Communication',
+        'Leadership',
+        'Creativity',
+        'Analytical Thinking',
+        'Research',
+        'Writing',
+        'Public Speaking',
+        'Programming',
+        'Data Analysis',
+        'Networking',
+        'Cybersecurity',
+        'Cloud Computing',
+        'Project Management',
+    ];
+
+    /**
+     * Small, intentionally conservative groups of equivalent ICT terms.
+     * These are used for duplicate prevention, not as a general dictionary.
+     */
+    private const INTEREST_ALIAS_GROUPS = [
+        ['Artificial Intelligence', 'AI'],
+        ['Machine Learning', 'ML'],
+        ['UI/UX', 'UI UX', 'UIUX'],
+        ['Cybersecurity', 'Cyber Security'],
+        ['Application Development', 'App Development', 'App Dev'],
+        ['Web Development', 'Web Dev'],
+        ['Database', 'DB'],
+    ];
+
+    /**
+     * Only unmistakable keyboard-smash values are blocked outright.
+     * Unfamiliar or emerging terms are handled as warnings in the UI.
+     */
+    private const CLEAR_NONSENSE_INTERESTS = [
+        'qwerty',
+        'qwertyui',
+        'qwertyuiop',
+        'asdfgh',
+        'asdfghjkl',
+        'zxcvbn',
+        'zxcvbnm',
+    ];
+
     public function __construct(
         private CareerRecommendationService $recommendationService
     ) {
@@ -46,8 +126,18 @@ class ProfileController extends Controller
         ]);
 
         $profileCompletion = $user->profile_completion;
+        $skillOptions = self::PREDEFINED_SKILLS;
+        $interestOptions = self::PREDEFINED_INTERESTS;
 
-        return view('student.profile.index', compact('user', 'profileCompletion'));
+        return view(
+            'student.profile.index',
+            compact(
+                'user',
+                'profileCompletion',
+                'skillOptions',
+                'interestOptions'
+            )
+        );
     }
 
     /**
@@ -69,8 +159,22 @@ class ProfileController extends Controller
         ]);
 
         $profileCompletion = $user->profile_completion;
+        $skillOptions = self::PREDEFINED_SKILLS;
+        $skillAliasGroups = self::SKILL_ALIAS_GROUPS;
+        $interestOptions = self::PREDEFINED_INTERESTS;
+        $interestAliasGroups = self::INTEREST_ALIAS_GROUPS;
 
-        return view('student.profile.edit', compact('user', 'profileCompletion'));
+        return view(
+            'student.profile.edit',
+            compact(
+                'user',
+                'profileCompletion',
+                'skillOptions',
+                'skillAliasGroups',
+                'interestOptions',
+                'interestAliasGroups'
+            )
+        );
     }
 
     /**
@@ -84,21 +188,47 @@ class ProfileController extends Controller
         $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'student_id' => [
+            'student_id' => ['nullable', 'string', 'max:50', 'unique:users,student_id,' . $user->id],
+            'phone' => [
                 'nullable',
                 'string',
-                'max:50',
-                'unique:users,student_id,' . $user->id
+                'max:20',
+                'regex:/^[\+\d\s\-\(\)]{7,20}$/',
+                'unique:users,phone,' . $user->id,
             ],
-            'phone' => User::getPhoneValidationRules(),
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:1000'],
             'programme' => ['nullable', 'string', 'max:255'],
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:4'],
+
             'skills' => ['nullable', 'array'],
+            'skills.*' => [
+                'string',
+                Rule::in(self::PREDEFINED_SKILLS),
+            ],
+
+            'custom_skills' => ['nullable', 'array'],
+            'custom_skills.*' => [
+                'nullable',
+                'string',
+                'max:60',
+            ],
+
             'interests' => ['nullable', 'array'],
+            'interests.*' => [
+                'string',
+                Rule::in(self::PREDEFINED_INTERESTS),
+            ],
+
+            'custom_interests' => ['nullable', 'array'],
+            'custom_interests.*' => [
+                'nullable',
+                'string',
+                'max:60',
+            ],
+
             'projects' => ['nullable', 'array'],
 
             'certifications' => ['nullable', 'array'],
@@ -150,6 +280,13 @@ class ProfileController extends Controller
             'career_goals_text' => ['nullable', 'string'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
+        ], [
+            'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
+            'phone.max' => 'The phone number cannot exceed 20 characters.',
+            'phone.unique' => 'This phone number is already registered to another account.',
+            'student_id.unique' => 'This Student ID is already taken.',
+            'cgpa.min' => 'CGPA must be at least 0.',
+            'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
 
         // Combine first and last name into full name
@@ -179,15 +316,25 @@ class ProfileController extends Controller
         );
 
         // Process Skills
+        $skills = $this->prepareSkills(
+            $request->input('skills', []),
+            $request->input('custom_skills', [])
+        );
+
         $this->syncSkills(
             $user,
-            $request->input('skills', [])
+            $skills
         );
 
         // Process Interests
+        $interests = $this->prepareInterests(
+            $request->input('interests', []),
+            $request->input('custom_interests', [])
+        );
+
         $this->syncInterests(
             $user,
-            $request->input('interests', [])
+            $interests
         );
 
         // Process Projects
@@ -230,6 +377,11 @@ class ProfileController extends Controller
             'profile_complete' => $profileIsComplete,
         ]);
 
+        // ============================================
+        // LOG ACTIVITY - Profile updated
+        // ============================================
+        NotificationHelper::logProfileUpdate($user->id, $user->name);
+
         // Generate or refresh career recommendations only
         // when the profile is at or above the threshold.
         $recommendationWarning = null;
@@ -238,7 +390,14 @@ class ProfileController extends Controller
             $user->refresh();
 
             try {
-                $this->recommendationService->generateFor($user);
+                $recommendations = $this->recommendationService->generateFor($user);
+
+                // Log career recommendations generated
+                NotificationHelper::logCareerRecommendation(
+                    $user->id,
+                    $user->name,
+                    $recommendations->count()
+                );
             } catch (\Throwable $exception) {
                 report($exception);
 
@@ -322,6 +481,85 @@ class ProfileController extends Controller
             ->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Export student profile as PDF (for students)
+     */
+    public function export()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if (!$user->isStudent()) {
+            abort(403, 'Only students can export profiles.');
+        }
+
+        $user->load([
+            'profile',
+            'academicRecords',
+            'competencies',
+            'interests',
+            'projects',
+            'certifications',
+            'aspirations',
+            'milestones',
+            'careerRecommendations.career'
+        ]);
+
+        $profileCompletion = $user->profile_completion;
+        $readinessScore = $user->readiness_score ?? 0;
+
+        return view('student.profile.export', compact(
+            'user',
+            'profileCompletion',
+            'readinessScore'
+        ));
+    }
+
+    /**
+     * Export student profile as PDF (for admin/lecturer)
+     */
+    public function exportAdmin($userId)
+    {
+        $user = User::findOrFail($userId);
+        $currentUser = Auth::user();
+
+        // Only allow admins and lecturers to view other students' profiles
+        if (
+            $currentUser->id !== $user->id
+            && ! in_array(
+                $currentUser->role,
+                ['admin', 'lecturer']
+            )
+        ) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        if (!$user->isStudent()) {
+            abort(403, 'Only students can export profiles.');
+        }
+
+        $user->load([
+            'profile',
+            'academicRecords',
+            'competencies',
+            'interests',
+            'projects',
+            'certifications',
+            'aspirations',
+            'milestones',
+            'careerRecommendations.career'
+        ]);
+
+        $profileCompletion = $user->profile_completion;
+        $readinessScore = $user->readiness_score ?? 0;
+
+        return view('student.profile.export', compact(
+            'user',
+            'profileCompletion',
+            'readinessScore'
+        ));
     }
 
     // ============================================
@@ -522,6 +760,13 @@ class ProfileController extends Controller
             'target_date' => $request->target_date,
         ]);
 
+        // Log milestone added
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $request->title,
+            'added'
+        );
+
         return redirect()
             ->route('student.milestones')
             ->with(
@@ -545,6 +790,13 @@ class ProfileController extends Controller
             'completed_date' => now(),
         ]);
 
+        // Log milestone completed
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $milestone->title,
+            'completed'
+        );
+
         return redirect()
             ->route('student.milestones')
             ->with(
@@ -562,6 +814,13 @@ class ProfileController extends Controller
             'user_id',
             Auth::id()
         )->findOrFail($id);
+
+        // Log milestone deleted
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $milestone->title,
+            'deleted'
+        );
 
         $milestone->delete();
 
@@ -597,6 +856,359 @@ class ProfileController extends Controller
                     'proficiency_level' => 'intermediate',
                 ]);
         }
+    }
+
+    /**
+     * Prepare predefined and additional skills for storage.
+     *
+     * Additional skills are stored as ordinary StudentCompetency records.
+     * Whether a skill is additional is determined by comparing it with
+     * PREDEFINED_SKILLS when the profile is displayed or edited.
+     */
+    private function prepareSkills(
+        array $predefinedSkills,
+        array $customSkills
+    ): array {
+        $selectedPredefined = array_values(
+            array_unique(
+                array_filter(
+                    $predefinedSkills,
+                    fn ($skill) => in_array(
+                        $skill,
+                        self::PREDEFINED_SKILLS,
+                        true
+                    )
+                )
+            )
+        );
+
+        $predefinedKeys = [];
+
+        foreach (self::PREDEFINED_SKILLS as $skill) {
+            $predefinedKeys[
+                $this->canonicalSkillKey($skill)
+            ] = $skill;
+        }
+
+        $seenKeys = [];
+
+        foreach ($selectedPredefined as $skill) {
+            $seenKeys[
+                $this->canonicalSkillKey($skill)
+            ] = $skill;
+        }
+
+        $prepared = $selectedPredefined;
+
+        foreach ($customSkills as $skill) {
+            $clean = preg_replace(
+                '/\s+/u',
+                ' ',
+                trim((string) $skill)
+            );
+
+            $clean = $clean
+                ?? trim((string) $skill);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            if (mb_strlen($clean) > 60) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        'Each additional skill must be 60 characters or fewer.',
+                ]);
+            }
+
+            if ($this->isClearlyInvalidSkill($clean)) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        '"' . $clean . '" does not look like a usable skill. '
+                        . 'Please enter a skill, technology, tool, method, or competency you have.',
+                ]);
+            }
+
+            $key = $this->canonicalSkillKey($clean);
+
+            if (isset($predefinedKeys[$key])) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        '"' . $clean . '" matches the predefined skill '
+                        . '"' . $predefinedKeys[$key] . '". Select that option instead.',
+                ]);
+            }
+
+            if (isset($seenKeys[$key])) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        '"' . $clean . '" duplicates '
+                        . '"' . $seenKeys[$key] . '". '
+                        . 'Each skill should only be added once.',
+                ]);
+            }
+
+            $seenKeys[$key] = $clean;
+            $prepared[] = $clean;
+        }
+
+        return $prepared;
+    }
+
+    /**
+     * Convert a skill to a comparison key and apply known aliases.
+     */
+    private function canonicalSkillKey(string $skill): string
+    {
+        $key = $this->normaliseInterestKey($skill);
+
+        foreach (self::SKILL_ALIAS_GROUPS as $group) {
+            if (empty($group)) {
+                continue;
+            }
+
+            foreach ($group as $alias) {
+                if (
+                    $key
+                    === $this->normaliseInterestKey($alias)
+                ) {
+                    return $this->normaliseInterestKey(
+                        $group[0]
+                    );
+                }
+            }
+        }
+
+        return $key;
+    }
+
+    /**
+     * Reject only unmistakable nonsense. Unfamiliar terms are warned about
+     * in the UI rather than rejected so emerging technologies still work.
+     */
+    private function isClearlyInvalidSkill(string $skill): bool
+    {
+        $trimmed = trim($skill);
+
+        if ($trimmed === '') {
+            return true;
+        }
+
+        $lettersAndNumbers = preg_replace(
+            '/[^\p{L}\p{N}]+/u',
+            '',
+            $trimmed
+        );
+
+        if (
+            ! is_string($lettersAndNumbers)
+            || $lettersAndNumbers === ''
+        ) {
+            return true;
+        }
+
+        if (preg_match('/^\d+$/u', $lettersAndNumbers)) {
+            return true;
+        }
+
+        $lower = mb_strtolower($lettersAndNumbers);
+
+        if (
+            mb_strlen($lower) >= 4
+            && preg_match('/^(.)\1{3,}$/u', $lower)
+        ) {
+            return true;
+        }
+
+        return in_array(
+            $lower,
+            self::CLEAR_NONSENSE_INTERESTS,
+            true
+        );
+    }
+
+    /**
+     * Prepare predefined and additional interests for storage.
+     *
+     * Additional interests are stored as ordinary StudentInterest records.
+     * Whether an interest is additional is determined by comparing it with
+     * PREDEFINED_INTERESTS when the profile is displayed or edited.
+     */
+    private function prepareInterests(
+        array $predefinedInterests,
+        array $customInterests
+    ): array {
+        $selectedPredefined = array_values(
+            array_unique(
+                array_filter(
+                    $predefinedInterests,
+                    fn ($interest) => in_array(
+                        $interest,
+                        self::PREDEFINED_INTERESTS,
+                        true
+                    )
+                )
+            )
+        );
+
+        $predefinedKeys = [];
+
+        foreach (self::PREDEFINED_INTERESTS as $interest) {
+            $predefinedKeys[
+                $this->canonicalInterestKey($interest)
+            ] = $interest;
+        }
+
+        $seenKeys = [];
+
+        foreach ($selectedPredefined as $interest) {
+            $seenKeys[
+                $this->canonicalInterestKey($interest)
+            ] = $interest;
+        }
+
+        $prepared = $selectedPredefined;
+
+        foreach ($customInterests as $interest) {
+            $clean = preg_replace(
+                '/\s+/u',
+                ' ',
+                trim((string) $interest)
+            );
+
+            $clean = $clean
+                ?? trim((string) $interest);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            if (mb_strlen($clean) > 60) {
+                throw ValidationException::withMessages([
+                    'custom_interests' =>
+                        'Each additional interest must be 60 characters or fewer.',
+                ]);
+            }
+
+            if ($this->isClearlyInvalidInterest($clean)) {
+                throw ValidationException::withMessages([
+                    'custom_interests' =>
+                        '"' . $clean . '" does not look like a usable interest. '
+                        . 'Please enter a topic, field, technology, or activity you are interested in.',
+                ]);
+            }
+
+            $key = $this->canonicalInterestKey($clean);
+
+            if (isset($predefinedKeys[$key])) {
+                throw ValidationException::withMessages([
+                    'custom_interests' =>
+                        '"' . $clean . '" matches the predefined interest '
+                        . '"' . $predefinedKeys[$key] . '". Select that option instead.',
+                ]);
+            }
+
+            if (isset($seenKeys[$key])) {
+                throw ValidationException::withMessages([
+                    'custom_interests' =>
+                        '"' . $clean . '" duplicates '
+                        . '"' . $seenKeys[$key] . '". '
+                        . 'Each interest should only be added once.',
+                ]);
+            }
+
+            $seenKeys[$key] = $clean;
+            $prepared[] = $clean;
+        }
+
+        return $prepared;
+    }
+
+    /**
+     * Convert an interest to a comparison key and apply known aliases.
+     */
+    private function canonicalInterestKey(string $interest): string
+    {
+        $key = $this->normaliseInterestKey($interest);
+
+        foreach (self::INTEREST_ALIAS_GROUPS as $group) {
+            $canonical = $this->normaliseInterestKey(
+                $group[0]
+            );
+
+            foreach ($group as $alias) {
+                if (
+                    $key
+                    === $this->normaliseInterestKey($alias)
+                ) {
+                    return $canonical;
+                }
+            }
+        }
+
+        return $key;
+    }
+
+    /**
+     * Normalise case and harmless separators for duplicate comparison.
+     * Symbols such as +, # and . are intentionally preserved so values
+     * such as C++, C# and .NET remain distinct.
+     */
+    private function normaliseInterestKey(string $interest): string
+    {
+        $normalised = Str::lower(
+            trim($interest)
+        );
+
+        return preg_replace(
+            '/[\s\/_-]+/u',
+            '',
+            $normalised
+        ) ?? $normalised;
+    }
+
+    /**
+     * Reject only high-confidence nonsense.
+     * Unknown words, acronyms and emerging technology names are not blocked.
+     */
+    private function isClearlyInvalidInterest(string $interest): bool
+    {
+        $trimmed = trim($interest);
+
+        if ($trimmed === '') {
+            return true;
+        }
+
+        $lettersAndNumbers = preg_replace(
+            '/[^\p{L}\p{N}]+/u',
+            '',
+            $trimmed
+        ) ?? '';
+
+        if ($lettersAndNumbers === '') {
+            return true;
+        }
+
+        if (preg_match('/^\d+$/u', $lettersAndNumbers)) {
+            return true;
+        }
+
+        $lower = Str::lower(
+            $lettersAndNumbers
+        );
+
+        if (
+            mb_strlen($lower) >= 4
+            && preg_match('/^(.)\1{3,}$/u', $lower)
+        ) {
+            return true;
+        }
+
+        return in_array(
+            $lower,
+            self::CLEAR_NONSENSE_INTERESTS,
+            true
+        );
     }
 
     /**

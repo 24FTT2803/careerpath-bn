@@ -61,9 +61,32 @@
         box-shadow: 0 8px 24px rgba(26, 58, 92, 0.25);
     }
 
+    .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
     .btn-sm {
         padding: 8px 16px;
         font-size: 12px;
+    }
+
+    .btn-success {
+        background: #2d8f5c;
+        color: white;
+    }
+
+    .btn-success:hover {
+        background: #1e6b44;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(45, 143, 92, 0.3);
     }
 
     .profile-grid {
@@ -161,9 +184,44 @@
         color: var(--danger);
     }
 
+    .tag-additional-skill {
+        background: rgba(201, 168, 76, 0.08);
+        color: #7b5c23;
+        border: 1px solid rgba(201, 168, 76, 0.45);
+    }
+
+    .tag-additional-interest {
+        background: rgba(192, 57, 43, 0.04);
+        color: #9a453c;
+        border: 1px solid rgba(192, 57, 43, 0.25);
+    }
+
     .tag small {
         opacity: 0.7;
         font-weight: 400;
+    }
+
+    .additional-group {
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+    }
+
+    .additional-group-title {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 9px;
+        color: var(--text-muted);
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .additional-group-title i {
+        color: var(--accent);
+        font-size: 10px;
     }
 
     .empty-text {
@@ -306,21 +364,80 @@
         gap: 4px;
     }
 
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
     @media (max-width: 768px) {
         .profile-grid {
             grid-template-columns: 1fr;
         }
+
         .panel-full {
             grid-column: 1;
         }
+
         .profile-header h1 {
             font-size: 24px;
         }
+
         .completion-card .top .percentage {
             font-size: 22px;
         }
+
+        .action-buttons {
+            width: 100%;
+        }
+
+        .action-buttons .btn {
+            flex: 1;
+            justify-content: center;
+        }
     }
 </style>
+
+@php
+    $skillOptions = $skillOptions ?? [];
+    $interestOptions = $interestOptions ?? [];
+
+    $predefinedSkills = $user->competencies
+        ->filter(
+            fn ($skill) => in_array(
+                $skill->skill_name,
+                $skillOptions,
+                true
+            )
+        );
+
+    $additionalSkills = $user->competencies
+        ->filter(
+            fn ($skill) => ! in_array(
+                $skill->skill_name,
+                $skillOptions,
+                true
+            )
+        );
+
+    $predefinedInterests = $user->interests
+        ->filter(
+            fn ($interest) => in_array(
+                $interest->interest_name,
+                $interestOptions,
+                true
+            )
+        );
+
+    $additionalInterests = $user->interests
+        ->filter(
+            fn ($interest) => ! in_array(
+                $interest->interest_name,
+                $interestOptions,
+                true
+            )
+        );
+@endphp
 
 <div class="profile-page">
     <div class="container">
@@ -328,22 +445,50 @@
         <div class="profile-header">
             <div>
                 <h1>My <span>Profile</span></h1>
-                <p class="subtitle">View and manage your personal information</p>
+                <p class="subtitle">
+                    View and manage your personal information
+                </p>
             </div>
-            <a href="{{ route('student.profile.edit') }}" class="btn btn-primary btn-sm">
-                <i class="fas fa-edit"></i> Edit Profile
-            </a>
+
+            <div class="action-buttons">
+                <a
+                    href="{{ route('student.profile.export') }}"
+                    class="btn btn-success btn-sm"
+                    target="_blank"
+                >
+                    <i class="fas fa-file-pdf"></i>
+                    Download PDF
+                </a>
+
+                <a
+                    href="{{ route('student.profile.edit') }}"
+                    class="btn btn-primary btn-sm"
+                >
+                    <i class="fas fa-edit"></i>
+                    Edit Profile
+                </a>
+            </div>
         </div>
 
         <!-- Completion Card -->
         <div class="completion-card">
             <div class="top">
-                <span class="label">Profile Completion</span>
-                <span class="percentage">{{ $profileCompletion ?? 0 }}%</span>
+                <span class="label">
+                    Profile Completion
+                </span>
+
+                <span class="percentage">
+                    {{ $profileCompletion ?? 0 }}%
+                </span>
             </div>
+
             <div class="bar">
-                <div class="fill" style="width: {{ $profileCompletion ?? 0 }}%"></div>
+                <div
+                    class="fill"
+                    style="width: {{ $profileCompletion ?? 0 }}%"
+                ></div>
             </div>
+
             <p class="note">
                 @if(($profileCompletion ?? 0) < 100)
                     Complete your profile to get better career recommendations
@@ -358,28 +503,46 @@
             <!-- Personal Information -->
             <div class="panel">
                 <div class="panel-header">
-                    <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
+                    <h3>
+                        <i class="fas fa-user-circle"></i>
+                        Personal Information
+                    </h3>
                 </div>
+
                 <div class="info-row">
                     <span class="label">Full Name</span>
-                    <span class="value">{{ $user->name ?? 'Not set' }}</span>
+                    <span class="value">
+                        {{ $user->name ?? 'Not set' }}
+                    </span>
                 </div>
+
                 <div class="info-row">
                     <span class="label">Email</span>
-                    <span class="value">{{ $user->email ?? 'Not set' }}</span>
+                    <span class="value">
+                        {{ $user->email ?? 'Not set' }}
+                    </span>
                 </div>
+
                 <div class="info-row">
                     <span class="label">Student ID</span>
-                    <span class="value">{{ $user->student_id ?? 'Not set' }}</span>
+                    <span class="value">
+                        {{ $user->student_id ?? 'Not set' }}
+                    </span>
                 </div>
+
                 <div class="info-row">
                     <span class="label">Programme</span>
-                    <span class="value">{{ $user->programme ?? 'Not set' }}</span>
+                    <span class="value">
+                        {{ $user->programme ?? 'Not set' }}
+                    </span>
                 </div>
+
                 @if($user->profile->phone ?? false)
                     <div class="info-row">
                         <span class="label">Phone</span>
-                        <span class="value">{{ $user->profile->phone }}</span>
+                        <span class="value">
+                            {{ $user->profile->phone }}
+                        </span>
                     </div>
                 @endif
             </div>
@@ -387,22 +550,40 @@
             <!-- Academic Information -->
             <div class="panel">
                 <div class="panel-header">
-                    <h3><i class="fas fa-graduation-cap"></i> Academic Information</h3>
+                    <h3>
+                        <i class="fas fa-graduation-cap"></i>
+                        Academic Information
+                    </h3>
                 </div>
+
                 <div class="info-row">
                     <span class="label">CGPA</span>
-                    <span class="value">{{ $user->cgpa ?? 'Not set' }}</span>
+                    <span class="value">
+                        {{ $user->cgpa ?? 'Not set' }}
+                    </span>
                 </div>
+
                 @if($user->profile->date_of_birth ?? false)
                     <div class="info-row">
-                        <span class="label">Date of Birth</span>
-                        <span class="value">{{ $user->profile->date_of_birth->format('d M Y') }}</span>
+                        <span class="label">
+                            Date of Birth
+                        </span>
+
+                        <span class="value">
+                            {{ $user->profile->date_of_birth->format('d M Y') }}
+                        </span>
                     </div>
                 @endif
+
                 @if($user->profile->nationality ?? false)
                     <div class="info-row">
-                        <span class="label">Nationality</span>
-                        <span class="value">{{ $user->profile->nationality }}</span>
+                        <span class="label">
+                            Nationality
+                        </span>
+
+                        <span class="value">
+                            {{ $user->profile->nationality }}
+                        </span>
                     </div>
                 @endif
             </div>
@@ -410,131 +591,280 @@
             <!-- Skills -->
             <div class="panel">
                 <div class="panel-header">
-                    <h3><i class="fas fa-tools"></i> Skills & Competencies</h3>
+                    <h3>
+                        <i class="fas fa-tools"></i>
+                        Skills &amp; Competencies
+                    </h3>
                 </div>
-                @if($user->competencies && $user->competencies->count() > 0)
-                    <div class="tags">
-                        @foreach($user->competencies as $skill)
-                            <span class="tag tag-blue">
-                                {{ $skill->skill_name }}
-                                <small>({{ $skill->proficiency_level }})</small>
-                            </span>
-                        @endforeach
-                    </div>
+
+                @if(
+                    $predefinedSkills->isNotEmpty()
+                    || $additionalSkills->isNotEmpty()
+                )
+                    @if($predefinedSkills->isNotEmpty())
+                        <div class="tags">
+                            @foreach($predefinedSkills as $skill)
+                                <span class="tag tag-blue">
+                                    {{ $skill->skill_name }}
+
+                                    <small>
+                                        ({{ $skill->proficiency_level }})
+                                    </small>
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if($additionalSkills->isNotEmpty())
+                        <div class="additional-group">
+                            <div class="additional-group-title">
+                                <i class="fas fa-plus"></i>
+                                Additional Skills
+                            </div>
+
+                            <div class="tags">
+                                @foreach($additionalSkills as $skill)
+                                    <span class="tag tag-additional-skill">
+                                        {{ $skill->skill_name }}
+
+                                        <small>
+                                            ({{ $skill->proficiency_level }})
+                                        </small>
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @else
-                    <p class="empty-text">No skills added yet</p>
+                    <p class="empty-text">
+                        No skills added yet
+                    </p>
                 @endif
             </div>
 
             <!-- Interests -->
             <div class="panel">
                 <div class="panel-header">
-                    <h3><i class="fas fa-heart"></i> Interests</h3>
+                    <h3>
+                        <i class="fas fa-heart"></i>
+                        Interests
+                    </h3>
                 </div>
-                @if($user->interests && $user->interests->count() > 0)
-                    <div class="tags">
-                        @foreach($user->interests as $interest)
-                            <span class="tag tag-rose">{{ $interest->interest_name }}</span>
-                        @endforeach
-                    </div>
+
+                @if(
+                    $predefinedInterests->isNotEmpty()
+                    || $additionalInterests->isNotEmpty()
+                )
+                    @if($predefinedInterests->isNotEmpty())
+                        <div class="tags">
+                            @foreach($predefinedInterests as $interest)
+                                <span class="tag tag-rose">
+                                    {{ $interest->interest_name }}
+                                </span>
+                            @endforeach
+                        </div>
+                    @endif
+
+                    @if($additionalInterests->isNotEmpty())
+                        <div class="additional-group">
+                            <div class="additional-group-title">
+                                <i class="fas fa-plus"></i>
+                                Additional Interests
+                            </div>
+
+                            <div class="tags">
+                                @foreach($additionalInterests as $interest)
+                                    <span class="tag tag-additional-interest">
+                                        {{ $interest->interest_name }}
+                                    </span>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                 @else
-                    <p class="empty-text">No interests added yet</p>
+                    <p class="empty-text">
+                        No interests added yet
+                    </p>
                 @endif
             </div>
 
             <!-- Projects -->
             <div class="panel panel-full">
                 <div class="panel-header">
-                    <h3><i class="fas fa-project-diagram"></i> Projects & Experience</h3>
+                    <h3>
+                        <i class="fas fa-project-diagram"></i>
+                        Projects &amp; Experience
+                    </h3>
                 </div>
+
                 @if($user->projects && $user->projects->count() > 0)
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div
+                        style="
+                            display:grid;
+                            grid-template-columns:1fr 1fr;
+                            gap:12px;
+                        "
+                    >
                         @foreach($user->projects as $project)
                             <div class="project-card">
                                 <h4>{{ $project->title }}</h4>
+
                                 @if($project->role)
-                                    <span class="role"><i class="fas fa-user-tag"></i> {{ $project->role }}</span>
+                                    <span class="role">
+                                        <i class="fas fa-user-tag"></i>
+                                        {{ $project->role }}
+                                    </span>
                                 @endif
+
                                 @if($project->description)
-                                    <p class="desc">{{ Str::limit($project->description, 80) }}</p>
+                                    <p class="desc">
+                                        {{ Str::limit(
+                                            $project->description,
+                                            80
+                                        ) }}
+                                    </p>
                                 @endif
-                                @if($project->technologies_used && count($project->technologies_used) > 0)
+
+                                @if(
+                                    $project->technologies_used
+                                    && count(
+                                        $project->technologies_used
+                                    ) > 0
+                                )
                                     <div class="tech-tags">
-                                        @foreach($project->technologies_used as $tech)
+                                        @foreach(
+                                            $project->technologies_used
+                                            as $tech
+                                        )
                                             <span>{{ $tech }}</span>
                                         @endforeach
                                     </div>
                                 @endif
+
                                 @if($project->achievements)
                                     <div class="achievement">
-                                        <i class="fas fa-trophy"></i> {{ $project->achievements }}
+                                        <i class="fas fa-trophy"></i>
+                                        {{ $project->achievements }}
                                     </div>
                                 @endif
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="empty-text">No projects added yet</p>
+                    <p class="empty-text">
+                        No projects added yet
+                    </p>
                 @endif
             </div>
 
             <!-- Certifications -->
             <div class="panel panel-full">
                 <div class="panel-header">
-                    <h3><i class="fas fa-certificate"></i> Certifications</h3>
+                    <h3>
+                        <i class="fas fa-certificate"></i>
+                        Certifications
+                    </h3>
                 </div>
-                @if($user->certifications && $user->certifications->count() > 0)
+
+                @if(
+                    $user->certifications
+                    && $user->certifications->count() > 0
+                )
                     <div style="display:grid;gap:10px;">
                         @foreach($user->certifications as $cert)
                             <div class="cert-card">
                                 <div>
-                                    <div class="cert-name">{{ $cert->certification_name }}</div>
-                                    <div class="cert-org">{{ $cert->issuing_organization ?? 'Unknown' }}</div>
+                                    <div class="cert-name">
+                                        {{ $cert->certification_name }}
+                                    </div>
+
+                                    <div class="cert-org">
+                                        {{ $cert->issuing_organization ?? 'Unknown' }}
+                                    </div>
                                 </div>
+
                                 <div style="text-align:right;">
                                     @if($cert->issue_date)
-                                        <div class="cert-date">Issued: {{ $cert->issue_date->format('d M Y') }}</div>
+                                        <div class="cert-date">
+                                            Issued:
+                                            {{ $cert->issue_date->format('d M Y') }}
+                                        </div>
                                     @endif
+
                                     @if($cert->certificate_file_path)
-                                        <span class="cert-badge"><i class="fas fa-check-circle"></i> Verified</span>
+                                        <span class="cert-badge">
+                                            <i class="fas fa-check-circle"></i>
+                                            Verified
+                                        </span>
                                     @endif
                                 </div>
                             </div>
                         @endforeach
                     </div>
                 @else
-                    <p class="empty-text">No certifications added yet</p>
+                    <p class="empty-text">
+                        No certifications added yet
+                    </p>
                 @endif
             </div>
 
             <!-- Aspirations -->
             <div class="panel panel-full">
                 <div class="panel-header">
-                    <h3><i class="fas fa-star"></i> Career Aspirations</h3>
+                    <h3>
+                        <i class="fas fa-star"></i>
+                        Career Aspirations
+                    </h3>
                 </div>
+
                 @if($user->aspirations)
                     <div style="display:grid;gap:10px;">
-                        @if($user->aspirations->career_goals && count($user->aspirations->career_goals) > 0)
+                        @if(
+                            $user->aspirations->career_goals
+                            && count(
+                                $user->aspirations->career_goals
+                            ) > 0
+                        )
                             <div class="info-row">
-                                <span class="label">Dream Career</span>
-                                <span class="value">{{ $user->aspirations->career_goals[0] ?? 'Not set' }}</span>
+                                <span class="label">
+                                    Dream Career
+                                </span>
+
+                                <span class="value">
+                                    {{ $user->aspirations->career_goals[0]
+                                        ?? 'Not set' }}
+                                </span>
                             </div>
                         @endif
+
                         @if($user->aspirations->vision_statement)
                             <div class="info-row">
-                                <span class="label">Vision Statement</span>
-                                <span class="value">{{ $user->aspirations->vision_statement }}</span>
+                                <span class="label">
+                                    Vision Statement
+                                </span>
+
+                                <span class="value">
+                                    {{ $user->aspirations->vision_statement }}
+                                </span>
                             </div>
                         @endif
+
                         @if($user->aspirations->long_term_goals)
                             <div class="info-row">
-                                <span class="label">Long Term Goals</span>
-                                <span class="value">{{ $user->aspirations->long_term_goals }}</span>
+                                <span class="label">
+                                    Long Term Goals
+                                </span>
+
+                                <span class="value">
+                                    {{ $user->aspirations->long_term_goals }}
+                                </span>
                             </div>
                         @endif
                     </div>
                 @else
-                    <p class="empty-text">No career aspirations set yet</p>
+                    <p class="empty-text">
+                        No career aspirations set yet
+                    </p>
                 @endif
             </div>
 

@@ -42,7 +42,7 @@ Route::get('/dashboard', function () {
 require __DIR__.'/auth.php';
 
 // ============================================
-// STUDENT ROUTES (Developer 1)
+// STUDENT ROUTES
 // ============================================
 Route::middleware(['auth'])
     ->prefix('student')
@@ -50,11 +50,6 @@ Route::middleware(['auth'])
     ->group(function () {
 
         // Career Recommendations
-        Route::get(
-            '/career-assessment',
-            [CareerRecommendationController::class, 'assessment']
-        )->name('recommendations.assessment');
-
         Route::get(
             '/career-analysis/{recommendation}',
             [CareerRecommendationController::class, 'analysis']
@@ -91,6 +86,17 @@ Route::middleware(['auth'])
             '/profile',
             [ProfileController::class, 'destroy']
         )->name('profile.destroy');
+
+        // Profile Export
+        Route::get(
+            '/profile/export',
+            [ProfileController::class, 'export']
+        )->name('profile.export');
+
+        Route::get(
+            '/profile/export/{userId}',
+            [ProfileController::class, 'exportAdmin']
+        )->name('profile.export.admin');
 
         // Certification Evidence
         Route::get(

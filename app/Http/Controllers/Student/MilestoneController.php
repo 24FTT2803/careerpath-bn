@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\StudentMilestone;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
@@ -24,7 +25,7 @@ class MilestoneController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255', // Title is REQUIRED
+            'title' => 'required|string|max:255',
             'category' => 'required|string|in:academic,career,personal,skill',
             'description' => 'nullable|string',
             'target_date' => 'nullable|date',
@@ -38,10 +39,18 @@ class MilestoneController extends Controller
             'category' => $request->category,
             'description' => $request->description,
             'target_date' => $request->target_date,
-            // Auto-complete if the target date is in the past
             'is_completed' => $isPast,
             'completed_date' => $isPast ? now() : null,
         ]);
+
+        // ============================================
+        // LOG ACTIVITY - Milestone added
+        // ============================================
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $request->title,
+            'added'
+        );
 
         $message = $isPast 
             ? '✅ Past milestone added and marked as completed!' 
@@ -58,12 +67,30 @@ class MilestoneController extends Controller
             'completed_date' => now(),
         ]);
 
+        // ============================================
+        // LOG ACTIVITY - Milestone completed
+        // ============================================
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $milestone->title,
+            'completed'
+        );
+
         return redirect()->route('student.milestones')
             ->with('success', '🎉 Milestone completed!');
     }
 
     public function destroy(StudentMilestone $milestone)
     {
+        // ============================================
+        // LOG ACTIVITY - Milestone deleted
+        // ============================================
+        NotificationHelper::logMilestoneActivity(
+            Auth::id(),
+            $milestone->title,
+            'deleted'
+        );
+
         $milestone->delete();
         return redirect()->route('student.milestones')
             ->with('success', 'Milestone deleted.');

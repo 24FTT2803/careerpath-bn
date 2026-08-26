@@ -219,10 +219,11 @@
         font-family: var(--font-body);
     }
 
-    .edit-profile .cpbn-field .error {
+    .edit-profile .cpbn-field .error,
+    .edit-profile .cpbn-error {
         color: var(--rose);
         font-size: 12px;
-        margin-top: 4px;
+        margin-top: 6px;
         font-family: var(--font-body);
     }
 
@@ -259,6 +260,173 @@
         color: var(--ink-dim);
         margin-top: 12px;
         font-family: var(--font-body);
+    }
+
+    /* Additional Skills / Interests */
+    .edit-profile .cpbn-additional {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+    }
+
+    .edit-profile .cpbn-additional[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-additional-heading {
+        margin-bottom: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .edit-profile .cpbn-custom-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px 7px 12px;
+        border: 1px solid var(--gold);
+        border-radius: 100px;
+        background: var(--gold-wash);
+        color: #7b5c23;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-chip button {
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    .edit-profile .cpbn-custom-chip button:hover {
+        background: rgba(123, 92, 35, 0.12);
+    }
+
+    .edit-profile .cpbn-custom-entry {
+        display: flex;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .edit-profile .cpbn-custom-entry input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 13px;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: var(--font-body);
+        background: #fff;
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-custom-entry input:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 0 4px rgba(207, 154, 61, 0.15);
+    }
+
+    .edit-profile .cpbn-custom-add {
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 8px;
+        padding: 0 16px;
+        background: var(--gold);
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-add:hover {
+        background: var(--gold-bright);
+    }
+
+    .edit-profile .cpbn-custom-example {
+        margin-top: 7px;
+        color: var(--ink-dim);
+        font-size: 11px;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-feedback {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 7px;
+        font-size: 12px;
+        line-height: 1.5;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-feedback[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-custom-feedback.warning {
+        background: var(--gold-wash);
+        color: #7b5c23;
+        border: 1px solid rgba(207, 154, 61, 0.35);
+    }
+
+    .edit-profile .cpbn-custom-feedback.error {
+        background: var(--rose-wash);
+        color: #9a453c;
+        border: 1px solid rgba(198, 91, 78, 0.25);
+    }
+
+    .edit-profile .cpbn-custom-warning-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 9px;
+    }
+
+    .edit-profile .cpbn-custom-warning-actions[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-custom-warning-actions button {
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-edit {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink-dim);
+    }
+
+    .edit-profile .cpbn-custom-add-anyway {
+        border: 1px solid var(--gold);
+        background: var(--gold);
+        color: var(--ink);
     }
 
     /* Project & Certification Cards */
@@ -482,6 +650,14 @@
         .edit-profile .head {
             flex-direction: column;
         }
+
+        .edit-profile .cpbn-custom-entry {
+            flex-direction: column;
+        }
+
+        .edit-profile .cpbn-custom-add {
+            min-height: 42px;
+        }
     }
 </style>
 
@@ -573,7 +749,11 @@
 
                     <div class="cpbn-field">
                         <label>Email <span class="req">*</span></label>
-                        <input type="email" value="{{ $user->email }}" disabled>
+                        <input
+                            type="email"
+                            value="{{ $user->email }}"
+                            disabled
+                        >
                     </div>
 
                     <div class="cpbn-field">
@@ -624,6 +804,7 @@
 
                         <select name="nationality">
                             <option value="">Select your nationality</option>
+
                             @foreach([
                                 'Brunei Darussalam',
                                 'Cambodia',
@@ -757,27 +938,56 @@
                 <p class="desc">Select your technical skills</p>
 
                 @php
-                    $skillOptions = [
-                        'Python',
-                        'JavaScript',
-                        'SQL',
-                        'Java',
-                        'PHP',
-                        'HTML/CSS',
-                        'React',
-                        'Node.js',
-                        'Git',
-                        'Linux',
-                        'Docker',
-                        'AWS',
-                        'C++',
-                        'C#',
-                        'Ruby'
-                    ];
+                    $skillOptions = $skillOptions ?? [];
+
+                    $storedSkillNames = $user
+                        ->competencies
+                        ->pluck('skill_name')
+                        ->toArray();
+
+                    $storedPredefinedSkills = array_values(
+                        array_filter(
+                            $storedSkillNames,
+                            fn ($skill) => in_array(
+                                $skill,
+                                $skillOptions,
+                                true
+                            )
+                        )
+                    );
+
+                    $storedAdditionalSkills = array_values(
+                        array_filter(
+                            $storedSkillNames,
+                            fn ($skill) => ! in_array(
+                                $skill,
+                                $skillOptions,
+                                true
+                            )
+                        )
+                    );
 
                     $savedSkills = old(
                         'skills',
-                        $user->competencies->pluck('skill_name')->toArray()
+                        $storedPredefinedSkills
+                    );
+
+                    $savedAdditionalSkills = old(
+                        'custom_skills',
+                        $storedAdditionalSkills
+                    );
+
+                    $savedAdditionalSkills = is_array($savedAdditionalSkills)
+                        ? array_values(
+                            array_filter(
+                                $savedAdditionalSkills,
+                                fn ($skill) => trim((string) $skill) !== ''
+                            )
+                        )
+                        : [];
+
+                    $hasAdditionalSkills = ! empty(
+                        $savedAdditionalSkills
                     );
                 @endphp
 
@@ -788,16 +998,128 @@
                                 type="checkbox"
                                 name="skills[]"
                                 value="{{ $skill }}"
-                                {{ in_array($skill, $savedSkills, true) ? 'checked' : '' }}
+                                {{ in_array($skill, $savedSkills ?? [], true) ? 'checked' : '' }}
                             >
                             <span>{{ $skill }}</span>
                         </label>
                     @endforeach
+
+                    <label class="cpbn-check">
+                        <input
+                            type="checkbox"
+                            id="additional-skills-toggle"
+                            {{ $hasAdditionalSkills ? 'checked' : '' }}
+                        >
+                        <span>Others</span>
+                    </label>
                 </div>
 
                 <p class="cpbn-check-note">
                     Select all that apply. More skills = better career matching.
                 </p>
+
+                <div
+                    id="additional-skills-section"
+                    class="cpbn-additional"
+                    {{ $hasAdditionalSkills ? '' : 'hidden' }}
+                >
+                    <div class="cpbn-additional-heading">
+                        Additional Skills
+                    </div>
+
+                    <div
+                        id="additional-skill-chips"
+                        class="cpbn-custom-chips"
+                    >
+                        @foreach($savedAdditionalSkills as $skill)
+                            <span
+                                class="cpbn-custom-chip"
+                                data-value="{{ $skill }}"
+                            >
+                                <span>{{ $skill }}</span>
+
+                                <button
+                                    type="button"
+                                    class="cpbn-remove-custom-chip"
+                                    aria-label="Remove {{ $skill }}"
+                                    title="Remove"
+                                >
+                                    &times;
+                                </button>
+
+                                <input
+                                    type="hidden"
+                                    name="custom_skills[]"
+                                    value="{{ $skill }}"
+                                >
+                            </span>
+                        @endforeach
+                    </div>
+
+                    <div class="cpbn-custom-entry">
+                        <input
+                            type="text"
+                            id="additional-skill-input"
+                            maxlength="60"
+                            autocomplete="off"
+                            placeholder="Type another skill..."
+                            aria-describedby="additional-skill-example additional-skill-feedback"
+                        >
+
+                        <button
+                            type="button"
+                            id="add-additional-skill"
+                            class="cpbn-custom-add"
+                        >
+                            Add
+                        </button>
+                    </div>
+
+                    <p
+                        id="additional-skill-example"
+                        class="cpbn-custom-example"
+                    >
+                        Examples: Laravel, Flutter, Power BI
+                    </p>
+
+                    <div
+                        id="additional-skill-feedback"
+                        class="cpbn-custom-feedback"
+                        hidden
+                    >
+                        <span id="additional-skill-feedback-text"></span>
+
+                        <div
+                            id="additional-skill-warning-actions"
+                            class="cpbn-custom-warning-actions"
+                            hidden
+                        >
+                            <button
+                                type="button"
+                                id="edit-additional-skill"
+                                class="cpbn-custom-edit"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                id="add-additional-skill-anyway"
+                                class="cpbn-custom-add-anyway"
+                            >
+                                Add Anyway
+                            </button>
+                        </div>
+                    </div>
+
+                    @error('custom_skills')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+
+                    @error('custom_skills.*')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
             <!-- SECTION 4: Interests -->
@@ -812,32 +1134,27 @@
                 <p class="desc">What are you interested in?</p>
 
                 @php
-                    $interestOptions = [
-                        'Problem Solving',
-                        'Teamwork',
-                        'Communication',
-                        'Leadership',
-                        'Creativity',
-                        'Analytical Thinking',
-                        'Research',
-                        'Writing',
-                        'Public Speaking',
-                        'Programming',
-                        'Data Analysis',
-                        'Networking',
-                        'Cybersecurity',
-                        'Cloud Computing',
-                        'Project Management'
-                    ];
+                    $interestOptions = $interestOptions ?? [];
 
-                    $savedInterests = old(
-                        'interests',
-                        $user->interests->pluck('interest_name')->toArray()
+                    $storedInterestNames = $user
+                        ->interests
+                        ->pluck('interest_name')
+                        ->toArray();
+
+                    $storedPredefinedInterests = array_values(
+                        array_filter(
+                            $storedInterestNames,
+                            fn ($interest) => in_array(
+                                $interest,
+                                $interestOptions,
+                                true
+                            )
+                        )
                     );
 
-                    $customInterests = array_values(
+                    $storedAdditionalInterests = array_values(
                         array_filter(
-                            $savedInterests,
+                            $storedInterestNames,
                             fn ($interest) => ! in_array(
                                 $interest,
                                 $interestOptions,
@@ -846,11 +1163,27 @@
                         )
                     );
 
-                    $hasOtherInterest = ! empty($customInterests);
+                    $savedInterests = old(
+                        'interests',
+                        $storedPredefinedInterests
+                    );
 
-                    $otherInterestText = old(
-                        'interest_others_text',
-                        implode(', ', $customInterests)
+                    $savedAdditionalInterests = old(
+                        'custom_interests',
+                        $storedAdditionalInterests
+                    );
+
+                    $savedAdditionalInterests = is_array($savedAdditionalInterests)
+                        ? array_values(
+                            array_filter(
+                                $savedAdditionalInterests,
+                                fn ($interest) => trim((string) $interest) !== ''
+                            )
+                        )
+                        : [];
+
+                    $hasAdditionalInterests = ! empty(
+                        $savedAdditionalInterests
                     );
                 @endphp
 
@@ -861,7 +1194,7 @@
                                 type="checkbox"
                                 name="interests[]"
                                 value="{{ $interest }}"
-                                {{ in_array($interest, $savedInterests, true) ? 'checked' : '' }}
+                                {{ in_array($interest, $savedInterests ?? [], true) ? 'checked' : '' }}
                             >
                             <span>{{ $interest }}</span>
                         </label>
@@ -870,37 +1203,119 @@
                     <label class="cpbn-check">
                         <input
                             type="checkbox"
-                            id="interest-others"
-                            {{ $hasOtherInterest ? 'checked' : '' }}
+                            id="additional-interests-toggle"
+                            {{ $hasAdditionalInterests ? 'checked' : '' }}
                         >
                         <span>Others</span>
                     </label>
                 </div>
 
                 <div
-                    id="interest-others-field"
-                    style="{{ $hasOtherInterest ? 'display:block' : 'display:none' }}; margin-top:12px;"
+                    id="additional-interests-section"
+                    class="cpbn-additional"
+                    {{ $hasAdditionalInterests ? '' : 'hidden' }}
                 >
-                    <div class="cpbn-field">
-                        <label>
-                            Please specify your other interests
-                            <span class="req">*</span>
-                        </label>
+                    <div class="cpbn-additional-heading">
+                        Additional Interests
+                    </div>
 
+                    <div
+                        id="additional-interest-chips"
+                        class="cpbn-custom-chips"
+                    >
+                        @foreach($savedAdditionalInterests as $additionalInterest)
+                            <span
+                                class="cpbn-custom-chip"
+                                data-value="{{ $additionalInterest }}"
+                            >
+                                <span>{{ $additionalInterest }}</span>
+
+                                <button
+                                    type="button"
+                                    class="cpbn-remove-custom-chip"
+                                    aria-label="Remove {{ $additionalInterest }}"
+                                    title="Remove"
+                                >
+                                    &times;
+                                </button>
+
+                                <input
+                                    type="hidden"
+                                    name="custom_interests[]"
+                                    value="{{ $additionalInterest }}"
+                                >
+                            </span>
+                        @endforeach
+                    </div>
+
+                    <div class="cpbn-custom-entry">
                         <input
                             type="text"
-                            name="interest_others_text"
-                            id="interest-others-text"
-                            value="{{ $otherInterestText }}"
-                            placeholder="e.g. AI, Machine Learning, Graphic Design"
-                            {{ $hasOtherInterest ? 'required' : '' }}
+                            id="additional-interest-input"
+                            maxlength="60"
+                            autocomplete="off"
+                            placeholder="Type another interest..."
+                            aria-describedby="additional-interest-example additional-interest-feedback"
                         >
 
-                        <span class="hint">
-                            Separate multiple interests with commas
-                        </span>
+                        <button
+                            type="button"
+                            id="add-additional-interest"
+                            class="cpbn-custom-add"
+                        >
+                            Add
+                        </button>
                     </div>
+
+                    <p
+                        id="additional-interest-example"
+                        class="cpbn-custom-example"
+                    >
+                        Examples: Artificial Intelligence, UI/UX, Game Development
+                    </p>
+
+                    <div
+                        id="additional-interest-feedback"
+                        class="cpbn-custom-feedback"
+                        hidden
+                    >
+                        <span id="additional-interest-feedback-text"></span>
+
+                        <div
+                            id="additional-interest-warning-actions"
+                            class="cpbn-custom-warning-actions"
+                            hidden
+                        >
+                            <button
+                                type="button"
+                                id="edit-additional-interest"
+                                class="cpbn-custom-edit"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                id="add-additional-interest-anyway"
+                                class="cpbn-custom-add-anyway"
+                            >
+                                Add Anyway
+                            </button>
+                        </div>
+                    </div>
+
+                    @error('custom_interests')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+
+                    @error('custom_interests.*')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
                 </div>
+
+                @error('interests')
+                    <div class="cpbn-error">{{ $message }}</div>
+                @enderror
             </div>
 
             <!-- SECTION 5: Projects -->
@@ -1350,5 +1765,557 @@
 
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const markChanged = function () {
+        if (typeof window.setFormChanged === 'function') {
+            window.setFormChanged(true);
+        }
+    };
+
+    const obviousKeyboardSmashes = new Set([
+        'qwerty',
+        'qwertyui',
+        'qwertyuiop',
+        'asdfgh',
+        'asdfghjkl',
+        'zxcvbn',
+        'zxcvbnm'
+    ]);
+
+    const initialiseAdditionalField = function (config) {
+        const toggle = document.getElementById(config.toggleId);
+        const section = document.getElementById(config.sectionId);
+        const input = document.getElementById(config.inputId);
+        const addButton = document.getElementById(config.addButtonId);
+        const chips = document.getElementById(config.chipsId);
+        const feedback = document.getElementById(config.feedbackId);
+        const feedbackText = document.getElementById(config.feedbackTextId);
+        const warningActions = document.getElementById(
+            config.warningActionsId
+        );
+        const editButton = document.getElementById(config.editButtonId);
+        const addAnywayButton = document.getElementById(
+            config.addAnywayButtonId
+        );
+
+        if (
+            ! toggle
+            || ! section
+            || ! input
+            || ! addButton
+            || ! chips
+            || ! feedback
+            || ! feedbackText
+            || ! warningActions
+            || ! editButton
+            || ! addAnywayButton
+        ) {
+            return;
+        }
+
+        const predefined = Array.isArray(config.predefined)
+            ? config.predefined
+            : [];
+
+        const aliasGroups = Array.isArray(config.aliasGroups)
+            ? config.aliasGroups
+            : [];
+
+        let pendingValue = null;
+
+        const cleanValue = function (value) {
+            return String(value)
+                .trim()
+                .replace(/\s+/gu, ' ');
+        };
+
+        const normaliseKey = function (value) {
+            return cleanValue(value)
+                .toLocaleLowerCase()
+                .replace(/[\s\/_-]+/gu, '');
+        };
+
+        const canonicalKey = function (value) {
+            const key = normaliseKey(value);
+
+            for (const group of aliasGroups) {
+                if (
+                    ! Array.isArray(group)
+                    || group.length === 0
+                ) {
+                    continue;
+                }
+
+                const matches = group.some(
+                    alias =>
+                        normaliseKey(String(alias))
+                        === key
+                );
+
+                if (matches) {
+                    return normaliseKey(
+                        String(group[0])
+                    );
+                }
+            }
+
+            return key;
+        };
+
+        const currentCustomValues = function () {
+            return Array.from(
+                chips.querySelectorAll(
+                    '.cpbn-custom-chip'
+                )
+            ).map(
+                chip => chip.dataset.value || ''
+            );
+        };
+
+        const allKnownTerms = function () {
+            return [
+                ...predefined,
+                ...currentCustomValues(),
+                ...aliasGroups.flat()
+            ].filter(Boolean);
+        };
+
+        const findDuplicate = function (value) {
+            const key = canonicalKey(value);
+
+            const predefinedMatch = predefined.find(
+                item =>
+                    canonicalKey(item)
+                    === key
+            );
+
+            if (predefinedMatch) {
+                return {
+                    type: 'predefined',
+                    value: predefinedMatch
+                };
+            }
+
+            const customMatch = currentCustomValues().find(
+                item =>
+                    canonicalKey(item)
+                    === key
+            );
+
+            if (customMatch) {
+                return {
+                    type: 'custom',
+                    value: customMatch
+                };
+            }
+
+            return null;
+        };
+
+        const validateClearlyInvalid = function (value) {
+            if (! value) {
+                return `Enter a ${config.singular} before adding it.`;
+            }
+
+            if (value.length > 60) {
+                return `Each additional ${config.singular} must be 60 characters or fewer.`;
+            }
+
+            const lettersAndNumbers = value.replace(
+                /[^\p{L}\p{N}]+/gu,
+                ''
+            );
+
+            if (! lettersAndNumbers) {
+                return config.invalidMessage;
+            }
+
+            if (/^\d+$/u.test(lettersAndNumbers)) {
+                return `A ${config.singular} cannot contain only numbers. ${config.invalidMessage}`;
+            }
+
+            const lower =
+                lettersAndNumbers.toLocaleLowerCase();
+
+            if (
+                lower.length >= 4
+                && /^(.)\1{3,}$/u.test(lower)
+            ) {
+                return `This looks like repeated characters rather than a ${config.singular}. Check the value and try again.`;
+            }
+
+            if (
+                obviousKeyboardSmashes.has(lower)
+            ) {
+                return `This looks like a keyboard-smash rather than a ${config.singular}. ${config.invalidMessage}`;
+            }
+
+            return null;
+        };
+
+        const findSimilarTerm = function (value) {
+            const distance =
+                window.cpbnLevenshteinDistance;
+
+            if (typeof distance !== 'function') {
+                return null;
+            }
+
+            const comparable = cleanValue(value)
+                .toLocaleLowerCase();
+
+            if (comparable.length < 5) {
+                return null;
+            }
+
+            let best = null;
+
+            for (const candidate of allKnownTerms()) {
+                const candidateComparable =
+                    cleanValue(candidate)
+                        .toLocaleLowerCase();
+
+                if (
+                    ! candidateComparable
+                    || canonicalKey(candidateComparable)
+                        === canonicalKey(comparable)
+                ) {
+                    continue;
+                }
+
+                const difference = distance(
+                    comparable,
+                    candidateComparable
+                );
+
+                const maxLength = Math.max(
+                    comparable.length,
+                    candidateComparable.length
+                );
+
+                const similarity = 1 - (
+                    difference / maxLength
+                );
+
+                if (
+                    difference <= 2
+                    && similarity >= 0.75
+                    && (
+                        ! best
+                        || similarity > best.similarity
+                    )
+                ) {
+                    best = {
+                        value: candidate,
+                        similarity
+                    };
+                }
+            }
+
+            return best;
+        };
+
+        const looksUnusual = function (value) {
+            const lettersOnly = value.replace(
+                /[^A-Za-z]/g,
+                ''
+            );
+
+            return (
+                lettersOnly.length >= 6
+                && ! /[aeiouy]/i.test(
+                    lettersOnly
+                )
+            );
+        };
+
+        const hideFeedback = function () {
+            feedback.hidden = true;
+            feedback.classList.remove(
+                'warning',
+                'error'
+            );
+            feedbackText.textContent = '';
+            warningActions.hidden = true;
+            pendingValue = null;
+        };
+
+        const showError = function (message) {
+            feedback.hidden = false;
+            feedback.classList.remove('warning');
+            feedback.classList.add('error');
+            feedbackText.textContent = message;
+            warningActions.hidden = true;
+            pendingValue = null;
+        };
+
+        const showWarning = function (
+            message,
+            value
+        ) {
+            feedback.hidden = false;
+            feedback.classList.remove('error');
+            feedback.classList.add('warning');
+            feedbackText.textContent = message;
+            warningActions.hidden = false;
+            pendingValue = value;
+        };
+
+        const createChip = function (value) {
+            const chip =
+                document.createElement('span');
+
+            chip.className =
+                'cpbn-custom-chip';
+
+            chip.dataset.value = value;
+
+            const label =
+                document.createElement('span');
+
+            label.textContent = value;
+
+            const removeButton =
+                document.createElement('button');
+
+            removeButton.type = 'button';
+
+            removeButton.className =
+                'cpbn-remove-custom-chip';
+
+            removeButton.setAttribute(
+                'aria-label',
+                `Remove ${value}`
+            );
+
+            removeButton.title = 'Remove';
+            removeButton.innerHTML = '&times;';
+
+            const hidden =
+                document.createElement('input');
+
+            hidden.type = 'hidden';
+            hidden.name = config.hiddenName;
+            hidden.value = value;
+
+            chip.append(
+                label,
+                removeButton,
+                hidden
+            );
+
+            chips.appendChild(chip);
+
+            input.value = '';
+            hideFeedback();
+            markChanged();
+            input.focus();
+        };
+
+        const attemptAdd = function () {
+            const value = cleanValue(
+                input.value
+            );
+
+            const invalidMessage =
+                validateClearlyInvalid(value);
+
+            if (invalidMessage) {
+                showError(invalidMessage);
+                return;
+            }
+
+            const duplicate =
+                findDuplicate(value);
+
+            if (duplicate) {
+                if (
+                    duplicate.type
+                    === 'predefined'
+                ) {
+                    showError(
+                        `"${value}" matches the predefined ${config.singular} "${duplicate.value}". Select that option instead.`
+                    );
+                } else {
+                    showError(
+                        `"${value}" is already in your additional ${config.plural}.`
+                    );
+                }
+
+                return;
+            }
+
+            const similar =
+                findSimilarTerm(value);
+
+            if (similar) {
+                showWarning(
+                    `This looks similar to "${similar.value}". Check the spelling, or add it anyway if this is a different term.`,
+                    value
+                );
+
+                return;
+            }
+
+            if (looksUnusual(value)) {
+                showWarning(
+                    `This ${config.singular} looks unusual. It may be a new term, acronym, or spelling variation. Check it before adding.`,
+                    value
+                );
+
+                return;
+            }
+
+            createChip(value);
+        };
+
+        const setEnabled = function (enabled) {
+            section.hidden = ! enabled;
+
+            section
+                .querySelectorAll(
+                    `input[name="${config.hiddenName}"]`
+                )
+                .forEach(hidden => {
+                    hidden.disabled = ! enabled;
+                });
+
+            if (enabled) {
+                input.focus();
+            } else {
+                /*
+                 * Important:
+                 * Chips are NOT deleted here.
+                 *
+                 * Unticking Others only prevents them from
+                 * being submitted. If the user changes their
+                 * mind before saving, checking Others again
+                 * restores the same chips.
+                 *
+                 * If the page is refreshed without saving,
+                 * the database remains unchanged.
+                 */
+                hideFeedback();
+            }
+        };
+
+        setEnabled(toggle.checked);
+
+        toggle.addEventListener(
+            'change',
+            function () {
+                setEnabled(this.checked);
+                markChanged();
+            }
+        );
+
+        addButton.addEventListener(
+            'click',
+            attemptAdd
+        );
+
+        input.addEventListener(
+            'keydown',
+            function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    attemptAdd();
+                }
+            }
+        );
+
+        input.addEventListener(
+            'input',
+            hideFeedback
+        );
+
+        chips.addEventListener(
+            'click',
+            function (event) {
+                const removeButton =
+                    event.target.closest(
+                        '.cpbn-remove-custom-chip'
+                    );
+
+                if (! removeButton) {
+                    return;
+                }
+
+                const chip =
+                    removeButton.closest(
+                        '.cpbn-custom-chip'
+                    );
+
+                if (chip) {
+                    chip.remove();
+                    hideFeedback();
+                    markChanged();
+                }
+            }
+        );
+
+        editButton.addEventListener(
+            'click',
+            function () {
+                hideFeedback();
+                input.focus();
+                input.select();
+            }
+        );
+
+        addAnywayButton.addEventListener(
+            'click',
+            function () {
+                if (! pendingValue) {
+                    return;
+                }
+
+                const value = pendingValue;
+                createChip(value);
+            }
+        );
+    };
+
+    initialiseAdditionalField({
+        toggleId: 'additional-skills-toggle',
+        sectionId: 'additional-skills-section',
+        inputId: 'additional-skill-input',
+        addButtonId: 'add-additional-skill',
+        chipsId: 'additional-skill-chips',
+        feedbackId: 'additional-skill-feedback',
+        feedbackTextId: 'additional-skill-feedback-text',
+        warningActionsId: 'additional-skill-warning-actions',
+        editButtonId: 'edit-additional-skill',
+        addAnywayButtonId: 'add-additional-skill-anyway',
+        hiddenName: 'custom_skills[]',
+        singular: 'skill',
+        plural: 'skills',
+        predefined: @json($skillOptions ?? []),
+        aliasGroups: @json($skillAliasGroups ?? []),
+        invalidMessage: 'Please enter a skill, technology, tool, method, or competency you have.'
+    });
+
+    initialiseAdditionalField({
+        toggleId: 'additional-interests-toggle',
+        sectionId: 'additional-interests-section',
+        inputId: 'additional-interest-input',
+        addButtonId: 'add-additional-interest',
+        chipsId: 'additional-interest-chips',
+        feedbackId: 'additional-interest-feedback',
+        feedbackTextId: 'additional-interest-feedback-text',
+        warningActionsId: 'additional-interest-warning-actions',
+        editButtonId: 'edit-additional-interest',
+        addAnywayButtonId: 'add-additional-interest-anyway',
+        hiddenName: 'custom_interests[]',
+        singular: 'interest',
+        plural: 'interests',
+        predefined: @json($interestOptions ?? []),
+        aliasGroups: @json($interestAliasGroups ?? []),
+        invalidMessage: 'Please enter a topic, field, technology, or activity you are interested in.'
+    });
+});
+</script>
 
 @endsection
