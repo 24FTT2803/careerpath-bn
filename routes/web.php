@@ -3,12 +3,13 @@
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\MilestoneController;
+use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\BiicfExplorerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Student\CareerRecommendationController;
 
 // ============================================
 // HOME ROUTE
@@ -43,100 +44,245 @@ require __DIR__.'/auth.php';
 // ============================================
 // STUDENT ROUTES (Developer 1)
 // ============================================
-Route::middleware(['auth'])->prefix('student')->name('student.')->group(function () {
-    Route::get(
-        '/career-assessment',
-        [CareerRecommendationController::class, 'assessment']
-    )->name('recommendations.assessment');
+Route::middleware(['auth'])
+    ->prefix('student')
+    ->name('student.')
+    ->group(function () {
 
-    Route::get(
-        '/career-analysis/{recommendation}',
-        [CareerRecommendationController::class, 'analysis']
-    )->name('recommendations.analysis');
+        // Career Recommendations
+        Route::get(
+            '/career-assessment',
+            [CareerRecommendationController::class, 'assessment']
+        )->name('recommendations.assessment');
 
-    Route::post(
-        '/recommendations/generate',
-        [CareerRecommendationController::class, 'generate']
-    )->name('recommendations.generate');
+        Route::get(
+            '/career-analysis/{recommendation}',
+            [CareerRecommendationController::class, 'analysis']
+        )->name('recommendations.analysis');
 
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::post(
+            '/recommendations/generate',
+            [CareerRecommendationController::class, 'generate']
+        )->name('recommendations.generate');
 
-    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+        // Dashboard
+        Route::get(
+            '/dashboard',
+            [DashboardController::class, 'index']
+        )->name('dashboard');
 
-    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
+        // Profile
+        Route::get(
+            '/profile',
+            [ProfileController::class, 'index']
+        )->name('profile');
 
-    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::get(
+            '/profile/edit',
+            [ProfileController::class, 'edit']
+        )->name('profile.edit');
 
-    Route::get(
-        '/certifications/{certification}/evidence',
-        [ProfileController::class, 'certificationEvidence']
-    )->name('certifications.evidence');
+        Route::put(
+            '/profile',
+            [ProfileController::class, 'update']
+        )->name('profile.update');
 
-    Route::get('/milestones', [MilestoneController::class, 'index'])->name('milestones');
+        Route::delete(
+            '/profile',
+            [ProfileController::class, 'destroy']
+        )->name('profile.destroy');
 
-    Route::post('/milestones', [MilestoneController::class, 'store'])->name('milestones.store');
+        // Certification Evidence
+        Route::get(
+            '/certifications/{certification}/evidence',
+            [ProfileController::class, 'certificationEvidence']
+        )->name('certifications.evidence');
 
-    Route::put('/milestones/{milestone}', [MilestoneController::class, 'complete'])->name('milestones.complete');
+        // Milestones
+        Route::get(
+            '/milestones',
+            [MilestoneController::class, 'index']
+        )->name('milestones');
 
-    Route::delete('/milestones/{milestone}', [MilestoneController::class, 'destroy'])->name('milestones.destroy');
+        Route::post(
+            '/milestones',
+            [MilestoneController::class, 'store']
+        )->name('milestones.store');
 
-    Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
+        Route::put(
+            '/milestones/{milestone}',
+            [MilestoneController::class, 'complete']
+        )->name('milestones.complete');
 
-    Route::put('/settings/password', [ProfileController::class, 'updatePassword'])->name('settings.password');
+        Route::delete(
+            '/milestones/{milestone}',
+            [MilestoneController::class, 'destroy']
+        )->name('milestones.destroy');
 
-    Route::get('/notifications', [ProfileController::class, 'notifications'])->name('notifications');
+        // Settings
+        Route::get(
+            '/settings',
+            [ProfileController::class, 'settings']
+        )->name('settings');
 
-    Route::post('/notifications/{id}/read', [ProfileController::class, 'markAsRead'])->name('notifications.read');
+        Route::put(
+            '/settings/password',
+            [ProfileController::class, 'updatePassword']
+        )->name('settings.password');
 
-    Route::post('/notifications/read-all', [ProfileController::class, 'markAllAsRead'])->name('notifications.read-all');
-});
+        // Notifications
+        Route::get(
+            '/notifications',
+            [ProfileController::class, 'notifications']
+        )->name('notifications');
+
+        Route::post(
+            '/notifications/{id}/read',
+            [ProfileController::class, 'markAsRead']
+        )->name('notifications.read');
+
+        Route::post(
+            '/notifications/read-all',
+            [ProfileController::class, 'markAllAsRead']
+        )->name('notifications.read-all');
+
+        // BIICF Explorer
+        Route::prefix('biicf-explorer')
+            ->name('biicf-explorer.')
+            ->group(function () {
+
+                Route::get(
+                    '/',
+                    [BiicfExplorerController::class, 'index']
+                )->name('index');
+
+                Route::get(
+                    '/sub-sectors/{subSector:slug}/roles',
+                    [BiicfExplorerController::class, 'subSectorRoles']
+                )->name('sub-sector.roles');
+
+                Route::get(
+                    '/job-roles/{jobRole:slug}',
+                    [BiicfExplorerController::class, 'jobRole']
+                )->name('job-role.show');
+
+                Route::get(
+                    '/job-roles/{jobRole:slug}/compare',
+                    [BiicfExplorerController::class, 'compareToMe']
+                )->name('job-role.compare');
+
+                Route::get(
+                    '/competencies',
+                    [BiicfExplorerController::class, 'competencies']
+                )->name('competencies');
+            });
+    });
 
 // ============================================
 // ADMIN ROUTES
 // ============================================
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-        ->name('dashboard')
-        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+Route::middleware(['auth'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
 
-    Route::get('/students', [AdminStudentController::class, 'index'])
-        ->name('students.index')
-        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+        Route::get(
+            '/dashboard',
+            [AdminDashboardController::class, 'index']
+        )
+            ->name('dashboard')
+            ->middleware(
+                \App\Http\Middleware\LecturerMiddleware::class
+            );
 
-    Route::get('/students/{id}', [AdminStudentController::class, 'show'])
-        ->name('students.show')
-        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+        Route::get(
+            '/students',
+            [AdminStudentController::class, 'index']
+        )
+            ->name('students.index')
+            ->middleware(
+                \App\Http\Middleware\LecturerMiddleware::class
+            );
 
-    Route::get('/careers', [AdminCareerController::class, 'index'])
-        ->name('careers.index')
-        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+        Route::get(
+            '/students/{id}',
+            [AdminStudentController::class, 'show']
+        )
+            ->name('students.show')
+            ->middleware(
+                \App\Http\Middleware\LecturerMiddleware::class
+            );
 
-    Route::get('/careers/{id}', [AdminCareerController::class, 'show'])
-        ->name('careers.show')
-        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+        Route::get(
+            '/careers',
+            [AdminCareerController::class, 'index']
+        )
+            ->name('careers.index')
+            ->middleware(
+                \App\Http\Middleware\LecturerMiddleware::class
+            );
 
-    // Admin ONLY routes
-    Route::get('/users', [AdminUserController::class, 'index'])
-        ->name('users.index')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+        Route::get(
+            '/careers/{id}',
+            [AdminCareerController::class, 'show']
+        )
+            ->name('careers.show')
+            ->middleware(
+                \App\Http\Middleware\LecturerMiddleware::class
+            );
 
-    Route::get('/users/create', [AdminUserController::class, 'create'])
-        ->name('users.create')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+        // Admin ONLY routes
+        Route::get(
+            '/users',
+            [AdminUserController::class, 'index']
+        )
+            ->name('users.index')
+            ->middleware(
+                \App\Http\Middleware\AdminMiddleware::class
+            );
 
-    Route::post('/users', [AdminUserController::class, 'store'])
-        ->name('users.store')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+        Route::get(
+            '/users/create',
+            [AdminUserController::class, 'create']
+        )
+            ->name('users.create')
+            ->middleware(
+                \App\Http\Middleware\AdminMiddleware::class
+            );
 
-    Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])
-        ->name('users.edit')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+        Route::post(
+            '/users',
+            [AdminUserController::class, 'store']
+        )
+            ->name('users.store')
+            ->middleware(
+                \App\Http\Middleware\AdminMiddleware::class
+            );
 
-    Route::put('/users/{id}', [AdminUserController::class, 'update'])
-        ->name('users.update')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
+        Route::get(
+            '/users/{id}/edit',
+            [AdminUserController::class, 'edit']
+        )
+            ->name('users.edit')
+            ->middleware(
+                \App\Http\Middleware\AdminMiddleware::class
+            );
 
-    Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])
-        ->name('users.destroy')
-        ->middleware(\App\Http\Middleware\AdminMiddleware::class);
-});
+        Route::put(
+            '/users/{id}',
+            [AdminUserController::class, 'update']
+        )
+            ->name('users.update')
+            ->middleware(
+                \App\Http\Middleware\AdminMiddleware::class
+            );
+
+        Route::delete(
+            '/users/{id}',
+            [AdminUserController::class, 'destroy']
+        )
+            ->name('users.destroy')
+            ->middleware(
+                \App\Http\Middleware\AdminMiddleware::class
+            );
+    });

@@ -4,486 +4,1117 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CareerPath BN — AI Career Guidance for Politeknik Brunei</title>
-    <meta name="description" content="CareerPath BN maps your interests, competencies and academic profile to real BIICF-aligned careers, shows exactly what's missing, and builds the plan to close the gap.">
+    <meta name="description" content="CareerPath BN maps your interests, competencies and academic profile to real BIICF-aligned careers.">
 
-    @fonts
-
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root{
-            --ink:#0d1a2b;
-            --ink-2:#132540;
-            --ink-3:#1c3355;
-            --paper:#f5f1e6;
-            --paper-dim:#c7c2b4;
-            --gold:#cf9a3d;
-            --gold-bright:#e9b95a;
-            --rose:#c65b4e;
-            --line:rgba(245,241,230,0.14);
-            --font-display:'Fraunces', Georgia, serif;
-            --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-            --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+        :root {
+            --primary: #1a3a5c;
+            --primary-light: #2a5a8c;
+            --primary-dark: #0d1f33;
+            --accent: #c9a84c;
+            --accent-light: #e8d4a0;
+            --accent-dark: #a88830;
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --success: #2d8f5c;
+            --danger: #c0392b;
+            --warning: #e67e22;
+            --shadow: 0 4px 24px rgba(26, 58, 92, 0.08);
+            --shadow-hover: 0 8px 40px rgba(26, 58, 92, 0.15);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        html{scroll-behavior:smooth}
-        body{
-            background:var(--ink);
-            color:var(--paper);
-            font-family:var(--font-body);
-            font-size:16px;
-            line-height:1.6;
-            -webkit-font-smoothing:antialiased;
-            overflow-x:hidden;
-        }
-        img,svg{display:block;max-width:100%}
-        a{color:inherit;text-decoration:none}
-        ul{list-style:none}
-        .wrap{max-width:1180px;margin-inline:auto;padding-inline:28px}
-        section{position:relative}
-
-        /* ---------- utility: reveal on load ---------- */
-        .reveal{opacity:0;transform:translateY(14px);animation:reveal .8s cubic-bezier(.2,.7,.2,1) forwards}
-        @keyframes reveal{to{opacity:1;transform:translateY(0)}}
-        @media (prefers-reduced-motion:reduce){
-            .reveal{animation:none;opacity:1;transform:none}
-            html{scroll-behavior:auto}
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        /* ---------- header ---------- */
-        header.site{
-            position:sticky;top:0;z-index:50;
-            background:rgba(13,26,43,0.86);
-            backdrop-filter:blur(10px);
-            border-bottom:1px solid var(--line);
-        }
-        .nav{
-            display:flex;align-items:center;justify-content:space-between;
-            padding-block:16px;
-        }
-        .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:.01em}
-        .brand-mark{width:30px;height:30px;flex-shrink:0}
-        .brand small{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-bright);font-weight:400;margin-top:1px}
-
-        nav.links{display:flex;align-items:center;gap:32px}
-        nav.links a{font-size:14px;color:var(--paper-dim);transition:color .2s}
-        nav.links a:hover{color:var(--paper)}
-
-        .nav-actions{display:flex;align-items:center;gap:12px}
-        .btn{
-            display:inline-flex;align-items:center;justify-content:center;gap:8px;
-            padding:10px 20px;border-radius:3px;font-size:14px;font-weight:500;
-            border:1px solid transparent;transition:all .2s;cursor:pointer;white-space:nowrap;
-        }
-        .btn-ghost{color:var(--paper);border-color:var(--line)}
-        .btn-ghost:hover{border-color:var(--gold-bright);color:var(--gold-bright)}
-        .btn-gold{background:var(--gold);color:var(--ink)}
-        .btn-gold:hover{background:var(--gold-bright)}
-        .nav-toggle{display:none}
-
-        /* ---------- hero ---------- */
-        .hero{padding-top:88px;padding-bottom:40px;overflow:hidden}
-        .hero-inner{display:grid;grid-template-columns:1fr;gap:24px;text-align:left;max-width:760px}
-        .eyebrow{
-            display:inline-flex;align-items:center;gap:8px;
-            font-family:var(--font-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;
-            color:var(--gold-bright);
-        }
-        .eyebrow::before{content:'';width:16px;height:1px;background:var(--gold-bright)}
-        h1.headline{
-            font-family:var(--font-display);
-            font-weight:600;
-            font-size:clamp(38px,6vw,64px);
-            line-height:1.06;
-            letter-spacing:-0.01em;
-            color:var(--paper);
-        }
-        h1.headline em{color:var(--gold-bright);font-style:italic}
-        .sub{
-            font-size:18px;color:var(--paper-dim);max-width:56ch;
-        }
-        .hero-ctas{display:flex;flex-wrap:wrap;gap:14px;margin-top:8px}
-        .btn-lg{padding:14px 26px;font-size:15px;border-radius:3px}
-
-        /* route map svg */
-        .route-wrap{margin-top:56px;position:relative}
-        .route-svg{width:100%;height:auto}
-        .route-label{
-            font-family:var(--font-mono);
-            font-size:11px;
-            letter-spacing:.06em;
-            text-transform:uppercase;
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* ---------- stats strip ---------- */
-        .stats{
-            border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-            background:var(--ink-2);
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
         }
-        .stats-grid{
-            display:grid;grid-template-columns:repeat(4,1fr);
-        }
-        .stat{
-            padding:28px 20px;text-align:center;border-right:1px solid var(--line);
-        }
-        .stat:last-child{border-right:none}
-        .stat .n{font-family:var(--font-mono);font-size:clamp(24px,3vw,34px);color:var(--gold-bright);font-weight:500}
-        .stat .l{font-size:12.5px;color:var(--paper-dim);margin-top:4px;letter-spacing:.02em}
 
-        /* ---------- section headers ---------- */
-        .section{padding-block:96px}
-        .section-head{max-width:620px;margin-bottom:56px}
-        .section-head .eyebrow{margin-bottom:14px}
-        h2.h{
-            font-family:var(--font-display);
-            font-size:clamp(28px,3.4vw,40px);
-            font-weight:600;letter-spacing:-.01em;line-height:1.15;
+        /* ============================================
+           HEADER / NAVIGATION
+           ============================================ */
+        .site-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            transition: var(--transition);
         }
-        .section-head p{color:var(--paper-dim);margin-top:14px;font-size:16px}
 
-        /* ---------- problem section ---------- */
-        .problem{background:var(--ink)}
-        .problem-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
-        .problem-copy p{color:var(--paper-dim);margin-bottom:16px;font-size:16px}
-        .problem-copy p strong{color:var(--paper);font-weight:500}
-        .quote-card{
-            background:var(--ink-2);border:1px solid var(--line);border-left:3px solid var(--rose);
-            padding:28px;border-radius:2px;
+        .site-header.scrolled {
+            box-shadow: var(--shadow);
         }
-        .quote-card p{font-family:var(--font-display);font-size:19px;font-style:italic;color:var(--paper);line-height:1.5}
-        .quote-card span{display:block;margin-top:14px;font-family:var(--font-mono);font-size:11.5px;color:var(--paper-dim);text-transform:uppercase;letter-spacing:.08em}
 
-        /* ---------- how it works ---------- */
-        .how{background:var(--ink-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-        .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
-        .step{background:var(--ink-2);padding:32px 26px;position:relative}
-        .step .num{font-family:var(--font-mono);font-size:13px;color:var(--gold-bright);letter-spacing:.06em}
-        .step h3{font-family:var(--font-display);font-size:21px;font-weight:600;margin-top:14px;margin-bottom:10px}
-        .step p{font-size:14.5px;color:var(--paper-dim)}
-
-        /* ---------- features ---------- */
-        .features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden}
-        .feat{background:var(--ink);padding:28px 24px;transition:background .2s}
-        .feat:hover{background:var(--ink-2)}
-        .feat .ic{width:22px;height:22px;color:var(--gold-bright);margin-bottom:16px}
-        .feat h3{font-size:16px;font-weight:600;margin-bottom:8px;font-family:var(--font-body)}
-        .feat p{font-size:13.5px;color:var(--paper-dim);line-height:1.55}
-
-        /* ---------- BIICF section ---------- */
-        .biicf{background:var(--ink-3);position:relative}
-        .biicf-inner{display:grid;grid-template-columns:1.1fr 0.9fr;gap:56px;align-items:center}
-        .biicf-copy p{color:var(--paper-dim);margin-bottom:16px}
-        .chip-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px}
-        .chip{
-            font-family:var(--font-mono);font-size:12px;padding:7px 12px;border:1px solid var(--line);
-            border-radius:100px;color:var(--paper-dim);
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
         }
-        .biicf-panel{
-            background:var(--ink-2);border:1px solid var(--line);border-radius:4px;padding:32px;
-        }
-        .biicf-panel .row{display:flex;justify-content:space-between;align-items:baseline;padding-block:14px;border-bottom:1px solid var(--line)}
-        .biicf-panel .row:last-child{border-bottom:none}
-        .biicf-panel .row .k{font-size:14px;color:var(--paper-dim)}
-        .biicf-panel .row .v{font-family:var(--font-mono);color:var(--gold-bright);font-size:15px}
-        .biicf-panel .src{margin-top:20px;font-size:11.5px;color:var(--paper-dim);font-family:var(--font-mono)}
 
-        /* ---------- CTA banner ---------- */
-        .cta{
-            background:linear-gradient(135deg, var(--ink-3), var(--ink));
-            border-top:1px solid var(--line);
-            padding-block:88px;text-align:center;
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
         }
-        .cta h2{font-family:var(--font-display);font-size:clamp(28px,4vw,42px);font-weight:600;max-width:640px;margin-inline:auto}
-        .cta p{color:var(--paper-dim);margin-top:16px;max-width:480px;margin-inline:auto}
-        .cta .hero-ctas{justify-content:center;margin-top:32px}
 
-        /* ---------- footer ---------- */
-        footer{border-top:1px solid var(--line);padding-block:48px}
-        .foot-grid{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:20px}
-        .foot-note{font-size:13px;color:var(--paper-dim)}
-        .foot-links{display:flex;gap:24px}
-        .foot-links a{font-size:13px;color:var(--paper-dim);transition:color .2s}
-        .foot-links a:hover{color:var(--paper)}
-
-        /* ---------- responsive ---------- */
-        @media (max-width:960px){
-            .stats-grid{grid-template-columns:repeat(2,1fr)}
-            .stat:nth-child(2){border-right:none}
-            .problem-grid{grid-template-columns:1fr}
-            .steps{grid-template-columns:repeat(2,1fr)}
-            .features-grid{grid-template-columns:repeat(2,1fr)}
-            .biicf-inner{grid-template-columns:1fr}
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 20px;
         }
-        @media (max-width:680px){
-            nav.links{display:none}
-            .stats-grid{grid-template-columns:repeat(2,1fr)}
-            .steps{grid-template-columns:1fr}
-            .features-grid{grid-template-columns:1fr}
-            .section{padding-block:64px}
+
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 22px;
+            color: var(--primary);
+        }
+
+        .logo-text span {
+            color: var(--accent);
+        }
+
+        .logo-sub {
+            font-size: 10px;
+            color: var(--text-muted);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            display: block;
+            margin-top: -2px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--accent);
+            transition: var(--transition);
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26, 58, 92, 0.3);
+        }
+
+        .btn-accent {
+            background: var(--accent);
+            color: var(--primary-dark);
+        }
+
+        .btn-accent:hover {
+            background: var(--accent-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(201, 168, 76, 0.3);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-outline:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 8px 18px;
+            font-size: 13px;
+        }
+
+        /* ============================================
+           HERO SECTION
+           ============================================ */
+        .hero {
+            padding: 140px 0 80px;
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(201, 168, 76, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: var(--bg);
+            clip-path: ellipse(70% 100% at 50% 100%);
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(201, 168, 76, 0.15);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            padding: 6px 16px;
+            border-radius: 100px;
+            color: var(--accent-light);
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 20px;
+        }
+
+        .hero-badge i {
+            font-size: 14px;
+        }
+
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 52px;
+            font-weight: 700;
+            color: white;
+            line-height: 1.1;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 span {
+            color: var(--accent);
+        }
+
+        .hero p {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.8);
+            max-width: 480px;
+            line-height: 1.7;
+            margin-bottom: 32px;
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            margin-top: 48px;
+            padding-top: 32px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .hero-stat {
+            text-align: left;
+        }
+
+        .hero-stat .number {
+            font-family: 'Playfair Display', serif;
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .hero-stat .label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .hero-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .hero-illustration {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius);
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .hero-illustration .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .hero-illustration .icon-item {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: var(--transition);
+        }
+
+        .hero-illustration .icon-item:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-4px);
+        }
+
+        .hero-illustration .icon-item i {
+            font-size: 28px;
+            color: var(--accent);
+            margin-bottom: 8px;
+        }
+
+        .hero-illustration .icon-item span {
+            display: block;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* ============================================
+           FEATURES SECTION
+           ============================================ */
+        .features {
+            padding: 80px 0;
+            background: var(--bg);
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 640px;
+            margin: 0 auto 48px;
+        }
+
+        .section-header .tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .section-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 16px;
+            line-height: 1.7;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .feature-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 32px;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            opacity: 0;
+            transition: var(--transition);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+            border-color: var(--accent-light);
+        }
+
+        .feature-card:hover::before {
+            opacity: 1;
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 10px;
+            background: rgba(26, 58, 92, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: var(--primary);
+            margin-bottom: 16px;
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            color: var(--text-muted);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        /* ============================================
+           HOW IT WORKS
+           ============================================ */
+        .how-it-works {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .steps-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        .step {
+            text-align: center;
+            padding: 32px 24px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .step:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .step-number {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            margin: 0 auto 16px;
+        }
+
+        .step h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            color: var(--text-muted);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .step-arrow {
+            position: absolute;
+            right: -16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--border);
+            font-size: 20px;
+        }
+
+        /* ============================================
+           BIICF SECTION
+           ============================================ */
+        .biicf-section {
+            padding: 80px 0;
+            background: var(--primary-dark);
+            color: white;
+        }
+
+        .biicf-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .biicf-content .tag {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .biicf-content h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .biicf-content h2 span {
+            color: var(--accent);
+        }
+
+        .biicf-content p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .biicf-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .biicf-stat {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .biicf-stat .number {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .biicf-stat .label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .biicf-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .biicf-image .placeholder {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius);
+            padding: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .biicf-image .placeholder i {
+            font-size: 64px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+
+        .biicf-image .placeholder h4 {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .biicf-image .placeholder p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+        }
+
+        /* ============================================
+           CTA SECTION
+           ============================================ */
+        .cta-section {
+            padding: 80px 0;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -20%;
+            width: 60%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(201, 168, 76, 0.05) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .cta-section h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 36px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-section p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 18px;
+            max-width: 480px;
+            margin: 0 auto 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cta-section .btn {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ============================================
+           FOOTER
+           ============================================ */
+        .site-footer {
+            background: var(--primary-dark);
+            color: white;
+            padding: 48px 0 24px;
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 32px;
+        }
+
+        .footer-brand .logo-text {
+            color: white;
+        }
+
+        .footer-brand p {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            max-width: 300px;
+            margin-top: 12px;
+            line-height: 1.7;
+        }
+
+        .footer-col h4 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: white;
+        }
+
+        .footer-col a {
+            display: block;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 13px;
+            padding: 4px 0;
+            transition: var(--transition);
+        }
+
+        .footer-col a:hover {
+            color: var(--accent);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            padding-top: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .footer-bottom p {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.3);
+        }
+
+        .footer-social {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-social a {
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 18px;
+            transition: var(--transition);
+        }
+
+        .footer-social a:hover {
+            color: var(--accent);
+        }
+
+        /* ============================================
+           RESPONSIVE
+           ============================================ */
+        @media (max-width: 1024px) {
+            .hero h1 { font-size: 40px; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 768px) {
+            .hero-grid { grid-template-columns: 1fr; text-align: center; }
+            .hero h1 { font-size: 32px; }
+            .hero p { max-width: 100%; }
+            .hero-stats { grid-template-columns: repeat(3, 1fr); }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps-grid { grid-template-columns: 1fr; }
+            .step-arrow { display: none; }
+            .biicf-grid { grid-template-columns: 1fr; text-align: center; }
+            .biicf-stats { grid-template-columns: 1fr 1fr; }
+            .footer-grid { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+            .hero-illustration .icon-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 480px) {
+            .hero { padding: 120px 0 60px; }
+            .hero h1 { font-size: 28px; }
+            .hero-actions { flex-direction: column; align-items: center; }
+            .hero-stats { grid-template-columns: 1fr; gap: 12px; }
+            .hero-stat { text-align: center; }
+            .biicf-stats { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <header class="site">
-        <div class="wrap nav">
-            <a href="{{ url('/') }}" class="brand">
-                <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="15" stroke="#cf9a3d" stroke-width="1.4"/>
-                    <path d="M16 6 L19 15 L16 26 L13 15 Z" fill="#e9b95a"/>
-                    <circle cx="16" cy="16" r="2" fill="#0d1a2b"/>
-                </svg>
-                <span>CareerPath BN<small>Politeknik Brunei</small></span>
-            </a>
+    <!-- ============================================
+    HEADER
+    ============================================ -->
+    <header class="site-header" id="site-header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="{{ url('/') }}" class="logo">
+                    <div class="logo-icon">
+                        <i class="fas fa-compass"></i>
+                    </div>
+                    <div>
+                        <span class="logo-text">CareerPath <span>BN</span></span>
+                        <span class="logo-sub">Politeknik Brunei</span>
+                    </div>
+                </a>
 
-            <nav class="links">
-                <a href="#how">How it works</a>
-                <a href="#features">Platform</a>
-                <a href="#biicf">BIICF alignment</a>
-                <a href="#about">About</a>
-            </nav>
+                <nav class="nav-links">
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#biicf">BIICF</a>
+                    <a href="#about">About</a>
+                </nav>
 
-            <div class="nav-actions">
-                @if (Route::has('login'))
-                    @auth
-                        <a href="{{ url('/dashboard') }}" class="btn btn-gold">Dashboard</a>
-                    @else
-                        <a href="{{ route('login') }}" class="btn btn-ghost">Log in</a>
-                        @if (Route::has('register'))
-                            <a href="{{ route('register') }}" class="btn btn-gold">Get started</a>
-                        @endif
-                    @endauth
-                @endif
+                <div class="nav-actions">
+                    @if (Route::has('login'))
+                        @auth
+                            <a href="{{ url('/dashboard') }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-th-large"></i> Dashboard
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="btn btn-outline btn-sm">
+                                <i class="fas fa-sign-in-alt"></i> Log In
+                            </a>
+                            @if (Route::has('register'))
+                                <a href="{{ route('register') }}" class="btn btn-accent btn-sm">
+                                    <i class="fas fa-user-plus"></i> Sign Up
+                                </a>
+                            @endif
+                        @endauth
+                    @endif
+                </div>
             </div>
         </div>
     </header>
 
-    <main>
-        <!-- HERO -->
-        <section class="hero">
-            <div class="wrap">
-                <div class="hero-inner reveal">
-                    <span class="eyebrow">AI career guidance · Built for Politeknik Brunei</span>
-                    <h1 class="headline">Stop guessing your career.<br>Start <em>mapping</em> it.</h1>
-                    <p class="sub">CareerPath BN reads your interests, academic record and competencies, matches them against real ICT job roles under the Brunei ICT Industry Competency Framework, and shows you exactly what stands between you and each one.</p>
-                    <div class="hero-ctas">
-                        <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-gold btn-lg">Build my profile</a>
-                        <a href="#how" class="btn btn-ghost btn-lg">See how matching works</a>
+    <!-- ============================================
+    HERO
+    ============================================ -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-grid">
+                <div>
+                    <div class="hero-badge">
+                        <i class="fas fa-robot"></i> AI-Powered Career Guidance
                     </div>
-                </div>
-
-                <div class="route-wrap reveal" style="animation-delay:.15s">
-                    <svg class="route-svg" viewBox="0 0 1120 260" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M20 210 C 160 210, 180 60, 300 60 S 440 210, 560 210 S 700 60, 820 60 S 960 210, 1100 130"
-                              stroke="#cf9a3d" stroke-width="1.5" stroke-dasharray="2 8" stroke-linecap="round"/>
-
-                        <g>
-                            <circle cx="20" cy="210" r="5" fill="#e9b95a"/>
-                            <text x="20" y="238" fill="#c7c2b4" class="route-label" text-anchor="start">01 · PROFILE</text>
-                        </g>
-                        <g>
-                            <circle cx="300" cy="60" r="5" fill="#e9b95a"/>
-                            <text x="300" y="34" fill="#c7c2b4" class="route-label" text-anchor="middle">02 · MATCH</text>
-                        </g>
-                        <g>
-                            <circle cx="560" cy="210" r="5" fill="#c65b4e"/>
-                            <text x="560" y="238" fill="#c7c2b4" class="route-label" text-anchor="middle">03 · GAPS</text>
-                        </g>
-                        <g>
-                            <circle cx="820" cy="60" r="5" fill="#e9b95a"/>
-                            <text x="820" y="34" fill="#c7c2b4" class="route-label" text-anchor="middle">04 · PLAN</text>
-                        </g>
-                        <g>
-                            <circle cx="1100" cy="130" r="6.5" fill="none" stroke="#e9b95a" stroke-width="1.5"/>
-                            <circle cx="1100" cy="130" r="2.5" fill="#e9b95a"/>
-                            <text x="1080" y="112" fill="#f5f1e6" class="route-label" text-anchor="end">CAREER</text>
-                        </g>
-                    </svg>
-                </div>
-            </div>
-        </section>
-
-        <!-- STATS -->
-        <section class="stats">
-            <div class="wrap stats-grid">
-                <div class="stat"><div class="n">3</div><div class="l">ICT job roles mapped</div></div>
-                <div class="stat"><div class="n">10</div><div class="l">Competencies referenced</div></div>
-                <div class="stat"><div class="n">2</div><div class="l">ICT subsectors covered</div></div>
-                <div class="stat"><div class="n">1</div><div class="l">Framework: BIICF (AITI)</div></div>
-            </div>
-        </section>
-
-        <!-- PROBLEM -->
-        <section class="problem section" id="about">
-            <div class="wrap">
-                <div class="section-head">
-                    <span class="eyebrow">The problem</span>
-                    <h2 class="h">Generic questionnaires don't know your transcript.</h2>
-                </div>
-                <div class="problem-grid">
-                    <div class="problem-copy">
-                        <p>Most career guidance today still runs on <strong>generic questionnaires and manual counselling sessions</strong> — a format that can't reasonably account for a student's actual academic performance, project history, competencies and career aspirations at the same time.</p>
-                        <p>Industry competency frameworks like BIICF already define what each role actually requires. The gap isn't information — it's <strong>translation</strong>: turning a dense framework document into something a student can see themselves in.</p>
-                        <p>CareerPath BN is that translation layer — for every academic programme, starting with ICT.</p>
+                    <h1>Discover Your <span>Career Path</span> with Confidence</h1>
+                    <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
+                    <div class="hero-actions">
+                        <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-accent">
+                            <i class="fas fa-rocket"></i> Get Started Free
+                        </a>
+                        <a href="#how-it-works" class="btn btn-outline" style="border-color:rgba(255,255,255,0.3);color:white;">
+                            <i class="fas fa-play-circle"></i> Learn More
+                        </a>
                     </div>
-                    <div class="quote-card">
-                        <p>"Students may have limited awareness of the competencies, qualifications and professional development required for different occupations — even where the framework already exists."</p>
-                        <span>Project brief · CareerPath BN, FYP</span>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- HOW IT WORKS -->
-        <section class="how" id="how">
-            <div class="wrap section">
-                <div class="section-head">
-                    <span class="eyebrow">How it works</span>
-                    <h2 class="h">From profile to career plan, in four moves.</h2>
-                    <p>Each stage feeds the next — nothing is a black box, and every recommendation comes with a reason.</p>
-                </div>
-                <div class="steps">
-                    <div class="step">
-                        <div class="num">01</div>
-                        <h3>Build your profile</h3>
-                        <p>Interests, preferred work activities, programme, academic record, competencies, projects and aspirations — captured once, structured properly.</p>
-                    </div>
-                    <div class="step">
-                        <div class="num">02</div>
-                        <h3>Get matched, with reasons</h3>
-                        <p>An explainable recommendation engine ranks suitable BIICF career pathways and states plainly why each one fits.</p>
-                    </div>
-                    <div class="step">
-                        <div class="num">03</div>
-                        <h3>See the gap</h3>
-                        <p>Your current competencies plotted against what the role requires — a readiness score, not a guess.</p>
-                    </div>
-                    <div class="step">
-                        <div class="num">04</div>
-                        <h3>Follow the plan</h3>
-                        <p>Milestones, certifications and projects generated to close the gap — tracked as you complete them.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- FEATURES -->
-        <section class="section" id="features">
-            <div class="wrap">
-                <div class="section-head">
-                    <span class="eyebrow">The platform</span>
-                    <h2 class="h">Everything a student — and an adviser — needs in one place.</h2>
-                </div>
-                <div class="features-grid">
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                        <h3>Career profiling form</h3>
-                        <p>Interests, preferences, academic history, competencies and aspirations, structured for matching.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-                        <h3>AI career matching</h3>
-                        <p>Ranks suitable pathways with a clear, explainable reason behind every recommendation.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                        <h3>Multi-programme support</h3>
-                        <p>Built for every academic programme at PB — ICT ships first as the pilot on BIICF.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                        <h3>BIICF career alignment</h3>
-                        <p>Maps ICT students directly to BIICF roles, technical and soft-skill competencies, and proficiency levels.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                        <h3>Career readiness score</h3>
-                        <p>One number combining academics, competencies, certifications, projects and experience.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h4l3 8 4-16 3 8h4"/></svg>
-                        <h3>Competency gap visualisation</h3>
-                        <p>Current vs. required competencies for a chosen career, laid out clearly — no spreadsheet required.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V6a2 2 0 0 1 2-2h9l5 5v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 21v-6h6v6"/></svg>
-                        <h3>Personalised development plan</h3>
-                        <p>AI-generated milestones — competencies, projects, certifications and learning activities.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                        <h3>AI career adviser</h3>
-                        <p>A source-grounded assistant that answers using verified BIICF and institutional documents only.</p>
-                    </div>
-                    <div class="feat">
-                        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 15l4-6 3 3 5-8"/></svg>
-                        <h3>Adviser dashboard</h3>
-                        <p>Lecturers review interests, readiness levels, common gaps and progress across their cohort.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- BIICF -->
-        <section class="biicf" id="biicf">
-            <div class="wrap section">
-                <div class="biicf-inner">
-                    <div class="biicf-copy">
-                        <span class="eyebrow">Framework alignment</span>
-                        <h2 class="h" style="margin-top:14px;margin-bottom:18px">Grounded in an official industry standard — not a survey.</h2>
-                        <p>The Brunei ICT Industry Competency Framework (BIICF) already defines job roles, technical and soft-skill competencies, proficiency levels, entry requirements and certification pathways for the local ICT sector.</p>
-                        <p>CareerPath BN doesn't reinvent that — it makes it navigable, mapping each student's profile onto it directly, with room to bring in other programme and industry frameworks in later phases.</p>
-                        <div class="chip-row">
-                            <span class="chip">Software Development</span>
-                            <span class="chip">Networking &amp; Infrastructure</span>
-                            <span class="chip">Cybersecurity</span>
-                            <span class="chip">Data &amp; AI</span>
-                            <span class="chip">IT Support</span>
-                            <span class="chip">Digital Media</span>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="number">3+</div>
+                            <div class="label">ICT Job Roles Mapped</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="number">10+</div>
+                            <div class="label">Competencies Referenced</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="number">BIICF</div>
+                            <div class="label">Framework Aligned</div>
                         </div>
                     </div>
-                    <div class="biicf-panel">
-                        <div class="row"><span class="k">Framework</span><span class="v">BIICF</span></div>
-                        <div class="row"><span class="k">Issuing body</span><span class="v">AITI</span></div>
-                        <div class="row"><span class="k">Job roles</span><span class="v">3</span></div>
-                        <div class="row"><span class="k">Competencies</span><span class="v">10</span></div>
-                        <div class="row"><span class="k">Subsectors</span><span class="v">2</span></div>
-                        <div class="row"><span class="k">Pilot programme</span><span class="v">ICT</span></div>
-                        <p class="src">Source: AITI — ICT Industry Competency Framework</p>
+                    <div style="height: 80px;"></div>
+                </div>
+                <div class="hero-image">
+                    <div class="hero-illustration">
+                        <div class="icon-grid">
+                            <div class="icon-item">
+                                <i class="fas fa-code"></i>
+                                <span>Development</span>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-network-wired"></i>
+                                <span>Networking</span>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-shield-alt"></i>
+                                <span>Security</span>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-database"></i>
+                                <span>Data</span>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-cloud"></i>
+                                <span>Cloud</span>
+                            </div>
+                            <div class="icon-item">
+                                <i class="fas fa-brain"></i>
+                                <span>AI</span>
+                            </div>
+                        </div>
+                        <div style="text-align:center;margin-top:20px;padding-top:20px;border-top:1px solid rgba(255,255,255,0.08);">
+                            <span style="color:rgba(255,255,255,0.4);font-size:12px;">Powered by</span>
+                            <span style="color:var(--accent);font-weight:600;font-size:14px;display:block;">Brunei ICT Industry Competency Framework</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <!-- CTA -->
-        <section class="cta">
-            <div class="wrap">
-                <h2 class="reveal">Your career shouldn't start with a guess.</h2>
-                <p class="reveal" style="animation-delay:.1s">Build your profile and see which BIICF-aligned careers actually fit — and exactly what to do next.</p>
-                <div class="hero-ctas reveal" style="animation-delay:.2s">
-                    <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-gold btn-lg">Get started free</a>
-                    <a href="#how" class="btn btn-ghost btn-lg">Learn more</a>
+    <!-- ============================================
+    FEATURES
+    ============================================ -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <span class="tag"><i class="fas fa-star"></i> Features</span>
+                <h2>Everything You Need for Career Success</h2>
+                <p>From profile building to career matching, we've got you covered.</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-user-cog"></i></div>
+                    <h3>Career Profiling</h3>
+                    <p>Build your complete profile with interests, competencies, projects, and aspirations.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                    <h3>AI Career Matching</h3>
+                    <p>Get personalized career recommendations with clear, explainable reasons.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                    <h3>Skill Gap Analysis</h3>
+                    <p>See exactly what skills you need and how to develop them.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-flag-checkered"></i></div>
+                    <h3>Milestone Tracking</h3>
+                    <p>Track your progress with personalized milestones and achievements.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-certificate"></i></div>
+                    <h3>BIICF Alignment</h3>
+                    <p>Mapped to the Brunei ICT Industry Competency Framework for accurate guidance.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-users-cog"></i></div>
+                    <h3>Admin Dashboard</h3>
+                    <p>Lecturers and admins can track student progress and identify common gaps.</p>
                 </div>
             </div>
-        </section>
-    </main>
+        </div>
+    </section>
 
-    <footer>
-        <div class="wrap foot-grid">
-            <div class="foot-note">CareerPath BN — a Final Year Project at Politeknik Brunei, aligned with AITI's BIICF.</div>
-            <div class="foot-links">
-                <a href="#how">How it works</a>
-                <a href="#features">Platform</a>
-                <a href="#biicf">BIICF</a>
-                @if (Route::has('login'))
-                    <a href="{{ route('login') }}">Log in</a>
-                @endif
+    <!-- ============================================
+    HOW IT WORKS
+    ============================================ -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header">
+                <span class="tag"><i class="fas fa-route"></i> How It Works</span>
+                <h2>From Profile to Career in 4 Steps</h2>
+                <p>Simple, structured, and effective career discovery.</p>
+            </div>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4>Build Your Profile</h4>
+                    <p>Complete your profile with academics, skills, projects, and career aspirations.</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4>Get Matched</h4>
+                    <p>AI analyzes your profile and recommends the best-fit BIICF careers.</p>
+                    <span class="step-arrow">→</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4>Identify Gaps</h4>
+                    <p>See which competencies you need to develop for each career.</p>
+                    <span class="step-arrow">→</span>
+                </div>
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h4>Follow Your Plan</h4>
+                    <p>Track your progress with milestones and development activities.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+    BIICF SECTION
+    ============================================ -->
+    <section class="biicf-section" id="biicf">
+        <div class="container">
+            <div class="biicf-grid">
+                <div class="biicf-content">
+                    <span class="tag"><i class="fas fa-certificate"></i> Framework Alignment</span>
+                    <h2>Aligned with <span>BIICF</span></h2>
+                    <p>The Brunei ICT Industry Competency Framework (BIICF) articulates the competencies needed to perform various ICT job roles. CareerPath BN makes it navigable for students.</p>
+                    <div class="biicf-stats">
+                        <div class="biicf-stat">
+                            <div class="number">3</div>
+                            <div class="label">Job Roles Mapped</div>
+                        </div>
+                        <div class="biicf-stat">
+                            <div class="number">10</div>
+                            <div class="label">Competencies</div>
+                        </div>
+                        <div class="biicf-stat">
+                            <div class="number">2</div>
+                            <div class="label">ICT Subsectors</div>
+                        </div>
+                        <div class="biicf-stat">
+                            <div class="number">AITI</div>
+                            <div class="label">Framework Issuer</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="biicf-image">
+                    <div class="placeholder">
+                        <i class="fas fa-certificate"></i>
+                        <h4>Brunei ICT Industry</h4>
+                        <p>Competency Framework</p>
+                        <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.08);">
+                            <span style="color:rgba(255,255,255,0.3);font-size:11px;">Source: AITI — ICT Industry Competency Framework</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============================================
+    CTA SECTION
+    ============================================ -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Discover Your Career Path?</h2>
+            <p>Join hundreds of students who are already building their future with CareerPath BN.</p>
+            <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-accent" style="font-size:16px;padding:14px 40px;">
+                <i class="fas fa-arrow-right"></i> Get Started Now
+            </a>
+        </div>
+    </section>
+
+    <!-- ============================================
+    FOOTER
+    ============================================ -->
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="logo-text">CareerPath <span>BN</span></div>
+                    <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
+                </div>
+                <div class="footer-col">
+                    <h4>Quick Links</h4>
+                    <a href="#features">Features</a>
+                    <a href="#how-it-works">How It Works</a>
+                    <a href="#biicf">BIICF</a>
+                    <a href="#">Career Guide</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Resources</h4>
+                    <a href="#">BIICF Framework</a>
+                    <a href="#">ICT Sub-Sectors</a>
+                    <a href="#">Competencies</a>
+                    <a href="#">Training</a>
+                </div>
+                <div class="footer-col">
+                    <h4>Contact</h4>
+                    <a href="#"><i class="fas fa-university" style="width:20px;"></i> Politeknik Brunei</a>
+                    <a href="#"><i class="fas fa-map-marker-alt" style="width:20px;"></i> Jalan Ong Sum Ping, BSB</a>
+                    <a href="#"><i class="fas fa-envelope" style="width:20px;"></i> sict@pb.edu.bn</a>
+                    <a href="#"><i class="fas fa-phone" style="width:20px;"></i> +673 123 4567</a>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
             </div>
         </div>
     </footer>
+
+    <!-- ============================================
+    SCROLL EFFECT
+    ============================================ -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const header = document.getElementById('site-header');
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

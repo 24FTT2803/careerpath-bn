@@ -1,9 +1,8 @@
 <nav x-data="{ open: false }" class="bg-white border-b border-gray-200 shadow-sm">
-    <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center">
-                <!-- Logo - CareerPath BN -->
+                <!-- Logo Only - No Navigation Links -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('student.dashboard') }}" class="flex items-center gap-2">
                         <div class="w-10 h-10 bg-gradient-to-r from-blue-900 to-blue-700 rounded-lg flex items-center justify-center">
@@ -14,30 +13,10 @@
                         </span>
                     </a>
                 </div>
-
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('student.dashboard')" :active="request()->routeIs('student.dashboard')">
-                        <i class="fas fa-chart-pie mr-1"></i> {{ __('Dashboard') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('student.profile')" :active="request()->routeIs('student.profile*')">
-                        <i class="fas fa-user mr-1"></i> {{ __('Profile') }}
-                    </x-nav-link>
-                    <x-nav-link :href="route('student.milestones')" :active="request()->routeIs('student.milestones*')">
-                        <i class="fas fa-flag-checkered mr-1"></i> {{ __('Milestones') }}
-                    </x-nav-link>
-                    @auth
-                        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'lecturer')
-                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.*')">
-                                <i class="fas fa-crown text-amber-500 mr-1"></i> {{ __('Admin') }}
-                            </x-nav-link>
-                        @endif
-                    @endauth
-                </div>
             </div>
 
             <!-- Right Side Navigation -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
+            <div class="flex items-center">
                 <!-- Notifications Bell -->
                 <div class="relative mr-4">
                     <a href="{{ route('student.notifications') }}" class="text-gray-500 hover:text-gray-700 relative">
@@ -52,7 +31,7 @@
                     </a>
                 </div>
 
-                <!-- Settings Dropdown -->
+                <!-- Settings Dropdown (Contains all navigation links) -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
@@ -99,7 +78,6 @@
                             @endauth
                         </x-dropdown-link>
 
-                        <!-- Divider -->
                         <div class="border-t border-gray-200 my-1"></div>
 
                         <!-- Milestones -->
@@ -107,7 +85,12 @@
                             <i class="fas fa-flag-checkered mr-2 text-gray-500"></i> {{ __('Milestones') }}
                         </x-dropdown-link>
 
-                        <!-- Divider -->
+                        @if(Auth::user()->role === 'admin' || Auth::user()->role === 'lecturer')
+                            <x-dropdown-link :href="route('admin.dashboard')">
+                                <i class="fas fa-crown text-amber-500 mr-2"></i> {{ __('Admin') }}
+                            </x-dropdown-link>
+                        @endif
+
                         <div class="border-t border-gray-200 my-1"></div>
 
                         <!-- Logout -->
@@ -155,7 +138,6 @@
             @endauth
         </div>
 
-        <!-- Responsive Settings Options -->
         <div class="pt-4 pb-1 border-t border-gray-200">
             <div class="px-4">
                 <div class="font-medium text-base text-gray-800">
@@ -174,24 +156,13 @@
                 <x-responsive-nav-link :href="route('student.profile')">
                     <i class="fas fa-user mr-2"></i> {{ __('Profile') }}
                 </x-responsive-nav-link>
-
                 <x-responsive-nav-link :href="route('student.settings')">
                     <i class="fas fa-cog mr-2"></i> {{ __('Settings') }}
                 </x-responsive-nav-link>
-
                 <x-responsive-nav-link :href="route('student.notifications')">
                     <i class="fas fa-bell mr-2"></i> {{ __('Notifications') }}
-                    @auth
-                        @if(Auth::user()->unreadNotifications()->count() > 0)
-                            <span class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full ml-1">
-                                {{ Auth::user()->unreadNotifications()->count() }}
-                            </span>
-                        @endif
-                    @endauth
                 </x-responsive-nav-link>
-
                 <div class="border-t border-gray-200 my-1"></div>
-
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <x-responsive-nav-link :href="route('logout')"

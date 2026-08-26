@@ -10,8 +10,30 @@ class User extends Authenticatable
 {
     use HasFactory, Notifiable;
 
+    // ============================================
+    // EMAIL DOMAIN VALIDATION CONSTANTS
+    // ============================================
+    
+    /**
+     * Allowed email domains for registration
+     */
+    const ALLOWED_DOMAINS = [
+        'gmail.com',
+        'pb.edu.bn',
+        'student.pb.edu.bn',
+    ];
+
+    /**
+     * Email domain rules by role
+     */
+    const ROLE_DOMAIN_RULES = [
+        'student' => ['gmail.com', 'student.pb.edu.bn', 'pb.edu.bn'],
+        'lecturer' => ['gmail.com', 'pb.edu.bn'],
+        'admin' => ['gmail.com', 'pb.edu.bn'],
+    ];
+
     protected $fillable = [
-        'first_name', 'last_name', 'name', 'email', 'password', 'student_id', 'programme',
+        'first_name', 'last_name', 'name', 'email', 'phone', 'password', 'student_id', 'programme',
         'cgpa', 'role', 'avatar', 'last_login_at'
     ];
 
@@ -29,7 +51,73 @@ class User extends Authenticatable
     }
 
     // ============================================
-    // RELATIONSHIPS - ADD ALL OF THESE
+    // VALIDATION HELPERS
+    // ============================================
+
+    /**
+     * Get the allowed domains for a specific role
+     */
+    public static function getAllowedDomainsForRole(string $role): array
+    {
+        return self::ROLE_DOMAIN_RULES[$role] ?? self::ALLOWED_DOMAINS;
+    }
+
+    /**
+     * Validate email domain for a specific role
+     */
+    public static function validateEmailDomain(string $email, string $role): bool
+    {
+        $domain = substr(strrchr($email, "@"), 1);
+        $allowedDomains = self::getAllowedDomainsForRole($role);
+        return in_array($domain, $allowedDomains);
+    }
+
+    /**
+     * Get validation rules for email based on role
+     */
+    public static function getEmailValidationRules(string $role): array
+    {
+        $allowedDomains = self::getAllowedDomainsForRole($role);
+        
+        // Build regex pattern for allowed domains
+        $pattern = '/^[a-zA-Z0-9._%+-]+@(' . implode('|', array_map('preg_quote', $allowedDomains)) . ')$/';
+        
+        return [
+            'required',
+            'string',
+            'lowercase',
+            'email',
+            'max:255',
+            'regex:' . $pattern,
+        ];
+    }
+
+    /**
+     * Get phone number validation rules
+     */
+    public static function getPhoneValidationRules(): array
+    {
+        return [
+            'nullable',
+            'string',
+            'max:20',
+            'regex:/^[\+\d\s\-\(\)]{7,20}$/',
+        ];
+    }
+
+    /**
+ * Get custom validation messages for phone
+ */
+public static function getPhoneValidationMessages(): array
+{
+    return [
+        'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
+        'phone.max' => 'The phone number cannot exceed 20 characters.',
+    ];
+}
+
+    // ============================================
+    // RELATIONSHIPS
     // ============================================
 
     /**

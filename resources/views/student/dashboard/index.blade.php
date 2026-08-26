@@ -1,345 +1,704 @@
 @extends('layouts.app')
 
-@section('title', 'Student Dashboard')
+@section('title', 'Dashboard')
 
 @section('content')
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-    .cpbn-dash{
-        --ink:#0d1a2b;
-        --ink-dim:#5b6675;
-        --paper:#faf8f2;
-        --card:#ffffff;
-        --line:#e7e2d4;
-        --gold:#cf9a3d;
-        --gold-bright:#e9b95a;
-        --gold-wash:#fbf1de;
-        --rose:#c65b4e;
-        --rose-wash:#fbeceb;
-        --green:#4c8a68;
-        --green-wash:#e9f3ee;
-        --font-display:'Fraunces', Georgia, serif;
-        --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-        --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+    :root {
+        --primary: #1a3a5c;
+        --primary-light: #2a5a8c;
+        --accent: #c9a84c;
+        --accent-light: #e8d4a0;
+        --bg: #f4f6f9;
+        --card: #ffffff;
+        --text: #1a1a2e;
+        --text-muted: #6b7280;
+        --border: #e5e7eb;
+        --shadow: 0 4px 24px rgba(26, 58, 92, 0.08);
+        --shadow-hover: 0 8px 40px rgba(26, 58, 92, 0.15);
+        --radius: 12px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        --success: #2d8f5c;
+        --danger: #c0392b;
+        --warning: #e67e22;
+    }
 
-        background:var(--paper);
-        color:var(--ink);
-        font-family:var(--font-body);
-        margin:-24px -16px 0;
-        padding:32px 20px 56px;
+    .dashboard {
+        padding: 24px 0 40px;
     }
-    .cpbn-dash *{box-sizing:border-box}
-    .cpbn-dash a{text-decoration:none;color:inherit}
-    .cpbn-wrap{max-width:1180px;margin-inline:auto}
 
-    .cpbn-head{
-        display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;
-        margin-bottom:32px;
+    /* Welcome Header */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
     }
-    .cpbn-head h1{
-        font-family:var(--font-display);font-weight:600;font-size:26px;letter-spacing:-.01em;color:var(--ink);
-    }
-    .cpbn-head p.sub{color:var(--ink-dim);margin-top:4px;font-size:14.5px}
-    .cpbn-badges{display:flex;gap:10px;flex-wrap:wrap}
-    .cpbn-chip{
-        display:inline-flex;align-items:center;gap:6px;
-        font-family:var(--font-mono);font-size:12px;letter-spacing:.02em;
-        padding:7px 13px;border-radius:100px;white-space:nowrap;
-    }
-    .cpbn-chip svg{width:13px;height:13px}
-    .cpbn-chip-gold{background:var(--gold-wash);color:#8a6420}
-    .cpbn-chip-ink{background:#eef1f5;color:var(--ink-dim)}
-    .cpbn-chip-green{background:var(--green-wash);color:var(--green)}
-    .cpbn-chip-rose{background:var(--rose-wash);color:var(--rose)}
 
-    .cpbn-stats{
-        display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;
+    .dashboard-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary);
     }
-    .cpbn-card{
-        background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;
-        transition:box-shadow .2s, border-color .2s;
+
+    .dashboard-header h1 span {
+        color: var(--accent);
     }
-    .cpbn-card:hover{box-shadow:0 8px 24px -12px rgba(13,26,43,0.12);border-color:#d8d2c0}
-    .cpbn-stat-top{display:flex;justify-content:space-between;align-items:flex-start}
-    .cpbn-stat-label{font-size:12.5px;color:var(--ink-dim)}
-    .cpbn-stat-num{font-family:var(--font-mono);font-size:28px;font-weight:500;margin-top:6px}
-    .cpbn-icon-badge{
-        width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+
+    .dashboard-header .subtitle {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin-top: 2px;
     }
-    .cpbn-icon-badge svg{width:18px;height:18px}
-    .ib-gold{background:var(--gold-wash);color:#a97a1f}
-    .ib-green{background:var(--green-wash);color:var(--green)}
-    .ib-rose{background:var(--rose-wash);color:var(--rose)}
-    .ib-ink{background:#eef1f5;color:var(--ink-dim)}
 
-    .cpbn-bar{width:100%;background:#eee9db;border-radius:100px;height:6px;margin-top:14px;overflow:hidden}
-    .cpbn-bar-fill{height:100%;background:var(--gold);border-radius:100px}
-
-    .cpbn-actions{display:flex;flex-wrap:wrap;gap:12px;margin-bottom:32px}
-    .cpbn-btn{
-        display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border-radius:5px;
-        font-size:14px;font-weight:500;border:1px solid transparent;transition:all .15s;cursor:pointer;
+    .dashboard-header .badges {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
     }
-    .cpbn-btn svg{width:15px;height:15px}
-    .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
-    .cpbn-btn-primary:hover{background:var(--gold-bright)}
-    .cpbn-btn-outline{background:var(--card);border-color:var(--line);color:var(--ink)}
-    .cpbn-btn-outline:hover{border-color:var(--gold);color:#8a6420}
 
-    .cpbn-cols{display:grid;grid-template-columns:2fr 1fr;gap:20px}
-    .cpbn-panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:24px}
-    .cpbn-panel + .cpbn-panel{margin-top:20px}
-    .cpbn-panel-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
-    .cpbn-panel-head h3{
-        font-family:var(--font-display);font-size:17px;font-weight:600;display:flex;align-items:center;gap:8px;
+    .badge-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 500;
+        background: var(--bg);
+        color: var(--text-muted);
     }
-    .cpbn-panel-head h3 svg{width:16px;height:16px;color:var(--gold)}
-    .cpbn-panel-head a{font-size:12.5px;color:var(--ink-dim);display:flex;align-items:center;gap:5px}
-    .cpbn-panel-head a:hover{color:var(--ink)}
 
-    .cpbn-rec{
-        border:1px solid var(--line);border-radius:6px;padding:16px 18px;margin-bottom:12px;transition:border-color .15s;
+    .badge-chip i {
+        font-size: 14px;
     }
-    .cpbn-rec:hover{border-color:var(--gold)}
-    .cpbn-rec-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-    .cpbn-rec-title{font-weight:600;font-size:15px}
-    .cpbn-rec-sub{font-size:13px;color:var(--ink-dim);margin-top:3px;display:flex;align-items:center;gap:5px}
-    .cpbn-rec-sub svg{width:12px;height:12px}
-    .cpbn-match{
-        font-family:var(--font-mono);font-size:12.5px;background:var(--gold-wash);color:#8a6420;
-        padding:5px 11px;border-radius:100px;white-space:nowrap;flex-shrink:0;
+
+    .badge-chip.primary {
+        background: rgba(26, 58, 92, 0.08);
+        color: var(--primary);
     }
-    .cpbn-rec-links{display:flex;gap:16px;margin-top:12px}
-    .cpbn-rec-links a{font-size:12.5px;color:var(--ink-dim);display:flex;align-items:center;gap:5px}
-    .cpbn-rec-links a:hover{color:#8a6420}
-    .cpbn-rec-links svg{width:12px;height:12px}
 
-    .cpbn-empty{text-align:center;padding:40px 20px}
-    .cpbn-empty svg{width:34px;height:34px;color:var(--gold);margin-inline:auto;margin-bottom:14px}
-    .cpbn-empty p.t{color:var(--ink);font-size:14.5px;font-weight:500}
-    .cpbn-empty p.s{color:var(--ink-dim);font-size:13px;margin-top:4px}
-    .cpbn-empty .cpbn-btn{margin-top:16px}
-
-    .cpbn-prow{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-dim);margin-bottom:6px}
-    .cpbn-prow span:last-child{font-weight:600;color:var(--ink);font-family:var(--font-mono)}
-
-    .cpbn-activity{padding-block:11px;border-bottom:1px solid var(--line)}
-    .cpbn-activity:last-child{border-bottom:none;padding-bottom:0}
-    .cpbn-activity:first-child{padding-top:0}
-    .cpbn-activity p.m{font-size:13.5px;color:var(--ink)}
-    .cpbn-activity p.t{font-size:11.5px;color:var(--ink-dim);font-family:var(--font-mono);margin-top:2px}
-    .cpbn-empty-sm{text-align:center;color:var(--ink-dim);font-size:13px;padding-block:20px}
-
-    @media (max-width:960px){
-        .cpbn-stats{grid-template-columns:repeat(2,1fr)}
-        .cpbn-cols{grid-template-columns:1fr}
+    .badge-chip.accent {
+        background: rgba(201, 168, 76, 0.12);
+        color: var(--accent-dark);
     }
-    @media (max-width:560px){
-        .cpbn-stats{grid-template-columns:1fr}
+
+    /* Stats Grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+    }
+
+    .stat-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        transition: var(--transition);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-hover);
+        border-color: var(--accent-light);
+    }
+
+    .stat-card .stat-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .stat-card .stat-label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .stat-card .stat-number {
+        font-family: 'Playfair Display', serif;
+        font-size: 32px;
+        font-weight: 700;
+        color: var(--primary);
+        margin-top: 4px;
+    }
+
+    .stat-card .stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+
+    .stat-card .stat-icon.gold {
+        background: rgba(201, 168, 76, 0.12);
+        color: var(--accent-dark);
+    }
+
+    .stat-card .stat-icon.green {
+        background: rgba(45, 143, 92, 0.12);
+        color: var(--success);
+    }
+
+    .stat-card .stat-icon.blue {
+        background: rgba(26, 58, 92, 0.08);
+        color: var(--primary);
+    }
+
+    .stat-card .stat-icon.red {
+        background: rgba(192, 57, 43, 0.08);
+        color: var(--danger);
+    }
+
+    .stat-card .stat-progress {
+        margin-top: 12px;
+        height: 4px;
+        background: var(--bg);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .stat-card .stat-progress .fill {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--accent);
+        transition: width 0.6s ease;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+    }
+
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background: var(--primary-light);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(26, 58, 92, 0.25);
+    }
+
+    .btn-outline {
+        background: transparent;
+        color: var(--primary);
+        border: 2px solid var(--primary);
+    }
+
+    .btn-outline:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .btn-accent {
+        background: var(--accent);
+        color: var(--primary-dark);
+    }
+
+    .btn-accent:hover {
+        background: var(--accent-light);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(201, 168, 76, 0.3);
+    }
+
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+
+    /* Main Content Grid */
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 2fr 1fr;
+        gap: 24px;
+    }
+
+    .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .panel-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-header h3 i {
+        color: var(--accent);
+    }
+
+    .panel-header a {
+        font-size: 12px;
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .panel-header a:hover {
+        color: var(--primary);
+    }
+
+    /* Recommendation Cards */
+    .rec-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 18px;
+        margin-bottom: 12px;
+        transition: var(--transition);
+        cursor: pointer;
+    }
+
+    .rec-card:last-child {
+        margin-bottom: 0;
+    }
+
+    .rec-card:hover {
+        border-color: var(--accent-light);
+        box-shadow: var(--shadow);
+    }
+
+    .rec-card .rec-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .rec-card .rec-title {
+        font-weight: 600;
+        font-size: 15px;
+        color: var(--primary);
+    }
+
+    .rec-card .rec-subsector {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .rec-card .rec-match {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--accent-dark);
+        background: rgba(201, 168, 76, 0.12);
+        padding: 4px 12px;
+        border-radius: 100px;
+    }
+
+    .rec-card .rec-link {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--primary);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .rec-card .rec-link:hover {
+        color: var(--accent);
+    }
+
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 40px 20px;
+    }
+
+    .empty-state i {
+        font-size: 48px;
+        color: var(--border);
+        margin-bottom: 16px;
+    }
+
+    .empty-state h4 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary);
+        margin-bottom: 4px;
+    }
+
+    .empty-state p {
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .empty-state .btn {
+        margin-top: 16px;
+    }
+
+    /* Profile Status */
+    .profile-status .status-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-bottom: 6px;
+    }
+
+    .profile-status .status-row .value {
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .profile-status .progress-bar {
+        height: 6px;
+        background: var(--bg);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .profile-status .progress-bar .fill {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--accent);
+        transition: width 0.6s ease;
+    }
+
+    .profile-status .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 100px;
+        margin-top: 12px;
+    }
+
+    .status-badge.complete {
+        background: rgba(45, 143, 92, 0.12);
+        color: var(--success);
+    }
+
+    .status-badge.incomplete {
+        background: rgba(230, 126, 34, 0.12);
+        color: var(--warning);
+    }
+
+    /* Activity Feed */
+    .activity-item {
+        padding: 12px 0;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-item .activity-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-muted);
+        font-size: 14px;
+        flex-shrink: 0;
+    }
+
+    .activity-item .activity-content {
+        flex: 1;
+    }
+
+    .activity-item .activity-content .message {
+        font-size: 13px;
+        color: var(--text);
+    }
+
+    .activity-item .activity-content .time {
+        font-size: 11px;
+        color: var(--text-muted);
+        margin-top: 2px;
+    }
+
+    .no-activity {
+        text-align: center;
+        padding: 20px;
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .no-activity i {
+        font-size: 24px;
+        display: block;
+        margin-bottom: 8px;
+        color: var(--border);
+    }
+
+    @media (max-width: 1024px) {
+        .stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .dashboard-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-header h1 {
+            font-size: 24px;
+        }
+
+        .stats-grid {
+            grid-template-columns: 1fr 1fr;
+        }
+
+        .stat-card .stat-number {
+            font-size: 24px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-header .badges {
+            width: 100%;
+        }
+
+        .quick-actions {
+            flex-direction: column;
+        }
+
+        .quick-actions .btn {
+            width: 100%;
+            justify-content: center;
+        }
     }
 </style>
 
-<div class="cpbn-dash">
-    <div class="cpbn-wrap">
+<div class="dashboard">
+    <div class="container">
 
-        <!-- Welcome Header -->
-        <div class="cpbn-head">
+        <!-- Header -->
+        <div class="dashboard-header">
             <div>
-                <h1>Welcome back, {{ Auth::user()->first_name ?? Auth::user()->name }} 👋</h1>
-                <p class="sub">{{ Auth::user()->programme ?? 'Complete your profile to get started' }}</p>
+                <h1>Welcome back, <span>{{ Auth::user()->first_name ?? Auth::user()->name }}</span></h1>
+                <p class="subtitle">{{ Auth::user()->programme ?? 'Complete your profile to get started' }}</p>
             </div>
-            <div class="cpbn-badges">
-                <span class="cpbn-chip cpbn-chip-gold">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
-                    Student
+            <div class="badges">
+                <span class="badge-chip primary">
+                    <i class="fas fa-graduation-cap"></i> Student
                 </span>
-                <span class="cpbn-chip cpbn-chip-ink">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                    {{ now()->format('d M Y') }}
+                <span class="badge-chip accent">
+                    <i class="fas fa-calendar-alt"></i> {{ now()->format('d M Y') }}
                 </span>
             </div>
         </div>
 
-        <!-- Statistics Cards -->
-        <div class="cpbn-stats">
-            <!-- Profile Completion -->
-            <div class="cpbn-card">
-                <div class="cpbn-stat-top">
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-top">
                     <div>
-                        <p class="cpbn-stat-label">Profile Completion</p>
-                        <p class="cpbn-stat-num">{{ $profileCompletion ?? 0 }}%</p>
+                        <div class="stat-label">Profile Completion</div>
+                        <div class="stat-number">{{ $profileCompletion ?? 0 }}%</div>
                     </div>
-                    <div class="cpbn-icon-badge ib-gold">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg>
-                    </div>
+                    <div class="stat-icon gold"><i class="fas fa-user-check"></i></div>
                 </div>
-                <div class="cpbn-bar"><div class="cpbn-bar-fill" style="width: {{ $profileCompletion ?? 0 }}%"></div></div>
-            </div>
-
-            <!-- Recommendations -->
-            <div class="cpbn-card">
-                <div class="cpbn-stat-top">
-                    <div>
-                        <p class="cpbn-stat-label">Career Recommendations</p>
-                        <p class="cpbn-stat-num">{{ $recommendationCount ?? 0 }}</p>
-                    </div>
-                    <div class="cpbn-icon-badge ib-green">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></svg>
-                    </div>
+                <div class="stat-progress">
+                    <div class="fill" style="width: {{ $profileCompletion ?? 0 }}%"></div>
                 </div>
             </div>
 
-            <!-- Readiness Score -->
-            <div class="cpbn-card">
-                <div class="cpbn-stat-top">
+            <div class="stat-card">
+                <div class="stat-top">
                     <div>
-                        <p class="cpbn-stat-label">Career Readiness</p>
-                        <p class="cpbn-stat-num">{{ $readinessScore ?? 0 }}%</p>
+                        <div class="stat-label">Career Recommendations</div>
+                        <div class="stat-number">{{ $recommendationCount ?? 0 }}</div>
                     </div>
-                    <div class="cpbn-icon-badge ib-rose">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></svg>
-                    </div>
+                    <div class="stat-icon green"><i class="fas fa-bullseye"></i></div>
                 </div>
             </div>
 
-            <!-- Milestones -->
-            <div class="cpbn-card">
-                <div class="cpbn-stat-top">
+            <div class="stat-card">
+                <div class="stat-top">
                     <div>
-                        <p class="cpbn-stat-label">Milestones Completed</p>
-                        <p class="cpbn-stat-num">{{ $milestoneCount ?? 0 }}</p>
+                        <div class="stat-label">Career Readiness</div>
+                        <div class="stat-number">{{ $readinessScore ?? 0 }}%</div>
                     </div>
-                    <div class="cpbn-icon-badge ib-ink">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V4a1 1 0 0 1 1-1h9l5 5v13"/><path d="M9 21v-6h6v6"/></svg>
+                    <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-top">
+                    <div>
+                        <div class="stat-label">Milestones Completed</div>
+                        <div class="stat-number">{{ $milestoneCount ?? 0 }}</div>
                     </div>
+                    <div class="stat-icon red"><i class="fas fa-flag-checkered"></i></div>
                 </div>
             </div>
         </div>
 
         <!-- Quick Actions -->
-        <div class="cpbn-actions">
-            <a href="{{ route('student.profile') }}" class="cpbn-btn cpbn-btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                Update Profile
+        <div class="quick-actions">
+            <a href="{{ route('student.profile') }}" class="btn btn-primary">
+                <i class="fas fa-user-edit"></i> Update Profile
             </a>
-            <a href="{{ route('student.recommendations.assessment') }}" class="cpbn-btn cpbn-btn-outline">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
-                Career Assessment
+            <a href="{{ route('student.recommendations.assessment') }}" class="btn btn-accent">
+                <i class="fas fa-rocket"></i> Career Assessment
             </a>
-            <a href="#" class="cpbn-btn cpbn-btn-outline">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                AI Career Adviser
+            <a href="{{ route('student.milestones') }}" class="btn btn-outline">
+                <i class="fas fa-flag-checkered"></i> Track Milestones
             </a>
-            <a href="{{ route('student.milestones') }}" class="cpbn-btn cpbn-btn-outline">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22V4"/><path d="M4 4h14l-3 4 3 4H4"/></svg>
-                Track Milestones
+            <a href="{{ route('student.biicf-explorer.index') }}" class="btn btn-outline">
+                <i class="fas fa-compass"></i> BIICF Explorer
             </a>
         </div>
 
-        <!-- Two Column Layout -->
-        <div class="cpbn-cols">
-            <!-- Left: Recommendations -->
-            <div class="cpbn-panel">
-                <div class="cpbn-panel-head">
-                    <h3>
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/></svg>
-                        Top Career Matches
-                    </h3>
+        <!-- Main Content -->
+        <div class="dashboard-grid">
+            <!-- Left Column - Recommendations -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-star"></i> Top Career Matches</h3>
                     <a href="{{ route('student.recommendations.assessment') }}">
-                        Career Assessment
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        View All <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
 
                 @if(isset($recommendations) && count($recommendations) > 0)
                     @foreach($recommendations as $rec)
-                        <div class="cpbn-rec">
-                            <div class="cpbn-rec-top">
+                        <div class="rec-card">
+                            <div class="rec-top">
                                 <div>
-                                    <div class="cpbn-rec-title">
-                                        <a href="{{ route('student.recommendations.analysis', $rec->id) }}">
-                                            {{ $rec->career->job_title ?? 'Career' }}
-                                        </a>
-                                    </div>
-                                    <div class="cpbn-rec-sub">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 9h1m4 0h1m-6 4h1m4 0h1"/></svg>
-                                        {{ $rec->career->subsector ?? '' }}
-                                    </div>
+                                    <div class="rec-title">{{ $rec->career->job_title ?? 'Career' }}</div>
+                                    <div class="rec-subsector">{{ $rec->career->subsector ?? '' }}</div>
                                 </div>
-                                <span class="cpbn-match">{{ $rec->match_score ?? 0 }}% Match</span>
+                                <span class="rec-match">{{ $rec->match_score ?? 0 }}% Match</span>
                             </div>
-                            <div class="cpbn-rec-links">
-                                <a href="{{ route('student.recommendations.analysis', $rec->id) }}">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <circle cx="12" cy="12" r="9"/>
-                                        <path d="M12 16v-5M12 8h.01"/>
-                                    </svg>
-                                    View Career Analysis
-                                </a>
-                            </div>
+                            <a href="{{ route('student.recommendations.analysis', $rec->id) }}" class="rec-link">
+                                View Career Analysis <i class="fas fa-arrow-right"></i>
+                            </a>
                         </div>
                     @endforeach
                 @else
-                    <div class="cpbn-empty">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/></svg>
-                        <p class="t">No recommendations yet.</p>
-                        <p class="s">Complete your profile and run a career assessment.</p>
-                        <a href="{{ route('student.profile') }}" class="cpbn-btn cpbn-btn-primary">Complete Profile</a>
+                    <div class="empty-state">
+                        <i class="fas fa-compass"></i>
+                        <h4>No Recommendations Yet</h4>
+                        <p>Complete your profile and run a career assessment.</p>
+                        <a href="{{ route('student.profile') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-user-edit"></i> Complete Profile
+                        </a>
                     </div>
                 @endif
             </div>
 
-            <!-- Right: Profile Status & Activity -->
+            <!-- Right Column -->
             <div>
                 <!-- Profile Status -->
-                <div class="cpbn-panel">
-                    <div class="cpbn-panel-head" style="margin-bottom:14px">
-                        <h3 style="font-size:15px">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                            Profile Status
-                        </h3>
+                <div class="panel profile-status">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-user-circle"></i> Profile Status</h3>
                     </div>
-                    <div class="cpbn-prow">
+
+                    <div class="status-row">
                         <span>Completion</span>
-                        <span>{{ $profileCompletion ?? 0 }}%</span>
+                        <span class="value">{{ $profileCompletion ?? 0 }}%</span>
                     </div>
-                    <div class="cpbn-bar"><div class="cpbn-bar-fill" style="width: {{ $profileCompletion ?? 0 }}%"></div></div>
-                    <div style="margin-top:14px">
+                    <div class="progress-bar">
+                        <div class="fill" style="width: {{ $profileCompletion ?? 0 }}%"></div>
+                    </div>
+
+                    <div>
                         @if(($profileCompletion ?? 0) >= 70)
-                            <span class="cpbn-chip cpbn-chip-green">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-                                Profile Complete
+                            <span class="status-badge complete">
+                                <i class="fas fa-check-circle"></i> Profile Complete
                             </span>
                         @else
-                            <span class="cpbn-chip cpbn-chip-rose">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v4M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>
-                                Incomplete &middot; {{ 100 - ($profileCompletion ?? 0) }}% remaining
+                            <span class="status-badge incomplete">
+                                <i class="fas fa-exclamation-circle"></i> {{ 100 - ($profileCompletion ?? 0) }}% Remaining
                             </span>
                         @endif
+                    </div>
+
+                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+                        <div class="status-row">
+                            <span>Readiness Score</span>
+                            <span class="value">{{ $readinessScore ?? 0 }}%</span>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Recent Activity -->
-                <div class="cpbn-panel">
-                    <div class="cpbn-panel-head" style="margin-bottom:8px">
-                        <h3 style="font-size:15px">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-                            Recent Activity
-                        </h3>
+                <div class="panel" style="margin-top:16px;">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-clock"></i> Recent Activity</h3>
                     </div>
+
                     @if(isset($recentActivities) && count($recentActivities) > 0)
                         @foreach($recentActivities as $activity)
-                            <div class="cpbn-activity">
-                                <p class="m">{{ $activity['message'] ?? 'Activity logged' }}</p>
-                                <p class="t">{{ $activity['time'] ?? 'Just now' }}</p>
+                            <div class="activity-item">
+                                <div class="activity-icon">
+                                    <i class="fas fa-{{ $activity['icon'] ?? 'bell' }}"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <div class="message">{{ $activity['message'] ?? 'Activity logged' }}</div>
+                                    <div class="time">{{ $activity['time'] ?? 'Just now' }}</div>
+                                </div>
                             </div>
                         @endforeach
                     @else
-                        <p class="cpbn-empty-sm">No recent activity. Start exploring your career options!</p>
+                        <div class="no-activity">
+                            <i class="fas fa-inbox"></i>
+                            No recent activity
+                        </div>
                     @endif
                 </div>
             </div>

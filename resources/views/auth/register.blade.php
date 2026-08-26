@@ -3,283 +3,431 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Register — CareerPath BN</title>
+    <title>Sign Up — CareerPath BN</title>
 
-    @fonts
-
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <style>
-        :root{
-            --ink:#0d1a2b;
-            --ink-2:#132540;
-            --ink-3:#1c3355;
-            --paper:#f5f1e6;
-            --paper-dim:#c7c2b4;
-            --gold:#cf9a3d;
-            --gold-bright:#e9b95a;
-            --rose:#c65b4e;
-            --line:rgba(245,241,230,0.14);
-            --danger:#e08a7d;
-            --success:#8fbf8a;
-            --font-display:'Fraunces', Georgia, serif;
-            --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-            --font-mono:'IBM Plex Mono', ui-monospace, monospace;
+        :root {
+            --primary: #1a3a5c;
+            --primary-light: #2a5a8c;
+            --primary-dark: #0d1f33;
+            --accent: #c9a84c;
+            --accent-light: #e8d4a0;
+            --accent-dark: #a88830;
+            --bg: #f4f6f9;
+            --card: #ffffff;
+            --text: #1a1a2e;
+            --text-muted: #6b7280;
+            --border: #e5e7eb;
+            --shadow: 0 4px 24px rgba(26, 58, 92, 0.08);
+            --radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-        body{
-            background:var(--ink);
-            color:var(--paper);
-            font-family:var(--font-body);
-            font-size:16px;
-            line-height:1.6;
-            -webkit-font-smoothing:antialiased;
-            min-height:100vh;
-            display:flex;
-            flex-direction:column;
-        }
-        a{color:inherit;text-decoration:none}
-        .wrap{max-width:1180px;margin-inline:auto;padding-inline:28px}
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .reveal{opacity:0;transform:translateY(14px);animation:reveal .7s cubic-bezier(.2,.7,.2,1) forwards}
-        @keyframes reveal{to{opacity:1;transform:translateY(0)}}
-        @media (prefers-reduced-motion:reduce){.reveal{animation:none;opacity:1;transform:none}}
-
-        header.site{
-            border-bottom:1px solid var(--line);
-            background:rgba(13,26,43,0.86);
-            backdrop-filter:blur(10px);
-        }
-        .nav{display:flex;align-items:center;justify-content:space-between;padding-block:16px}
-        .brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:20px;font-weight:600}
-        .brand-mark{width:30px;height:30px;flex-shrink:0}
-        .brand small{display:block;font-family:var(--font-mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--gold-bright);font-weight:400;margin-top:1px}
-        .nav-actions a{font-size:14px;color:var(--paper-dim);transition:color .2s}
-        .nav-actions a:hover{color:var(--paper)}
-
-        .auth-main{flex:1;display:flex;align-items:center;justify-content:center;padding:64px 20px}
-        .auth-card{
-            width:100%;max-width:480px;
-            background:var(--ink-2);border:1px solid var(--line);border-radius:6px;
-            padding:44px 40px;
-        }
-        .eyebrow{
-            display:inline-flex;align-items:center;gap:8px;
-            font-family:var(--font-mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;
-            color:var(--gold-bright);margin-bottom:16px;
-        }
-        .eyebrow::before{content:'';width:16px;height:1px;background:var(--gold-bright)}
-        .auth-card h1{font-family:var(--font-display);font-size:28px;font-weight:600;margin-bottom:6px}
-        .auth-card .lede{color:var(--paper-dim);font-size:14px;margin-bottom:28px}
-
-        .status{
-            background:rgba(143,191,138,0.1);border:1px solid rgba(143,191,138,0.35);color:var(--success);
-            padding:12px 14px;border-radius:3px;font-size:13.5px;margin-bottom:22px;
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .name-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
+        .container { max-width: 480px; margin: 0 auto; padding: 0 24px; }
+
+        .auth-header {
+            padding: 20px 0;
+            background: white;
+            border-bottom: 1px solid var(--border);
         }
 
-        .field{margin-bottom:18px}
-        .field label{
-            display:block;font-family:var(--font-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;
-            color:var(--paper-dim);margin-bottom:8px;
+        .auth-header .container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .field input, .field select{
-            width:100%;background:var(--ink);border:1px solid var(--line);color:var(--paper);
-            padding:12px 14px;border-radius:3px;font-size:14.5px;font-family:var(--font-body);
-            transition:border-color .2s;
-            appearance:none;
-            -webkit-appearance:none;
-        }
-        .field input:focus, .field select:focus{outline:none;border-color:var(--gold-bright)}
-        .field input::placeholder{color:rgba(199,194,180,0.45)}
-        .field select option{background:var(--ink);color:var(--paper)}
-        .err{color:var(--danger);font-size:12.5px;margin-top:6px}
 
-        .btn{
-            display:inline-flex;align-items:center;justify-content:center;gap:8px;
-            padding:12px 22px;border-radius:3px;font-size:14.5px;font-weight:500;
-            border:1px solid transparent;transition:all .2s;cursor:pointer;white-space:nowrap;
-        }
-        .btn-gold{background:var(--gold);color:var(--ink);width:100%}
-        .btn-gold:hover{background:var(--gold-bright)}
-
-        .form-foot{margin-top:22px;text-align:center;font-size:13.5px;color:var(--paper-dim)}
-        .form-foot a{color:var(--gold-bright);border-bottom:1px solid transparent;transition:border-color .2s}
-        .form-foot a:hover{border-color:var(--gold-bright)}
-
-        .terms-wrapper {
+        .logo {
             display: flex;
             align-items: center;
             gap: 10px;
-            font-size: 13.5px;
-            color: var(--paper-dim);
-            cursor: pointer;
-            padding: 4px 0;
-        }
-        .terms-wrapper input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            accent-color: var(--gold);
-            cursor: pointer;
-            flex-shrink: 0;
-            appearance: checkbox;
-            -webkit-appearance: checkbox;
-        }
-        .terms-wrapper a {
-            color: var(--gold-bright);
-            border-bottom: 1px solid transparent;
-            transition: border-color .2s;
             text-decoration: none;
         }
-        .terms-wrapper a:hover {
-            border-color: var(--gold-bright);
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent);
+            font-size: 18px;
         }
 
-        /* Back button */
-        .back-link {
+        .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .logo-text span { color: var(--accent); }
+
+        .auth-main {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 0;
+        }
+
+        .auth-card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 32px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            width: 100%;
+        }
+
+        .auth-card .back-link {
             display: inline-flex;
             align-items: center;
-            gap: 8px;
-            color: var(--paper-dim);
+            gap: 6px;
+            color: var(--text-muted);
             font-size: 13px;
-            transition: color .2s;
+            text-decoration: none;
             margin-bottom: 16px;
-        }
-        .back-link:hover {
-            color: var(--paper);
-        }
-        .back-link svg {
-            width: 16px;
-            height: 16px;
+            transition: var(--transition);
         }
 
-        @media (max-width: 600px) {
-            .name-grid {
-                grid-template-columns: 1fr;
-            }
-            .auth-card {
-                padding: 32px 24px;
-            }
+        .auth-card .back-link:hover { color: var(--primary); }
+
+        .auth-card .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--accent);
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .auth-card h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .auth-card .subtitle {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        .field { margin-bottom: 14px; }
+
+        .field label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .field label .required {
+            color: #c0392b;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: var(--transition);
+            background: white;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+
+        .field input:focus,
+        .field select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.08);
+        }
+
+        .field input::placeholder {
+            color: #9ca3af;
+        }
+
+        .field select { cursor: pointer; }
+
+        .field .error {
+            color: #c0392b;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .field .error-input {
+            border-color: #c0392b !important;
+            box-shadow: 0 0 0 4px rgba(192, 57, 43, 0.08) !important;
+        }
+
+        .name-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .checkbox-field {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin: 16px 0 20px;
+        }
+
+        .checkbox-field input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            margin-top: 2px;
+            accent-color: var(--primary);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .checkbox-field label {
+            font-size: 13px;
+            color: var(--text-muted);
+            cursor: pointer;
+            line-height: 1.5;
+        }
+
+        .checkbox-field label a {
+            color: var(--primary);
+            font-weight: 500;
+            text-decoration: none;
+        }
+
+        .checkbox-field label a:hover { color: var(--accent); }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            font-family: inherit;
+            width: 100%;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26, 58, 92, 0.3);
+        }
+
+        .auth-footer {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .auth-footer p {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .auth-footer a {
+            color: var(--primary);
+            font-weight: 600;
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .auth-footer a:hover { color: var(--accent); }
+
+        .status {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .status-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        @media (max-width: 480px) {
+            .auth-card { padding: 24px 16px; }
+            .auth-card h1 { font-size: 22px; }
+            .name-row { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <header class="site">
-        <div class="wrap nav">
-            <a href="{{ url('/') }}" class="brand">
-                <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
-                    <circle cx="16" cy="16" r="15" stroke="#cf9a3d" stroke-width="1.4"/>
-                    <path d="M16 6 L19 15 L16 26 L13 15 Z" fill="#e9b95a"/>
-                    <circle cx="16" cy="16" r="2" fill="#0d1a2b"/>
-                </svg>
-                <span>CareerPath BN<small>Politeknik Brunei</small></span>
+    <header class="auth-header">
+        <div class="container">
+            <a href="{{ url('/') }}" class="logo">
+                <div class="logo-icon"><i class="fas fa-compass"></i></div>
+                <span class="logo-text">CareerPath <span>BN</span></span>
             </a>
-            <div class="nav-actions"></div>
         </div>
     </header>
 
     <main class="auth-main">
-        <div class="auth-card reveal">
-            <!-- Back Button -->
-            <a href="{{ url('/') }}" class="back-link">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                Back to Home
-            </a>
+        <div class="container">
+            <div class="auth-card">
+                <a href="{{ url('/') }}" class="back-link">
+                    <i class="fas fa-arrow-left"></i> Back to Home
+                </a>
 
-            <span class="eyebrow">Get started</span>
-            <h1>Create account</h1>
-            <p class="lede">Start your career discovery journey with BIICF.</p>
+                <div class="badge"><i class="fas fa-user-plus"></i> Get Started</div>
+                <h1>Create Account</h1>
+                <p class="subtitle">Start your career discovery journey with BIICF.</p>
 
-            @if (session('status'))
-                <div class="status">{{ session('status') }}</div>
-            @endif
+                @if ($errors->any())
+                    <div class="status status-error">
+                        Please fix the errors below.
+                    </div>
+                @endif
 
-            @if ($errors->any())
-                <div class="status" style="color:var(--danger);border-color:rgba(224,138,125,0.35);background:rgba(224,138,125,0.1);">
-                    Please fix the errors below.
-                </div>
-            @endif
+                <form method="POST" action="{{ route('register') }}">
+                    @csrf
 
-            <form method="POST" action="{{ route('register') }}">
-                @csrf
+                    <div class="name-row">
+                        <div class="field">
+                            <label>First Name <span class="required">*</span></label>
+                            <input type="text" name="first_name" value="{{ old('first_name') }}"
+                                   placeholder="Ahmad" required
+                                   class="{{ $errors->has('first_name') ? 'error-input' : '' }}">
+                            @error('first_name')
+                                <div class="error">{{ $message }}</div>
+                            @enderror
+                        </div>
 
-                <div class="name-grid">
-                    <div class="field">
-                        <label for="first_name">First Name</label>
-                        <input id="first_name" type="text" name="first_name" value="{{ old('first_name') }}" placeholder="Ahmad" required autofocus>
-                        @error('first_name')<div class="err">{{ $message }}</div>@enderror
+                        <div class="field">
+                            <label>Last Name <span class="required">*</span></label>
+                            <input type="text" name="last_name" value="{{ old('last_name') }}"
+                                   placeholder="Bin Abdullah" required
+                                   class="{{ $errors->has('last_name') ? 'error-input' : '' }}">
+                            @error('last_name')
+                                <div class="error">{{ $message }}</div>
+                            @enderror
+                        </div>
                     </div>
 
                     <div class="field">
-                        <label for="last_name">Last Name</label>
-                        <input id="last_name" type="text" name="last_name" value="{{ old('last_name') }}" placeholder="Bin Abdullah" required>
-                        @error('last_name')<div class="err">{{ $message }}</div>@enderror
+                        <label>Email <span class="required">*</span></label>
+                        <input type="email" name="email" value="{{ old('email') }}"
+                               placeholder="you@pb.edu.bn" required
+                               class="{{ $errors->has('email') ? 'error-input' : '' }}">
+                        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                            <i class="fas fa-info-circle"></i>
+                            Use your gmail.com, pb.edu.bn, or student.pb.edu.bn email
+                        </div>
+                        @error('email')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
-                </div>
 
-                <div class="field">
-                    <label for="email">Email</label>
-                    <input id="email" type="email" name="email" value="{{ old('email') }}" placeholder="you@pb.edu.bn" required>
-                    @error('email')<div class="err">{{ $message }}</div>@enderror
-                </div>
+                    <div class="field">
+                        <label>Programme <span class="required">*</span></label>
+                        <select name="programme" required class="{{ $errors->has('programme') ? 'error-input' : '' }}">
+                            <option value="">Select your programme</option>
+                            <option value="Diploma in ICT (Application Development)" {{ old('programme') == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
+                                DADT - Application Development
+                            </option>
+                            <option value="Diploma in ICT (Data Analytics)" {{ old('programme') == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
+                                DDAT - Data Analytics
+                            </option>
+                            <option value="Diploma in ICT (Cloud Networking)" {{ old('programme') == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
+                                DCNG - Cloud Networking
+                            </option>
+                            <option value="Diploma in Business Information Systems" {{ old('programme') == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
+                                DBIS - Business Information Systems
+                            </option>
+                            <option value="Others" {{ old('programme') == 'Others' ? 'selected' : '' }}>
+                                Others
+                            </option>
+                        </select>
+                        @error('programme')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-                <div class="field">
-                    <label for="programme">Programme</label>
-                    <select id="programme" name="programme" required>
-                        <option value="">Select your programme</option>
-                        <option value="Diploma in ICT (Application Development)" {{ old('programme') == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
-                            DADT - Application Development
-                        </option>
-                        <option value="Diploma in ICT (Data Analytics)" {{ old('programme') == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
-                            DDAT - Data Analytics
-                        </option>
-                        <option value="Diploma in ICT (Cloud Networking)" {{ old('programme') == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
-                            DCNG - Cloud Networking
-                        </option>
-                        <option value="Diploma in Business Information Systems" {{ old('programme') == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
-                            DBIS - Business Information Systems
-                        </option>
-                        <option value="Others" {{ old('programme') == 'Others' ? 'selected' : '' }}>
-                            Others
-                        </option>
-                    </select>
-                    @error('programme')<div class="err">{{ $message }}</div>@enderror
-                </div>
+                    <div class="field">
+                        <label>Password <span class="required">*</span></label>
+                        <input type="password" name="password" placeholder="Min. 8 characters" required
+                               class="{{ $errors->has('password') ? 'error-input' : '' }}">
+                        @error('password')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-                <div class="field">
-                    <label for="password">Password</label>
-                    <input id="password" type="password" name="password" placeholder="Min. 8 characters" required>
-                    @error('password')<div class="err">{{ $message }}</div>@enderror
-                </div>
+                    <div class="field">
+                        <label>Confirm Password <span class="required">*</span></label>
+                        <input type="password" name="password_confirmation" placeholder="Confirm your password" required>
+                    </div>
 
-                <div class="field">
-                    <label for="password_confirmation">Confirm Password</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" placeholder="Confirm your password" required>
-                </div>
+                    <div class="checkbox-field">
+                        <input type="checkbox" name="terms" id="terms" required {{ old('terms') ? 'checked' : '' }}>
+                        <label for="terms">
+                            I agree to the <a href="{{ route('terms') }}" target="_blank">Terms of Service</a>
+                            and <a href="{{ route('privacy') }}" target="_blank">Privacy Policy</a>
+                            <span class="required">*</span>
+                        </label>
+                    </div>
+                    @error('terms')
+                        <div class="error" style="margin-top:-12px;margin-bottom:12px;">{{ $message }}</div>
+                    @enderror
 
-                <div class="field" style="margin-bottom:24px; margin-top:8px;">
-                    <label class="terms-wrapper">
-                        <input type="checkbox" name="terms" required {{ old('terms') ? 'checked' : '' }}>
-                        <span>I agree to the <a href="{{ route('terms') }}" target="_blank">Terms of Service</a> and <a href="{{ route('privacy') }}" target="_blank">Privacy Policy</a></span>
-                    </label>
-                    @error('terms')<div class="err">{{ $message }}</div>@enderror
-                </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-rocket"></i> Create Account
+                    </button>
+                </form>
 
-                <button type="submit" class="btn btn-gold">Create account</button>
-
-                <div class="form-foot">
-                    Already have an account? <a href="{{ route('login') }}">Sign in</a>
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="{{ route('login') }}">Sign in</a></p>
                 </div>
-            </form>
+            </div>
         </div>
     </main>
 

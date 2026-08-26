@@ -4,173 +4,540 @@
 
 @section('content')
 
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-
 <style>
-    .cpbn-dash{
-        --ink:#0d1a2b; --ink-dim:#5b6675; --paper:#faf8f2; --card:#ffffff; --line:#e7e2d4;
-        --gold:#cf9a3d; --gold-bright:#e9b95a; --gold-wash:#fbf1de;
-        --rose:#c65b4e; --rose-wash:#fbeceb; --green:#4c8a68; --green-wash:#e9f3ee;
-        --purple:#7a5ea8; --purple-wash:#f1ecf7;
-        --font-display:'Fraunces', Georgia, serif; --font-body:'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-        --font-mono:'IBM Plex Mono', ui-monospace, monospace;
-        background:var(--paper); color:var(--ink); font-family:var(--font-body);
-        margin:-24px -16px 0; padding:32px 20px 56px;
+    .profile-page {
+        padding: 24px 0 40px;
     }
-    .cpbn-dash *{box-sizing:border-box}
-    .cpbn-dash a{text-decoration:none;color:inherit}
-    .cpbn-wrap{max-width:1100px;margin-inline:auto}
 
-    .cpbn-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:24px}
-    .cpbn-head h1{font-family:var(--font-display);font-weight:600;font-size:25px;letter-spacing:-.01em}
-    .cpbn-head p.sub{color:var(--ink-dim);margin-top:4px;font-size:14.5px}
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+    }
 
-    .cpbn-btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:5px;font-size:14px;font-weight:500;border:none;cursor:pointer;transition:background .15s}
-    .cpbn-btn svg{width:14px;height:14px}
-    .cpbn-btn-primary{background:var(--gold);color:var(--ink)}
-    .cpbn-btn-primary:hover{background:var(--gold-bright)}
+    .profile-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary);
+    }
 
-    .cpbn-card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:22px;margin-bottom:20px}
+    .profile-header h1 span {
+        color: var(--accent);
+    }
 
-    .cpbn-bar{width:100%;background:#eee9db;border-radius:100px;height:10px;margin-top:10px;overflow:hidden}
-    .cpbn-bar-fill{height:100%;background:var(--gold);border-radius:100px}
-    .cpbn-comp-top{display:flex;align-items:center;justify-content:space-between}
-    .cpbn-comp-top span:first-child{font-weight:500;font-size:14.5px}
-    .cpbn-comp-num{font-family:var(--font-mono);font-size:24px;color:#8a6420;font-weight:500}
-    .cpbn-comp-note{font-size:12.5px;color:var(--ink-dim);margin-top:10px}
+    .profile-header .subtitle {
+        color: var(--text-muted);
+        font-size: 14px;
+        margin-top: 2px;
+    }
 
-    .cpbn-grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        text-decoration: none;
+        font-family: inherit;
+    }
 
-    .cpbn-panel-title{font-family:var(--font-display);font-size:16px;font-weight:600;margin-bottom:16px;display:flex;align-items:center;gap:9px}
-    .cpbn-panel-title svg{width:16px;height:16px;color:var(--gold)}
+    .btn-primary {
+        background: var(--primary);
+        color: white;
+    }
 
-    .cpbn-info-row{margin-bottom:12px}
-    .cpbn-info-row:last-child{margin-bottom:0}
-    .cpbn-info-row label{display:block;font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-dim);margin-bottom:3px}
-    .cpbn-info-row p{font-weight:500;font-size:14.5px}
+    .btn-primary:hover {
+        background: var(--primary-light);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(26, 58, 92, 0.25);
+    }
 
-    .cpbn-tags{display:flex;flex-wrap:wrap;gap:8px}
-    .cpbn-tag{font-family:var(--font-mono);font-size:12.5px;padding:6px 12px;border-radius:100px;display:inline-flex;align-items:center;gap:6px}
-    .cpbn-tag-purple{background:var(--purple-wash);color:#5a4180}
-    .cpbn-tag-rose{background:var(--rose-wash);color:#8f3a30}
-    .cpbn-tag small{opacity:.75}
-    .cpbn-empty-sm{color:var(--ink-dim);font-size:13.5px}
+    .btn-sm {
+        padding: 8px 16px;
+        font-size: 12px;
+    }
 
-    @media (max-width:820px){
-        .cpbn-grid2{grid-template-columns:1fr}
+    .profile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+    }
+
+    .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 24px;
+    }
+
+    .panel-full {
+        grid-column: 1 / -1;
+    }
+
+    .panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .panel-header h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: var(--primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .panel-header h3 i {
+        color: var(--accent);
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+        font-size: 14px;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-row .label {
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .info-row .value {
+        font-weight: 500;
+        color: var(--text);
+    }
+
+    .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .tag-blue {
+        background: rgba(26, 58, 92, 0.08);
+        color: var(--primary);
+    }
+
+    .tag-gold {
+        background: rgba(201, 168, 76, 0.12);
+        color: var(--accent-dark);
+    }
+
+    .tag-green {
+        background: rgba(45, 143, 92, 0.12);
+        color: var(--success);
+    }
+
+    .tag-rose {
+        background: rgba(192, 57, 43, 0.08);
+        color: var(--danger);
+    }
+
+    .tag small {
+        opacity: 0.7;
+        font-weight: 400;
+    }
+
+    .empty-text {
+        color: var(--text-muted);
+        font-size: 13px;
+        padding: 8px 0;
+    }
+
+    .completion-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        margin-bottom: 24px;
+    }
+
+    .completion-card .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .completion-card .top .label {
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .completion-card .top .percentage {
+        font-family: 'Playfair Display', serif;
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--accent-dark);
+    }
+
+    .completion-card .bar {
+        height: 6px;
+        background: var(--bg);
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 10px;
+    }
+
+    .completion-card .bar .fill {
+        height: 100%;
+        border-radius: 4px;
+        background: var(--accent);
+        transition: width 0.6s ease;
+    }
+
+    .completion-card .note {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-top: 8px;
+    }
+
+    .project-card {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 16px;
+        border: 1px solid var(--border);
+    }
+
+    .project-card h4 {
+        font-weight: 600;
+        font-size: 14px;
+        color: var(--primary);
+        margin-bottom: 4px;
+    }
+
+    .project-card .role {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .project-card .desc {
+        font-size: 13px;
+        color: var(--text-muted);
+        margin-top: 6px;
+    }
+
+    .project-card .tech-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 8px;
+    }
+
+    .project-card .tech-tags span {
+        background: rgba(26, 58, 92, 0.06);
+        padding: 2px 10px;
+        border-radius: 100px;
+        font-size: 11px;
+        color: var(--primary);
+    }
+
+    .project-card .achievement {
+        font-size: 12px;
+        color: var(--success);
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .cert-card {
+        background: var(--bg);
+        border-radius: 8px;
+        padding: 14px 16px;
+        border: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .cert-card .cert-name {
+        font-weight: 500;
+        font-size: 14px;
+        color: var(--primary);
+    }
+
+    .cert-card .cert-org {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .cert-card .cert-date {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .cert-card .cert-badge {
+        font-size: 11px;
+        font-weight: 500;
+        color: var(--success);
+        background: rgba(45, 143, 92, 0.1);
+        padding: 2px 10px;
+        border-radius: 100px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    @media (max-width: 768px) {
+        .profile-grid {
+            grid-template-columns: 1fr;
+        }
+        .panel-full {
+            grid-column: 1;
+        }
+        .profile-header h1 {
+            font-size: 24px;
+        }
+        .completion-card .top .percentage {
+            font-size: 22px;
+        }
     }
 </style>
 
-<div class="cpbn-dash">
-    <div class="cpbn-wrap">
+<div class="profile-page">
+    <div class="container">
 
-        <div class="cpbn-head">
+        <div class="profile-header">
             <div>
-                <h1>My Profile</h1>
-                <p class="sub">View and manage your personal information</p>
+                <h1>My <span>Profile</span></h1>
+                <p class="subtitle">View and manage your personal information</p>
             </div>
-            <a href="{{ route('student.profile.edit') }}" class="cpbn-btn cpbn-btn-primary">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                Edit Profile
+            <a href="{{ route('student.profile.edit') }}" class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i> Edit Profile
             </a>
         </div>
 
-        <!-- Profile Completion -->
-        <div class="cpbn-card">
-            <div class="cpbn-comp-top">
-                <span>Profile Completion</span>
-                <span class="cpbn-comp-num">{{ $profileCompletion ?? 0 }}%</span>
+        <!-- Completion Card -->
+        <div class="completion-card">
+            <div class="top">
+                <span class="label">Profile Completion</span>
+                <span class="percentage">{{ $profileCompletion ?? 0 }}%</span>
             </div>
-            <div class="cpbn-bar"><div class="cpbn-bar-fill" style="width: {{ $profileCompletion ?? 0 }}%"></div></div>
-            <p class="cpbn-comp-note">
+            <div class="bar">
+                <div class="fill" style="width: {{ $profileCompletion ?? 0 }}%"></div>
+            </div>
+            <p class="note">
                 @if(($profileCompletion ?? 0) < 100)
                     Complete your profile to get better career recommendations
                 @else
-                    Your profile is complete!
+                    🎉 Your profile is complete!
                 @endif
             </p>
         </div>
 
-        <!-- Profile Information -->
-        <div class="cpbn-grid2">
+        <div class="profile-grid">
+
             <!-- Personal Information -->
-            <div class="cpbn-card">
-                <h3 class="cpbn-panel-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
-                    Personal Information
-                </h3>
-                <div class="cpbn-info-row">
-                    <label>Full Name</label>
-                    <p>{{ $user->name ?? 'Not set' }}</p>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-user-circle"></i> Personal Information</h3>
                 </div>
-                <div class="cpbn-info-row">
-                    <label>Email</label>
-                    <p>{{ $user->email ?? 'Not set' }}</p>
+                <div class="info-row">
+                    <span class="label">Full Name</span>
+                    <span class="value">{{ $user->name ?? 'Not set' }}</span>
                 </div>
-                <div class="cpbn-info-row">
-                    <label>Student ID</label>
-                    <p>{{ $user->student_id ?? 'Not set' }}</p>
+                <div class="info-row">
+                    <span class="label">Email</span>
+                    <span class="value">{{ $user->email ?? 'Not set' }}</span>
                 </div>
-                <div class="cpbn-info-row">
-                    <label>Programme</label>
-                    <p>{{ $user->programme ?? 'Not set' }}</p>
+                <div class="info-row">
+                    <span class="label">Student ID</span>
+                    <span class="value">{{ $user->student_id ?? 'Not set' }}</span>
                 </div>
+                <div class="info-row">
+                    <span class="label">Programme</span>
+                    <span class="value">{{ $user->programme ?? 'Not set' }}</span>
+                </div>
+                @if($user->profile->phone ?? false)
+                    <div class="info-row">
+                        <span class="label">Phone</span>
+                        <span class="value">{{ $user->profile->phone }}</span>
+                    </div>
+                @endif
             </div>
 
             <!-- Academic Information -->
-            <div class="cpbn-card">
-                <h3 class="cpbn-panel-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>
-                    Academic Information
-                </h3>
-                <div class="cpbn-info-row">
-                    <label>CGPA</label>
-                    <p>{{ $user->cgpa ?? 'Not set' }}</p>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-graduation-cap"></i> Academic Information</h3>
                 </div>
-                <div class="cpbn-info-row">
-                    <label>Academic Records</label>
-                    <p>{{ $user->academicRecords->count() ?? 0 }} records</p>
+                <div class="info-row">
+                    <span class="label">CGPA</span>
+                    <span class="value">{{ $user->cgpa ?? 'Not set' }}</span>
                 </div>
+                @if($user->profile->date_of_birth ?? false)
+                    <div class="info-row">
+                        <span class="label">Date of Birth</span>
+                        <span class="value">{{ $user->profile->date_of_birth->format('d M Y') }}</span>
+                    </div>
+                @endif
+                @if($user->profile->nationality ?? false)
+                    <div class="info-row">
+                        <span class="label">Nationality</span>
+                        <span class="value">{{ $user->profile->nationality }}</span>
+                    </div>
+                @endif
             </div>
 
-            <!-- Skills & Competencies -->
-            <div class="cpbn-card">
-                <h3 class="cpbn-panel-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                    Skills &amp; Competencies
-                </h3>
+            <!-- Skills -->
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-tools"></i> Skills & Competencies</h3>
+                </div>
                 @if($user->competencies && $user->competencies->count() > 0)
-                    <div class="cpbn-tags">
+                    <div class="tags">
                         @foreach($user->competencies as $skill)
-                            <span class="cpbn-tag cpbn-tag-purple">
+                            <span class="tag tag-blue">
                                 {{ $skill->skill_name }}
                                 <small>({{ $skill->proficiency_level }})</small>
                             </span>
                         @endforeach
                     </div>
                 @else
-                    <p class="cpbn-empty-sm">No skills added yet</p>
+                    <p class="empty-text">No skills added yet</p>
                 @endif
             </div>
 
             <!-- Interests -->
-            <div class="cpbn-card">
-                <h3 class="cpbn-panel-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
-                    Interests
-                </h3>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="fas fa-heart"></i> Interests</h3>
+                </div>
                 @if($user->interests && $user->interests->count() > 0)
-                    <div class="cpbn-tags">
+                    <div class="tags">
                         @foreach($user->interests as $interest)
-                            <span class="cpbn-tag cpbn-tag-rose">{{ $interest->interest_name }}</span>
+                            <span class="tag tag-rose">{{ $interest->interest_name }}</span>
                         @endforeach
                     </div>
                 @else
-                    <p class="cpbn-empty-sm">No interests added yet</p>
+                    <p class="empty-text">No interests added yet</p>
                 @endif
             </div>
+
+            <!-- Projects -->
+            <div class="panel panel-full">
+                <div class="panel-header">
+                    <h3><i class="fas fa-project-diagram"></i> Projects & Experience</h3>
+                </div>
+                @if($user->projects && $user->projects->count() > 0)
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                        @foreach($user->projects as $project)
+                            <div class="project-card">
+                                <h4>{{ $project->title }}</h4>
+                                @if($project->role)
+                                    <span class="role"><i class="fas fa-user-tag"></i> {{ $project->role }}</span>
+                                @endif
+                                @if($project->description)
+                                    <p class="desc">{{ Str::limit($project->description, 80) }}</p>
+                                @endif
+                                @if($project->technologies_used && count($project->technologies_used) > 0)
+                                    <div class="tech-tags">
+                                        @foreach($project->technologies_used as $tech)
+                                            <span>{{ $tech }}</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                                @if($project->achievements)
+                                    <div class="achievement">
+                                        <i class="fas fa-trophy"></i> {{ $project->achievements }}
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="empty-text">No projects added yet</p>
+                @endif
+            </div>
+
+            <!-- Certifications -->
+            <div class="panel panel-full">
+                <div class="panel-header">
+                    <h3><i class="fas fa-certificate"></i> Certifications</h3>
+                </div>
+                @if($user->certifications && $user->certifications->count() > 0)
+                    <div style="display:grid;gap:10px;">
+                        @foreach($user->certifications as $cert)
+                            <div class="cert-card">
+                                <div>
+                                    <div class="cert-name">{{ $cert->certification_name }}</div>
+                                    <div class="cert-org">{{ $cert->issuing_organization ?? 'Unknown' }}</div>
+                                </div>
+                                <div style="text-align:right;">
+                                    @if($cert->issue_date)
+                                        <div class="cert-date">Issued: {{ $cert->issue_date->format('d M Y') }}</div>
+                                    @endif
+                                    @if($cert->certificate_file_path)
+                                        <span class="cert-badge"><i class="fas fa-check-circle"></i> Verified</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="empty-text">No certifications added yet</p>
+                @endif
+            </div>
+
+            <!-- Aspirations -->
+            <div class="panel panel-full">
+                <div class="panel-header">
+                    <h3><i class="fas fa-star"></i> Career Aspirations</h3>
+                </div>
+                @if($user->aspirations)
+                    <div style="display:grid;gap:10px;">
+                        @if($user->aspirations->career_goals && count($user->aspirations->career_goals) > 0)
+                            <div class="info-row">
+                                <span class="label">Dream Career</span>
+                                <span class="value">{{ $user->aspirations->career_goals[0] ?? 'Not set' }}</span>
+                            </div>
+                        @endif
+                        @if($user->aspirations->vision_statement)
+                            <div class="info-row">
+                                <span class="label">Vision Statement</span>
+                                <span class="value">{{ $user->aspirations->vision_statement }}</span>
+                            </div>
+                        @endif
+                        @if($user->aspirations->long_term_goals)
+                            <div class="info-row">
+                                <span class="label">Long Term Goals</span>
+                                <span class="value">{{ $user->aspirations->long_term_goals }}</span>
+                            </div>
+                        @endif
+                    </div>
+                @else
+                    <p class="empty-text">No career aspirations set yet</p>
+                @endif
+            </div>
+
         </div>
 
     </div>

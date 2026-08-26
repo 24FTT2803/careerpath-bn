@@ -84,8 +84,13 @@ class ProfileController extends Controller
         $request->validate([
             'first_name' => ['required', 'string', 'max:255'],
             'last_name' => ['required', 'string', 'max:255'],
-            'student_id' => ['nullable', 'string', 'max:50', 'unique:users,student_id,' . $user->id],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'student_id' => [
+                'nullable',
+                'string',
+                'max:50',
+                'unique:users,student_id,' . $user->id
+            ],
+            'phone' => User::getPhoneValidationRules(),
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
@@ -94,41 +99,54 @@ class ProfileController extends Controller
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:4'],
             'skills' => ['nullable', 'array'],
             'interests' => ['nullable', 'array'],
-            'projects_text' => ['nullable', 'string'],
+            'projects' => ['nullable', 'array'],
+
             'certifications' => ['nullable', 'array'],
+
             'certifications.*.id' => [
                 'nullable',
                 'integer',
                 'distinct',
             ],
+
             'certifications.*.certification_name' => [
                 'required',
                 'string',
                 'max:255',
             ],
+
             'certifications.*.issuing_organization' => [
                 'nullable',
                 'string',
                 'max:255',
             ],
+
             'certifications.*.issue_date' => [
                 'nullable',
                 'date',
                 'before_or_equal:today',
             ],
+
             'certifications.*.certificate_file' => [
                 'nullable',
-                File::types(['pdf', 'jpg', 'jpeg', 'png'])
-                    ->max('5mb'),
+                File::types([
+                    'pdf',
+                    'jpg',
+                    'jpeg',
+                    'png'
+                ])->max('5mb'),
             ],
+
             'removed_certification_ids' => [
                 'nullable',
                 'array',
             ],
+
             'removed_certification_ids.*' => [
                 'integer',
                 'distinct',
             ],
+
             'career_goals_text' => ['nullable', 'string'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
@@ -137,7 +155,7 @@ class ProfileController extends Controller
         // Combine first and last name into full name
         $fullName = $request->first_name . ' ' . $request->last_name;
 
-        // Update User - WITH FIRST & LAST NAME
+        // Update User
         $user->update([
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -145,6 +163,7 @@ class ProfileController extends Controller
             'student_id' => $request->student_id,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
+            'phone' => $request->phone,
         ]);
 
         // Update Profile
@@ -160,21 +179,35 @@ class ProfileController extends Controller
         );
 
         // Process Skills
-        $this->syncSkills($user, $request->input('skills', []));
+        $this->syncSkills(
+            $user,
+            $request->input('skills', [])
+        );
 
         // Process Interests
-        $this->syncInterests($user, $request->input('interests', []));
+        $this->syncInterests(
+            $user,
+            $request->input('interests', [])
+        );
 
-        // Process Projects (comma separated)
-        if ($request->filled('projects_text')) {
-            $projectTitles = array_filter(array_map('trim', explode(',', $request->projects_text)));
-            $this->syncProjects($user, $projectTitles);
+        // Process Projects
+        if (
+            $request->has('projects')
+            && is_array($request->projects)
+        ) {
+            $this->syncProjects(
+                $user,
+                $request->projects
+            );
         } else {
             $user->projects()->delete();
         }
 
         // Process Certifications
-        $this->syncCertifications($user, $request);
+        $this->syncCertifications(
+            $user,
+            $request
+        );
 
         // Update Aspirations
         $user->aspirations()->updateOrCreate(
@@ -197,8 +230,8 @@ class ProfileController extends Controller
             'profile_complete' => $profileIsComplete,
         ]);
 
-        // Generate or refresh career recommendations
-        // once the profile reaches the existing completion threshold.
+        // Generate or refresh career recommendations only
+        // when the profile is at or above the threshold.
         $recommendationWarning = null;
 
         if ($profileIsComplete) {
@@ -209,17 +242,26 @@ class ProfileController extends Controller
             } catch (\Throwable $exception) {
                 report($exception);
 
-                $recommendationWarning = $user->careerRecommendations()->exists()
+                $recommendationWarning = $user
+                    ->careerRecommendations()
+                    ->exists()
                     ? 'Your profile was updated, but career recommendations could not be refreshed. Your previous recommendations are still available.'
                     : 'Your profile was updated, but career recommendations could not be generated. Please try again later.';
             }
         }
 
-        $response = redirect()->route('student.profile')
-            ->with('success', 'Profile updated successfully!');
+        $response = redirect()
+            ->route('student.profile')
+            ->with(
+                'success',
+                'Profile updated successfully!'
+            );
 
         if ($recommendationWarning) {
-            $response->with('warning', $recommendationWarning);
+            $response->with(
+                'warning',
+                $recommendationWarning
+            );
         }
 
         return $response;
@@ -233,11 +275,13 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $certification = $user->certifications()
+        $certification = $user
+            ->certifications()
             ->whereKey($certification)
             ->firstOrFail();
 
-        $filePath = $certification->certificate_file_path;
+        $filePath = $certification
+            ->certificate_file_path;
 
         abort_unless(
             $filePath
@@ -245,7 +289,8 @@ class ProfileController extends Controller
             404
         );
 
-        $fileName = $certification->certificate_original_name
+        $fileName = $certification
+            ->certificate_original_name
             ?: basename($filePath);
 
         return Storage::disk('local')->response(
@@ -265,9 +310,16 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         Auth::logout();
+
         $user->delete();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+
+        $request
+            ->session()
+            ->invalidate();
+
+        $request
+            ->session()
+            ->regenerateToken();
 
         return redirect('/');
     }
@@ -284,7 +336,10 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        return view('student.settings.index', compact('user'));
+        return view(
+            'student.settings.index',
+            compact('user')
+        );
     }
 
     /**
@@ -293,19 +348,34 @@ class ProfileController extends Controller
     public function updatePassword(Request $request)
     {
         $request->validate([
-            'current_password' => ['required', 'current_password'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'current_password' => [
+                'required',
+                'current_password'
+            ],
+
+            'password' => [
+                'required',
+                'string',
+                'min:8',
+                'confirmed'
+            ],
         ]);
 
         /** @var User $user */
         $user = Auth::user();
 
         $user->update([
-            'password' => Hash::make($request->password),
+            'password' => Hash::make(
+                $request->password
+            ),
         ]);
 
-        return redirect()->route('student.settings')
-            ->with('success', 'Password updated successfully!');
+        return redirect()
+            ->route('student.settings')
+            ->with(
+                'success',
+                'Password updated successfully!'
+            );
     }
 
     // ============================================
@@ -320,13 +390,25 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $notifications = $user->notifications()
-            ->orderBy('created_at', 'desc')
+        $notifications = $user
+            ->notifications()
+            ->orderBy(
+                'created_at',
+                'desc'
+            )
             ->paginate(20);
 
-        $unreadCount = $user->unreadNotifications()->count();
+        $unreadCount = $user
+            ->unreadNotifications()
+            ->count();
 
-        return view('student.notifications.index', compact('notifications', 'unreadCount'));
+        return view(
+            'student.notifications.index',
+            compact(
+                'notifications',
+                'unreadCount'
+            )
+        );
     }
 
     /**
@@ -334,15 +416,22 @@ class ProfileController extends Controller
      */
     public function markAsRead($id)
     {
-        $notification = Notification::where('user_id', Auth::id())
-            ->findOrFail($id);
+        $notification = Notification::where(
+            'user_id',
+            Auth::id()
+        )->findOrFail($id);
 
         $notification->update([
             'is_read' => true,
             'read_at' => now(),
         ]);
 
-        return redirect()->back()->with('success', 'Notification marked as read.');
+        return redirect()
+            ->back()
+            ->with(
+                'success',
+                'Notification marked as read.'
+            );
     }
 
     /**
@@ -350,14 +439,25 @@ class ProfileController extends Controller
      */
     public function markAllAsRead()
     {
-        Notification::where('user_id', Auth::id())
-            ->where('is_read', false)
+        Notification::where(
+            'user_id',
+            Auth::id()
+        )
+            ->where(
+                'is_read',
+                false
+            )
             ->update([
                 'is_read' => true,
                 'read_at' => now(),
             ]);
 
-        return redirect()->back()->with('success', 'All notifications marked as read.');
+        return redirect()
+            ->back()
+            ->with(
+                'success',
+                'All notifications marked as read.'
+            );
     }
 
     // ============================================
@@ -372,12 +472,16 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $milestones = $user->milestones()
+        $milestones = $user
+            ->milestones()
             ->orderBy('is_completed')
             ->orderBy('target_date')
             ->get();
 
-        return view('student.milestones.index', compact('milestones'));
+        return view(
+            'student.milestones.index',
+            compact('milestones')
+        );
     }
 
     /**
@@ -386,13 +490,31 @@ class ProfileController extends Controller
     public function storeMilestone(Request $request)
     {
         $request->validate([
-            'title' => ['required', 'string', 'max:255'],
-            'category' => ['required', 'string', 'in:academic,career,personal,skill'],
-            'description' => ['nullable', 'string'],
-            'target_date' => ['nullable', 'date', 'after:today'],
+            'title' => [
+                'required',
+                'string',
+                'max:255'
+            ],
+
+            'category' => [
+                'required',
+                'string',
+                'in:academic,career,personal,skill'
+            ],
+
+            'description' => [
+                'nullable',
+                'string'
+            ],
+
+            'target_date' => [
+                'nullable',
+                'date',
+                'after:today'
+            ],
         ]);
 
-        $milestone = StudentMilestone::create([
+        StudentMilestone::create([
             'user_id' => Auth::id(),
             'title' => $request->title,
             'category' => $request->category,
@@ -400,8 +522,12 @@ class ProfileController extends Controller
             'target_date' => $request->target_date,
         ]);
 
-        return redirect()->route('student.milestones')
-            ->with('success', 'Milestone added successfully!');
+        return redirect()
+            ->route('student.milestones')
+            ->with(
+                'success',
+                'Milestone added successfully!'
+            );
     }
 
     /**
@@ -409,16 +535,22 @@ class ProfileController extends Controller
      */
     public function completeMilestone($id)
     {
-        $milestone = StudentMilestone::where('user_id', Auth::id())
-            ->findOrFail($id);
+        $milestone = StudentMilestone::where(
+            'user_id',
+            Auth::id()
+        )->findOrFail($id);
 
         $milestone->update([
             'is_completed' => true,
             'completed_date' => now(),
         ]);
 
-        return redirect()->route('student.milestones')
-            ->with('success', '🎉 Milestone completed!');
+        return redirect()
+            ->route('student.milestones')
+            ->with(
+                'success',
+                '🎉 Milestone completed!'
+            );
     }
 
     /**
@@ -426,13 +558,19 @@ class ProfileController extends Controller
      */
     public function destroyMilestone($id)
     {
-        $milestone = StudentMilestone::where('user_id', Auth::id())
-            ->findOrFail($id);
+        $milestone = StudentMilestone::where(
+            'user_id',
+            Auth::id()
+        )->findOrFail($id);
 
         $milestone->delete();
 
-        return redirect()->route('student.milestones')
-            ->with('success', 'Milestone deleted.');
+        return redirect()
+            ->route('student.milestones')
+            ->with(
+                'success',
+                'Milestone deleted.'
+            );
     }
 
     // ============================================
@@ -442,82 +580,249 @@ class ProfileController extends Controller
     /**
      * Sync skills/competencies.
      */
-    private function syncSkills(User $user, array $skills)
-    {
-        $user->competencies()->delete();
+    private function syncSkills(
+        User $user,
+        array $skills
+    ) {
+        $user
+            ->competencies()
+            ->delete();
 
         foreach ($skills as $skill) {
-            $user->competencies()->create([
-                'skill_name' => $skill,
-                'category' => 'technical',
-                'proficiency_level' => 'intermediate',
-            ]);
+            $user
+                ->competencies()
+                ->create([
+                    'skill_name' => $skill,
+                    'category' => 'technical',
+                    'proficiency_level' => 'intermediate',
+                ]);
         }
     }
 
     /**
      * Sync interests.
      */
-    private function syncInterests(User $user, array $interests)
-    {
-        $user->interests()->delete();
+    private function syncInterests(
+        User $user,
+        array $interests
+    ) {
+        $user
+            ->interests()
+            ->delete();
 
         foreach ($interests as $interest) {
-            $user->interests()->create([
-                'interest_name' => $interest,
-                'category' => 'career',
-            ]);
+            $user
+                ->interests()
+                ->create([
+                    'interest_name' => $interest,
+                    'category' => 'career',
+                ]);
         }
     }
 
     /**
      * Sync projects.
      */
-    private function syncProjects(User $user, array $projectTitles)
-    {
-        $user->projects()->delete();
+    private function syncProjects(
+        User $user,
+        array $projects
+    ) {
+        $existingIds = [];
 
-        foreach ($projectTitles as $title) {
-            $user->projects()->create([
-                'title' => $title,
-                'description' => '',
+        foreach ($projects as $projectData) {
+            // If project has an ID, update existing.
+            if (
+                isset($projectData['id'])
+                && ! empty($projectData['id'])
+            ) {
+                $project = StudentProject::where(
+                    'user_id',
+                    $user->id
+                )->find(
+                    $projectData['id']
+                );
+
+                if ($project) {
+                    $project->update([
+                        'title' =>
+                            $projectData['title']
+                            ?? '',
+
+                        'description' =>
+                            $projectData['description']
+                            ?? '',
+
+                        'technologies_used' =>
+                            $this->processCommaList(
+                                $projectData[
+                                    'technologies_used'
+                                ] ?? ''
+                            ),
+
+                        'role' =>
+                            $projectData['role']
+                            ?? '',
+
+                        'project_url' =>
+                            $projectData['project_url']
+                            ?? '',
+
+                        'start_date' =>
+                            $projectData['start_date']
+                            ?? null,
+
+                        'end_date' =>
+                            $projectData['end_date']
+                            ?? null,
+
+                        'achievements' =>
+                            $projectData['achievements']
+                            ?? '',
+                    ]);
+
+                    $existingIds[] = $project->id;
+
+                    continue;
+                }
+            }
+
+            // Create new project.
+            // Skip completely empty project rows.
+            if (empty($projectData['title'])) {
+                continue;
+            }
+
+            $project = StudentProject::create([
+                'user_id' => $user->id,
+
+                'title' =>
+                    $projectData['title'],
+
+                'description' =>
+                    $projectData['description']
+                    ?? '',
+
+                'technologies_used' =>
+                    $this->processCommaList(
+                        $projectData[
+                            'technologies_used'
+                        ] ?? ''
+                    ),
+
+                'role' =>
+                    $projectData['role']
+                    ?? '',
+
+                'project_url' =>
+                    $projectData['project_url']
+                    ?? '',
+
+                'start_date' =>
+                    $projectData['start_date']
+                    ?? null,
+
+                'end_date' =>
+                    $projectData['end_date']
+                    ?? null,
+
+                'achievements' =>
+                    $projectData['achievements']
+                    ?? '',
             ]);
+
+            $existingIds[] = $project->id;
         }
+
+        // Delete removed projects.
+        if (! empty($existingIds)) {
+            StudentProject::where(
+                'user_id',
+                $user->id
+            )
+                ->whereNotIn(
+                    'id',
+                    $existingIds
+                )
+                ->delete();
+        } else {
+            $user->projects()->delete();
+        }
+    }
+
+    /**
+     * Helper: Process comma-separated list to array.
+     */
+    private function processCommaList($input)
+    {
+        if (empty($input)) {
+            return [];
+        }
+
+        return array_filter(
+            array_map(
+                'trim',
+                explode(',', $input)
+            )
+        );
     }
 
     /**
      * Sync the student's certifications and uploaded evidence.
      */
-    private function syncCertifications(User $user, Request $request): void
-    {
-        foreach ($request->input('certifications', []) as $index => $data) {
+    private function syncCertifications(
+        User $user,
+        Request $request
+    ): void {
+        foreach (
+            $request->input(
+                'certifications',
+                []
+            )
+            as $index => $data
+        ) {
             $certification = null;
 
             if (! empty($data['id'])) {
-                $certification = $user->certifications()
-                    ->whereKey($data['id'])
+                $certification = $user
+                    ->certifications()
+                    ->whereKey(
+                        $data['id']
+                    )
                     ->firstOrFail();
             }
 
-            $oldFilePath = $certification?->certificate_file_path;
-            $oldOriginalName = $certification?->certificate_original_name;
+            $oldFilePath =
+                $certification
+                    ?->certificate_file_path;
+
+            $oldOriginalName =
+                $certification
+                    ?->certificate_original_name;
 
             $newFilePath = null;
             $newOriginalName = null;
 
             try {
-                if ($request->hasFile("certifications.$index.certificate_file")) {
-                    $uploadedFile = $request->file(
+                if (
+                    $request->hasFile(
                         "certifications.$index.certificate_file"
-                    );
+                    )
+                ) {
+                    $uploadedFile =
+                        $request->file(
+                            "certifications.$index.certificate_file"
+                        );
 
-                    $newOriginalName = $uploadedFile
-                        ->getClientOriginalName();
+                    $newOriginalName =
+                        $uploadedFile
+                            ->getClientOriginalName();
 
-                    $newFilePath = $uploadedFile->store(
-                        "certifications/{$user->id}",
-                        'local'
-                    );
+                    $newFilePath =
+                        $uploadedFile
+                            ->store(
+                                "certifications/{$user->id}",
+                                'local'
+                            );
 
                     if (! $newFilePath) {
                         throw new \RuntimeException(
@@ -528,16 +833,23 @@ class ProfileController extends Controller
 
                 $values = [
                     'certification_name' =>
-                        $data['certification_name'],
+                        $data[
+                            'certification_name'
+                        ],
 
                     'issuing_organization' =>
-                        $data['issuing_organization'] ?? null,
+                        $data[
+                            'issuing_organization'
+                        ] ?? null,
 
                     'issue_date' =>
-                        $data['issue_date'] ?? null,
+                        $data[
+                            'issue_date'
+                        ] ?? null,
 
                     'certificate_file_path' =>
-                        $newFilePath ?? $oldFilePath,
+                        $newFilePath
+                        ?? $oldFilePath,
 
                     'certificate_original_name' =>
                         $newFilePath
@@ -546,38 +858,68 @@ class ProfileController extends Controller
                 ];
 
                 if ($certification) {
-                    $certification->update($values);
+                    $certification
+                        ->update(
+                            $values
+                        );
                 } else {
-                    $user->certifications()->create($values);
+                    $user
+                        ->certifications()
+                        ->create(
+                            $values
+                        );
                 }
             } catch (\Throwable $exception) {
+                /*
+                 * If the new physical file was stored but
+                 * the database update failed, remove only
+                 * the new file. The previous evidence
+                 * remains untouched.
+                 */
                 if ($newFilePath) {
-                    Storage::disk('local')->delete($newFilePath);
+                    Storage::disk('local')
+                        ->delete(
+                            $newFilePath
+                        );
                 }
 
                 throw $exception;
             }
 
-            // The new evidence is safely stored and recorded
-            // before the previous evidence is deleted.
+            /*
+             * Only after the new evidence is safely stored
+             * and recorded in the database do we remove
+             * the previous evidence.
+             */
             if (
                 $newFilePath
                 && $oldFilePath
                 && $newFilePath !== $oldFilePath
             ) {
-                Storage::disk('local')->delete($oldFilePath);
+                Storage::disk('local')
+                    ->delete(
+                        $oldFilePath
+                    );
             }
         }
 
         /*
-         * Existing certifications are deleted only when the
-         * browser explicitly submits their IDs for removal.
+         * Existing certifications are deleted only when
+         * the browser explicitly submits their IDs for
+         * removal.
+         *
+         * A certification simply missing from the normal
+         * certifications array is not enough to authorise
+         * deletion.
          */
         $removedIds = array_values(
             array_unique(
                 array_map(
                     'intval',
-                    $request->input('removed_certification_ids', [])
+                    $request->input(
+                        'removed_certification_ids',
+                        []
+                    )
                 )
             )
         );
@@ -586,22 +928,37 @@ class ProfileController extends Controller
             return;
         }
 
-        $certificationsToDelete = $user->certifications()
-            ->whereIn('id', $removedIds)
-            ->get();
+        $certificationsToDelete =
+            $user
+                ->certifications()
+                ->whereIn(
+                    'id',
+                    $removedIds
+                )
+                ->get();
 
-        foreach ($certificationsToDelete as $certification) {
-            $filePath = $certification->certificate_file_path;
+        foreach (
+            $certificationsToDelete
+            as $certification
+        ) {
+            $filePath =
+                $certification
+                    ->certificate_file_path;
 
             /*
-             * Delete the database record first. If physical
-             * deletion fails, an orphaned private file is safer
-             * than a certification pointing to missing evidence.
+             * Remove the database record first.
+             *
+             * If physical file deletion fails, an orphaned
+             * private file is safer than a certification
+             * record pointing at missing evidence.
              */
             $certification->delete();
 
             if ($filePath) {
-                Storage::disk('local')->delete($filePath);
+                Storage::disk('local')
+                    ->delete(
+                        $filePath
+                    );
             }
         }
     }

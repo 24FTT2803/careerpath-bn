@@ -10,6 +10,20 @@ class StudentProject extends Model
         'user_id',
         'title',
         'description',
+        'technologies_used',
+        'team_members',
+        'role',
+        'project_url',
+        'start_date',
+        'end_date',
+        'achievements',
+    ];
+
+    protected $casts = [
+        'technologies_used' => 'array',
+        'team_members' => 'array',
+        'start_date' => 'date',
+        'end_date' => 'date',
     ];
 
     public function user()

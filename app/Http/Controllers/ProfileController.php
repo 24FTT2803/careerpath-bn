@@ -66,7 +66,7 @@ class ProfileController extends Controller
 
         $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'],
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
@@ -107,9 +107,23 @@ class ProfileController extends Controller
         }
 
         // Process Interests
-        if ($request->has('interests')) {
-            $this->syncInterests($user, $request->interests);
+    if ($request->has('interests')) {
+        $interests = $request->interests;
+        
+        // Check if "others" is selected and add custom interests
+        if (in_array('others', $interests) && $request->filled('interest_others_text')) {
+            // Remove "others" from the array
+            $interests = array_filter($interests, function($item) {
+                return $item !== 'others';
+            });
+            
+            // Add custom interests from the text field
+            $customInterests = array_filter(array_map('trim', explode(',', $request->interest_others_text)));
+            $interests = array_merge($interests, $customInterests);
         }
+        
+        $this->syncInterests($user, $interests);
+    }
 
         // Process Projects (comma separated)
         if ($request->filled('projects_text')) {
@@ -177,24 +191,91 @@ class ProfileController extends Controller
         }
     }
 
-    private function syncInterests($user, $interests)
-    {
-        $user->interests()->delete();
-        foreach ($interests as $interest) {
-            $user->interests()->create([
-                'interest_name' => $interest,
-                'category' => 'career',
-            ]);
-        }
+    /**
+ * Sync interests.
+ */
+private function syncInterests(User $user, array $interests)
+{
+    $user->interests()->delete();
+    
+    // Filter out "others" from the interests array
+    $filteredInterests = array_filter($interests, function($interest) {
+        return $interest !== 'others';
+    });
+    
+    foreach ($filteredInterests as $interest) {
+        $user->interests()->create([
+            'interest_name' => $interest,
+            'category' => 'career',
+        ]);
     }
+}
 
-    private function syncProjects($user, $projectTitles)
-    {
-        $user->projects()->delete();
-        foreach ($projectTitles as $title) {
-            $user->projects()->create(['title' => $title]);
+    /**
+ * Sync projects.
+ */
+private function syncProjects(User $user, array $projects)
+{
+    $existingIds = [];
+    
+    foreach ($projects as $projectData) {
+        // Skip empty projects (no title)
+        if (empty($projectData['title'])) {
+            continue;
         }
+        
+        // Process technologies from comma-separated string to array
+        $technologies = [];
+        if (!empty($projectData['technologies_used'])) {
+            $technologies = array_filter(array_map('trim', explode(',', $projectData['technologies_used'])));
+        }
+        
+        // If project has an ID, update existing
+        if (isset($projectData['id']) && !empty($projectData['id'])) {
+            $project = StudentProject::where('user_id', $user->id)
+                ->find($projectData['id']);
+            
+            if ($project) {
+                $project->update([
+                    'title' => $projectData['title'],
+                    'description' => $projectData['description'] ?? '',
+                    'technologies_used' => $technologies,
+                    'role' => $projectData['role'] ?? '',
+                    'project_url' => $projectData['project_url'] ?? '',
+                    'start_date' => $projectData['start_date'] ?? null,
+                    'end_date' => $projectData['end_date'] ?? null,
+                    'achievements' => $projectData['achievements'] ?? '',
+                ]);
+                $existingIds[] = $project->id;
+                continue;
+            }
+        }
+        
+        // Create new project
+        $project = StudentProject::create([
+            'user_id' => $user->id,
+            'title' => $projectData['title'],
+            'description' => $projectData['description'] ?? '',
+            'technologies_used' => $technologies,
+            'role' => $projectData['role'] ?? '',
+            'project_url' => $projectData['project_url'] ?? '',
+            'start_date' => $projectData['start_date'] ?? null,
+            'end_date' => $projectData['end_date'] ?? null,
+            'achievements' => $projectData['achievements'] ?? '',
+        ]);
+        $existingIds[] = $project->id;
     }
+    
+    // Delete removed projects
+    if (!empty($existingIds)) {
+        StudentProject::where('user_id', $user->id)
+            ->whereNotIn('id', $existingIds)
+            ->delete();
+    } else {
+        // If no projects were submitted, delete all
+        $user->projects()->delete();
+    }
+}
 
     private function syncCertifications($user, $certNames)
     {
