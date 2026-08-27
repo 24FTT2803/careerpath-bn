@@ -85,6 +85,11 @@
                             <i class="fas fa-flag-checkered mr-2 text-gray-500"></i> {{ __('Milestones') }}
                         </x-dropdown-link>
 
+                        <!-- BIICF Explorer -->
+                        <x-dropdown-link :href="route('student.biicf-explorer.index')">
+                            <i class="fas fa-sitemap mr-2 text-gray-500"></i> {{ __('BIICF Explorer') }}
+                        </x-dropdown-link>
+
                         @if(Auth::user()->role === 'admin' || Auth::user()->role === 'lecturer')
                             <x-dropdown-link :href="route('admin.dashboard')">
                                 <i class="fas fa-crown text-amber-500 mr-2"></i> {{ __('Admin') }}
@@ -128,6 +133,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('student.milestones')" :active="request()->routeIs('student.milestones*')">
                 <i class="fas fa-flag-checkered mr-2"></i> {{ __('Milestones') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('student.biicf-explorer.index')" :active="request()->routeIs('student.biicf-explorer.*')">
+                <i class="fas fa-sitemap mr-2"></i> {{ __('BIICF Explorer') }}
             </x-responsive-nav-link>
             @auth
                 @if(Auth::user()->role === 'admin' || Auth::user()->role === 'lecturer')
