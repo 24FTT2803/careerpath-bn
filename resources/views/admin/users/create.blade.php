@@ -117,6 +117,47 @@
 </div>
 
 <style>
+
+:root {
+    --ink: #0d1a2b;
+    --ink-dim: #5b6675;
+    --line: #e7e2d4;
+    --gold: #cf9a3d;
+    --gold-bright: #e9b95a;
+    --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --card: #ffffff;
+    --rose: #c65b4e;
+}
+
+    .cpbn-field input,
+.cpbn-field select {
+    width: 100%;
+    padding: 10px 13px;
+    border-radius: 4px;
+    border: 2px solid var(--line, #e7e2d4);
+    background: #ffffff;
+    font-size: 14px;
+    font-family: var(--font-body, 'IBM Plex Sans', sans-serif);
+    color: var(--ink, #0d1a2b);
+    transition: border-color 0.2s;
+}
+
+.cpbn-field input:focus,
+.cpbn-field select:focus {
+    outline: none;
+    border-color: var(--gold, #cf9a3d);
+    box-shadow: 0 0 0 3px rgba(207,154,61,0.15);
+}
+
+.cpbn-field input::placeholder {
+    color: #9ca3af;
+}
+
+.cpbn-field input:disabled {
+    background: #f2efe6;
+    color: #6b7280;
+}
     .cpbn-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:16px;margin-bottom:22px}
     .cpbn-head h1{font-family:var(--font-display);font-weight:600;font-size:24px;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
     .cpbn-head h1 svg{width:22px;height:22px;color:var(--gold)}

@@ -18,6 +18,8 @@ class StudentMilestone extends Model
         'priority',
         'subtasks',
         'notes',
+        'proof_file_path',
+        'proof_submitted_at',
     ];
 
     protected $casts = [
@@ -25,6 +27,7 @@ class StudentMilestone extends Model
         'completed_date' => 'date',
         'is_completed' => 'boolean',
         'subtasks' => 'array',
+        'proof_submitted_at' => 'datetime',
     ];
 
     public function user()

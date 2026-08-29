@@ -438,12 +438,12 @@
                                     </a>
                                 @endif
                                 <div class="dropdown-divider"></div>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item danger" style="width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;">
-                                        <i class="fas fa-sign-out-alt"></i> Log Out
-                                    </button>
-                                </form>
+                                <button type="button" class="dropdown-item danger" onclick="confirmStudentLogout()" style="width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;">
+                                <i class="fas fa-sign-out-alt"></i> Log Out
+                                </button>
+                                <form id="student-logout-form" method="POST" action="{{ route('logout') }}" style="display:none;">
+                                @csrf
+                            </form>
                             </div>
                         </div>
                     </div>
@@ -515,7 +515,34 @@
                 });
             }
         });
-    </script>
 
+        // ============================================
+        // STUDENT LOGOUT CONFIRMATION
+        // ============================================
+        function confirmStudentLogout() {
+            if (typeof showConfirmModal === 'function') {
+                showConfirmModal({
+                    title: 'Confirm Logout',
+                    message: 'Are you sure you want to log out? You will be redirected to the login page.',
+                    confirmText: 'Yes, Log Out',
+                    cancelText: 'Cancel',
+                    type: 'warning',
+                    onConfirm: function() {
+                        document.getElementById('student-logout-form').submit();
+                    },
+                    onCancel: function() {
+                        // Just close modal, do nothing
+                    }
+                });
+            } else {
+                // Fallback if modal function not available
+                if (confirm('Are you sure you want to log out?')) {
+                    document.getElementById('student-logout-form').submit();
+                }
+            }
+        }
+
+    </script>
+    
 </body>
 </html>

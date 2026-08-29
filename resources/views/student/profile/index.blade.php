@@ -534,11 +534,13 @@
                                 </div>
                                 <div style="text-align:right;">
                                     @if($cert->issue_date)
-                                        <div class="cert-date">Issued: {{ $cert->issue_date->format('d M Y') }}</div>
-                                    @endif
-                                    @if($cert->certificate_file_path)
-                                        <span class="cert-badge"><i class="fas fa-check-circle"></i> Verified</span>
-                                    @endif
+                                    <div class="cert-date">Issued: {{ $cert->issue_date->format('d M Y') }}</div>
+                                @endif
+                            @if($cert->certificate_file_path)
+                        <span class="cert-badge" style="background:rgba(45,143,92,0.1);color:#2d8f5c;padding:2px 10px;border-radius:100px;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                         <i class="fas fa-file-alt"></i> File Attached
+                        </span>
+                            @endif
                                 </div>
                             </div>
                         @endforeach

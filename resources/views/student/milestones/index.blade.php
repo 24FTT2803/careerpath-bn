@@ -523,6 +523,12 @@
                         <input type="date" name="target_date">
                         <div class="hint"><i class="fas fa-info-circle"></i> Past dates will be auto-marked as completed</div>
                     </div>
+                    <div class="field">
+                    <label>Proof of Completion</label>
+                    <input type="file" name="proof_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    <div class="hint">PDF, JPG, JPEG, PNG, DOC, DOCX · Max 10 MB</div>
+                </div>
+
                 </div>
                 <div class="form-actions">
                     <button type="button" onclick="document.getElementById('addForm').classList.toggle('open')" class="btn btn-muted">
