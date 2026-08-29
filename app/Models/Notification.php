@@ -54,7 +54,7 @@ class Notification extends Model
                     'profile' => 'user-edit',
                     'career' => 'briefcase',
                 ];
-                
+
                 return [
                     'type' => $notification->type,
                     'icon' => $iconMap[$notification->type] ?? 'bell',

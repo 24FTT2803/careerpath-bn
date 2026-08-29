@@ -19,32 +19,6 @@ class CareerRecommendationController extends Controller
     }
 
     /**
-     * Display the student's top three career recommendations.
-     */
-    public function assessment(): View
-    {
-        /** @var User $student */
-        $student = Auth::user();
-
-        abort_unless(
-            $student->isStudent(),
-            403
-        );
-
-        $recommendations = $student
-            ->careerRecommendations()
-            ->with('career')
-            ->orderBy('rank')
-            ->limit(3)
-            ->get();
-
-        return view(
-            'student.recommendations.assessment',
-            compact('recommendations')
-        );
-    }
-
-    /**
      * Display the analysis for one of the student's
      * career recommendations.
      */
@@ -100,7 +74,7 @@ class CareerRecommendationController extends Controller
 
         try {
             $recommendations = $this->recommendationService->generateFor($student);
-            
+
             // ============================================
             // LOG ACTIVITY - Career recommendations generated
             // ============================================

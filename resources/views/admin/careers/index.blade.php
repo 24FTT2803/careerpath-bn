@@ -32,7 +32,7 @@
                 <span class="stat-number">
                     @php
                         $highDemand = $careers->filter(function($c) {
-                            return str_contains(strtolower($c->demand_level ?? ''), 'high') || 
+                            return str_contains(strtolower($c->demand_level ?? ''), 'high') ||
                                    str_contains(strtolower($c->demand_level ?? ''), 'very');
                         })->count();
                     @endphp
@@ -49,7 +49,7 @@
             <div class="filter-group">
                 <div class="filter-field">
                     <i class="fas fa-search"></i>
-                    <input type="text" name="search" value="{{ request('search') }}" 
+                    <input type="text" name="search" value="{{ request('search') }}"
                            placeholder="Search careers by title or subsector...">
                 </div>
                 <div class="filter-field">
@@ -93,7 +93,7 @@
                 $technicalSkills = is_array($career->technical_skills) ? $career->technical_skills : json_decode($career->technical_skills ?? '[]', true);
                 $softSkills = is_array($career->soft_skills) ? $career->soft_skills : json_decode($career->soft_skills ?? '[]', true);
                 $totalSkills = count($technicalSkills) + count($softSkills);
-                
+
                 $demandColor = match(strtolower($career->demand_level ?? 'medium')) {
                     'very high' => 'demand-very-high',
                     'high' => 'demand-high',
@@ -101,7 +101,7 @@
                     'low' => 'demand-low',
                     default => 'demand-medium',
                 };
-                
+
                 $demandIcon = match(strtolower($career->demand_level ?? 'medium')) {
                     'very high' => 'fa-rocket',
                     'high' => 'fa-arrow-up',

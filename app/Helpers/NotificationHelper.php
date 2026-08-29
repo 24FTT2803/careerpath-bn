@@ -29,8 +29,8 @@ class NotificationHelper
             $userId,
             'system',
             'Profile Complete! 🎉',
-            'Your profile is now complete. Run a career assessment to get personalized recommendations!',
-            route('student.recommendations.assessment', absolute: false)
+            'Your profile is now complete. View your personalised career recommendations on the dashboard!',
+            route('student.dashboard', absolute: false)
         );
     }
 
@@ -44,7 +44,7 @@ class NotificationHelper
             'recommendation',
             'New Career Recommendation',
             "We found a great match for you: {$careerName}. Check it out!",
-            route('student.recommendations.assessment', absolute: false)
+            route('student.dashboard', absolute: false)
         );
     }
 
@@ -85,7 +85,7 @@ class NotificationHelper
             'system',
             'Skill Gap Update',
             "For {$careerName}, you need to develop {$gapCount} more skill(s). Check your development plan!",
-            route('student.recommendations.assessment', absolute: false)
+            route('student.dashboard', absolute: false)
         );
     }
 
@@ -127,7 +127,7 @@ class NotificationHelper
             'career',
             'Career Recommendations Generated',
             "{$count} new career recommendations generated for {$name}",
-            route('student.recommendations.assessment', absolute: false)
+            route('student.dashboard', absolute: false)
         );
     }
 

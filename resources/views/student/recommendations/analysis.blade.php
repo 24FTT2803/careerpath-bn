@@ -449,7 +449,7 @@
 
         <div class="cpbn-analysis-nav">
             <a
-                href="{{ route('student.recommendations.assessment') }}"
+                href="{{ route('student.dashboard') }}"
                 class="cpbn-back"
             >
                 <svg
@@ -462,7 +462,7 @@
                     <path d="M12 19l-7-7 7-7"/>
                 </svg>
 
-                Back to Career Assessment
+                Back to Dashboard
             </a>
 
             <span class="cpbn-rank">

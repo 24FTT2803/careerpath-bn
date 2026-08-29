@@ -8,29 +8,24 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::table('student_projects', function (Blueprint $table) {
-            $table->json('technologies_used')->nullable()->after('description');
-            $table->json('team_members')->nullable()->after('technologies_used');
-            $table->string('role')->nullable()->after('team_members');
-            $table->string('project_url')->nullable()->after('role');
-            $table->date('start_date')->nullable()->after('project_url');
-            $table->date('end_date')->nullable()->after('start_date');
-            $table->text('achievements')->nullable()->after('end_date');
+        Schema::create('student_projects', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->string('title');
+            $table->text('description');
+            $table->json('technologies_used')->nullable();
+            $table->json('team_members')->nullable();
+            $table->string('role')->nullable();
+            $table->string('project_url')->nullable();
+            $table->date('start_date')->nullable();
+            $table->date('end_date')->nullable();
+            $table->text('achievements')->nullable();
+            $table->timestamps();
         });
     }
 
     public function down()
     {
-        Schema::table('student_projects', function (Blueprint $table) {
-            $table->dropColumn([
-                'technologies_used',
-                'team_members',
-                'role',
-                'project_url',
-                'start_date',
-                'end_date',
-                'achievements'
-            ]);
-        });
+        Schema::dropIfExists('student_projects');
     }
 };

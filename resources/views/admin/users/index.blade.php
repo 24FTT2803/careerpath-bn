@@ -45,7 +45,7 @@
             <div class="filter-group">
                 <div class="filter-field">
                     <i class="fas fa-search"></i>
-                    <input type="text" name="search" value="{{ request('search') }}" 
+                    <input type="text" name="search" value="{{ request('search') }}"
                            placeholder="Search by name, email or student ID...">
                 </div>
                 <div class="filter-field">
@@ -89,7 +89,7 @@
                 $roleColor = $roleColors[$user->role] ?? 'role-student';
                 $roleIcon = $roleIcons[$user->role] ?? 'fa-user';
                 $roleLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
-                
+
                 $profileCompletion = $user->profile_completion ?? 0;
                 $isStudent = $user->role === 'student';
                 $isLecturer = $user->role === 'lecturer';
@@ -192,7 +192,7 @@
                         </div>
                         <div class="lecturer-info">
                             <p style="font-size: 13px; color: #6b7280; margin: 0; text-align: center;">
-                                <i class="fas fa-info-circle"></i> 
+                                <i class="fas fa-info-circle"></i>
                                 Lecturer accounts can view student progress and generate reports
                             </p>
                         </div>
@@ -219,7 +219,7 @@
                         </div>
                         <div class="admin-info">
                             <p style="font-size: 13px; color: #6b7280; margin: 0; text-align: center;">
-                                <i class="fas fa-crown" style="color: #c9a84c;"></i> 
+                                <i class="fas fa-crown" style="color: #c9a84c;"></i>
                                 Administrator with full system access
                             </p>
                         </div>
@@ -236,8 +236,8 @@
                         </a>
                     @endif
                     @if($user->id !== auth()->id())
-                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" 
-                              style="display:inline; margin-left: auto;" 
+                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
+                              style="display:inline; margin-left: auto;"
                               data-confirm-delete data-item-name="{{ $user->name }}">
                             @csrf
                             @method('DELETE')
