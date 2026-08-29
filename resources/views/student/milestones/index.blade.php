@@ -93,6 +93,84 @@
         font-size: 12px;
     }
 
+    .btn-view-proof {
+        background: #e8f0fe;
+        color: #2a5a8c;
+        padding: 4px 12px;
+        font-size: 11px;
+        border-radius: 100px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+
+    .btn-view-proof:hover {
+        background: #2a5a8c;
+        color: #fff;
+        transform: translateY(-1px);
+    }
+
+    /* Custom File Input */
+    .file-upload-wrapper {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .file-upload-wrapper .file-input {
+        position: absolute;
+        left: 0;
+        top: 0;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+    }
+
+    .file-upload-wrapper .file-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        background: #f4f6f9;
+        border: 2px dashed #c9a84c;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #6b7280;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Inter', -apple-system, sans-serif;
+        white-space: nowrap;
+    }
+
+    .file-upload-wrapper .file-label:hover {
+        background: #fbf1de;
+        border-color: #a88830;
+    }
+
+    .file-upload-wrapper .file-label i {
+        color: #c9a84c;
+    }
+
+    .file-upload-wrapper .file-name {
+        font-size: 11px;
+        color: #6b7280;
+        max-width: 100px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .file-upload-wrapper .file-name.has-file {
+        color: #2d8f5c;
+        font-weight: 500;
+    }
+
     /* Add Form */
     .add-form {
         background: #ffffff;
@@ -264,6 +342,7 @@
         border-bottom: 1px solid #e5e7eb;
         transition: all 0.3s ease;
         gap: 14px;
+        flex-wrap: wrap;
     }
 
     .milestone-item:last-child {
@@ -279,7 +358,7 @@
         align-items: center;
         gap: 14px;
         flex: 1;
-        min-width: 0;
+        min-width: 200px;
     }
 
     .milestone-item .icon {
@@ -385,6 +464,7 @@
         align-items: center;
         gap: 8px;
         flex-shrink: 0;
+        flex-wrap: wrap;
     }
 
     .milestone-item .right .done-badge {
@@ -414,6 +494,13 @@
     .milestone-item .right .delete-btn:hover {
         color: #c0392b;
         background: #fbeceb;
+    }
+
+    .milestone-item .complete-form {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
     }
 
     /* Empty State */
@@ -461,6 +548,13 @@
         .milestone-page .head h1 {
             font-size: 24px;
         }
+        .milestone-item .complete-form {
+            width: 100%;
+        }
+        .file-upload-wrapper .file-label {
+            font-size: 11px;
+            padding: 4px 10px;
+        }
     }
 
     @media (max-width: 480px) {
@@ -475,6 +569,21 @@
             flex-direction: column;
             align-items: flex-start;
             gap: 4px;
+        }
+        .milestone-item .right {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .milestone-item .complete-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .file-upload-wrapper {
+            width: 100%;
+        }
+        .file-upload-wrapper .file-label {
+            width: 100%;
+            justify-content: center;
         }
     }
 </style>
@@ -492,54 +601,74 @@
             </button>
         </div>
 
-        <!-- Add Form -->
-        <div id="addForm" class="add-form">
-            <form action="{{ route('student.milestones.store') }}" method="POST" id="milestone-form">
-                @csrf
-                <div class="form-grid">
-                    <div class="field">
-                        <label>Title <span class="req">*</span></label>
-                        <input type="text" name="title" id="milestone-title" placeholder="Enter milestone title" required>
-                        <div class="error-text" id="title-error">Please enter a title</div>
-                        @error('title')
-                            <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
-                        @enderror
-                    </div>
-                    <div class="field">
-                        <label>Category <span class="req">*</span></label>
-                        <select name="category" required>
-                            <option value="academic">Academic</option>
-                            <option value="career">Career</option>
-                            <option value="personal">Personal</option>
-                            <option value="skill">Skill</option>
-                        </select>
-                    </div>
-                    <div class="field full">
-                        <label>Description</label>
-                        <textarea name="description" rows="2" placeholder="Describe this milestone..."></textarea>
-                    </div>
-                    <div class="field">
-                        <label>Target Date</label>
-                        <input type="date" name="target_date">
-                        <div class="hint"><i class="fas fa-info-circle"></i> Past dates will be auto-marked as completed</div>
-                    </div>
-                    <div class="field">
-                    <label>Proof of Completion</label>
-                    <input type="file" name="proof_file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
-                    <div class="hint">PDF, JPG, JPEG, PNG, DOC, DOCX · Max 10 MB</div>
+       <!-- Add Form -->
+<div id="addForm" class="add-form {{ $errors->any() ? 'open' : '' }}">
+    <form action="{{ route('student.milestones.store') }}" method="POST" id="milestone-form" enctype="multipart/form-data">
+        @csrf
+        <div class="form-grid">
+            <div class="field">
+                <label>Title <span class="req">*</span></label>
+                <input type="text" name="title" id="milestone-title" placeholder="Enter milestone title" 
+                       value="{{ old('title') }}" required
+                       class="{{ $errors->has('title') ? 'error-input' : '' }}">
+                @error('title')
+                    <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
+                @else
+                    <div class="error-text" id="title-error">Please enter a title</div>
+                @enderror
+            </div>
+            <div class="field">
+                <label>Category <span class="req">*</span></label>
+                <select name="category" required>
+                    <option value="academic" {{ old('category') == 'academic' ? 'selected' : '' }}>Academic</option>
+                    <option value="career" {{ old('category') == 'career' ? 'selected' : '' }}>Career</option>
+                    <option value="personal" {{ old('category') == 'personal' ? 'selected' : '' }}>Personal</option>
+                    <option value="skill" {{ old('category') == 'skill' ? 'selected' : '' }}>Skill</option>
+                </select>
+                @error('category')
+                    <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="field full">
+                <label>Description</label>
+                <textarea name="description" rows="2" placeholder="Describe this milestone...">{{ old('description') }}</textarea>
+                @error('description')
+                    <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="field">
+                <label>Target Date</label>
+                <input type="date" name="target_date" value="{{ old('target_date') }}">
+                <div class="hint"><i class="fas fa-info-circle"></i> Past dates will still require proof to complete</div>
+                @error('target_date')
+                    <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="field">
+                <label>Proof of Completion</label>
+                <div class="file-upload-wrapper">
+                    <input type="file" name="proof_file" id="add-proof-file" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="file-input">
+                    <label for="add-proof-file" class="file-label">
+                        <i class="fas fa-upload"></i> Choose File
+                    </label>
+                    <span class="file-name" id="add-file-name">No file chosen</span>
                 </div>
-
-                </div>
-                <div class="form-actions">
-                    <button type="button" onclick="document.getElementById('addForm').classList.toggle('open')" class="btn btn-muted">
-                        Cancel
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="submit-milestone" data-confirm-save>
-                        <i class="fas fa-plus"></i> Add Milestone
-                    </button>
-                </div>
-            </form>
+                <div class="hint">PDF, JPG, JPEG, PNG, DOC, DOCX · Max 10 MB</div>
+                @error('proof_file')
+                    <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
+        <div class="form-actions">
+            <button type="button" onclick="document.getElementById('addForm').classList.toggle('open')" class="btn btn-muted">
+                Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" id="submit-milestone">
+                <i class="fas fa-plus"></i> Add Milestone
+            </button>
+        </div>
+    </form>
+</div>
 
         <!-- Stats -->
         <div class="stats-grid">
@@ -568,78 +697,122 @@
             <div class="list-header"><i class="fas fa-list"></i> All Milestones</div>
 
             @forelse($milestones as $milestone)
-                @php
-                    $isOverdue = !$milestone->is_completed && $milestone->target_date && now()->startOfDay() > \Carbon\Carbon::parse($milestone->target_date)->endOfDay();
-                    $isPast = !$milestone->is_completed && $milestone->target_date && now()->startOfDay() > \Carbon\Carbon::parse($milestone->target_date)->endOfDay();
-                @endphp
+    @php
+        $isOverdue = !$milestone->is_completed && $milestone->target_date && now()->startOfDay() > \Carbon\Carbon::parse($milestone->target_date)->endOfDay();
+        $isPast = !$milestone->is_completed && $milestone->target_date && now()->startOfDay() > \Carbon\Carbon::parse($milestone->target_date)->endOfDay();
+    @endphp
 
-                <div class="milestone-item">
-                    <div class="left">
-                        <div class="icon {{ $milestone->is_completed ? 'completed' : ($isOverdue ? 'overdue' : ($isPast ? 'past' : 'pending')) }}">
-                            @if($milestone->is_completed)
-                                <i class="fas fa-check"></i>
-                            @elseif($isOverdue)
-                                <i class="fas fa-exclamation"></i>
-                            @else
-                                <i class="fas fa-clock"></i>
-                            @endif
-                        </div>
-                        <div class="info">
-                            <div class="title {{ $milestone->is_completed ? 'done' : '' }}">{{ $milestone->title }}</div>
-                            <div class="meta">
-                                <span class="category">{{ $milestone->category }}</span>
-                                @if($milestone->target_date)
-                                    <span class="date">
-                                        <i class="fas fa-calendar-alt"></i>
-                                        Target: {{ $milestone->target_date->format('d M Y') }}
-                                    </span>
-                                    @if($isOverdue)
-                                        <span class="status-badge overdue">
-                                            <i class="fas fa-exclamation-triangle"></i> Overdue
-                                        </span>
-                                    @elseif($isPast && !$milestone->is_completed)
-                                        <span class="status-badge past">
-                                            <i class="fas fa-clock"></i> Past Due
-                                        </span>
-                                    @endif
-                                @endif
-                                @if($milestone->is_completed && $milestone->completed_date)
-                                    <span class="status-badge completed">
-                                        <i class="fas fa-check-circle"></i>
-                                        Completed: {{ $milestone->completed_date->format('d M Y') }}
-                                    </span>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                    <div class="right">
-                        @if(!$milestone->is_completed)
-                            <form action="{{ route('student.milestones.complete', $milestone) }}" method="POST" style="display:inline;">
-                                @csrf
-                                @method('PUT')
-                                <button type="submit" class="btn btn-success btn-sm" data-confirm-update data-item-name="{{ $milestone->title }}">
-                                    <i class="fas fa-check"></i> {{ $isPast ? 'Mark Done' : 'Complete' }}
-                                </button>
-                            </form>
-                        @else
-                            <span class="done-badge"><i class="fas fa-check-circle"></i> Done</span>
+    <div class="milestone-item">
+        <div class="left">
+            <div class="icon {{ $milestone->is_completed ? 'completed' : ($isOverdue ? 'overdue' : ($isPast ? 'past' : 'pending')) }}">
+                @if($milestone->is_completed)
+                    <i class="fas fa-check"></i>
+                @elseif($isOverdue)
+                    <i class="fas fa-exclamation"></i>
+                @else
+                    <i class="fas fa-clock"></i>
+                @endif
+            </div>
+            <div class="info">
+                <div class="title {{ $milestone->is_completed ? 'done' : '' }}">{{ $milestone->title }}</div>
+                <div class="meta">
+                    <span class="category">{{ $milestone->category }}</span>
+                    @if($milestone->target_date)
+                        <span class="date">
+                            <i class="fas fa-calendar-alt"></i>
+                            Target: {{ $milestone->target_date->format('d M Y') }}
+                        </span>
+                        @if($isOverdue)
+                            <span class="status-badge overdue">
+                                <i class="fas fa-exclamation-triangle"></i> Overdue
+                            </span>
+                        @elseif($isPast && !$milestone->is_completed)
+                            <span class="status-badge past">
+                                <i class="fas fa-clock"></i> Past Due
+                            </span>
                         @endif
-                        <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST" style="display:inline;" data-confirm-delete data-item-name="{{ $milestone->title }}">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="delete-btn" title="Delete">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </form>
+                    @endif
+                    @if($milestone->is_completed && $milestone->completed_date)
+                        <span class="status-badge completed">
+                            <i class="fas fa-check-circle"></i>
+                            Completed: {{ $milestone->completed_date->format('d M Y') }}
+                        </span>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="right">
+            @if(!$milestone->is_completed)
+                <form action="{{ route('student.milestones.complete', $milestone) }}" method="POST" class="complete-form" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+                    <div class="file-upload-wrapper">
+                        <input type="file" name="proof_file" id="proof-{{ $milestone->id }}" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" class="file-input">
+                        <label for="proof-{{ $milestone->id }}" class="file-label">
+                            <i class="fas fa-upload"></i> {{ $milestone->proof_file_path ? 'Replace' : 'Choose' }}
+                        </label>
+                        <span class="file-name {{ $milestone->proof_file_path ? 'has-file' : '' }}" id="proof-name-{{ $milestone->id }}">
+                            @if($milestone->proof_file_path)
+                                @php
+                                    $proofFileName = basename($milestone->proof_file_path);
+                                    $displayName = strlen($proofFileName) > 15 ? substr($proofFileName, 0, 12) . '…' : $proofFileName;
+                                @endphp
+                                <i class="fas fa-check-circle" style="color:#2d8f5c;"></i> {{ $displayName }}
+                            @else
+                                No file
+                            @endif
+                        </span>
                     </div>
+                    <button type="submit" class="btn btn-success btn-sm" data-confirm-update data-item-name="{{ $milestone->title }}">
+                        <i class="fas fa-check"></i> {{ $isPast ? 'Mark Done' : 'Complete' }}
+                    </button>
+                </form>
+            @else
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span class="done-badge"><i class="fas fa-check-circle"></i> Done</span>
+                    @if($milestone->proof_file_path)
+                        @php
+                            $proofFileName = basename($milestone->proof_file_path);
+                            $extension = strtolower(pathinfo($proofFileName, PATHINFO_EXTENSION));
+                            
+                            $fileIcon = 'fa-file-alt';
+                            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'])) {
+                                $fileIcon = 'fa-file-image';
+                            } elseif ($extension === 'pdf') {
+                                $fileIcon = 'fa-file-pdf';
+                            } elseif (in_array($extension, ['doc', 'docx'])) {
+                                $fileIcon = 'fa-file-word';
+                            } elseif (in_array($extension, ['xls', 'xlsx'])) {
+                                $fileIcon = 'fa-file-excel';
+                            } elseif (in_array($extension, ['zip', 'rar', '7z'])) {
+                                $fileIcon = 'fa-file-archive';
+                            }
+                            
+                            $displayName = strlen($proofFileName) > 20 ? substr($proofFileName, 0, 18) . '…' : $proofFileName;
+                        @endphp
+                        <a href="{{ route('student.milestones.proof', $milestone) }}" target="_blank" class="btn-view-proof" title="Download {{ $proofFileName }}">
+                            <i class="fas {{ $fileIcon }}"></i>
+                            {{ $displayName }}
+                        </a>
+                    @endif
                 </div>
-            @empty
-                <div class="empty-state">
-                    <i class="fas fa-flag-checkered"></i>
-                    <h4>No milestones yet</h4>
-                    <p>Click "Add Milestone" to start tracking your progress.</p>
-                </div>
-            @endforelse
+            @endif
+            <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST" style="display:inline;" data-confirm-delete data-item-name="{{ $milestone->title }}">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="delete-btn" title="Delete">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+@empty
+    <div class="empty-state">
+        <i class="fas fa-flag-checkered"></i>
+        <h4>No milestones yet</h4>
+        <p>Click "Add Milestone" to start tracking your progress.</p>
+    </div>
+@endforelse
         </div>
 
     </div>
@@ -651,6 +824,35 @@
         const titleInput = document.getElementById('milestone-title');
         const titleError = document.getElementById('title-error');
         const submitBtn = document.getElementById('submit-milestone');
+
+        // File name display for add form
+        const addFileInput = document.getElementById('add-proof-file');
+        const addFileName = document.getElementById('add-file-name');
+        if (addFileInput && addFileName) {
+            addFileInput.addEventListener('change', function() {
+                if (this.files && this.files.length > 0) {
+                    addFileName.textContent = this.files[0].name;
+                    addFileName.classList.add('has-file');
+                } else {
+                    addFileName.textContent = 'No file chosen';
+                    addFileName.classList.remove('has-file');
+                }
+            });
+        }
+
+        // File name display for each milestone complete form
+        document.querySelectorAll('.complete-form .file-input').forEach(function(input) {
+            input.addEventListener('change', function() {
+                const fileNameSpan = document.getElementById('proof-name-' + this.id.replace('proof-', ''));
+                if (this.files && this.files.length > 0) {
+                    fileNameSpan.textContent = this.files[0].name;
+                    fileNameSpan.classList.add('has-file');
+                } else {
+                    fileNameSpan.textContent = 'No file';
+                    fileNameSpan.classList.remove('has-file');
+                }
+            });
+        });
 
         if (form && titleInput) {
             form.addEventListener('submit', function(e) {

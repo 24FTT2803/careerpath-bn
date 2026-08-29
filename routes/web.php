@@ -79,6 +79,9 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
     Route::post('/milestones', [MilestoneController::class, 'store'])->name('milestones.store');
     Route::put('/milestones/{milestone}', [MilestoneController::class, 'complete'])->name('milestones.complete');
     Route::delete('/milestones/{milestone}', [MilestoneController::class, 'destroy'])->name('milestones.destroy');
+    
+    // View milestone proof
+    Route::get('/milestones/{milestone}/proof', [MilestoneController::class, 'viewProof'])->name('milestones.proof');
 
     // Settings
     Route::get('/settings', [ProfileController::class, 'settings'])->name('settings');
@@ -121,6 +124,11 @@ Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () 
 
     Route::get('/careers/{id}', [AdminCareerController::class, 'show'])
         ->name('careers.show')
+        ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+
+    // View milestone proof for admin/lecturer
+    Route::get('/students/{studentId}/milestones/{milestoneId}/proof', [MilestoneController::class, 'viewProofAdmin'])
+        ->name('milestones.proof')
         ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
     // Admin ONLY routes
