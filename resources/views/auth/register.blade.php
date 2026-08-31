@@ -430,7 +430,7 @@
                     <div class="field">
                         <label>Password <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <input type="password" name="password" id="password" 
+                            <input type="password" name="password" id="password"
                                    placeholder="Min. 8 characters" required
                                    class="{{ $errors->has('password') ? 'error-input' : '' }}">
                             <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password', this)">
@@ -445,7 +445,7 @@
                     <div class="field">
                         <label>Confirm Password <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <input type="password" name="password_confirmation" id="password_confirmation" 
+                            <input type="password" name="password_confirmation" id="password_confirmation"
                                    placeholder="Confirm your password" required>
                             <button type="button" class="toggle-password" onclick="togglePasswordVisibility('password_confirmation', this)">
                                 <i class="fas fa-eye"></i>
@@ -481,7 +481,7 @@
         function togglePasswordVisibility(inputId, button) {
             const input = document.getElementById(inputId);
             const icon = button.querySelector('i');
-            
+
             if (input.type === 'password') {
                 input.type = 'text';
                 icon.classList.remove('fa-eye');

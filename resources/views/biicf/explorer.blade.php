@@ -557,11 +557,11 @@
                         </div>
                     </template>
 
-                    <p class="empty-state" x-show="!selectedSubSectorSlug && roles.length === 0" style="padding:20px;">
+                    <div class="empty-state" x-show="!selectedSubSectorSlug && roles.length === 0" style="padding:20px;">
                         <i class="fas fa-hand-point-left"></i>
                         <h4>Select a sub-sector first</h4>
                         <p>Or browse all {{ $jobRoleCount ?? 0 }} job roles below.</p>
-                    </p>
+                    </div>
 
                     <div class="role-list">
                         <template x-for="role in roles" :key="role.id">
@@ -570,11 +570,11 @@
                                 <span class="level">Level <span x-text="role.career_path_level"></span></span>
                             </button>
                         </template>
-                        <p x-show="selectedSubSectorSlug && roles.length === 0" class="empty-state" style="padding:20px;">
+                        <div x-show="selectedSubSectorSlug && roles.length === 0" class="empty-state" style="padding:20px;">
                             <i class="fas fa-search"></i>
                             <h4>No roles found</h4>
                             <p>Try selecting a different sub-sector.</p>
-                        </p>
+                        </div>
                     </div>
                 </section>
 
@@ -601,19 +601,19 @@
                                 </template>
                             </div>
 
-                            <p x-show="!(selectedRole.progresses_from || []).length && !(selectedRole.progresses_to || []).length" class="empty-state" style="padding:20px;">
+                            <div x-show="!(selectedRole.progresses_from || []).length && !(selectedRole.progresses_to || []).length" class="empty-state" style="padding:20px;">
                                 <i class="fas fa-info-circle"></i>
                                 <h4>No career path data</h4>
                                 <p>This role doesn't have defined progression paths yet.</p>
-                            </p>
+                            </div>
                         </div>
                     </template>
 
-                    <p x-show="!selectedRole" class="empty-state" style="padding:40px;">
+                    <div x-show="!selectedRole" class="empty-state" style="padding:40px;">
                         <i class="fas fa-hand-point-up"></i>
                         <h4>Select a job role first</h4>
                         <p>Go to "Job Roles" and pick one to see its career progression.</p>
-                    </p>
+                    </div>
                 </section>
 
                 <!-- Competencies -->
@@ -662,11 +662,11 @@
                         </div>
                     </template>
 
-                    <p x-show="!selectedRole" class="empty-state" style="padding:40px;">
+                    <div x-show="!selectedRole" class="empty-state" style="padding:40px;">
                         <i class="fas fa-hand-point-up"></i>
                         <h4>Select a job role first</h4>
                         <p>Go to "Job Roles" to see required competencies, or browse the full glossary of {{ $competencyCount ?? 0 }} competencies.</p>
-                    </p>
+                    </div>
                 </section>
 
                 <!-- Proficiency Levels -->
@@ -709,11 +709,11 @@
                         </div>
                     </template>
 
-                    <p x-show="!selectedRole?.entry_requirement" class="empty-state" style="padding:40px;">
+                    <div x-show="!selectedRole?.entry_requirement" class="empty-state" style="padding:40px;">
                         <i class="fas fa-hand-point-up"></i>
                         <h4>Select a job role first</h4>
                         <p>Go to "Job Roles" to see entry requirements for a specific role.</p>
-                    </p>
+                    </div>
                 </section>
 
                 <!-- Training -->
@@ -734,19 +734,19 @@
                                 </div>
                             </template>
 
-                            <p x-show="!(selectedRole.trainings || []).length" class="empty-state" style="padding:20px;">
+                            <div x-show="!(selectedRole.trainings || []).length" class="empty-state" style="padding:20px;">
                                 <i class="fas fa-info-circle"></i>
                                 <h4>No training data</h4>
                                 <p>This role doesn't have recommended training yet.</p>
-                            </p>
+                            </div>
                         </div>
                     </template>
 
-                    <p x-show="!selectedRole" class="empty-state" style="padding:40px;">
+                    <div x-show="!selectedRole" class="empty-state" style="padding:40px;">
                         <i class="fas fa-hand-point-up"></i>
                         <h4>Select a job role first</h4>
                         <p>Go to "Job Roles" to see recommended training and certifications for a specific role.</p>
-                    </p>
+                    </div>
                 </section>
 
             </main>

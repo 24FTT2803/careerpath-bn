@@ -111,8 +111,8 @@ class DashboardController extends Controller
             return ($student->profile_completion ?? 0) >= 70;
         })->count();
 
-        $completionRate = $students->count() > 0 
-            ? round(($completedProfiles / $students->count()) * 100) 
+        $completionRate = $students->count() > 0
+            ? round(($completedProfiles / $students->count()) * 100)
             : 0;
 
         // At risk students (readiness < 40%)
@@ -151,11 +151,11 @@ class DashboardController extends Controller
 
             foreach ($recommendations as $rec) {
                 $skillGaps = $rec->skill_gaps;
-                
+
                 if (is_string($skillGaps)) {
                     $skillGaps = json_decode($skillGaps, true);
                 }
-                
+
                 if (!is_array($skillGaps) || empty($skillGaps)) {
                     continue;
                 }
@@ -168,7 +168,7 @@ class DashboardController extends Controller
                     } else {
                         continue;
                     }
-                    
+
                     if (is_string($skillName) || is_numeric($skillName)) {
                         $skillName = (string) $skillName;
                         $gaps[$skillName] = ($gaps[$skillName] ?? 0) + 1;

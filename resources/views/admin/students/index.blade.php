@@ -36,7 +36,7 @@
             <div class="filter-group">
                 <div class="filter-field">
                     <i class="fas fa-search"></i>
-                    <input type="text" name="search" value="{{ request('search') }}" 
+                    <input type="text" name="search" value="{{ request('search') }}"
                            placeholder="Search by name, email or student ID...">
                 </div>
                 <div class="filter-field">

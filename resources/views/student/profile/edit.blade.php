@@ -219,10 +219,11 @@
         font-family: var(--font-body);
     }
 
-    .edit-profile .cpbn-field .error {
+    .edit-profile .cpbn-field .error,
+    .edit-profile .cpbn-error {
         color: var(--rose);
         font-size: 12px;
-        margin-top: 4px;
+        margin-top: 6px;
         font-family: var(--font-body);
     }
 
@@ -259,6 +260,173 @@
         color: var(--ink-dim);
         margin-top: 12px;
         font-family: var(--font-body);
+    }
+
+    /* Additional Skills / Interests */
+    .edit-profile .cpbn-additional {
+        margin-top: 18px;
+        padding-top: 18px;
+        border-top: 1px solid var(--line);
+    }
+
+    .edit-profile .cpbn-additional[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-additional-heading {
+        margin-bottom: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .edit-profile .cpbn-custom-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px 7px 12px;
+        border: 1px solid var(--gold);
+        border-radius: 100px;
+        background: var(--gold-wash);
+        color: #7b5c23;
+        font-size: 12px;
+        font-weight: 500;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-chip button {
+        width: 20px;
+        height: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        padding: 0;
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    .edit-profile .cpbn-custom-chip button:hover {
+        background: rgba(123, 92, 35, 0.12);
+    }
+
+    .edit-profile .cpbn-custom-entry {
+        display: flex;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .edit-profile .cpbn-custom-entry input {
+        flex: 1;
+        min-width: 0;
+        padding: 10px 13px;
+        border: 2px solid var(--line);
+        border-radius: 8px;
+        font-size: 14px;
+        font-family: var(--font-body);
+        background: #fff;
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-custom-entry input:focus {
+        outline: none;
+        border-color: var(--gold);
+        box-shadow: 0 0 0 4px rgba(207, 154, 61, 0.15);
+    }
+
+    .edit-profile .cpbn-custom-add {
+        flex: 0 0 auto;
+        border: 0;
+        border-radius: 8px;
+        padding: 0 16px;
+        background: var(--gold);
+        color: var(--ink);
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 600;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-add:hover {
+        background: var(--gold-bright);
+    }
+
+    .edit-profile .cpbn-custom-example {
+        margin-top: 7px;
+        color: var(--ink-dim);
+        font-size: 11px;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-feedback {
+        margin-top: 10px;
+        padding: 10px 12px;
+        border-radius: 7px;
+        font-size: 12px;
+        line-height: 1.5;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-feedback[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-custom-feedback.warning {
+        background: var(--gold-wash);
+        color: #7b5c23;
+        border: 1px solid rgba(207, 154, 61, 0.35);
+    }
+
+    .edit-profile .cpbn-custom-feedback.error {
+        background: var(--rose-wash);
+        color: #9a453c;
+        border: 1px solid rgba(198, 91, 78, 0.25);
+    }
+
+    .edit-profile .cpbn-custom-warning-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 9px;
+    }
+
+    .edit-profile .cpbn-custom-warning-actions[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-custom-warning-actions button {
+        border-radius: 6px;
+        padding: 6px 10px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-custom-edit {
+        border: 1px solid var(--line);
+        background: #fff;
+        color: var(--ink-dim);
+    }
+
+    .edit-profile .cpbn-custom-add-anyway {
+        border: 1px solid var(--gold);
+        background: var(--gold);
+        color: var(--ink);
     }
 
     /* Project & Certification Cards */
@@ -313,12 +481,6 @@
         color: white;
     }
 
-    .edit-profile .cpbn-remove-project svg,
-    .edit-profile .cpbn-remove-certification svg {
-        width: 14px;
-        height: 14px;
-    }
-
     /* Add Buttons */
     .edit-profile .cpbn-add-project,
     .edit-profile .cpbn-add-certification {
@@ -346,12 +508,6 @@
         border-style: solid;
     }
 
-    .edit-profile .cpbn-add-project svg,
-    .edit-profile .cpbn-add-certification svg {
-        width: 16px;
-        height: 16px;
-    }
-
     /* File Upload Helpers */
     .edit-profile .cpbn-file-note {
         display: block;
@@ -362,13 +518,67 @@
     }
 
     .edit-profile .cpbn-file-existing {
-        font-size: 12px;
+        display: block;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: var(--green-wash);
         color: var(--green);
-        margin-top: 6px;
-        display: flex;
-        align-items: center;
-        gap: 4px;
+        border-radius: 6px;
+        font-size: 12px;
         font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-file-existing-name {
+        display: block;
+        margin-top: 4px;
+        font-weight: 400;
+        overflow-wrap: anywhere;
+    }
+
+    .edit-profile .cpbn-file-view {
+        display: inline-block;
+        margin-top: 7px;
+        color: #386747;
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .edit-profile .cpbn-file-missing {
+        display: block;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: var(--rose-wash);
+        color: #9a453c;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .edit-profile .cpbn-file-selected {
+        display: block;
+        margin-top: 8px;
+        padding: 8px 10px;
+        background: var(--gold-wash);
+        color: #7b5c23;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .edit-profile .cpbn-clear-file {
+        display: inline-block;
+        margin-top: 7px;
+        border: 0;
+        background: transparent;
+        color: #8a6420;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 0;
+    }
+
+    .edit-profile .cpbn-clear-file:hover {
+        text-decoration: underline;
     }
 
     /* Submit Buttons */
@@ -387,11 +597,6 @@
         font-family: var(--font-body);
     }
 
-    .edit-profile .cpbn-btn svg {
-        width: 14px;
-        height: 14px;
-    }
-
     .edit-profile .cpbn-btn-primary {
         background: var(--gold);
         color: var(--ink);
@@ -403,16 +608,6 @@
         box-shadow: 0 8px 24px rgba(207, 154, 61, 0.25);
     }
 
-    .edit-profile .cpbn-btn-muted {
-        background: var(--line);
-        color: var(--ink);
-    }
-
-    .edit-profile .cpbn-btn-muted:hover {
-        background: #d8d2c0;
-        transform: translateY(-2px);
-    }
-
     .edit-profile .submit-row {
         display: flex;
         justify-content: flex-end;
@@ -420,28 +615,27 @@
         margin-top: 24px;
     }
 
-    /* Error States */
-    .edit-profile .cpbn-field .error-input {
-        border-color: var(--rose) !important;
-        box-shadow: 0 0 0 4px rgba(198, 91, 78, 0.15) !important;
-    }
-
     @media (max-width: 720px) {
         .edit-profile .cpbn-fgrid {
             grid-template-columns: 1fr;
         }
+
         .edit-profile .cpbn-fgrid .full {
             grid-column: auto;
         }
+
         .edit-profile .cpbn-checks {
             grid-template-columns: repeat(2, 1fr);
         }
+
         .edit-profile .head h1 {
             font-size: 20px;
         }
+
         .edit-profile .submit-row {
             flex-direction: column;
         }
+
         .edit-profile .submit-row .cpbn-btn {
             width: 100%;
             justify-content: center;
@@ -452,8 +646,17 @@
         .edit-profile .cpbn-checks {
             grid-template-columns: 1fr;
         }
+
         .edit-profile .head {
             flex-direction: column;
+        }
+
+        .edit-profile .cpbn-custom-entry {
+            flex-direction: column;
+        }
+
+        .edit-profile .cpbn-custom-add {
+            min-height: 42px;
         }
     }
 </style>
@@ -464,10 +667,13 @@
         <div class="head">
             <div>
                 <h1>Complete Your <span>Profile</span></h1>
-                <p class="sub">Fill in all sections for better career recommendations</p>
+                <p class="sub">Fill in your profile for better career recommendations</p>
             </div>
+
             <a href="{{ route('student.profile') }}" class="back">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
                 Back
             </a>
         </div>
@@ -478,82 +684,168 @@
                 <span>Profile Completion</span>
                 <span>{{ $profileCompletion ?? 0 }}%</span>
             </div>
+
             <div class="bar">
-                <div class="fill" style="width: {{ $profileCompletion ?? 0 }}%"></div>
+                <div
+                    class="fill"
+                    style="width: {{ $profileCompletion ?? 0 }}%"
+                ></div>
             </div>
+
             <p class="progress-note">
-                {{ $profileCompletion >= 70 ? '✅ Profile complete — ready for career matching!' : 'Complete all sections for better recommendations' }}
+                {{ $profileCompletion >= 70
+                    ? '✅ Profile complete — ready for career matching!'
+                    : 'Your progress can be saved now and completed later.' }}
             </p>
         </div>
 
-        <form method="POST" action="{{ route('student.profile.update') }}" enctype="multipart/form-data" id="profile-form">
+        <form
+            method="POST"
+            action="{{ route('student.profile.update') }}"
+            enctype="multipart/form-data"
+            id="profile-form"
+            data-confirm-update
+            data-item-name="your profile"
+        >
             @csrf
             @method('PUT')
 
             <!-- SECTION 1: Personal Information -->
             <div class="section">
                 <div class="title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+                    </svg>
                     Personal Information
                 </div>
+
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
                         <label>First Name <span class="req">*</span></label>
-                        <input type="text" name="first_name" value="{{ old('first_name', $user->first_name ?? '') }}" required>
-                        @error('first_name')<div class="error">{{ $message }}</div>@enderror
+                        <input
+                            type="text"
+                            name="first_name"
+                            value="{{ old('first_name', $user->first_name ?? '') }}"
+                            required
+                        >
+                        @error('first_name')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field">
                         <label>Last Name <span class="req">*</span></label>
-                        <input type="text" name="last_name" value="{{ old('last_name', $user->last_name ?? '') }}" required>
-                        @error('last_name')<div class="error">{{ $message }}</div>@enderror
+                        <input
+                            type="text"
+                            name="last_name"
+                            value="{{ old('last_name', $user->last_name ?? '') }}"
+                            required
+                        >
+                        @error('last_name')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field">
                         <label>Email <span class="req">*</span></label>
-                        <input type="email" value="{{ $user->email }}" disabled>
+                        <input
+                            type="email"
+                            value="{{ $user->email }}"
+                            disabled
+                        >
                     </div>
+
                     <div class="cpbn-field">
                         <label>Student ID <span class="req">*</span></label>
-                        <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" required>
-                        @error('student_id')<div class="error">{{ $message }}</div>@enderror
+                        <input
+                            type="text"
+                            name="student_id"
+                            value="{{ old('student_id', $user->student_id) }}"
+                            required
+                        >
+                        @error('student_id')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field">
                         <label>Phone Number</label>
-                        <input type="tel" name="phone" value="{{ old('phone', $user->phone ?? '') }}" placeholder="+673 123 4567" pattern="[\+\d\s\-\(\)]{7,20}" title="Only digits, +, -, spaces, and parentheses allowed">
-                        <span class="hint">Only digits, +, -, spaces, and parentheses allowed (7-20 characters)</span>
-                        @error('phone')<div class="error">{{ $message }}</div>@enderror
+                        <input
+                            type="tel"
+                            name="phone"
+                            value="{{ old('phone', $user->phone ?? '') }}"
+                            placeholder="+673 123 4567"
+                            pattern="[\+\d\s\-\(\)]{7,20}"
+                            title="Only digits, +, -, spaces, and parentheses allowed"
+                        >
+                        <span class="hint">
+                            Only digits, +, -, spaces, and parentheses allowed (7-20 characters)
+                        </span>
+                        @error('phone')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field">
                         <label>Date of Birth</label>
-                        <input type="date" name="date_of_birth" value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}">
-                        @error('date_of_birth')<div class="error">{{ $message }}</div>@enderror
+                        <input
+                            type="date"
+                            name="date_of_birth"
+                            value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}"
+                        >
+                        @error('date_of_birth')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field">
                         <label>Nationality</label>
+
                         <select name="nationality">
                             <option value="">Select your nationality</option>
-                            <option value="Brunei Darussalam" {{ old('nationality', $user->profile->nationality ?? '') == 'Brunei Darussalam' ? 'selected' : '' }}>🇧🇳 Brunei Darussalam</option>
-                            <option value="Cambodia" {{ old('nationality', $user->profile->nationality ?? '') == 'Cambodia' ? 'selected' : '' }}>🇰🇭 Cambodia</option>
-                            <option value="Indonesia" {{ old('nationality', $user->profile->nationality ?? '') == 'Indonesia' ? 'selected' : '' }}>🇮🇩 Indonesia</option>
-                            <option value="Laos" {{ old('nationality', $user->profile->nationality ?? '') == 'Laos' ? 'selected' : '' }}>🇱🇦 Laos</option>
-                            <option value="Malaysia" {{ old('nationality', $user->profile->nationality ?? '') == 'Malaysia' ? 'selected' : '' }}>🇲🇾 Malaysia</option>
-                            <option value="Myanmar" {{ old('nationality', $user->profile->nationality ?? '') == 'Myanmar' ? 'selected' : '' }}>🇲🇲 Myanmar</option>
-                            <option value="Philippines" {{ old('nationality', $user->profile->nationality ?? '') == 'Philippines' ? 'selected' : '' }}>🇵🇭 Philippines</option>
-                            <option value="Singapore" {{ old('nationality', $user->profile->nationality ?? '') == 'Singapore' ? 'selected' : '' }}>🇸🇬 Singapore</option>
-                            <option value="Thailand" {{ old('nationality', $user->profile->nationality ?? '') == 'Thailand' ? 'selected' : '' }}>🇹🇭 Thailand</option>
-                            <option value="Timor-Leste" {{ old('nationality', $user->profile->nationality ?? '') == 'Timor-Leste' ? 'selected' : '' }}>🇹🇱 Timor-Leste</option>
-                            <option value="Vietnam" {{ old('nationality', $user->profile->nationality ?? '') == 'Vietnam' ? 'selected' : '' }}>🇻🇳 Vietnam</option>
+
+                            @foreach([
+                                'Brunei Darussalam',
+                                'Cambodia',
+                                'Indonesia',
+                                'Laos',
+                                'Malaysia',
+                                'Myanmar',
+                                'Philippines',
+                                'Singapore',
+                                'Thailand',
+                                'Timor-Leste',
+                                'Vietnam'
+                            ] as $nationality)
+                                <option
+                                    value="{{ $nationality }}"
+                                    {{ old('nationality', $user->profile->nationality ?? '') === $nationality ? 'selected' : '' }}
+                                >
+                                    {{ $nationality }}
+                                </option>
+                            @endforeach
                         </select>
-                        @error('nationality')<div class="error">{{ $message }}</div>@enderror
+
+                        @error('nationality')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field full">
                         <label>Address</label>
                         <textarea name="address" rows="2">{{ old('address', $user->profile->address ?? '') }}</textarea>
-                        @error('address')<div class="error">{{ $message }}</div>@enderror
+                        @error('address')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field full">
                         <label>Bio / About You</label>
                         <textarea name="bio" rows="3">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
-                        @error('bio')<div class="error">{{ $message }}</div>@enderror
+                        @error('bio')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -568,23 +860,68 @@
                     </svg>
                     Academic Information
                 </div>
+
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
-                        <label>Programme <span class="req">*</span></label>
-                        <select name="programme" required>
+                        <label>Programme</label>
+
+                        <select name="programme">
                             <option value="">Select your programme</option>
-                            <option value="Diploma in ICT (Application Development)" {{ old('programme', $user->programme) == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>DADT - Application Development</option>
-                            <option value="Diploma in ICT (Data Analytics)" {{ old('programme', $user->programme) == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>DDAT - Data Analytics</option>
-                            <option value="Diploma in ICT (Cloud Networking)" {{ old('programme', $user->programme) == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>DCNG - Cloud Networking</option>
-                            <option value="Diploma in Business Information Systems" {{ old('programme', $user->programme) == 'Diploma in Business Information Systems' ? 'selected' : '' }}>DBIS - Business Information Systems</option>
-                            <option value="Others" {{ old('programme', $user->programme) == 'Others' ? 'selected' : '' }}>Others</option>
+
+                            <option
+                                value="Diploma in ICT (Application Development)"
+                                {{ old('programme', $user->programme) === 'Diploma in ICT (Application Development)' ? 'selected' : '' }}
+                            >
+                                DADT - Application Development
+                            </option>
+
+                            <option
+                                value="Diploma in ICT (Data Analytics)"
+                                {{ old('programme', $user->programme) === 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}
+                            >
+                                DDAT - Data Analytics
+                            </option>
+
+                            <option
+                                value="Diploma in ICT (Cloud Networking)"
+                                {{ old('programme', $user->programme) === 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}
+                            >
+                                DCNG - Cloud Networking
+                            </option>
+
+                            <option
+                                value="Diploma in Business Information Systems"
+                                {{ old('programme', $user->programme) === 'Diploma in Business Information Systems' ? 'selected' : '' }}
+                            >
+                                DBIS - Business Information Systems
+                            </option>
+
+                            <option
+                                value="Others"
+                                {{ old('programme', $user->programme) === 'Others' ? 'selected' : '' }}
+                            >
+                                Others
+                            </option>
                         </select>
-                        @error('programme')<div class="error">{{ $message }}</div>@enderror
+
+                        @error('programme')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
+
                     <div class="cpbn-field">
-                        <label>CGPA <span class="req">*</span></label>
-                        <input type="number" name="cgpa" step="0.01" min="0" max="4" value="{{ old('cgpa', $user->cgpa) }}" required>
-                        @error('cgpa')<div class="error">{{ $message }}</div>@enderror
+                        <label>CGPA</label>
+                        <input
+                            type="number"
+                            name="cgpa"
+                            step="0.01"
+                            min="0"
+                            max="4"
+                            value="{{ old('cgpa', $user->cgpa) }}"
+                        >
+                        @error('cgpa')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
                 </div>
             </div>
@@ -592,116 +929,574 @@
             <!-- SECTION 3: Skills -->
             <div class="section">
                 <div class="title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                    </svg>
                     Skills &amp; Competencies
                 </div>
+
                 <p class="desc">Select your technical skills</p>
+
                 @php
-                    $skillOptions = ['Python', 'JavaScript', 'SQL', 'Java', 'PHP', 'HTML/CSS', 'React', 'Node.js', 'Git', 'Linux', 'Docker', 'AWS', 'C++', 'C#', 'Ruby'];
-                    $savedSkills = $user->competencies->pluck('skill_name')->toArray();
+                    $skillOptions = $skillOptions ?? [];
+
+                    $storedSkillNames = $user
+                        ->competencies
+                        ->pluck('skill_name')
+                        ->toArray();
+
+                    $storedPredefinedSkills = array_values(
+                        array_filter(
+                            $storedSkillNames,
+                            fn ($skill) => in_array(
+                                $skill,
+                                $skillOptions,
+                                true
+                            )
+                        )
+                    );
+
+                    $storedAdditionalSkills = array_values(
+                        array_filter(
+                            $storedSkillNames,
+                            fn ($skill) => ! in_array(
+                                $skill,
+                                $skillOptions,
+                                true
+                            )
+                        )
+                    );
+
+                    $savedSkills = old(
+                        'skills',
+                        $storedPredefinedSkills
+                    );
+
+                    $savedAdditionalSkills = old(
+                        'custom_skills',
+                        $storedAdditionalSkills
+                    );
+
+                    $savedAdditionalSkills = is_array($savedAdditionalSkills)
+                        ? array_values(
+                            array_filter(
+                                $savedAdditionalSkills,
+                                fn ($skill) => trim((string) $skill) !== ''
+                            )
+                        )
+                        : [];
+
+                    $hasAdditionalSkills = ! empty(
+                        $savedAdditionalSkills
+                    );
                 @endphp
+
                 <div class="cpbn-checks">
                     @foreach($skillOptions as $skill)
                         <label class="cpbn-check">
-                            <input type="checkbox" name="skills[]" value="{{ $skill }}" {{ in_array($skill, $savedSkills) ? 'checked' : '' }}>
+                            <input
+                                type="checkbox"
+                                name="skills[]"
+                                value="{{ $skill }}"
+                                {{ in_array($skill, $savedSkills ?? [], true) ? 'checked' : '' }}
+                            >
                             <span>{{ $skill }}</span>
                         </label>
                     @endforeach
+
+                    <label class="cpbn-check">
+                        <input
+                            type="checkbox"
+                            id="additional-skills-toggle"
+                            {{ $hasAdditionalSkills ? 'checked' : '' }}
+                        >
+                        <span>Others</span>
+                    </label>
                 </div>
-                <p class="cpbn-check-note">Select all that apply. More skills = better career matching.</p>
-                @error('skills')<div class="error">{{ $message }}</div>@enderror
+
+                <p class="cpbn-check-note">
+                    Select all that apply. More skills = better career matching.
+                </p>
+
+                <div
+                    id="additional-skills-section"
+                    class="cpbn-additional"
+                    {{ $hasAdditionalSkills ? '' : 'hidden' }}
+                >
+                    <div class="cpbn-additional-heading">
+                        Additional Skills
+                    </div>
+
+                    <div
+                        id="additional-skill-chips"
+                        class="cpbn-custom-chips"
+                    >
+                        @foreach($savedAdditionalSkills as $skill)
+                            <span
+                                class="cpbn-custom-chip"
+                                data-value="{{ $skill }}"
+                            >
+                                <span>{{ $skill }}</span>
+
+                                <button
+                                    type="button"
+                                    class="cpbn-remove-custom-chip"
+                                    aria-label="Remove {{ $skill }}"
+                                    title="Remove"
+                                >
+                                    &times;
+                                </button>
+
+                                <input
+                                    type="hidden"
+                                    name="custom_skills[]"
+                                    value="{{ $skill }}"
+                                >
+                            </span>
+                        @endforeach
+                    </div>
+
+                    <div class="cpbn-custom-entry">
+                        <input
+                            type="text"
+                            id="additional-skill-input"
+                            maxlength="60"
+                            autocomplete="off"
+                            placeholder="Type another skill..."
+                            aria-describedby="additional-skill-example additional-skill-feedback"
+                        >
+
+                        <button
+                            type="button"
+                            id="add-additional-skill"
+                            class="cpbn-custom-add"
+                        >
+                            Add
+                        </button>
+                    </div>
+
+                    <p
+                        id="additional-skill-example"
+                        class="cpbn-custom-example"
+                    >
+                        Examples: Laravel, Flutter, Power BI
+                    </p>
+
+                    <div
+                        id="additional-skill-feedback"
+                        class="cpbn-custom-feedback"
+                        hidden
+                    >
+                        <span id="additional-skill-feedback-text"></span>
+
+                        <div
+                            id="additional-skill-warning-actions"
+                            class="cpbn-custom-warning-actions"
+                            hidden
+                        >
+                            <button
+                                type="button"
+                                id="edit-additional-skill"
+                                class="cpbn-custom-edit"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                id="add-additional-skill-anyway"
+                                class="cpbn-custom-add-anyway"
+                            >
+                                Add Anyway
+                            </button>
+                        </div>
+                    </div>
+
+                    @error('custom_skills')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+
+                    @error('custom_skills.*')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+                </div>
             </div>
 
             <!-- SECTION 4: Interests -->
-<div class="section">
-    <div class="title">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/></svg>
-        Interests &amp; Preferences
-    </div>
-    <p class="desc">What are you interested in?</p>
-    @php
-        $interestOptions = ['Problem Solving', 'Teamwork', 'Communication', 'Leadership', 'Creativity', 'Analytical Thinking', 'Research', 'Writing', 'Public Speaking', 'Programming', 'Data Analysis', 'Networking', 'Cybersecurity', 'Cloud Computing', 'Project Management'];
-        $savedInterests = $user->interests->pluck('interest_name')->toArray();
-    @endphp
-    <div class="cpbn-checks">
-        @foreach($interestOptions as $interest)
-            <label class="cpbn-check">
-                <input type="checkbox" name="interests[]" value="{{ $interest }}" {{ in_array($interest, $savedInterests) ? 'checked' : '' }}>
-                <span>{{ $interest }}</span>
-            </label>
-        @endforeach
-    </div>
-    @error('interests')<div class="error">{{ $message }}</div>@enderror
-</div>
+            <div class="section">
+                <div class="title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
+                    </svg>
+                    Interests &amp; Preferences
+                </div>
+
+                <p class="desc">What are you interested in?</p>
+
+                @php
+                    $interestOptions = $interestOptions ?? [];
+
+                    $storedInterestNames = $user
+                        ->interests
+                        ->pluck('interest_name')
+                        ->toArray();
+
+                    $storedPredefinedInterests = array_values(
+                        array_filter(
+                            $storedInterestNames,
+                            fn ($interest) => in_array(
+                                $interest,
+                                $interestOptions,
+                                true
+                            )
+                        )
+                    );
+
+                    $storedAdditionalInterests = array_values(
+                        array_filter(
+                            $storedInterestNames,
+                            fn ($interest) => ! in_array(
+                                $interest,
+                                $interestOptions,
+                                true
+                            )
+                        )
+                    );
+
+                    $savedInterests = old(
+                        'interests',
+                        $storedPredefinedInterests
+                    );
+
+                    $savedAdditionalInterests = old(
+                        'custom_interests',
+                        $storedAdditionalInterests
+                    );
+
+                    $savedAdditionalInterests = is_array($savedAdditionalInterests)
+                        ? array_values(
+                            array_filter(
+                                $savedAdditionalInterests,
+                                fn ($interest) => trim((string) $interest) !== ''
+                            )
+                        )
+                        : [];
+
+                    $hasAdditionalInterests = ! empty(
+                        $savedAdditionalInterests
+                    );
+                @endphp
+
+                <div class="cpbn-checks">
+                    @foreach($interestOptions as $interest)
+                        <label class="cpbn-check">
+                            <input
+                                type="checkbox"
+                                name="interests[]"
+                                value="{{ $interest }}"
+                                {{ in_array($interest, $savedInterests ?? [], true) ? 'checked' : '' }}
+                            >
+                            <span>{{ $interest }}</span>
+                        </label>
+                    @endforeach
+
+                    <label class="cpbn-check">
+                        <input
+                            type="checkbox"
+                            id="additional-interests-toggle"
+                            {{ $hasAdditionalInterests ? 'checked' : '' }}
+                        >
+                        <span>Others</span>
+                    </label>
+                </div>
+
+                <div
+                    id="additional-interests-section"
+                    class="cpbn-additional"
+                    {{ $hasAdditionalInterests ? '' : 'hidden' }}
+                >
+                    <div class="cpbn-additional-heading">
+                        Additional Interests
+                    </div>
+
+                    <div
+                        id="additional-interest-chips"
+                        class="cpbn-custom-chips"
+                    >
+                        @foreach($savedAdditionalInterests as $additionalInterest)
+                            <span
+                                class="cpbn-custom-chip"
+                                data-value="{{ $additionalInterest }}"
+                            >
+                                <span>{{ $additionalInterest }}</span>
+
+                                <button
+                                    type="button"
+                                    class="cpbn-remove-custom-chip"
+                                    aria-label="Remove {{ $additionalInterest }}"
+                                    title="Remove"
+                                >
+                                    &times;
+                                </button>
+
+                                <input
+                                    type="hidden"
+                                    name="custom_interests[]"
+                                    value="{{ $additionalInterest }}"
+                                >
+                            </span>
+                        @endforeach
+                    </div>
+
+                    <div class="cpbn-custom-entry">
+                        <input
+                            type="text"
+                            id="additional-interest-input"
+                            maxlength="60"
+                            autocomplete="off"
+                            placeholder="Type another interest..."
+                            aria-describedby="additional-interest-example additional-interest-feedback"
+                        >
+
+                        <button
+                            type="button"
+                            id="add-additional-interest"
+                            class="cpbn-custom-add"
+                        >
+                            Add
+                        </button>
+                    </div>
+
+                    <p
+                        id="additional-interest-example"
+                        class="cpbn-custom-example"
+                    >
+                        Examples: Artificial Intelligence, UI/UX, Game Development
+                    </p>
+
+                    <div
+                        id="additional-interest-feedback"
+                        class="cpbn-custom-feedback"
+                        hidden
+                    >
+                        <span id="additional-interest-feedback-text"></span>
+
+                        <div
+                            id="additional-interest-warning-actions"
+                            class="cpbn-custom-warning-actions"
+                            hidden
+                        >
+                            <button
+                                type="button"
+                                id="edit-additional-interest"
+                                class="cpbn-custom-edit"
+                            >
+                                Edit
+                            </button>
+
+                            <button
+                                type="button"
+                                id="add-additional-interest-anyway"
+                                class="cpbn-custom-add-anyway"
+                            >
+                                Add Anyway
+                            </button>
+                        </div>
+                    </div>
+
+                    @error('custom_interests')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+
+                    @error('custom_interests.*')
+                        <div class="cpbn-error">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                @error('interests')
+                    <div class="cpbn-error">{{ $message }}</div>
+                @enderror
+            </div>
 
             <!-- SECTION 5: Projects -->
             <div class="section">
                 <div class="title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7" rx="1"/>
+                        <rect x="14" y="3" width="7" height="7" rx="1"/>
+                        <rect x="3" y="14" width="7" height="7" rx="1"/>
+                        <rect x="14" y="14" width="7" height="7" rx="1"/>
+                    </svg>
                     Projects &amp; Experience
                 </div>
-                <p class="desc">Add your projects with details like technologies used, your role, and achievements.</p>
+
+                <p class="desc">
+                    Add your projects with details like technologies used, your role, and achievements.
+                </p>
 
                 @php
                     $projectRows = old('projects');
+
                     if ($projectRows === null) {
-                        $projectRows = $user->projects->map(function ($p) {
-                            return [
-                                'id' => $p->id,
-                                'title' => $p->title,
-                                'description' => $p->description,
-                                'technologies_used' => $p->technologies_used ?? [],
-                                'role' => $p->role,
-                                'project_url' => $p->project_url,
-                                'start_date' => $p->start_date?->format('Y-m-d'),
-                                'end_date' => $p->end_date?->format('Y-m-d'),
-                                'achievements' => $p->achievements,
-                            ];
-                        })->values()->all();
+                        $projectRows = $user->projects
+                            ->map(function ($project) {
+                                return [
+                                    'id' => $project->id,
+                                    'title' => $project->title,
+                                    'description' => $project->description,
+                                    'technologies_used' => $project->technologies_used ?? [],
+                                    'role' => $project->role,
+                                    'project_url' => $project->project_url,
+                                    'start_date' => $project->start_date?->format('Y-m-d'),
+                                    'end_date' => $project->end_date?->format('Y-m-d'),
+                                    'achievements' => $project->achievements,
+                                ];
+                            })
+                            ->values()
+                            ->all();
                     }
-                    $nextIdx = !empty($projectRows) && is_array($projectRows) ? max(array_map('intval', array_keys($projectRows))) + 1 : 0;
+
+                    $nextProjectIndex = empty($projectRows)
+                        ? 0
+                        : max(
+                            array_map(
+                                'intval',
+                                array_keys($projectRows)
+                            )
+                        ) + 1;
                 @endphp
 
-                <div id="project-list" data-next-index="{{ $nextIdx }}">
-                    @if(empty($projectRows) || !is_array($projectRows) || count($projectRows) === 0)
+                <div
+                    id="project-list"
+                    data-next-index="{{ $nextProjectIndex }}"
+                >
+                    @foreach($projectRows as $index => $project)
+                        @php
+                            $technologies = is_array(
+                                $project['technologies_used'] ?? []
+                            )
+                                ? implode(
+                                    ', ',
+                                    $project['technologies_used']
+                                )
+                                : (string) (
+                                    $project['technologies_used']
+                                    ?? ''
+                                );
+                        @endphp
+
                         <div class="cpbn-project-card">
-                            <span class="cpbn-project-number">Project #1</span>
+                            @if(! empty($project['id']))
+                                <input
+                                    type="hidden"
+                                    name="projects[{{ $index }}][id]"
+                                    value="{{ $project['id'] }}"
+                                >
+                            @endif
+
+                            <span class="cpbn-project-number">
+                                Project #{{ $loop->iteration }}
+                            </span>
+
                             <div class="cpbn-fgrid">
-                                <div class="cpbn-field"><label>Project Title <span class="req">*</span></label><input type="text" name="projects[0][title]" placeholder="e.g. Hobbee Apps" required></div>
-                                <div class="cpbn-field"><label>Your Role</label><input type="text" name="projects[0][role]" placeholder="e.g. Lead Developer"></div>
-                                <div class="cpbn-field"><label>Project URL</label><input type="url" name="projects[0][project_url]" placeholder="https://github.com/your-project"></div>
-                                <div class="cpbn-field full"><label>Description</label><textarea name="projects[0][description]" rows="2" placeholder="Brief description"></textarea></div>
-                                <div class="cpbn-field full"><label>Technologies Used</label><input type="text" name="projects[0][technologies_used]" placeholder="e.g. Python, React, MySQL"><span class="cpbn-file-note">Separate with commas</span></div>
-                                <div class="cpbn-field"><label>Start Date</label><input type="date" name="projects[0][start_date]"></div>
-                                <div class="cpbn-field"><label>End Date</label><input type="date" name="projects[0][end_date]"></div>
-                                <div class="cpbn-field full"><label>Achievements</label><textarea name="projects[0][achievements]" rows="2" placeholder="What did you accomplish?"></textarea></div>
-                            </div>
-                            <button type="button" class="cpbn-remove-project" onclick="removeProject(this)" style="display:none;"><i class="fas fa-trash-alt"></i> Remove</button>
-                        </div>
-                    @else
-                        @foreach ($projectRows as $idx => $p)
-                            @php $tech = is_array($p['technologies_used'] ?? []) ? implode(', ', $p['technologies_used']) : (string) ($p['technologies_used'] ?? ''); @endphp
-                            <div class="cpbn-project-card">
-                                @if (!empty($p['id'])) <input type="hidden" name="projects[{{ $idx }}][id]" value="{{ $p['id'] }}"> @endif
-                                <span class="cpbn-project-number">Project #{{ $loop->iteration }}</span>
-                                <div class="cpbn-fgrid">
-                                    <div class="cpbn-field"><label>Project Title <span class="req">*</span></label><input type="text" name="projects[{{ $idx }}][title]" value="{{ $p['title'] ?? '' }}" required></div>
-                                    <div class="cpbn-field"><label>Your Role</label><input type="text" name="projects[{{ $idx }}][role]" value="{{ $p['role'] ?? '' }}"></div>
-                                    <div class="cpbn-field"><label>Project URL</label><input type="url" name="projects[{{ $idx }}][project_url]" value="{{ $p['project_url'] ?? '' }}"></div>
-                                    <div class="cpbn-field full"><label>Description</label><textarea name="projects[{{ $idx }}][description]" rows="2">{{ $p['description'] ?? '' }}</textarea></div>
-                                    <div class="cpbn-field full"><label>Technologies Used</label><input type="text" name="projects[{{ $idx }}][technologies_used]" value="{{ $tech }}"><span class="cpbn-file-note">Separate with commas</span></div>
-                                    <div class="cpbn-field"><label>Start Date</label><input type="date" name="projects[{{ $idx }}][start_date]" value="{{ $p['start_date'] ?? '' }}"></div>
-                                    <div class="cpbn-field"><label>End Date</label><input type="date" name="projects[{{ $idx }}][end_date]" value="{{ $p['end_date'] ?? '' }}"></div>
-                                    <div class="cpbn-field full"><label>Achievements</label><textarea name="projects[{{ $idx }}][achievements]" rows="2">{{ $p['achievements'] ?? '' }}</textarea></div>
+                                <div class="cpbn-field">
+                                    <label>
+                                        Project Title
+                                        <span class="req">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="projects[{{ $index }}][title]"
+                                        value="{{ $project['title'] ?? '' }}"
+                                        required
+                                    >
                                 </div>
-                                <button type="button" class="cpbn-remove-project" onclick="removeProject(this)" data-confirm-delete data-item-name="{{ $p['title'] ?? 'this project' }}">
-                                    <i class="fas fa-trash-alt"></i> Remove
-                                </button>
+
+                                <div class="cpbn-field">
+                                    <label>Your Role</label>
+                                    <input
+                                        type="text"
+                                        name="projects[{{ $index }}][role]"
+                                        value="{{ $project['role'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Project URL</label>
+                                    <input
+                                        type="url"
+                                        name="projects[{{ $index }}][project_url]"
+                                        value="{{ $project['project_url'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field full">
+                                    <label>Description</label>
+                                    <textarea
+                                        name="projects[{{ $index }}][description]"
+                                        rows="2"
+                                    >{{ $project['description'] ?? '' }}</textarea>
+                                </div>
+
+                                <div class="cpbn-field full">
+                                    <label>Technologies Used</label>
+                                    <input
+                                        type="text"
+                                        name="projects[{{ $index }}][technologies_used]"
+                                        value="{{ $technologies }}"
+                                    >
+                                    <span class="cpbn-file-note">
+                                        Separate with commas
+                                    </span>
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Start Date</label>
+                                    <input
+                                        type="date"
+                                        name="projects[{{ $index }}][start_date]"
+                                        value="{{ $project['start_date'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>End Date</label>
+                                    <input
+                                        type="date"
+                                        name="projects[{{ $index }}][end_date]"
+                                        value="{{ $project['end_date'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field full">
+                                    <label>Achievements</label>
+                                    <textarea
+                                        name="projects[{{ $index }}][achievements]"
+                                        rows="2"
+                                    >{{ $project['achievements'] ?? '' }}</textarea>
+                                </div>
                             </div>
-                        @endforeach
-                    @endif
+
+                            <button
+                                type="button"
+                                class="cpbn-remove-project"
+                                onclick="removeProject(this)"
+                            >
+                                <i class="fas fa-trash-alt"></i>
+                                Remove
+                            </button>
+                        </div>
+                    @endforeach
                 </div>
-                <button type="button" id="add-project" class="cpbn-add-project"><i class="fas fa-plus"></i> Add Project</button>
+
+                <button
+                    type="button"
+                    id="add-project"
+                    class="cpbn-add-project"
+                >
+                    <i class="fas fa-plus"></i>
+                    Add Project
+                </button>
             </div>
 
             <!-- SECTION 6: Certifications -->
@@ -713,53 +1508,207 @@
                     </svg>
                     Certifications
                 </div>
-                <p class="desc">Add any academic, professional, training or course certifications you have completed.</p>
+
+                <p class="desc">
+                    Add any academic, professional, training or course certifications you have completed.
+                </p>
 
                 @php
-                    $certRows = old('certifications');
-                    if ($certRows === null) {
-                        $certRows = $user->certifications->map(function ($c) {
-                            return [
-                                'id' => $c->id,
-                                'certification_name' => $c->certification_name,
-                                'issuing_organization' => $c->issuing_organization,
-                                'issue_date' => $c->issue_date?->format('Y-m-d'),
-                            ];
-                        })->values()->all();
+                    $certificationRows = old('certifications');
+
+                    if ($certificationRows === null) {
+                        $certificationRows = $user->certifications
+                            ->map(function ($certification) {
+                                return [
+                                    'id' => $certification->id,
+                                    'certification_name' => $certification->certification_name,
+                                    'issuing_organization' => $certification->issuing_organization,
+                                    'issue_date' => $certification->issue_date?->format('Y-m-d'),
+                                ];
+                            })
+                            ->values()
+                            ->all();
                     }
-                    $nextCertIdx = !empty($certRows) && is_array($certRows) ? max(array_map('intval', array_keys($certRows))) + 1 : 0;
+
+                    $nextCertificationIndex = empty($certificationRows)
+                        ? 0
+                        : max(
+                            array_map(
+                                'intval',
+                                array_keys($certificationRows)
+                            )
+                        ) + 1;
                 @endphp
 
-                <div id="certification-list" data-next-index="{{ $nextCertIdx }}">
-                    @if(empty($certRows) || !is_array($certRows) || count($certRows) === 0)
-                        <div class="cpbn-certification-card">
-                            <div class="cpbn-fgrid">
-                                <div class="cpbn-field"><label>Certification Name <span class="req">*</span></label><input type="text" name="certifications[0][certification_name]" placeholder="e.g. AWS Cloud Practitioner" required></div>
-                                <div class="cpbn-field"><label>Issuing Organisation</label><input type="text" name="certifications[0][issuing_organization]" placeholder="e.g. AWS, Cisco"></div>
-                                <div class="cpbn-field"><label>Issue Date</label><input type="date" name="certifications[0][issue_date]" max="{{ now()->format('Y-m-d') }}"></div>
-                                <div class="cpbn-field"><label>Certificate File</label><input type="file" name="certifications[0][certificate_file]" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><span class="cpbn-file-note">PDF, JPG, JPEG or PNG · Max 5MB</span></div>
-                            </div>
-                            <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)" style="display:none;"><i class="fas fa-trash-alt"></i> Remove</button>
-                        </div>
-                    @else
-                        @foreach ($certRows as $idx => $c)
-                            @php $existing = !empty($c['id']) ? $user->certifications->firstWhere('id', (int) $c['id']) : null; @endphp
-                            <div class="cpbn-certification-card">
-                                @if (!empty($c['id'])) <input type="hidden" name="certifications[{{ $idx }}][id]" value="{{ $c['id'] }}"> @endif
-                                <div class="cpbn-fgrid">
-                                    <div class="cpbn-field"><label>Certification Name <span class="req">*</span></label><input type="text" name="certifications[{{ $idx }}][certification_name]" value="{{ $c['certification_name'] ?? '' }}" required></div>
-                                    <div class="cpbn-field"><label>Issuing Organisation</label><input type="text" name="certifications[{{ $idx }}][issuing_organization]" value="{{ $c['issuing_organization'] ?? '' }}"></div>
-                                    <div class="cpbn-field"><label>Issue Date</label><input type="date" name="certifications[{{ $idx }}][issue_date]" value="{{ $c['issue_date'] ?? '' }}" max="{{ now()->format('Y-m-d') }}"></div>
-                                    <div class="cpbn-field"><label>Certificate File</label><input type="file" name="certifications[{{ $idx }}][certificate_file]" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"><span class="cpbn-file-note">PDF, JPG, JPEG or PNG · Max 5MB</span>@if($existing?->certificate_file_path)<span class="cpbn-file-existing"><i class="fas fa-check-circle"></i> Uploaded</span>@endif</div>
-                                </div>
-                                <button type="button" class="cpbn-remove-certification" onclick="removeCertification(this)" data-confirm-delete data-item-name="{{ $c['certification_name'] ?? 'this certification' }}">
-                                    <i class="fas fa-trash-alt"></i> Remove
-                                </button>
-                            </div>
-                        @endforeach
-                    @endif
+                <div id="removed-certification-fields">
+                    @foreach(old('removed_certification_ids', []) as $removedCertificationId)
+                        <input
+                            type="hidden"
+                            name="removed_certification_ids[]"
+                            value="{{ $removedCertificationId }}"
+                        >
+                    @endforeach
                 </div>
-                <button type="button" id="add-certification" class="cpbn-add-certification"><i class="fas fa-plus"></i> Add Certification</button>
+
+                <div
+                    id="certification-list"
+                    data-next-index="{{ $nextCertificationIndex }}"
+                >
+                    @foreach($certificationRows as $index => $certification)
+                        @php
+                            $existingCertification = ! empty(
+                                $certification['id']
+                            )
+                                ? $user->certifications->firstWhere(
+                                    'id',
+                                    (int) $certification['id']
+                                )
+                                : null;
+
+                            $existingEvidenceAvailable =
+                                $existingCertification?->certificate_file_path
+                                && \Illuminate\Support\Facades\Storage::disk(
+                                    'local'
+                                )->exists(
+                                    $existingCertification->certificate_file_path
+                                );
+                        @endphp
+
+                        <div
+                            class="cpbn-certification-card"
+                            data-has-existing-evidence="{{ $existingEvidenceAvailable ? '1' : '0' }}"
+                        >
+                            @if(! empty($certification['id']))
+                                <input
+                                    type="hidden"
+                                    name="certifications[{{ $index }}][id]"
+                                    value="{{ $certification['id'] }}"
+                                >
+                            @endif
+
+                            <div class="cpbn-fgrid">
+                                <div class="cpbn-field">
+                                    <label>
+                                        Certification Name
+                                        <span class="req">*</span>
+                                    </label>
+
+                                    <input
+                                        type="text"
+                                        name="certifications[{{ $index }}][certification_name]"
+                                        value="{{ $certification['certification_name'] ?? '' }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Issuing Organisation</label>
+
+                                    <input
+                                        type="text"
+                                        name="certifications[{{ $index }}][issuing_organization]"
+                                        value="{{ $certification['issuing_organization'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Issue Date</label>
+
+                                    <input
+                                        type="date"
+                                        name="certifications[{{ $index }}][issue_date]"
+                                        value="{{ $certification['issue_date'] ?? '' }}"
+                                        max="{{ now()->format('Y-m-d') }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Certificate File</label>
+
+                                    <input
+                                        type="file"
+                                        class="cpbn-certificate-file"
+                                        name="certifications[{{ $index }}][certificate_file]"
+                                        accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                    >
+
+                                    <span class="cpbn-file-note">
+                                        PDF, JPG, JPEG or PNG · Maximum 5 MB
+                                    </span>
+
+                                    @if($existingEvidenceAvailable)
+                                        <div class="cpbn-file-existing">
+                                            ✓ Existing evidence verified
+
+                                            @if($existingCertification->certificate_original_name)
+                                                <span class="cpbn-file-existing-name">
+                                                    Current file:
+                                                    {{ $existingCertification->certificate_original_name }}
+                                                </span>
+                                            @else
+                                                <span class="cpbn-file-existing-name">
+                                                    Original filename unavailable for this older upload.
+                                                </span>
+                                            @endif
+
+                                            <a
+                                                href="{{ route(
+                                                    'student.certifications.evidence',
+                                                    $existingCertification->id
+                                                ) }}"
+                                                target="_blank"
+                                                rel="noopener"
+                                                class="cpbn-file-view"
+                                            >
+                                                View Evidence
+                                            </a>
+                                        </div>
+
+                                        <span class="cpbn-file-note">
+                                            Current evidence will be kept unless a replacement is successfully saved.
+                                        </span>
+                                    @elseif($existingCertification?->certificate_file_path)
+                                        <div class="cpbn-file-missing">
+                                            ⚠ An evidence record exists, but the stored file could not be found.
+                                        </div>
+                                    @endif
+
+                                    <div
+                                        class="cpbn-file-selected"
+                                        hidden
+                                    ></div>
+
+                                    <button
+                                        type="button"
+                                        class="cpbn-clear-file"
+                                        onclick="clearSelectedCertificateFile(this)"
+                                        hidden
+                                    >
+                                        Clear selected file
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                type="button"
+                                class="cpbn-remove-certification"
+                                onclick="removeCertification(this)"
+                            >
+                                <i class="fas fa-trash-alt"></i>
+                                Remove
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+
+                <button
+                    type="button"
+                    id="add-certification"
+                    class="cpbn-add-certification"
+                >
+                    <i class="fas fa-plus"></i>
+                    Add Certification
+                </button>
             </div>
 
             <!-- SECTION 7: Aspirations -->
@@ -770,72 +1719,603 @@
                     </svg>
                     Career Aspirations
                 </div>
+
                 <div class="cpbn-fgrid">
-                    <div class="cpbn-field full"><label>Dream Career</label><input type="text" name="career_goals_text" value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}" placeholder="e.g. Software Engineer">@error('career_goals_text')<div class="error">{{ $message }}</div>@enderror</div>
-                    <div class="cpbn-field full"><label>Vision Statement</label><textarea name="vision_statement" rows="2">{{ old('vision_statement', $user->aspirations->vision_statement ?? '') }}</textarea>@error('vision_statement')<div class="error">{{ $message }}</div>@enderror</div>
-                    <div class="cpbn-field full"><label>Long Term Goals</label><textarea name="long_term_goals" rows="2">{{ old('long_term_goals', $user->aspirations->long_term_goals ?? '') }}</textarea>@error('long_term_goals')<div class="error">{{ $message }}</div>@enderror</div>
+                    <div class="cpbn-field full">
+                        <label>Dream Career</label>
+                        <input
+                            type="text"
+                            name="career_goals_text"
+                            value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}"
+                            placeholder="e.g. Software Engineer"
+                        >
+                    </div>
+
+                    <div class="cpbn-field full">
+                        <label>Vision Statement</label>
+                        <textarea
+                            name="vision_statement"
+                            rows="2"
+                        >{{ old('vision_statement', $user->aspirations->vision_statement ?? '') }}</textarea>
+                    </div>
+
+                    <div class="cpbn-field full">
+                        <label>Long Term Goals</label>
+                        <textarea
+                            name="long_term_goals"
+                            rows="2"
+                        >{{ old('long_term_goals', $user->aspirations->long_term_goals ?? '') }}</textarea>
+                    </div>
                 </div>
             </div>
 
-            <!-- SUBMIT BUTTON WITH CONFIRMATION -->
             <div class="submit-row">
-                <button type="submit" class="cpbn-btn cpbn-btn-primary" data-confirm-update data-item-name="your profile">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+                <button
+                    type="submit"
+                    class="cpbn-btn cpbn-btn-primary"
+                >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                        <path d="M17 21v-8H7v8M7 3v5h8"/>
+                    </svg>
                     Save Profile
                 </button>
             </div>
-
         </form>
 
     </div>
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // ============================================
-        // PROJECTS - Dynamic Add/Remove
-        // ============================================
+document.addEventListener('DOMContentLoaded', function () {
+    const markChanged = function () {
+        if (typeof window.setFormChanged === 'function') {
+            window.setFormChanged(true);
+        }
+    };
 
-        const projectList = document.getElementById('project-list');
-        let projectIndex = Number(projectList.dataset.nextIndex) || 0;
+    const obviousKeyboardSmashes = new Set([
+        'qwerty',
+        'qwertyui',
+        'qwertyuiop',
+        'asdfgh',
+        'asdfghjkl',
+        'zxcvbn',
+        'zxcvbnm'
+    ]);
 
-        document.getElementById('add-project').addEventListener('click', function() {
-            const card = document.createElement('div');
-            card.className = 'cpbn-project-card';
-            const iteration = projectList.children.length + 1;
-            card.innerHTML = `
-                <span class="cpbn-project-number">Project #${iteration}</span>
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field"><label>Project Title <span class="req">*</span></label><input type="text" name="projects[${projectIndex}][title]" placeholder="e.g. Hobbee Apps" required></div>
-                    <div class="cpbn-field"><label>Your Role</label><input type="text" name="projects[${projectIndex}][role]" placeholder="e.g. Lead Developer"></div>
-                    <div class="cpbn-field"><label>Project URL</label><input type="url" name="projects[${projectIndex}][project_url]" placeholder="https://github.com/your-project"></div>
-                    <div class="cpbn-field full"><label>Description</label><textarea name="projects[${projectIndex}][description]" rows="2" placeholder="Brief description"></textarea></div>
-                    <div class="cpbn-field full"><label>Technologies Used</label><input type="text" name="projects[${projectIndex}][technologies_used]" placeholder="e.g. Python, React, MySQL"><span class="cpbn-file-note">Separate with commas</span></div>
-                    <div class="cpbn-field"><label>Start Date</label><input type="date" name="projects[${projectIndex}][start_date]"></div>
-                    <div class="cpbn-field"><label>End Date</label><input type="date" name="projects[${projectIndex}][end_date]"></div>
-                    <div class="cpbn-field full"><label>Achievements</label><textarea name="projects[${projectIndex}][achievements]" rows="2" placeholder="What did you accomplish?"></textarea></div>
-                </div>
-                <button type="button" class="cpbn-remove-project" onclick="removeProject(this)" data-confirm-delete data-item-name="this new project">
-                    <i class="fas fa-trash-alt"></i> Remove
-                </button>
-            `;
-            projectList.appendChild(card);
-            projectIndex++;
-        });
+    const initialiseAdditionalField = function (config) {
+        const toggle = document.getElementById(config.toggleId);
+        const section = document.getElementById(config.sectionId);
+        const input = document.getElementById(config.inputId);
+        const addButton = document.getElementById(config.addButtonId);
+        const chips = document.getElementById(config.chipsId);
+        const feedback = document.getElementById(config.feedbackId);
+        const feedbackText = document.getElementById(config.feedbackTextId);
+        const warningActions = document.getElementById(
+            config.warningActionsId
+        );
+        const editButton = document.getElementById(config.editButtonId);
+        const addAnywayButton = document.getElementById(
+            config.addAnywayButtonId
+        );
 
-        window.removeProject = function(button) {
-            const card = button.closest('.cpbn-project-card');
-            if (projectList.children.length <= 1) {
-                const inputs = card.querySelectorAll('input, textarea');
-                inputs.forEach(input => input.value = '');
+        if (
+            ! toggle
+            || ! section
+            || ! input
+            || ! addButton
+            || ! chips
+            || ! feedback
+            || ! feedbackText
+            || ! warningActions
+            || ! editButton
+            || ! addAnywayButton
+        ) {
+            return;
+        }
+
+        const predefined = Array.isArray(config.predefined)
+            ? config.predefined
+            : [];
+
+        const aliasGroups = Array.isArray(config.aliasGroups)
+            ? config.aliasGroups
+            : [];
+
+        let pendingValue = null;
+
+        const cleanValue = function (value) {
+            return String(value)
+                .trim()
+                .replace(/\s+/gu, ' ');
+        };
+
+        const normaliseKey = function (value) {
+            return cleanValue(value)
+                .toLocaleLowerCase()
+                .replace(/[\s\/_-]+/gu, '');
+        };
+
+        const canonicalKey = function (value) {
+            const key = normaliseKey(value);
+
+            for (const group of aliasGroups) {
+                if (
+                    ! Array.isArray(group)
+                    || group.length === 0
+                ) {
+                    continue;
+                }
+
+                const matches = group.some(
+                    alias =>
+                        normaliseKey(String(alias))
+                        === key
+                );
+
+                if (matches) {
+                    return normaliseKey(
+                        String(group[0])
+                    );
+                }
+            }
+
+            return key;
+        };
+
+        const currentCustomValues = function () {
+            return Array.from(
+                chips.querySelectorAll(
+                    '.cpbn-custom-chip'
+                )
+            ).map(
+                chip => chip.dataset.value || ''
+            );
+        };
+
+        const allKnownTerms = function () {
+            return [
+                ...predefined,
+                ...currentCustomValues(),
+                ...aliasGroups.flat()
+            ].filter(Boolean);
+        };
+
+        const findDuplicate = function (value) {
+            const key = canonicalKey(value);
+
+            const predefinedMatch = predefined.find(
+                item =>
+                    canonicalKey(item)
+                    === key
+            );
+
+            if (predefinedMatch) {
+                return {
+                    type: 'predefined',
+                    value: predefinedMatch
+                };
+            }
+
+            const customMatch = currentCustomValues().find(
+                item =>
+                    canonicalKey(item)
+                    === key
+            );
+
+            if (customMatch) {
+                return {
+                    type: 'custom',
+                    value: customMatch
+                };
+            }
+
+            return null;
+        };
+
+        const validateClearlyInvalid = function (value) {
+            if (! value) {
+                return `Enter a ${config.singular} before adding it.`;
+            }
+
+            if (value.length > 60) {
+                return `Each additional ${config.singular} must be 60 characters or fewer.`;
+            }
+
+            const lettersAndNumbers = value.replace(
+                /[^\p{L}\p{N}]+/gu,
+                ''
+            );
+
+            if (! lettersAndNumbers) {
+                return config.invalidMessage;
+            }
+
+            if (/^\d+$/u.test(lettersAndNumbers)) {
+                return `A ${config.singular} cannot contain only numbers. ${config.invalidMessage}`;
+            }
+
+            const lower =
+                lettersAndNumbers.toLocaleLowerCase();
+
+            if (
+                lower.length >= 4
+                && /^(.)\1{3,}$/u.test(lower)
+            ) {
+                return `This looks like repeated characters rather than a ${config.singular}. Check the value and try again.`;
+            }
+
+            if (
+                obviousKeyboardSmashes.has(lower)
+            ) {
+                return `This looks like a keyboard-smash rather than a ${config.singular}. ${config.invalidMessage}`;
+            }
+
+            return null;
+        };
+
+        const findSimilarTerm = function (value) {
+            const distance =
+                window.cpbnLevenshteinDistance;
+
+            if (typeof distance !== 'function') {
+                return null;
+            }
+
+            const comparable = cleanValue(value)
+                .toLocaleLowerCase();
+
+            if (comparable.length < 5) {
+                return null;
+            }
+
+            let best = null;
+
+            for (const candidate of allKnownTerms()) {
+                const candidateComparable =
+                    cleanValue(candidate)
+                        .toLocaleLowerCase();
+
+                if (
+                    ! candidateComparable
+                    || canonicalKey(candidateComparable)
+                        === canonicalKey(comparable)
+                ) {
+                    continue;
+                }
+
+                const difference = distance(
+                    comparable,
+                    candidateComparable
+                );
+
+                const maxLength = Math.max(
+                    comparable.length,
+                    candidateComparable.length
+                );
+
+                const similarity = 1 - (
+                    difference / maxLength
+                );
+
+                if (
+                    difference <= 2
+                    && similarity >= 0.75
+                    && (
+                        ! best
+                        || similarity > best.similarity
+                    )
+                ) {
+                    best = {
+                        value: candidate,
+                        similarity
+                    };
+                }
+            }
+
+            return best;
+        };
+
+        const looksUnusual = function (value) {
+            const lettersOnly = value.replace(
+                /[^A-Za-z]/g,
+                ''
+            );
+
+            return (
+                lettersOnly.length >= 6
+                && ! /[aeiouy]/i.test(
+                    lettersOnly
+                )
+            );
+        };
+
+        const hideFeedback = function () {
+            feedback.hidden = true;
+            feedback.classList.remove(
+                'warning',
+                'error'
+            );
+            feedbackText.textContent = '';
+            warningActions.hidden = true;
+            pendingValue = null;
+        };
+
+        const showError = function (message) {
+            feedback.hidden = false;
+            feedback.classList.remove('warning');
+            feedback.classList.add('error');
+            feedbackText.textContent = message;
+            warningActions.hidden = true;
+            pendingValue = null;
+        };
+
+        const showWarning = function (
+            message,
+            value
+        ) {
+            feedback.hidden = false;
+            feedback.classList.remove('error');
+            feedback.classList.add('warning');
+            feedbackText.textContent = message;
+            warningActions.hidden = false;
+            pendingValue = value;
+        };
+
+        const createChip = function (value) {
+            const chip =
+                document.createElement('span');
+
+            chip.className =
+                'cpbn-custom-chip';
+
+            chip.dataset.value = value;
+
+            const label =
+                document.createElement('span');
+
+            label.textContent = value;
+
+            const removeButton =
+                document.createElement('button');
+
+            removeButton.type = 'button';
+
+            removeButton.className =
+                'cpbn-remove-custom-chip';
+
+            removeButton.setAttribute(
+                'aria-label',
+                `Remove ${value}`
+            );
+
+            removeButton.title = 'Remove';
+            removeButton.innerHTML = '&times;';
+
+            const hidden =
+                document.createElement('input');
+
+            hidden.type = 'hidden';
+            hidden.name = config.hiddenName;
+            hidden.value = value;
+
+            chip.append(
+                label,
+                removeButton,
+                hidden
+            );
+
+            chips.appendChild(chip);
+
+            input.value = '';
+            hideFeedback();
+            markChanged();
+            input.focus();
+        };
+
+        const attemptAdd = function () {
+            const value = cleanValue(
+                input.value
+            );
+
+            const invalidMessage =
+                validateClearlyInvalid(value);
+
+            if (invalidMessage) {
+                showError(invalidMessage);
                 return;
             }
-            card.remove();
-            const cards = projectList.querySelectorAll('.cpbn-project-card');
-            cards.forEach((c, i) => {
-                const num = c.querySelector('.cpbn-project-number');
-                if (num) num.textContent = `Project #${i + 1}`;
-            });
+
+            const duplicate =
+                findDuplicate(value);
+
+            if (duplicate) {
+                if (
+                    duplicate.type
+                    === 'predefined'
+                ) {
+                    showError(
+                        `"${value}" matches the predefined ${config.singular} "${duplicate.value}". Select that option instead.`
+                    );
+                } else {
+                    showError(
+                        `"${value}" is already in your additional ${config.plural}.`
+                    );
+                }
+
+                return;
+            }
+
+            const similar =
+                findSimilarTerm(value);
+
+            if (similar) {
+                showWarning(
+                    `This looks similar to "${similar.value}". Check the spelling, or add it anyway if this is a different term.`,
+                    value
+                );
+
+                return;
+            }
+
+            if (looksUnusual(value)) {
+                showWarning(
+                    `This ${config.singular} looks unusual. It may be a new term, acronym, or spelling variation. Check it before adding.`,
+                    value
+                );
+
+                return;
+            }
+
+            createChip(value);
         };
+
+        const setEnabled = function (enabled) {
+            section.hidden = ! enabled;
+
+            section
+                .querySelectorAll(
+                    `input[name="${config.hiddenName}"]`
+                )
+                .forEach(hidden => {
+                    hidden.disabled = ! enabled;
+                });
+
+            if (enabled) {
+                input.focus();
+            } else {
+                /*
+                 * Important:
+                 * Chips are NOT deleted here.
+                 *
+                 * Unticking Others only prevents them from
+                 * being submitted. If the user changes their
+                 * mind before saving, checking Others again
+                 * restores the same chips.
+                 *
+                 * If the page is refreshed without saving,
+                 * the database remains unchanged.
+                 */
+                hideFeedback();
+            }
+        };
+
+        setEnabled(toggle.checked);
+
+        toggle.addEventListener(
+            'change',
+            function () {
+                setEnabled(this.checked);
+                markChanged();
+            }
+        );
+
+        addButton.addEventListener(
+            'click',
+            attemptAdd
+        );
+
+        input.addEventListener(
+            'keydown',
+            function (event) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    attemptAdd();
+                }
+            }
+        );
+
+        input.addEventListener(
+            'input',
+            hideFeedback
+        );
+
+        chips.addEventListener(
+            'click',
+            function (event) {
+                const removeButton =
+                    event.target.closest(
+                        '.cpbn-remove-custom-chip'
+                    );
+
+                if (! removeButton) {
+                    return;
+                }
+
+                const chip =
+                    removeButton.closest(
+                        '.cpbn-custom-chip'
+                    );
+
+                if (chip) {
+                    chip.remove();
+                    hideFeedback();
+                    markChanged();
+                }
+            }
+        );
+
+        editButton.addEventListener(
+            'click',
+            function () {
+                hideFeedback();
+                input.focus();
+                input.select();
+            }
+        );
+
+        addAnywayButton.addEventListener(
+            'click',
+            function () {
+                if (! pendingValue) {
+                    return;
+                }
+
+                const value = pendingValue;
+                createChip(value);
+            }
+        );
+    };
+
+    initialiseAdditionalField({
+        toggleId: 'additional-skills-toggle',
+        sectionId: 'additional-skills-section',
+        inputId: 'additional-skill-input',
+        addButtonId: 'add-additional-skill',
+        chipsId: 'additional-skill-chips',
+        feedbackId: 'additional-skill-feedback',
+        feedbackTextId: 'additional-skill-feedback-text',
+        warningActionsId: 'additional-skill-warning-actions',
+        editButtonId: 'edit-additional-skill',
+        addAnywayButtonId: 'add-additional-skill-anyway',
+        hiddenName: 'custom_skills[]',
+        singular: 'skill',
+        plural: 'skills',
+        predefined: @json($skillOptions ?? []),
+        aliasGroups: @json($skillAliasGroups ?? []),
+        invalidMessage: 'Please enter a skill, technology, tool, method, or competency you have.'
+    });
+
+    initialiseAdditionalField({
+        toggleId: 'additional-interests-toggle',
+        sectionId: 'additional-interests-section',
+        inputId: 'additional-interest-input',
+        addButtonId: 'add-additional-interest',
+        chipsId: 'additional-interest-chips',
+        feedbackId: 'additional-interest-feedback',
+        feedbackTextId: 'additional-interest-feedback-text',
+        warningActionsId: 'additional-interest-warning-actions',
+        editButtonId: 'edit-additional-interest',
+        addAnywayButtonId: 'add-additional-interest-anyway',
+        hiddenName: 'custom_interests[]',
+        singular: 'interest',
+        plural: 'interests',
+        predefined: @json($interestOptions ?? []),
+        aliasGroups: @json($interestAliasGroups ?? []),
+        invalidMessage: 'Please enter a topic, field, technology, or activity you are interested in.'
+    });
+});
+</script>
 
 @endsection
