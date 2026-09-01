@@ -706,7 +706,14 @@
         }
 
         .footer-brand .logo-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 700;
             color: white;
+        }
+
+        .footer-brand .logo-text span {
+            color: var(--accent);
         }
 
         .footer-brand p {
@@ -715,6 +722,59 @@
             max-width: 300px;
             margin-top: 12px;
             line-height: 1.7;
+        }
+
+        .footer-logos {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+
+        .footer-logos .logo-link {
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .footer-logos .logo-link:hover {
+            transform: translateY(-2px);
+            opacity: 0.8;
+        }
+
+        .footer-logos .footer-logo {
+            height: 50px;
+            width: auto;
+            object-fit: contain;
+            filter: brightness(0) invert(1) opacity(0.8);
+            transition: var(--transition);
+        }
+
+        .footer-logos .footer-logo:hover {
+            filter: brightness(0) invert(1) opacity(1);
+        }
+
+        .footer-logos .logo-fallback {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .footer-logos .logo-fallback:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .footer-logos .logo-fallback i {
+            color: var(--accent);
         }
 
         .footer-col h4 {
@@ -737,6 +797,11 @@
             color: var(--accent);
         }
 
+        .footer-col a i {
+            width: 20px;
+            margin-right: 4px;
+        }
+
         .footer-bottom {
             border-top: 1px solid rgba(255, 255, 255, 0.08);
             padding-top: 24px;
@@ -750,6 +815,12 @@
         .footer-bottom p {
             font-size: 12px;
             color: rgba(255, 255, 255, 0.3);
+            margin: 0;
+        }
+
+        .footer-bottom .credit {
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.2);
         }
 
         .footer-social {
@@ -765,6 +836,7 @@
 
         .footer-social a:hover {
             color: var(--accent);
+            transform: translateY(-2px);
         }
 
         /* ============================================
@@ -800,6 +872,7 @@
             .hero-stats { grid-template-columns: 1fr; gap: 12px; }
             .hero-stat { text-align: center; }
             .biicf-stats { grid-template-columns: 1fr; }
+            .footer-logos { flex-direction: column; align-items: flex-start; }
         }
     </style>
 </head>
@@ -831,7 +904,7 @@
                 <div class="nav-actions">
                     @if (Route::has('login'))
                         @auth
-                            <a href="{{ url('/dashboard') }}" class="btn btn-primary btn-sm">
+                            <a href="{{ url('/student/dashboard') }}" class="btn btn-primary btn-sm">
                                 <i class="fas fa-th-large"></i> Dashboard
                             </a>
                         @else
@@ -871,12 +944,17 @@
                         </a>
                     </div>
                     <div class="hero-stats">
+                        @php
+                    $totalJobRoles = \App\Models\BiicfJobRole::count();
+                    $totalCompetencies = \App\Models\BiicfCompetency::count();
+                    $totalSubSectors = \App\Models\BiicfSubSector::count();
+                    @endphp
                         <div class="hero-stat">
-                            <div class="number">3+</div>
+                            <div class="number">{{ $totalJobRoles }}+</div>
                             <div class="label">ICT Job Roles Mapped</div>
                         </div>
                         <div class="hero-stat">
-                            <div class="number">10+</div>
+                            <div class="number">{{ $totalCompetencies }}+</div>
                             <div class="label">Competencies Referenced</div>
                         </div>
                         <div class="hero-stat">
@@ -925,49 +1003,49 @@
     </section>
 
     <!-- ============================================
-    FEATURES
-    ============================================ -->
-    <section class="features" id="features">
-        <div class="container">
-            <div class="section-header">
-                <span class="tag"><i class="fas fa-star"></i> Features</span>
-                <h2>Everything You Need for Career Success</h2>
-                <p>From profile building to career matching, we've got you covered.</p>
+   FEATURES
+   ============================================ -->
+<section class="features" id="features">
+    <div class="container">
+        <div class="section-header">
+            <span class="tag"><i class="fas fa-star"></i> Features</span>
+            <h2>Everything You Need for Career Success</h2>
+            <p>From profile building to career matching, we've got you covered.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-user-cog"></i></div>
+                <h3>Career Profiling</h3>
+                <p>Build your complete profile with interests, competencies, projects, and aspirations.</p>
             </div>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-user-cog"></i></div>
-                    <h3>Career Profiling</h3>
-                    <p>Build your complete profile with interests, competencies, projects, and aspirations.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-robot"></i></div>
-                    <h3>AI Career Matching</h3>
-                    <p>Get personalized career recommendations with clear, explainable reasons.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
-                    <h3>Skill Gap Analysis</h3>
-                    <p>See exactly what skills you need and how to develop them.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-flag-checkered"></i></div>
-                    <h3>Milestone Tracking</h3>
-                    <p>Track your progress with personalized milestones and achievements.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-certificate"></i></div>
-                    <h3>BIICF Alignment</h3>
-                    <p>Mapped to the Brunei ICT Industry Competency Framework for accurate guidance.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon"><i class="fas fa-users-cog"></i></div>
-                    <h3>Admin Dashboard</h3>
-                    <p>Lecturers and admins can track student progress and identify common gaps.</p>
-                </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                <h3>AI Career Matching</h3>
+                <p>Get personalized career recommendations with clear, explainable reasons.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-line"></i></div>
+                <h3>Skill Gap Analysis</h3>
+                <p>See exactly what skills you need and how to develop them.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-flag-checkered"></i></div>
+                <h3>Milestone Tracking</h3>
+                <p>Track your progress with personalized milestones and achievements.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-certificate"></i></div>
+                <h3>BIICF Alignment</h3>
+                <p>Mapped to the Brunei ICT Industry Competency Framework for accurate guidance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-pie"></i></div>
+                <h3>Progress Analytics</h3>
+                <p>Lecturers can track student progress, identify skill gaps, and provide targeted guidance.</p>
             </div>
         </div>
-    </section>
+    </div>
+</section>
 
     <!-- ============================================
     HOW IT WORKS
@@ -1007,7 +1085,7 @@
     </section>
 
     <!-- ============================================
-    BIICF SECTION
+    BIICF SECTION (DYNAMIC DATA FROM DATABASE)
     ============================================ -->
     <section class="biicf-section" id="biicf">
         <div class="container">
@@ -1017,16 +1095,27 @@
                     <h2>Aligned with <span>BIICF</span></h2>
                     <p>The Brunei ICT Industry Competency Framework (BIICF) articulates the competencies needed to perform various ICT job roles. CareerPath BN makes it navigable for students.</p>
                     <div class="biicf-stats">
+                        @php
+                            use App\Models\BiicfJobRole;
+                            use App\Models\BiicfCompetency;
+                            use App\Models\BiicfSubSector;
+                            use App\Models\BiicfProficiencyLevel;
+                            
+                            $totalJobRoles = BiicfJobRole::count();
+                            $totalCompetencies = BiicfCompetency::count();
+                            $totalSubSectors = BiicfSubSector::count();
+                            $totalProficiencyLevels = BiicfProficiencyLevel::count();
+                        @endphp
                         <div class="biicf-stat">
-                            <div class="number">3</div>
+                            <div class="number">{{ $totalJobRoles }}</div>
                             <div class="label">Job Roles Mapped</div>
                         </div>
                         <div class="biicf-stat">
-                            <div class="number">10</div>
+                            <div class="number">{{ $totalCompetencies }}</div>
                             <div class="label">Competencies</div>
                         </div>
                         <div class="biicf-stat">
-                            <div class="number">2</div>
+                            <div class="number">{{ $totalSubSectors }}</div>
                             <div class="label">ICT Subsectors</div>
                         </div>
                         <div class="biicf-stat">
@@ -1071,6 +1160,29 @@
                 <div class="footer-brand">
                     <div class="logo-text">CareerPath <span>BN</span></div>
                     <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
+                    <div class="footer-logos">
+                        <a href="https://www.pb.edu.bn" target="_blank" class="logo-link">
+                            @if(file_exists(public_path('images/politeknik-logo.png')))
+                                <img src="{{ asset('images/politeknik-logo.png') }}" alt="Politeknik Brunei" class="footer-logo">
+                            @else
+                                <span class="logo-fallback"><i class="fas fa-university"></i> Politeknik Brunei</span>
+                            @endif
+                        </a>
+                        <a href="https://www.biicf.bn" target="_blank" class="logo-link">
+                            @if(file_exists(public_path('images/biicf-logo.png')))
+                                <img src="{{ asset('images/biicf-logo.png') }}" alt="BIICF" class="footer-logo">
+                            @else
+                                <span class="logo-fallback"><i class="fas fa-certificate"></i> BIICF</span>
+                            @endif
+                        </a>
+                        <a href="https://www.aiti.gov.bn" target="_blank" class="logo-link">
+                            @if(file_exists(public_path('images/aiti-logo.png')))
+                                <img src="{{ asset('images/aiti-logo.png') }}" alt="AITI" class="footer-logo">
+                            @else
+                                <span class="logo-fallback"><i class="fas fa-building"></i> AITI</span>
+                            @endif
+                        </a>
+                    </div>
                 </div>
                 <div class="footer-col">
                     <h4>Quick Links</h4>
@@ -1081,21 +1193,22 @@
                 </div>
                 <div class="footer-col">
                     <h4>Resources</h4>
-                    <a href="#">BIICF Framework</a>
-                    <a href="#">ICT Sub-Sectors</a>
-                    <a href="#">Competencies</a>
+                    <a href="{{ route('student.biicf-explorer.index') }}">BIICF Framework</a>
+                    <a href="{{ route('student.biicf-explorer.index') }}">ICT Sub-Sectors</a>
+                    <a href="{{ route('student.biicf-explorer.index') }}">Competencies</a>
                     <a href="#">Training</a>
                 </div>
                 <div class="footer-col">
                     <h4>Contact</h4>
-                    <a href="#"><i class="fas fa-university" style="width:20px;"></i> Politeknik Brunei</a>
-                    <a href="#"><i class="fas fa-map-marker-alt" style="width:20px;"></i> Jalan Ong Sum Ping, BSB</a>
-                    <a href="#"><i class="fas fa-envelope" style="width:20px;"></i> sict@pb.edu.bn</a>
-                    <a href="#"><i class="fas fa-phone" style="width:20px;"></i> +673 123 4567</a>
+                    <a href="#"><i class="fas fa-university"></i> Politeknik Brunei</a>
+                    <a href="#"><i class="fas fa-map-marker-alt"></i> Jalan Ong Sum Ping, BSB</a>
+                    <a href="#"><i class="fas fa-envelope"></i> sict@pb.edu.bn</a>
+                    <a href="#"><i class="fas fa-phone"></i> +673 123 4567</a>
                 </div>
             </div>
             <div class="footer-bottom">
                 <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
+                <p class="credit">In collaboration with AITI - Brunei ICT Industry Competency Framework (BIICF)</p>
             </div>
         </div>
     </footer>
