@@ -35,6 +35,9 @@ Route::get('/privacy', function () {
 // DASHBOARD SHORTCUT
 // ============================================
 Route::get('/dashboard', function () {
+    if (auth()->user()->role === 'admin' || auth()->user()->role === 'lecturer') {
+        return redirect()->route('admin.dashboard');
+    }
     return redirect()->route('student.dashboard');
 })->name('dashboard');
 
