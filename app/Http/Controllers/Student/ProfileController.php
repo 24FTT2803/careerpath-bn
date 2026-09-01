@@ -23,6 +23,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 use App\Helpers\NotificationHelper;
+use Propaganistas\LaravelPhone\PhoneNumber;
+use Propaganistas\LaravelPhone\Rules\Phone;
 
 class ProfileController extends Controller
 {
@@ -192,9 +194,17 @@ class ProfileController extends Controller
             'phone' => [
                 'nullable',
                 'string',
-                'max:20',
-                'regex:/^[\+\d\s\-\(\)]{7,20}$/',
-                'unique:users,phone,' . $user->id,
+                'max:30',
+                (new Phone)->countryField(
+                    'phone_country'
+                ),
+            ],
+
+            'phone_country' => [
+                'nullable',
+                'required_with:phone',
+                'string',
+                'size:2',
             ],
             'address' => ['nullable', 'string', 'max:500'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
@@ -281,13 +291,57 @@ class ProfileController extends Controller
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
         ], [
-            'phone.regex' => 'The phone number format is invalid. Only digits, +, -, spaces, and parentheses are allowed.',
-            'phone.max' => 'The phone number cannot exceed 20 characters.',
-            'phone.unique' => 'This phone number is already registered to another account.',
+            'phone.phone' =>
+                'Enter a valid phone number for the selected country.',
+
+            'phone.max' =>
+                'The phone number is too long.',
+
+            'phone_country.required_with' =>
+                'Please select a country for the phone number.',
+
+            'phone_country.size' =>
+                'The selected phone country is invalid.',
             'student_id.unique' => 'This Student ID is already taken.',
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
+
+        $normalizedPhone =
+            null;
+
+        if (
+            $request->filled('phone')
+        ) {
+            $normalizedPhone =
+                (new PhoneNumber(
+                    $request->phone,
+                    strtoupper(
+                        $request->phone_country
+                    )
+                ))
+                    ->formatE164();
+
+            $phoneAlreadyExists =
+                User::query()
+                    ->where(
+                        'phone',
+                        $normalizedPhone
+                    )
+                    ->where(
+                        'id',
+                        '!=',
+                        $user->id
+                    )
+                    ->exists();
+
+            if ($phoneAlreadyExists) {
+                throw ValidationException::withMessages([
+                    'phone' =>
+                        'This phone number is already registered to another account.',
+                ]);
+            }
+        }
 
         // Combine first and last name into full name
         $fullName = $request->first_name . ' ' . $request->last_name;
@@ -300,14 +354,14 @@ class ProfileController extends Controller
             'student_id' => $request->student_id,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
-            'phone' => $request->phone,
+            'phone' => $normalizedPhone,
         ]);
 
         // Update Profile
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             [
-                'phone' => $request->phone,
+                'phone' => $normalizedPhone,
                 'address' => $request->address,
                 'date_of_birth' => $request->date_of_birth,
                 'nationality' => $request->nationality,

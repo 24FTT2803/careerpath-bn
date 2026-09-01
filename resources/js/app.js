@@ -3,6 +3,8 @@
 // ============================================
 import Alpine from 'alpinejs';
 import { distance as levenshteinDistance } from 'fastest-levenshtein';
+import intlTelInput from 'intl-tel-input';
+import 'intl-tel-input/styles';
 
 window.Alpine = Alpine;
 window.cpbnLevenshteinDistance = levenshteinDistance;
@@ -853,129 +855,329 @@ document.addEventListener(
                 }
             );
 
-        // ============================================
-        // PHONE NUMBER VALIDATION
+                // ============================================
+        // INTERNATIONAL PHONE NUMBER VALIDATION
         // ============================================
 
-        function validatePhone(input) {
-            const originalValue =
-                input.value;
+        const phoneInput =
+            document.querySelector(
+                'input[name="phone"]'
+            );
 
-            const cleaned =
-                originalValue.replace(
-                    /[^\d\+\s\-\(\)]/g,
-                    ''
+        const phoneCountryInput =
+            document.getElementById(
+                'phone_country'
+            );
+
+        if (
+            phoneInput
+            && phoneCountryInput
+        ) {
+            const phoneForm =
+                phoneInput.closest('form');
+
+            const phoneField =
+                phoneInput.closest(
+                    '.cpbn-field'
                 );
 
-            if (
-                cleaned
-                !== originalValue
-            ) {
-                input.value =
-                    cleaned;
+            const iti =
+                intlTelInput(
+                    phoneInput,
+                    {
+                        initialCountry:
+                            (
+                                phoneCountryInput.value
+                                || 'BN'
+                            ).toLowerCase(),
+
+                        countryOrder: [
+                            'bn',
+                            'my',
+                            'sg',
+                            'id',
+                            'ph',
+                            'th',
+                            'vn',
+                        ],
+
+                        separateDialCode: true,
+
+                        loadUtils:
+                            () =>
+                                import(
+                                    'intl-tel-input/utils'
+                                ),
+                    }
+                );
+
+            let phoneInitialising =
+                true;
+
+            let phoneUtilsReady =
+                false;
+
+            function updatePhoneCountry() {
+                const selectedCountry =
+                    iti.getSelectedCountry();
+
+                phoneCountryInput.value =
+                    selectedCountry?.iso2
+                        ? selectedCountry.iso2
+                            .toUpperCase()
+                        : '';
             }
 
-            const isValid =
-                /^[\+\d\s\-\(\)]{7,20}$/
-                    .test(cleaned);
-
-            if (
-                cleaned.length
-                > 0
-            ) {
-                if (! isValid) {
-                    input.style.borderColor =
-                        '#c65b4e';
-
-                    input.style.boxShadow =
-                        '0 0 0 3px rgba(198,91,78,0.15)';
-
-                    let errorMessage =
-                        input.parentElement
-                            .querySelector(
-                                '.phone-error'
-                            );
-
-                    if (! errorMessage) {
-                        errorMessage =
-                            document.createElement(
-                                'small'
-                            );
-
-                        errorMessage.className =
-                            'phone-error';
-
-                        errorMessage.style.cssText =
-                            'color:#c65b4e;font-size:11px;display:block;margin-top:4px;';
-
-                        errorMessage.textContent =
-                            'Please enter only digits, +, -, spaces, or parentheses (7-20 characters)';
-
-                        input.parentElement
-                            .appendChild(
-                                errorMessage
-                            );
-                    }
-                } else {
-                    input.style.borderColor =
-                        '#4c8a68';
-
-                    input.style.boxShadow =
-                        '0 0 0 3px rgba(76,138,104,0.15)';
-
-                    const errorMessage =
-                        input.parentElement
-                            .querySelector(
-                                '.phone-error'
-                            );
-
-                    if (errorMessage) {
-                        errorMessage.remove();
-                    }
+            function getPhoneErrorElement() {
+                if (! phoneField) {
+                    return null;
                 }
 
-                return;
-            }
-
-            input.style.borderColor = '';
-            input.style.boxShadow = '';
-
-            const errorMessage =
-                input.parentElement
-                    .querySelector(
+                let errorElement =
+                    phoneField.querySelector(
                         '.phone-error'
                     );
 
-            if (errorMessage) {
-                errorMessage.remove();
-            }
-        }
+                if (! errorElement) {
+                    errorElement =
+                        document.createElement(
+                            'small'
+                        );
 
-        document
-            .querySelectorAll(
-                'input[name="phone"], input[type="tel"]'
-            )
-            .forEach(
-                function(input) {
-                    input.addEventListener(
-                        'input',
-                        function() {
-                            validatePhone(
-                                this
-                            );
-                        }
-                    );
+                    errorElement.className =
+                        'phone-error';
 
-                    input.addEventListener(
-                        'blur',
-                        function() {
-                            validatePhone(
-                                this
-                            );
-                        }
+                    errorElement.style.cssText =
+                        [
+                            'color:#c65b4e',
+                            'font-size:11px',
+                            'display:block',
+                            'margin-top:4px',
+                        ].join(';');
+
+                    phoneField.appendChild(
+                        errorElement
                     );
                 }
+
+                return errorElement;
+            }
+
+            function clearPhoneError() {
+                phoneInput.style.borderColor =
+                    '';
+
+                phoneInput.style.boxShadow =
+                    '';
+
+                phoneInput.setCustomValidity(
+                    ''
+                );
+
+                const errorElement =
+                    phoneField?.querySelector(
+                        '.phone-error'
+                    );
+
+                if (errorElement) {
+                    errorElement.remove();
+                }
+            }
+
+            function showPhoneError(
+                message
+            ) {
+                phoneInput.style.borderColor =
+                    '#c65b4e';
+
+                phoneInput.style.boxShadow =
+                    '0 0 0 3px rgba(198,91,78,0.15)';
+
+                phoneInput.setCustomValidity(
+                    message
+                );
+
+                const errorElement =
+                    getPhoneErrorElement();
+
+                if (errorElement) {
+                    errorElement.textContent =
+                        message;
+                }
+            }
+
+            function getPhoneValidationMessage() {
+                const error =
+                    iti.getValidationError();
+
+                switch (error) {
+                    case 'TOO_SHORT':
+                        return 'This phone number is too short for the selected country.';
+
+                    case 'TOO_LONG':
+                        return 'This phone number is too long for the selected country.';
+
+                    case 'INVALID_COUNTRY_CODE':
+                        return 'Please select a valid country code.';
+
+                    case 'INVALID_LENGTH':
+                        return 'This phone number has an invalid length for the selected country.';
+
+                    default:
+                        return 'Enter a valid phone number for the selected country.';
+                }
+            }
+
+            function validateInternationalPhone() {
+                updatePhoneCountry();
+
+                const value =
+                    phoneInput.value.trim();
+
+                if (value === '') {
+                    clearPhoneError();
+
+                    return true;
+                }
+
+                if (! iti.isValidNumber()) {
+                    showPhoneError(
+                        getPhoneValidationMessage()
+                    );
+
+                    return false;
+                }
+
+                clearPhoneError();
+
+                return true;
+            }
+
+            phoneInput.addEventListener(
+                'input',
+                function() {
+                    clearPhoneError();
+                }
             );
+
+            phoneInput.addEventListener(
+                'blur',
+                function() {
+                    if (! phoneUtilsReady) {
+                        return;
+                    }
+
+                    validateInternationalPhone();
+                }
+            );
+
+            phoneInput.addEventListener(
+                'countrychange',
+                function() {
+                    updatePhoneCountry();
+                    clearPhoneError();
+
+                    if (
+                        ! phoneInitialising
+                        && typeof window
+                            .setFormChanged
+                            === 'function'
+                    ) {
+                        window.setFormChanged(
+                            true
+                        );
+                    }
+                }
+            );
+
+            iti.promise.then(
+                function() {
+                    phoneUtilsReady =
+                        true;
+
+                    /*
+                     * Stored numbers are saved in
+                     * international E.164 format.
+                     *
+                     * setNumber() automatically selects
+                     * the matching country.
+                     */
+                    if (
+                        phoneInput.value.trim()
+                        !== ''
+                    ) {
+                        iti.setNumber(
+                            phoneInput.value.trim()
+                        );
+                    }
+
+                    updatePhoneCountry();
+
+                    phoneInitialising =
+                        false;
+                }
+            );
+
+            if (phoneForm) {
+                /*
+                 * Run phone validation before the
+                 * existing confirmation handler.
+                 *
+                 * We deliberately DO NOT requestSubmit()
+                 * again after successful validation.
+                 * The normal profile confirmation flow
+                 * remains responsible for submission.
+                 */
+                phoneForm.addEventListener(
+                    'submit',
+                    async function(event) {
+                        updatePhoneCountry();
+
+                        if (
+                            phoneInput.value.trim()
+                            === ''
+                        ) {
+                            clearPhoneError();
+
+                            return;
+                        }
+
+                        if (! phoneUtilsReady) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            const submitter =
+                                event.submitter;
+
+                            await iti.promise;
+
+                            phoneUtilsReady =
+                                true;
+
+                            if (submitter) {
+                                phoneForm.requestSubmit(
+                                    submitter
+                                );
+                            } else {
+                                phoneForm.requestSubmit();
+                            }
+
+                            return;
+                        }
+
+                        if (
+                            ! validateInternationalPhone()
+                        ) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            phoneInput.focus();
+                        }
+                    },
+                    true
+                );
+            }
+        }
 
         // ============================================
         // MILESTONE FORM VALIDATION
@@ -1514,7 +1716,19 @@ document.addEventListener(
             let formChanged =
                 false;
 
-            function markChanged() {
+            function markChanged(event) {
+                /*
+                * Ignore changes fired programmatically by
+                * components such as intl-tel-input while
+                * the form is initialising.
+                */
+                if (
+                    event
+                    && event.isTrusted === false
+                ) {
+                    return;
+                }
+
                 formChanged =
                     true;
 
