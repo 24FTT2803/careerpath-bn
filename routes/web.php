@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
+use App\Http\Controllers\Admin\BiicfController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -256,7 +257,58 @@ Route::middleware(['auth'])
             ->name('milestones.proof')
             ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
-        // Admin ONLY routes
+        // ============================================
+// BIICF MANAGEMENT (Admin ONLY)
+// ============================================
+Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+    
+    Route::get('/biicf', function() {
+        return redirect()->route('admin.biicf.sub-sectors');
+    })->name('biicf');
+
+    // Sub-sectors - Use 'biicf.' NOT 'admin.biicf.'
+    Route::get('/biicf/sub-sectors', [BiicfController::class, 'subSectors'])->name('biicf.sub-sectors');
+    Route::get('/biicf/sub-sectors/create', [BiicfController::class, 'subSectorCreate'])->name('biicf.sub-sectors.create');
+    Route::post('/biicf/sub-sectors', [BiicfController::class, 'subSectorStore'])->name('biicf.sub-sectors.store');
+    Route::get('/biicf/sub-sectors/{subSector}/edit', [BiicfController::class, 'subSectorEdit'])->name('biicf.sub-sectors.edit');
+    Route::put('/biicf/sub-sectors/{subSector}', [BiicfController::class, 'subSectorUpdate'])->name('biicf.sub-sectors.update');
+    Route::delete('/biicf/sub-sectors/{subSector}', [BiicfController::class, 'subSectorDestroy'])->name('biicf.sub-sectors.destroy');
+
+    // Job Roles - Use 'biicf.' NOT 'admin.biicf.'
+    Route::get('/biicf/job-roles', [BiicfController::class, 'jobRoles'])->name('biicf.job-roles');
+    Route::get('/biicf/job-roles/create', [BiicfController::class, 'jobRoleCreate'])->name('biicf.job-roles.create');
+    Route::post('/biicf/job-roles', [BiicfController::class, 'jobRoleStore'])->name('biicf.job-roles.store');
+    Route::get('/biicf/job-roles/{jobRole}', [BiicfController::class, 'jobRoleShow'])->name('biicf.job-roles.show');
+    Route::get('/biicf/job-roles/{jobRole}/edit', [BiicfController::class, 'jobRoleEdit'])->name('biicf.job-roles.edit');
+    Route::put('/biicf/job-roles/{jobRole}', [BiicfController::class, 'jobRoleUpdate'])->name('biicf.job-roles.update');
+    Route::delete('/biicf/job-roles/{jobRole}', [BiicfController::class, 'jobRoleDestroy'])->name('biicf.job-roles.destroy');
+
+    // Competencies - Use 'biicf.' NOT 'admin.biicf.'
+    Route::get('/biicf/competencies', [BiicfController::class, 'competencies'])->name('biicf.competencies');
+    Route::get('/biicf/competencies/create', [BiicfController::class, 'competencyCreate'])->name('biicf.competencies.create');
+    Route::post('/biicf/competencies', [BiicfController::class, 'competencyStore'])->name('biicf.competencies.store');
+    Route::get('/biicf/competencies/{competency}/edit', [BiicfController::class, 'competencyEdit'])->name('biicf.competencies.edit');
+    Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
+    Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');
+
+    // Proficiency Levels - Use 'biicf.' NOT 'admin.biicf.'
+    Route::get('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevels'])->name('biicf.proficiency-levels');
+    Route::get('/biicf/proficiency-levels/create', [BiicfController::class, 'proficiencyLevelCreate'])->name('biicf.proficiency-levels.create');
+    Route::post('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevelStore'])->name('biicf.proficiency-levels.store');
+    Route::get('/biicf/proficiency-levels/{level}/edit', [BiicfController::class, 'proficiencyLevelEdit'])->name('biicf.proficiency-levels.edit');
+    Route::put('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelUpdate'])->name('biicf.proficiency-levels.update');
+    Route::delete('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelDestroy'])->name('biicf.proficiency-levels.destroy');
+
+    // Trainings - Use 'biicf.' NOT 'admin.biicf.'
+    Route::get('/biicf/trainings', [BiicfController::class, 'trainings'])->name('biicf.trainings');
+    Route::get('/biicf/trainings/create', [BiicfController::class, 'trainingCreate'])->name('biicf.trainings.create');
+    Route::post('/biicf/trainings', [BiicfController::class, 'trainingStore'])->name('biicf.trainings.store');
+    Route::get('/biicf/trainings/{training}/edit', [BiicfController::class, 'trainingEdit'])->name('biicf.trainings.edit');
+    Route::put('/biicf/trainings/{training}', [BiicfController::class, 'trainingUpdate'])->name('biicf.trainings.update');
+    Route::delete('/biicf/trainings/{training}', [BiicfController::class, 'trainingDestroy'])->name('biicf.trainings.destroy');
+});
+
+        // Admin ONLY routes - Users
         Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
             Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');

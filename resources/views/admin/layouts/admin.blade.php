@@ -428,6 +428,29 @@
                 <span>Careers</span>
             </a>
             @if(auth()->user()->role === 'admin')
+    <div class="nav-label" style="margin-top:16px;">BIICF Management</div>
+    <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}">
+        <i class="fas fa-layer-group"></i>
+        <span>Sub-Sectors <span class="badge">{{ \App\Models\BiicfSubSector::count() }}</span></span>
+    </a>
+    <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}">
+        <i class="fas fa-briefcase"></i>
+        <span>Job Roles <span class="badge">{{ \App\Models\BiicfJobRole::count() }}</span></span>
+    </a>
+    <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}">
+        <i class="fas fa-tools"></i>
+        <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
+    </a>
+    <a href="{{ route('admin.biicf.proficiency-levels') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.proficiency-levels*') ? 'active' : '' }}">
+        <i class="fas fa-level-up-alt"></i>
+        <span>Proficiency Levels</span>
+    </a>
+    <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
+        <i class="fas fa-graduation-cap"></i>
+        <span>Trainings</span>
+    </a>
+@endif
+            @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i>
                     <span>Manage Users</span>
@@ -435,33 +458,26 @@
             @endif
         </nav>
 
-        <!-- Footer - Clean dropdown with only Logout -->
-        <div class="sidebar-footer">
-            <div class="nav-user-wrapper" id="navUserWrapper">
-                <div class="nav-user" id="navUserToggle">
-                    <div class="avatar">
-                        {{ substr(auth()->user()->first_name ?? auth()->user()->name, 0, 1) }}
-                    </div>
-                    <div class="user-info">
-                        <span class="name">{{ auth()->user()->first_name ?? auth()->user()->name }}</span>
-                        <span class="role">{{ ucfirst(auth()->user()->role) }}</span>
-                    </div>
-                    <span class="chevron"><i class="fas fa-chevron-down"></i></span>
-                </div>
-
-                <!-- Dropdown - Only Logout with Confirmation -->
-                <div class="dropdown" id="dropdownMenu">
-                    <div class="dropdown-menu">
-                        <form method="POST" action="{{ route('logout') }}" id="logout-form" style="margin:0;">
-                            @csrf
-                            <button type="button" class="dropdown-item danger" onclick="confirmLogout()" style="width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;">
-                                <i class="fas fa-sign-out-alt"></i> Log Out
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
+        <!-- Footer - Simple Logout Button -->
+<div class="sidebar-footer" style="padding:16px 20px;border-top:1px solid rgba(255,255,255,0.06);">
+    <div style="display:flex;align-items:center;gap:10px;">
+        <!-- Avatar -->
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">
+            {{ substr(auth()->user()->first_name ?? auth()->user()->name, 0, 1) }}
         </div>
+        
+        <!-- User Info -->
+        <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.3;">{{ auth()->user()->first_name ?? auth()->user()->name }}</div>
+            <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.04em;line-height:1.3;">{{ ucfirst(auth()->user()->role) }}</div>
+        </div>
+        
+        <!-- Logout Button -->
+        <button onclick="confirmLogout()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f5f1e6;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.3s ease;font-family:inherit;white-space:nowrap;">
+            <i class="fas fa-sign-out-alt" style="color:#c9a84c;margin-right:4px;"></i> Logout
+        </button>
+    </div>
+</div>
     </aside>
 
     <!-- Main Content -->
@@ -518,26 +534,29 @@
         });
 
         // Logout confirmation using the existing modal system
-        function confirmLogout() {
-            if (typeof showConfirmModal === 'function') {
-                showConfirmModal({
-                    title: 'Confirm Logout',
-                    message: 'Are you sure you want to log out?',
-                    confirmText: 'Yes, Log Out',
-                    cancelText: 'Cancel',
-                    type: 'warning',
-                    onConfirm: function() {
-                        document.getElementById('logout-form').submit();
-                    }
-                });
-            } else {
-                // Fallback if modal function not available
-                if (confirm('Are you sure you want to log out?')) {
-                    document.getElementById('logout-form').submit();
-                }
+       function confirmLogout() {
+    if (typeof showConfirmModal === 'function') {
+        showConfirmModal({
+            title: 'Confirm Logout',
+            message: 'Are you sure you want to log out?',
+            confirmText: 'Yes, Log Out',
+            cancelText: 'Cancel',
+            type: 'warning',
+            onConfirm: function() {
+                document.getElementById('logout-form').submit();
             }
+        });
+    } else {
+        if (confirm('Are you sure you want to log out?')) {
+            document.getElementById('logout-form').submit();
         }
+    }
+}
     </script>
-
+    
+<!-- Hidden Logout Form -->
+<form method="POST" action="{{ route('logout') }}" id="logout-form" style="display:none;">
+    @csrf
+</form>
 </body>
 </html>

@@ -177,18 +177,18 @@
                     </div>
                     <span>View Students</span>
                 </a>
+                <a href="{{ route('admin.biicf.sub-sectors') }}" class="action-card">
+            <div class="action-icon" style="background: #fff3e0; color: #e65100;">
+                <i class="fas fa-layer-group"></i>
+            </div>
+            <span>Manage BIICF</span>
+        </a>
                 <a href="{{ route('admin.careers.index') }}" class="action-card">
-                    <div class="action-icon" style="background: #fff3e0; color: #e65100;">
-                        <i class="fas fa-briefcase"></i>
-                    </div>
-                    <span>Manage Careers</span>
-                </a>
-                <a href="#" class="action-card">
-                    <div class="action-icon" style="background: #fce4ec; color: #c62828;">
-                        <i class="fas fa-file-export"></i>
-                    </div>
-                    <span>Export Reports</span>
-                </a>
+    <div class="action-icon" style="background: #fce4ec; color: #c62828;">
+        <i class="fas fa-briefcase"></i>
+    </div>
+    <span>View Careers</span>
+</a>
             </div>
         </div>
     </div>
