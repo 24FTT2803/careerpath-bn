@@ -227,6 +227,29 @@
         font-family: var(--font-body);
     }
 
+    /* International Phone Input */
+    .edit-profile .cpbn-field .iti {
+        width: 100%;
+    }
+
+    .edit-profile .cpbn-field .iti input[type="tel"] {
+        width: 100%;
+    }
+
+    /*
+    * The country search still works, but we hide the
+    * magnifying-glass icon because it clashes with the
+    * existing form styling.
+    */
+    .edit-profile .iti__search-icon,
+    .edit-profile .iti__search-icon-svg {
+        display: none !important;
+    }
+
+    .edit-profile .iti__search-input {
+        padding-left: 12px !important;
+    }
+
     /* Checkbox Grid */
     .edit-profile .cpbn-checks {
         display: grid;
@@ -723,12 +746,14 @@
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
                         <label>First Name <span class="req">*</span></label>
+
                         <input
                             type="text"
                             name="first_name"
                             value="{{ old('first_name', $user->first_name ?? '') }}"
                             required
                         >
+
                         @error('first_name')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -736,12 +761,14 @@
 
                     <div class="cpbn-field">
                         <label>Last Name <span class="req">*</span></label>
+
                         <input
                             type="text"
                             name="last_name"
                             value="{{ old('last_name', $user->last_name ?? '') }}"
                             required
                         >
+
                         @error('last_name')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -749,6 +776,7 @@
 
                     <div class="cpbn-field">
                         <label>Email <span class="req">*</span></label>
+
                         <input
                             type="email"
                             value="{{ $user->email }}"
@@ -758,42 +786,60 @@
 
                     <div class="cpbn-field">
                         <label>Student ID <span class="req">*</span></label>
+
                         <input
                             type="text"
                             name="student_id"
                             value="{{ old('student_id', $user->student_id) }}"
                             required
                         >
+
                         @error('student_id')
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="cpbn-field">
-                        <label>Phone Number</label>
+                        <label for="phone">Phone Number</label>
+
                         <input
                             type="tel"
+                            id="phone"
                             name="phone"
                             value="{{ old('phone', $user->phone ?? '') }}"
-                            placeholder="+673 123 4567"
-                            pattern="[\+\d\s\-\(\)]{7,20}"
-                            title="Only digits, +, -, spaces, and parentheses allowed"
+                            autocomplete="tel"
                         >
+
+                        <input
+                            type="hidden"
+                            id="phone_country"
+                            name="phone_country"
+                            value="{{ old('phone_country', 'BN') }}"
+                        >
+
                         <span class="hint">
-                            Only digits, +, -, spaces, and parentheses allowed (7-20 characters)
+                            Select your country and enter a valid phone number.
+                            Brunei (+673) is selected by default.
                         </span>
+
                         @error('phone')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
+
+                        @error('phone_country')
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>
 
                     <div class="cpbn-field">
                         <label>Date of Birth</label>
+
                         <input
                             type="date"
                             name="date_of_birth"
                             value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}"
                         >
+
                         @error('date_of_birth')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -803,7 +849,9 @@
                         <label>Nationality</label>
 
                         <select name="nationality">
-                            <option value="">Select your nationality</option>
+                            <option value="">
+                                Select your nationality
+                            </option>
 
                             @foreach([
                                 'Brunei Darussalam',
@@ -834,7 +882,12 @@
 
                     <div class="cpbn-field full">
                         <label>Address</label>
-                        <textarea name="address" rows="2">{{ old('address', $user->profile->address ?? '') }}</textarea>
+
+                        <textarea
+                            name="address"
+                            rows="2"
+                        >{{ old('address', $user->profile->address ?? '') }}</textarea>
+
                         @error('address')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -842,7 +895,12 @@
 
                     <div class="cpbn-field full">
                         <label>Bio / About You</label>
-                        <textarea name="bio" rows="3">{{ old('bio', $user->profile->bio ?? '') }}</textarea>
+
+                        <textarea
+                            name="bio"
+                            rows="3"
+                        >{{ old('bio', $user->profile->bio ?? '') }}</textarea>
+
                         @error('bio')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -853,11 +911,17 @@
             <!-- SECTION 2: Academic Information -->
             <div class="section">
                 <div class="title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
                         <path d="M22 10v6"/>
                         <path d="M2 10l10-5 10 5-10 5z"/>
                         <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                     </svg>
+
                     Academic Information
                 </div>
 
@@ -866,7 +930,9 @@
                         <label>Programme</label>
 
                         <select name="programme">
-                            <option value="">Select your programme</option>
+                            <option value="">
+                                Select your programme
+                            </option>
 
                             <option
                                 value="Diploma in ICT (Application Development)"
@@ -895,13 +961,6 @@
                             >
                                 DBIS - Business Information Systems
                             </option>
-
-                            <option
-                                value="Others"
-                                {{ old('programme', $user->programme) === 'Others' ? 'selected' : '' }}
-                            >
-                                Others
-                            </option>
                         </select>
 
                         @error('programme')
@@ -911,6 +970,7 @@
 
                     <div class="cpbn-field">
                         <label>CGPA</label>
+
                         <input
                             type="number"
                             name="cgpa"
@@ -919,6 +979,7 @@
                             max="4"
                             value="{{ old('cgpa', $user->cgpa) }}"
                         >
+
                         @error('cgpa')
                             <div class="error">{{ $message }}</div>
                         @enderror
@@ -1638,7 +1699,7 @@
 
                                     @if($existingEvidenceAvailable)
                                         <div class="cpbn-file-existing">
-                                            ✓ Existing evidence verified
+                                            Existing evidence uploaded
 
                                             @if($existingCertification->certificate_original_name)
                                                 <span class="cpbn-file-existing-name">

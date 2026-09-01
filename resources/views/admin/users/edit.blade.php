@@ -101,9 +101,6 @@
                         <option value="Diploma in Business Information Systems" {{ old('programme', $user->programme) == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
                             DBIS - Business Information Systems
                         </option>
-                        <option value="Others" {{ old('programme', $user->programme) == 'Others' ? 'selected' : '' }}>
-                            Others
-                        </option>
                     </select>
                 </div>
             </div>

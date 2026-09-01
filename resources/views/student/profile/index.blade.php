@@ -793,8 +793,8 @@
 
                                     @if($cert->certificate_file_path)
                                         <span class="cert-badge">
-                                            <i class="fas fa-check-circle"></i>
-                                            Verified
+                                            <i class="fas fa-paperclip"></i>
+                                            Evidence uploaded
                                         </span>
                                     @endif
                                 </div>
