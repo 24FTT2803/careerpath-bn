@@ -210,7 +210,16 @@ class ProfileController extends Controller
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:1000'],
-            'programme' => ['nullable', 'string', 'max:255'],
+            'programme' => [
+                'nullable',
+                'string',
+                Rule::in([
+                    'Diploma in ICT (Application Development)',
+                    'Diploma in ICT (Data Analytics)',
+                    'Diploma in ICT (Cloud Networking)',
+                    'Diploma in Business Information Systems',
+                ]),
+            ],
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:4'],
 
             'skills' => ['nullable', 'array'],

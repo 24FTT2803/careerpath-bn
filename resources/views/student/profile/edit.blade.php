@@ -961,13 +961,6 @@
                             >
                                 DBIS - Business Information Systems
                             </option>
-
-                            <option
-                                value="Others"
-                                {{ old('programme', $user->programme) === 'Others' ? 'selected' : '' }}
-                            >
-                                Others
-                            </option>
                         </select>
 
                         @error('programme')

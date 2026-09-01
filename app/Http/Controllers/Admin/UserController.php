@@ -64,7 +64,8 @@ class UserController extends Controller
         // Only require student_id and programme if role is student
         if ($request->role === 'student') {
             $rules['student_id'] = 'required|unique:users';
-            $rules['programme'] = 'required|string';
+            $rules['programme'] =
+                'required|string|in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems';
         } else {
             $rules['student_id'] = 'nullable|unique:users';
             $rules['programme'] = 'nullable|string';
@@ -79,7 +80,9 @@ class UserController extends Controller
             'password' => Hash::make($request->password),
             'role' => $request->role,
             'student_id' => $request->student_id,
-            'programme' => $request->programme,
+            'programme' => $request->role === 'student'
+                ? $request->programme
+                : null,
         ]);
 
         // Create student profile with phone number if provided
@@ -122,7 +125,8 @@ class UserController extends Controller
         // Only require student_id and programme if role is student
         if ($request->role === 'student') {
             $rules['student_id'] = 'required|unique:users,student_id,' . $id;
-            $rules['programme'] = 'required|string';
+            $rules['programme'] =
+                'required|string|in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems';
         } else {
             $rules['student_id'] = 'nullable|unique:users,student_id,' . $id;
             $rules['programme'] = 'nullable|string';

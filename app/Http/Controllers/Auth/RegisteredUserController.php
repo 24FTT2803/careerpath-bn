@@ -36,7 +36,11 @@ class RegisteredUserController extends Controller
                 'unique:users,email', // This ensures email is unique
                 'regex:/^[a-zA-Z0-9._%+-]+@(gmail\.com|pb\.edu\.bn|student\.pb\.edu\.bn)$/',
             ],
-            'programme' => ['required', 'string', 'max:255'],
+            'programme' => [
+                'required',
+                'string',
+                'in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems',
+            ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'terms' => ['required', 'accepted'],
         ], [
@@ -46,6 +50,7 @@ class RegisteredUserController extends Controller
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
             'terms.required' => 'You must agree to the Terms of Service.',
+            'programme.in' => 'Please select a valid programme.',
         ]);
 
         // Combine first and last name
