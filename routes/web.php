@@ -225,11 +225,21 @@ Route::middleware(['auth'])
                 \App\Http\Middleware\LecturerMiddleware::class
             );
 
+        // CAREER ROUTES
         Route::get(
             '/careers',
             [AdminCareerController::class, 'index']
         )
             ->name('careers.index')
+            ->middleware(
+                \App\Http\Middleware\LecturerMiddleware::class
+            );
+
+        Route::get(
+            '/careers/{id}',
+            [AdminCareerController::class, 'show']
+        )
+            ->name('careers.show')
             ->middleware(
                 \App\Http\Middleware\LecturerMiddleware::class
             );
