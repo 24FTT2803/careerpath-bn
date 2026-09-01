@@ -1699,7 +1699,7 @@
 
                                     @if($existingEvidenceAvailable)
                                         <div class="cpbn-file-existing">
-                                            ✓ Existing evidence verified
+                                            Existing evidence uploaded
 
                                             @if($existingCertification->certificate_original_name)
                                                 <span class="cpbn-file-existing-name">
