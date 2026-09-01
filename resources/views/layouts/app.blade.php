@@ -362,6 +362,73 @@
             .container { padding: 0 16px; }
             .nav-user .name { display: none !important; }
         }
+
+        /* ============================================
+        CAREER ADVISER FLOATING ACCESS
+        ============================================ */
+
+        .career-adviser-fab {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 900;
+
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+
+            padding: 12px 18px;
+
+            background: var(--primary);
+            color: white;
+
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 100px;
+
+            box-shadow:
+                0 8px 28px rgba(26, 58, 92, 0.22);
+
+            font-size: 13px;
+            font-weight: 600;
+            text-decoration: none;
+
+            transition: var(--transition);
+        }
+
+        .career-adviser-fab:hover {
+            transform: translateY(-2px);
+            color: white;
+
+            box-shadow:
+                0 12px 34px rgba(26, 58, 92, 0.28);
+        }
+
+        .career-adviser-fab i {
+            color: var(--accent);
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .career-adviser-fab {
+                width: 52px;
+                height: 52px;
+
+                right: 18px;
+                bottom: 18px;
+
+                padding: 0;
+                border-radius: 50%;
+            }
+
+            .career-adviser-fab span {
+                display: none;
+            }
+
+            .career-adviser-fab i {
+                font-size: 17px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -425,9 +492,17 @@
                                     @endif
                                 </a>
                                 <div class="dropdown-divider"></div>
+
+                                @if(Auth::user()->role === 'student')
+                                    <a href="{{ route('student.career-adviser') }}" class="dropdown-item">
+                                        <i class="fas fa-comments"></i> Career Adviser
+                                    </a>
+                                @endif
+
                                 <a href="{{ route('student.milestones') }}" class="dropdown-item">
                                     <i class="fas fa-flag-checkered"></i> Milestones
                                 </a>
+
                                 <a href="{{ route('student.biicf-explorer.index') }}" class="dropdown-item">
                                     <i class="fas fa-compass"></i> BIICF Explorer
                                 </a>
@@ -478,6 +553,22 @@
             @yield('content')
         </div>
     </main>
+
+    @if(
+        Auth::check()
+        && Auth::user()->role === 'student'
+        && !request()->routeIs('student.career-adviser')
+    )
+        <a
+            href="{{ route('student.career-adviser') }}"
+            class="career-adviser-fab"
+            aria-label="Open Career Adviser"
+            title="Career Adviser"
+        >
+            <i class="fas fa-comments"></i>
+            <span>Career Adviser</span>
+        </a>
+    @endif
 
     @include('layouts.footer')
 

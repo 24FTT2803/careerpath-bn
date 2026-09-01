@@ -4,6 +4,7 @@ use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Controllers\Student\MilestoneController;
 use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\CareerAdviserController;
 use App\Http\Controllers\Student\BiicfExplorerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
@@ -59,6 +60,12 @@ Route::middleware(['auth'])
             '/recommendations/generate',
             [CareerRecommendationController::class, 'generate']
         )->name('recommendations.generate');
+
+        // Career Adviser
+        Route::get(
+            '/career-adviser',
+            [CareerAdviserController::class, 'index']
+        )->name('career-adviser');
 
         // Dashboard
         Route::get(

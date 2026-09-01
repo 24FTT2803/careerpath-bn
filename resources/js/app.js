@@ -3,6 +3,8 @@
 // ============================================
 import Alpine from 'alpinejs';
 import { distance as levenshteinDistance } from 'fastest-levenshtein';
+import intlTelInput from 'intl-tel-input';
+import 'intl-tel-input/styles';
 
 window.Alpine = Alpine;
 window.cpbnLevenshteinDistance = levenshteinDistance;
@@ -853,129 +855,343 @@ document.addEventListener(
                 }
             );
 
-        // ============================================
-        // PHONE NUMBER VALIDATION
+                // ============================================
+        // INTERNATIONAL PHONE NUMBER VALIDATION
         // ============================================
 
-        function validatePhone(input) {
-            const originalValue =
-                input.value;
+        const phoneInput =
+            document.querySelector(
+                'input[name="phone"]'
+            );
 
-            const cleaned =
-                originalValue.replace(
-                    /[^\d\+\s\-\(\)]/g,
-                    ''
+        const phoneCountryInput =
+            document.getElementById(
+                'phone_country'
+            );
+
+        if (
+            phoneInput
+            && phoneCountryInput
+        ) {
+            const phoneForm =
+                phoneInput.closest('form');
+
+            const phoneField =
+                phoneInput.closest(
+                    '.cpbn-field'
                 );
 
-            if (
-                cleaned
-                !== originalValue
-            ) {
-                input.value =
-                    cleaned;
+            const iti =
+                intlTelInput(
+                    phoneInput,
+                    {
+                        initialCountry:
+                            (
+                                phoneCountryInput.value
+                                || 'BN'
+                            ).toLowerCase(),
+
+                        countryOrder: [
+                            'bn',
+                            'my',
+                            'sg',
+                            'id',
+                            'ph',
+                            'th',
+                            'vn',
+                        ],
+
+                        separateDialCode: true,
+
+                        loadUtils:
+                            () =>
+                                import(
+                                    'intl-tel-input/utils'
+                                ),
+                    }
+                );
+
+            let phoneInitialising =
+                true;
+
+            let phoneUtilsReady =
+                false;
+
+            function updatePhoneCountry() {
+                const selectedCountry =
+                    iti.getSelectedCountry();
+
+                phoneCountryInput.value =
+                    selectedCountry?.iso2
+                        ? selectedCountry.iso2
+                            .toUpperCase()
+                        : '';
             }
 
-            const isValid =
-                /^[\+\d\s\-\(\)]{7,20}$/
-                    .test(cleaned);
-
-            if (
-                cleaned.length
-                > 0
-            ) {
-                if (! isValid) {
-                    input.style.borderColor =
-                        '#c65b4e';
-
-                    input.style.boxShadow =
-                        '0 0 0 3px rgba(198,91,78,0.15)';
-
-                    let errorMessage =
-                        input.parentElement
-                            .querySelector(
-                                '.phone-error'
-                            );
-
-                    if (! errorMessage) {
-                        errorMessage =
-                            document.createElement(
-                                'small'
-                            );
-
-                        errorMessage.className =
-                            'phone-error';
-
-                        errorMessage.style.cssText =
-                            'color:#c65b4e;font-size:11px;display:block;margin-top:4px;';
-
-                        errorMessage.textContent =
-                            'Please enter only digits, +, -, spaces, or parentheses (7-20 characters)';
-
-                        input.parentElement
-                            .appendChild(
-                                errorMessage
-                            );
-                    }
-                } else {
-                    input.style.borderColor =
-                        '#4c8a68';
-
-                    input.style.boxShadow =
-                        '0 0 0 3px rgba(76,138,104,0.15)';
-
-                    const errorMessage =
-                        input.parentElement
-                            .querySelector(
-                                '.phone-error'
-                            );
-
-                    if (errorMessage) {
-                        errorMessage.remove();
-                    }
+            function getPhoneErrorElement() {
+                if (! phoneField) {
+                    return null;
                 }
 
-                return;
-            }
-
-            input.style.borderColor = '';
-            input.style.boxShadow = '';
-
-            const errorMessage =
-                input.parentElement
-                    .querySelector(
+                let errorElement =
+                    phoneField.querySelector(
                         '.phone-error'
                     );
 
-            if (errorMessage) {
-                errorMessage.remove();
-            }
-        }
+                if (! errorElement) {
+                    errorElement =
+                        document.createElement(
+                            'small'
+                        );
 
-        document
-            .querySelectorAll(
-                'input[name="phone"], input[type="tel"]'
-            )
-            .forEach(
-                function(input) {
-                    input.addEventListener(
-                        'input',
-                        function() {
-                            validatePhone(
-                                this
-                            );
-                        }
+                    errorElement.className =
+                        'phone-error';
+
+                    errorElement.style.cssText =
+                        [
+                            'color:#c65b4e',
+                            'font-size:11px',
+                            'display:block',
+                            'margin-top:4px',
+                        ].join(';');
+
+                    phoneField.appendChild(
+                        errorElement
+                    );
+                }
+
+                return errorElement;
+            }
+
+            function clearPhoneError() {
+                phoneInput.style.borderColor =
+                    '';
+
+                phoneInput.style.boxShadow =
+                    '';
+
+                phoneInput.setCustomValidity(
+                    ''
+                );
+
+                const errorElement =
+                    phoneField?.querySelector(
+                        '.phone-error'
                     );
 
-                    input.addEventListener(
-                        'blur',
+                if (errorElement) {
+                    errorElement.remove();
+                }
+            }
+
+            function showPhoneError(
+                message
+            ) {
+                phoneInput.style.borderColor =
+                    '#c65b4e';
+
+                phoneInput.style.boxShadow =
+                    '0 0 0 3px rgba(198,91,78,0.15)';
+
+                phoneInput.setCustomValidity(
+                    message
+                );
+
+                const errorElement =
+                    getPhoneErrorElement();
+
+                if (errorElement) {
+                    errorElement.textContent =
+                        message;
+                }
+            }
+
+            function getPhoneValidationMessage() {
+                const error =
+                    iti.getValidationError();
+
+                switch (error) {
+                    case 'TOO_SHORT':
+                        return 'This phone number is too short for the selected country.';
+
+                    case 'TOO_LONG':
+                        return 'This phone number is too long for the selected country.';
+
+                    case 'INVALID_COUNTRY_CODE':
+                        return 'Please select a valid country code.';
+
+                    case 'INVALID_LENGTH':
+                        return 'This phone number has an invalid length for the selected country.';
+
+                    default:
+                        return 'Enter a valid phone number for the selected country.';
+                }
+            }
+
+            function validateInternationalPhone() {
+                updatePhoneCountry();
+
+                const value =
+                    phoneInput.value.trim();
+
+                if (value === '') {
+                    clearPhoneError();
+
+                    return true;
+                }
+
+                if (! iti.isValidNumber()) {
+                    showPhoneError(
+                        getPhoneValidationMessage()
+                    );
+
+                    return false;
+                }
+
+                clearPhoneError();
+
+                return true;
+            }
+
+            phoneInput.addEventListener(
+                'input',
+                function() {
+                    clearPhoneError();
+                }
+            );
+
+            phoneInput.addEventListener(
+                'blur',
+                function() {
+                    if (! phoneUtilsReady) {
+                        return;
+                    }
+
+                    validateInternationalPhone();
+                }
+            );
+
+            phoneInput.addEventListener(
+                'countrychange',
+                function() {
+                    updatePhoneCountry();
+                    clearPhoneError();
+
+                    if (
+                        ! phoneInitialising
+                        && typeof window
+                            .setFormChanged
+                            === 'function'
+                    ) {
+                        window.setFormChanged(
+                            true
+                        );
+                    }
+                }
+            );
+
+            iti.promise.then(
+                function() {
+                    phoneUtilsReady =
+                        true;
+
+                    /*
+                     * Stored numbers are saved in
+                     * international E.164 format.
+                     *
+                     * setNumber() automatically selects
+                     * the matching country.
+                     */
+                    if (
+                        phoneInput.value.trim()
+                        !== ''
+                    ) {
+                        iti.setNumber(
+                            phoneInput.value.trim()
+                        );
+                    }
+
+                    updatePhoneCountry();
+
+                    phoneInitialising =
+                        false;
+
+                        setTimeout(
                         function() {
-                            validatePhone(
-                                this
-                            );
-                        }
+                            if (
+                                typeof window
+                                    .refreshProfileFormBaseline
+                                === 'function'
+                            ) {
+                                window
+                                    .refreshProfileFormBaseline();
+                            }
+                        },
+                        0
                     );
                 }
             );
+
+            if (phoneForm) {
+                /*
+                 * Run phone validation before the
+                 * existing confirmation handler.
+                 *
+                 * We deliberately DO NOT requestSubmit()
+                 * again after successful validation.
+                 * The normal profile confirmation flow
+                 * remains responsible for submission.
+                 */
+                phoneForm.addEventListener(
+                    'submit',
+                    async function(event) {
+                        updatePhoneCountry();
+
+                        if (
+                            phoneInput.value.trim()
+                            === ''
+                        ) {
+                            clearPhoneError();
+
+                            return;
+                        }
+
+                        if (! phoneUtilsReady) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            const submitter =
+                                event.submitter;
+
+                            await iti.promise;
+
+                            phoneUtilsReady =
+                                true;
+
+                            if (submitter) {
+                                phoneForm.requestSubmit(
+                                    submitter
+                                );
+                            } else {
+                                phoneForm.requestSubmit();
+                            }
+
+                            return;
+                        }
+
+                        if (
+                            ! validateInternationalPhone()
+                        ) {
+                            event.preventDefault();
+                            event.stopImmediatePropagation();
+
+                            phoneInput.focus();
+                        }
+                    },
+                    true
+                );
+            }
+        }
 
         // ============================================
         // MILESTONE FORM VALIDATION
@@ -1511,158 +1727,473 @@ document.addEventListener(
             );
 
         if (form) {
+            let baselineState =
+                null;
+
             let formChanged =
                 false;
 
-            function markChanged() {
+            let baselineReady =
+                false;
+
+            let hasUserInteraction =
+                false;
+
+            let isSubmitting =
+                false;
+
+            function setDirtyState(
+                value
+            ) {
                 formChanged =
-                    true;
+                    Boolean(value);
 
                 window.formChanged =
-                    true;
+                    formChanged;
             }
 
-            form
-                .querySelectorAll(
-                    'input, select, textarea'
-                )
-                .forEach(
-                    function(input) {
-                        input.addEventListener(
-                            'change',
-                            markChanged
-                        );
+            function captureFormState() {
+                const fields =
+                    [];
 
-                        input.addEventListener(
-                            'input',
-                            markChanged
-                        );
-                    }
-                );
+                form
+                    .querySelectorAll(
+                        'input, select, textarea'
+                    )
+                    .forEach(
+                        function(
+                            field,
+                            index
+                        ) {
+                            /*
+                             * These are temporary fields
+                             * generated only while the form
+                             * is being submitted.
+                             */
+                            if (
+                                field.dataset
+                                    .generatedOtherInterest
+                                === '1'
+                            ) {
+                                return;
+                            }
 
-            const observer =
-                new MutationObserver(
-                    function(mutations) {
-                        mutations.forEach(
-                            function(mutation) {
-                                mutation.addedNodes
-                                    .forEach(
-                                        function(node) {
-                                            if (
-                                                node.nodeType
-                                                !== 1
-                                                || ! node
-                                                    .querySelectorAll
-                                            ) {
-                                                return;
-                                            }
+                            const type =
+                                (
+                                    field.type
+                                    || ''
+                                ).toLowerCase();
 
-                                            node
-                                                .querySelectorAll(
-                                                    'input, select, textarea'
-                                                )
-                                                .forEach(
-                                                    function(input) {
-                                                        input.addEventListener(
-                                                            'change',
-                                                            markChanged
-                                                        );
+                            if (
+                                [
+                                    'submit',
+                                    'button',
+                                    'reset',
+                                ].includes(
+                                    type
+                                )
+                            ) {
+                                return;
+                            }
 
-                                                        input.addEventListener(
-                                                            'input',
-                                                            markChanged
-                                                        );
-                                                    }
-                                                );
+                            const key =
+                                field.name
+                                || field.id
+                                || `field-${index}`;
+
+                            const state = {
+                                key:
+                                    key,
+
+                                tag:
+                                    field.tagName,
+
+                                type:
+                                    type,
+
+                                disabled:
+                                    Boolean(
+                                        field.disabled
+                                    ),
+                            };
+
+                            if (
+                                type === 'checkbox'
+                                || type === 'radio'
+                            ) {
+                                state.checked =
+                                    Boolean(
+                                        field.checked
+                                    );
+
+                                state.value =
+                                    field.value;
+
+                                fields.push(
+                                    state
+                                );
+
+                                return;
+                            }
+
+                            if (
+                                type === 'file'
+                            ) {
+                                state.files =
+                                    Array.from(
+                                        field.files
+                                        || []
+                                    ).map(
+                                        function(file) {
+                                            return {
+                                                name:
+                                                    file.name,
+
+                                                size:
+                                                    file.size,
+
+                                                type:
+                                                    file.type,
+
+                                                lastModified:
+                                                    file.lastModified,
+                                            };
                                         }
                                     );
-                            }
-                        );
-                    }
-                );
 
-            observer.observe(
-                form,
-                {
-                    childList: true,
-                    subtree: true
+                                fields.push(
+                                    state
+                                );
+
+                                return;
+                            }
+
+                            if (
+                                field.tagName
+                                    === 'SELECT'
+                                && field.multiple
+                            ) {
+                                state.value =
+                                    Array.from(
+                                        field
+                                            .selectedOptions
+                                    ).map(
+                                        option =>
+                                            option.value
+                                    );
+
+                                fields.push(
+                                    state
+                                );
+
+                                return;
+                            }
+
+                            state.value =
+                                field.value;
+
+                            fields.push(
+                                state
+                            );
+                        }
+                    );
+
+                return JSON.stringify(
+                    fields
+                );
+            }
+
+            function recomputeDirtyState() {
+                if (
+                    ! baselineReady
+                    || isSubmitting
+                ) {
+                    return;
                 }
+
+                setDirtyState(
+                    captureFormState()
+                    !== baselineState
+                );
+            }
+
+            function refreshBaseline() {
+                /*
+                 * Do not silently replace the baseline
+                 * after the student has actually started
+                 * editing the form.
+                 */
+                if (
+                    hasUserInteraction
+                    || isSubmitting
+                ) {
+                    return;
+                }
+
+                baselineState =
+                    captureFormState();
+
+                baselineReady =
+                    true;
+
+                setDirtyState(
+                    false
+                );
+            }
+
+            function handleUserChange(
+                event
+            ) {
+                /*
+                 * Ignore programmatic events produced
+                 * while components such as the phone
+                 * selector initialise themselves.
+                 */
+                if (
+                    event
+                    && event.isTrusted
+                        === false
+                ) {
+                    return;
+                }
+
+                hasUserInteraction =
+                    true;
+
+                recomputeDirtyState();
+            }
+
+            /*
+             * Event delegation means inputs added later,
+             * such as projects and certifications, are
+             * automatically covered without needing a
+             * MutationObserver.
+             */
+            form.addEventListener(
+                'input',
+                handleUserChange
+            );
+
+            form.addEventListener(
+                'change',
+                handleUserChange
             );
 
             /*
-             * Reset the warning only when the browser is
-             * actually submitting the form.
+             * Existing dynamic controls already call
+             * setFormChanged(true) after adding/removing
+             * projects, certifications, skills, files,
+             * interests and phone countries.
              *
-             * Do not reset it merely because Save Profile
-             * was clicked; the user may still cancel the
-             * confirmation modal.
+             * Instead of permanently forcing the form
+             * dirty, recalculate its actual state.
+             */
+            window.setFormChanged =
+                function(value) {
+                    if (! value) {
+                        setDirtyState(
+                            false
+                        );
+
+                        return;
+                    }
+
+                    hasUserInteraction =
+                        true;
+
+                    recomputeDirtyState();
+                };
+
+            /*
+             * The phone widget may finish formatting the
+             * existing saved number after DOMContentLoaded.
+             * It can call this once its initialisation is
+             * complete so that formatting alone does not
+             * count as an edit.
+             */
+            window.refreshProfileFormBaseline =
+                refreshBaseline;
+
+            /*
+             * Wait until all normal DOMContentLoaded
+             * initialisers have completed before taking
+             * the first snapshot.
+             */
+            setTimeout(
+                refreshBaseline,
+                0
+            );
+
+            /*
+             * This listener is reached only when the form
+             * is genuinely proceeding with submission.
+             * The existing confirmation handler blocks
+             * the earlier unapproved submission attempt.
              */
             form.addEventListener(
                 'submit',
                 function() {
-                    formChanged =
-                        false;
+                    isSubmitting =
+                        true;
 
-                    window.formChanged =
-                        false;
+                    setDirtyState(
+                        false
+                    );
                 }
             );
 
+            /*
+             * Browser refresh, tab close and browser Back
+             * cannot use our custom modal. Browsers show
+             * their own standard warning here.
+             */
             window.addEventListener(
                 'beforeunload',
                 function(event) {
-                    if (! formChanged) {
+                    if (
+                        ! formChanged
+                        || isSubmitting
+                    ) {
                         return;
                     }
 
                     event.preventDefault();
+
                     event.returnValue =
                         '';
                 }
             );
 
-            document
-                .querySelectorAll(
-                    '.back, a[href*="profile"], a[href*="dashboard"], .nav-link, .nav-brand'
-                )
-                .forEach(
-                    function(link) {
-                        link.addEventListener(
-                            'click',
-                            function(event) {
-                                if (
-                                    ! formChanged
-                                ) {
-                                    return;
-                                }
-
-                                const confirmLeave =
-                                    window.confirm(
-                                        '⚠️ You have unsaved changes. Are you sure you want to leave?'
-                                    );
-
-                                if (
-                                    ! confirmLeave
-                                ) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                }
-                            }
-                        );
+            /*
+             * Links inside the application use the same
+             * CareerPath confirmation modal instead of a
+             * basic window.confirm().
+             */
+            document.addEventListener(
+                'click',
+                function(event) {
+                    if (
+                        ! formChanged
+                        || isSubmitting
+                    ) {
+                        return;
                     }
-                );
 
-            window.formChanged =
+                    if (
+                        event.button !== 0
+                        || event.ctrlKey
+                        || event.metaKey
+                        || event.shiftKey
+                        || event.altKey
+                    ) {
+                        return;
+                    }
+
+                    const link =
+                        event.target.closest(
+                            'a[href]'
+                        );
+
+                    if (! link) {
+                        return;
+                    }
+
+                    if (
+                        link.target === '_blank'
+                        || link.hasAttribute(
+                            'download'
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const href =
+                        link.getAttribute(
+                            'href'
+                        );
+
+                    if (
+                        ! href
+                        || href.startsWith(
+                            '#'
+                        )
+                        || href.startsWith(
+                            'javascript:'
+                        )
+                        || href.startsWith(
+                            'mailto:'
+                        )
+                        || href.startsWith(
+                            'tel:'
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const destination =
+                        new URL(
+                            link.href,
+                            window.location.href
+                        );
+
+                    const current =
+                        new URL(
+                            window.location.href
+                        );
+
+                    /*
+                     * Moving to another anchor on the same
+                     * page does not discard the form.
+                     */
+                    if (
+                        destination.origin
+                            === current.origin
+                        && destination.pathname
+                            === current.pathname
+                        && destination.search
+                            === current.search
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+
+                    showConfirmModal({
+                        title:
+                            'Unsaved Changes',
+
+                        message:
+                            'You have unsaved profile changes. If you leave this page, those changes will be lost.',
+
+                        confirmText:
+                            'Leave Page',
+
+                        cancelText:
+                            'Stay Here',
+
+                        type:
+                            'warning',
+
+                        onConfirm:
+                            function() {
+                                isSubmitting =
+                                    true;
+
+                                setDirtyState(
+                                    false
+                                );
+
+                                window.location.href =
+                                    link.href;
+                            }
+                    });
+                },
+                true
+            );
+
+                        window.formChanged =
                 false;
-
-            window.setFormChanged =
-                function(value) {
-                    formChanged =
-                        Boolean(value);
-
-                    window.formChanged =
-                        formChanged;
-                };
         }
     }
 );

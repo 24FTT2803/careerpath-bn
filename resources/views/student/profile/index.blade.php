@@ -785,10 +785,17 @@
 
                                 <div style="text-align:right;">
                                     @if($cert->issue_date)
-                                        <div class="cert-date">Issued: {{ $cert->issue_date->format('d M Y') }}</div>
+                                        <div class="cert-date">
+                                            Issued:
+                                            {{ $cert->issue_date->format('d M Y') }}
+                                        </div>
                                     @endif
+
                                     @if($cert->certificate_file_path)
-                                        <span class="cert-badge"><i class="fas fa-check-circle"></i> Verified</span>
+                                        <span class="cert-badge">
+                                            <i class="fas fa-paperclip"></i>
+                                            Evidence uploaded
+                                        </span>
                                     @endif
                                 </div>
                             </div>

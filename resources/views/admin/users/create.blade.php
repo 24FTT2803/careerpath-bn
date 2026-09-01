@@ -99,9 +99,6 @@
                         <option value="Diploma in Business Information Systems" {{ old('programme') == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
                             DBIS - Business Information Systems
                         </option>
-                        <option value="Others" {{ old('programme') == 'Others' ? 'selected' : '' }}>
-                            Others
-                        </option>
                     </select>
                 </div>
             </div>
