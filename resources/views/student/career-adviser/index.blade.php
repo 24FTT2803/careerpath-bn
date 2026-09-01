@@ -16,6 +16,7 @@
         --adviser-muted: #6b7280;
         --adviser-border: #e5e7eb;
         --adviser-success: #2d8f5c;
+        --adviser-warning: #c58a24;
         --adviser-shadow: 0 4px 24px rgba(26, 58, 92, 0.08);
         --adviser-shadow-hover: 0 8px 36px rgba(26, 58, 92, 0.13);
 
@@ -98,7 +99,27 @@
         margin-top: 2px;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Main Workspace
+    |--------------------------------------------------------------------------
+    */
+
+    .adviser-workspace {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 18px;
+        align-items: stretch;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Conversation
+    |--------------------------------------------------------------------------
+    */
+
     .adviser-shell {
+        min-width: 0;
         background: var(--adviser-card);
         border: 1px solid var(--adviser-border);
         border-radius: 14px;
@@ -221,6 +242,12 @@
         margin-bottom: 0;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Suggested Questions
+    |--------------------------------------------------------------------------
+    */
+
     .suggested-section {
         margin-top: 30px;
         padding-left: 43px;
@@ -268,6 +295,12 @@
         color: var(--adviser-accent);
         font-size: 11px;
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Composer
+    |--------------------------------------------------------------------------
+    */
 
     .composer {
         padding: 16px 20px 18px;
@@ -339,6 +372,242 @@
         font-size: 10.5px;
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | Career Context
+    |--------------------------------------------------------------------------
+    */
+
+    .career-context {
+        min-width: 0;
+        padding: 20px;
+        background: var(--adviser-card);
+        border: 1px solid var(--adviser-border);
+        border-radius: 14px;
+        box-shadow: var(--adviser-shadow);
+    }
+
+    .context-heading {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding-bottom: 15px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid var(--adviser-border);
+    }
+
+    .context-heading-icon {
+        width: 31px;
+        height: 31px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border-radius: 8px;
+        background: rgba(26, 58, 92, 0.07);
+        color: var(--adviser-primary);
+        font-size: 12px;
+    }
+
+    .context-heading h2 {
+        margin: 0;
+        color: var(--adviser-primary);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+    }
+
+    .context-heading p {
+        margin: 2px 0 0;
+        color: var(--adviser-muted);
+        font-size: 10px;
+    }
+
+    .context-item {
+        padding: 17px 0;
+        border-bottom: 1px solid var(--adviser-border);
+    }
+
+    .context-item:last-of-type {
+        border-bottom: none;
+    }
+
+    .context-label {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        margin-bottom: 8px;
+        color: var(--adviser-muted);
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .context-label i {
+        width: 13px;
+        color: var(--adviser-accent);
+        text-align: center;
+    }
+
+    .context-value {
+        margin: 0;
+        color: var(--adviser-primary);
+        font-size: 20px;
+        font-weight: 750;
+        line-height: 1.25;
+    }
+
+    .context-value.career-name {
+        font-size: 16px;
+        line-height: 1.35;
+    }
+
+    .context-description {
+        margin: 5px 0 0;
+        color: var(--adviser-muted);
+        font-size: 11px;
+        line-height: 1.55;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Profile Completion
+    |--------------------------------------------------------------------------
+    */
+
+    .profile-progress-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+    }
+
+    .profile-progress-row .context-value {
+        font-size: 19px;
+    }
+
+    .profile-progress-track {
+        width: 100%;
+        height: 6px;
+        overflow: hidden;
+        border-radius: 100px;
+        background: #edf0f3;
+    }
+
+    .profile-progress-fill {
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(
+            90deg,
+            var(--adviser-primary),
+            var(--adviser-primary-light)
+        );
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Context Status
+    |--------------------------------------------------------------------------
+    */
+
+    .context-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 7px;
+        padding: 5px 8px;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 700;
+    }
+
+    .context-status.success {
+        background: rgba(45, 143, 92, 0.1);
+        color: var(--adviser-success);
+    }
+
+    .context-status.warning {
+        background: rgba(197, 138, 36, 0.1);
+        color: var(--adviser-warning);
+    }
+
+    .context-status.neutral {
+        background: #f1f3f5;
+        color: var(--adviser-muted);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | BIICF Link
+    |--------------------------------------------------------------------------
+    */
+
+    .context-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 10px;
+        color: var(--adviser-primary-light);
+        font-size: 11px;
+        font-weight: 700;
+        text-decoration: none;
+    }
+
+    .context-action:hover {
+        color: var(--adviser-primary);
+        text-decoration: underline;
+    }
+
+    .context-action i {
+        font-size: 9px;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Responsive
+    |--------------------------------------------------------------------------
+    */
+
+    @media (max-width: 1000px) {
+        .adviser-workspace {
+            grid-template-columns: minmax(0, 1fr) 270px;
+        }
+
+        .career-context {
+            padding: 17px;
+        }
+    }
+
+    @media (max-width: 850px) {
+        .adviser-workspace {
+            grid-template-columns: 1fr;
+        }
+
+        .career-context {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0 22px;
+        }
+
+        .context-heading {
+            grid-column: 1 / -1;
+        }
+
+        .context-item:nth-of-type(2),
+        .context-item:nth-of-type(4) {
+            border-right: 1px solid var(--adviser-border);
+            padding-right: 22px;
+        }
+
+        .context-item:nth-of-type(3),
+        .context-item:nth-of-type(5) {
+            padding-left: 0;
+        }
+    }
+
     @media (max-width: 768px) {
         .career-adviser-page {
             padding-top: 20px;
@@ -373,6 +642,18 @@
 
         .composer {
             padding: 14px;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .career-context {
+            display: block;
+        }
+
+        .context-item {
+            border-right: none !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
         }
     }
 
@@ -434,146 +715,365 @@
         </div>
     </div>
 
-    <section class="adviser-shell">
+    <div class="adviser-workspace">
 
-        <div class="conversation-header">
+        {{-- ============================================================
+             CONVERSATION
+             ============================================================ --}}
+        <section class="adviser-shell">
 
-            <div class="adviser-identity">
-                <div class="adviser-avatar">
-                    <i class="fas fa-compass"></i>
+            <div class="conversation-header">
+
+                <div class="adviser-identity">
+                    <div class="adviser-avatar">
+                        <i class="fas fa-compass"></i>
+                    </div>
+
+                    <div>
+                        <h2>Career Adviser</h2>
+                        <p>CareerPath BN guidance assistant</p>
+                    </div>
+                </div>
+
+                <div class="preview-status">
+                    <span class="preview-status-dot"></span>
+                    Interface preview
+                </div>
+
+            </div>
+
+            <div class="conversation-body">
+
+                <div class="adviser-message">
+
+                    <div class="message-avatar">
+                        <i class="fas fa-compass"></i>
+                    </div>
+
+                    <div class="message-bubble">
+
+                        <p class="message-name">
+                            Career Adviser
+                        </p>
+
+                        <p>
+                            Hi {{ $student->first_name ?? $student->name }}.
+                            This space will help you understand your career
+                            recommendations and turn them into practical next steps.
+                        </p>
+
+                        <p>
+                            You will be able to ask about your career matches,
+                            skills to improve, BIICF roles and career development.
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="suggested-section">
+
+                    <p class="suggested-label">
+                        Suggested questions
+                    </p>
+
+                    <div class="suggested-prompts">
+
+                        <button
+                            type="button"
+                            class="suggested-prompt"
+                            data-prompt="Explain my top career match"
+                        >
+                            <i class="fas fa-star"></i>
+                            Explain my top career match
+                        </button>
+
+                        <button
+                            type="button"
+                            class="suggested-prompt"
+                            data-prompt="What skills should I improve?"
+                        >
+                            <i class="fas fa-arrow-trend-up"></i>
+                            What skills should I improve?
+                        </button>
+
+                        <button
+                            type="button"
+                            class="suggested-prompt"
+                            data-prompt="Compare my career options"
+                        >
+                            <i class="fas fa-code-compare"></i>
+                            Compare my career options
+                        </button>
+
+                        <button
+                            type="button"
+                            class="suggested-prompt"
+                            data-prompt="What should I do next?"
+                        >
+                            <i class="fas fa-route"></i>
+                            What should I do next?
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="composer">
+
+                <label
+                    for="careerAdviserPrompt"
+                    class="composer-label"
+                >
+                    Ask your Career Adviser
+                </label>
+
+                <div class="composer-row">
+
+                    <textarea
+                        id="careerAdviserPrompt"
+                        class="composer-input"
+                        rows="1"
+                        maxlength="500"
+                        placeholder="Ask about your career options, competencies or next steps..."
+                    ></textarea>
+
+                    <button
+                        type="button"
+                        class="composer-send"
+                        disabled
+                        title="AI integration is not connected yet"
+                    >
+                        <i class="fas fa-paper-plane"></i>
+                        <span>Send</span>
+                    </button>
+
+                </div>
+
+                <p class="composer-note">
+                    Preview only — message processing will be enabled during
+                    Career Adviser integration.
+                </p>
+
+            </div>
+
+        </section>
+
+        {{-- ============================================================
+             CAREER CONTEXT
+             ============================================================ --}}
+        <aside class="career-context">
+
+            <div class="context-heading">
+
+                <div class="context-heading-icon">
+                    <i class="fas fa-user-graduate"></i>
                 </div>
 
                 <div>
-                    <h2>Career Adviser</h2>
-                    <p>CareerPath BN guidance assistant</p>
-                </div>
-            </div>
-
-            <div class="preview-status">
-                <span class="preview-status-dot"></span>
-                Interface preview
-            </div>
-
-        </div>
-
-        <div class="conversation-body">
-
-            <div class="adviser-message">
-
-                <div class="message-avatar">
-                    <i class="fas fa-compass"></i>
+                    <h2>Your Career Context</h2>
+                    <p>Based on your current CareerPath data</p>
                 </div>
 
-                <div class="message-bubble">
+            </div>
 
-                    <p class="message-name">
-                        Career Adviser
+            {{-- Profile Completion --}}
+            <div class="context-item">
+
+                <div class="context-label">
+                    <i class="fas fa-user-check"></i>
+                    Profile Completion
+                </div>
+
+                <div class="profile-progress-row">
+                    <p class="context-value">
+                        {{ $profileCompletion }}%
                     </p>
-
-                    <p>
-                        Hi {{ $student->first_name ?? $student->name }}.
-                        This space will help you understand your career
-                        recommendations and turn them into practical next steps.
-                    </p>
-
-                    <p>
-                        You will be able to ask about your career matches,
-                        skills to improve, BIICF roles and career development.
-                    </p>
-
                 </div>
 
-            </div>
-
-            <div class="suggested-section">
-
-                <p class="suggested-label">
-                    Suggested questions
-                </p>
-
-                <div class="suggested-prompts">
-
-                    <button
-                        type="button"
-                        class="suggested-prompt"
-                        data-prompt="Explain my top career match"
-                    >
-                        <i class="fas fa-star"></i>
-                        Explain my top career match
-                    </button>
-
-                    <button
-                        type="button"
-                        class="suggested-prompt"
-                        data-prompt="What skills should I improve?"
-                    >
-                        <i class="fas fa-arrow-trend-up"></i>
-                        What skills should I improve?
-                    </button>
-
-                    <button
-                        type="button"
-                        class="suggested-prompt"
-                        data-prompt="Compare my career options"
-                    >
-                        <i class="fas fa-code-compare"></i>
-                        Compare my career options
-                    </button>
-
-                    <button
-                        type="button"
-                        class="suggested-prompt"
-                        data-prompt="What should I do next?"
-                    >
-                        <i class="fas fa-route"></i>
-                        What should I do next?
-                    </button>
-
-                </div>
-
-            </div>
-
-        </div>
-
-        <div class="composer">
-
-            <label
-                for="careerAdviserPrompt"
-                class="composer-label"
-            >
-                Ask your Career Adviser
-            </label>
-
-            <div class="composer-row">
-
-                <textarea
-                    id="careerAdviserPrompt"
-                    class="composer-input"
-                    rows="1"
-                    maxlength="500"
-                    placeholder="Ask about your career options, competencies or next steps..."
-                ></textarea>
-
-                <button
-                    type="button"
-                    class="composer-send"
-                    disabled
-                    title="AI integration is not connected yet"
+                <div
+                    class="profile-progress-track"
+                    role="progressbar"
+                    aria-label="Profile completion"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    aria-valuenow="{{ $profileCompletion }}"
                 >
-                    <i class="fas fa-paper-plane"></i>
-                    <span>Send</span>
-                </button>
+                    <div
+                        class="profile-progress-fill"
+                        style="width: {{ min(max($profileCompletion, 0), 100) }}%;"
+                    ></div>
+                </div>
+
+                @if($profileCompletion >= 70)
+                    <span class="context-status success">
+                        <i class="fas fa-circle-check"></i>
+                        Recommendation ready
+                    </span>
+                @else
+                    <span class="context-status warning">
+                        <i class="fas fa-circle-exclamation"></i>
+                        More profile details needed
+                    </span>
+                @endif
 
             </div>
 
-            <p class="composer-note">
-                Preview only — message processing will be enabled during
-                Career Adviser integration.
-            </p>
+            {{-- Top Career Recommendation --}}
+            <div class="context-item">
 
-        </div>
+                <div class="context-label">
+                    <i class="fas fa-star"></i>
+                    Top Career Match
+                </div>
 
-    </section>
+                @if($topRecommendation && $topRecommendation->career)
+
+                    <p class="context-value career-name">
+                        {{ $topRecommendation->career->job_title }}
+                    </p>
+
+                    <p class="context-description">
+                        {{ round($topRecommendation->match_score ?? 0) }}%
+                        match based on your latest recommendation.
+                    </p>
+
+                    <span class="context-status success">
+                        <i class="fas fa-ranking-star"></i>
+                        Rank #{{ $topRecommendation->rank ?? 1 }}
+                    </span>
+
+                @else
+
+                    <p class="context-value career-name">
+                        Not available yet
+                    </p>
+
+                    <p class="context-description">
+                        Career recommendations will appear here once they
+                        are available for your profile.
+                    </p>
+
+                    <span class="context-status neutral">
+                        <i class="fas fa-clock"></i>
+                        No recommendation
+                    </span>
+
+                @endif
+
+            </div>
+
+            {{-- Skill Gaps --}}
+            <div class="context-item">
+
+                <div class="context-label">
+                    <i class="fas fa-arrow-trend-up"></i>
+                    Priority Skill Gaps
+                </div>
+
+                @if($topRecommendation)
+
+                    <p class="context-value">
+                        {{ $skillGapCount }}
+                    </p>
+
+                    @if($skillGapCount > 0)
+                        <p class="context-description">
+                            {{ Str::plural('gap', $skillGapCount) }}
+                            identified in your top career recommendation.
+                        </p>
+
+                        <span class="context-status warning">
+                            <i class="fas fa-screwdriver-wrench"></i>
+                            Development areas
+                        </span>
+                    @else
+                        <p class="context-description">
+                            No skill gaps are currently listed for your
+                            top recommendation.
+                        </p>
+
+                        <span class="context-status success">
+                            <i class="fas fa-circle-check"></i>
+                            No gaps listed
+                        </span>
+                    @endif
+
+                @else
+
+                    <p class="context-value">
+                        —
+                    </p>
+
+                    <p class="context-description">
+                        Skill-gap information will be available with your
+                        career recommendations.
+                    </p>
+
+                @endif
+
+            </div>
+
+            {{-- BIICF Explorer --}}
+            <div class="context-item">
+
+                <div class="context-label">
+                    <i class="fas fa-compass"></i>
+                    BIICF Explorer
+                </div>
+
+                @if($biicfAvailable)
+
+                    <p class="context-value">
+                        {{ $biicfRoleCount }}
+                    </p>
+
+                    <p class="context-description">
+                        Job {{ Str::plural('role', $biicfRoleCount) }}
+                        across
+                        {{ $biicfSubSectorCount }}
+                        {{ Str::plural('sub-sector', $biicfSubSectorCount) }}.
+                    </p>
+
+                    <span class="context-status success">
+                        <i class="fas fa-database"></i>
+                        BIICF available
+                    </span>
+
+                @else
+
+                    <p class="context-value">
+                        —
+                    </p>
+
+                    <p class="context-description">
+                        BIICF Explorer data is currently unavailable.
+                    </p>
+
+                    <span class="context-status neutral">
+                        <i class="fas fa-database"></i>
+                        No BIICF data
+                    </span>
+
+                @endif
+
+                <br>
+
+                <a
+                    href="{{ route('student.biicf-explorer.index') }}"
+                    class="context-action"
+                >
+                    Browse BIICF Explorer
+                    <i class="fas fa-arrow-right"></i>
+                </a>
+
+            </div>
+
+        </aside>
+
+    </div>
 
 </div>
 
