@@ -591,9 +591,15 @@
             <a href="{{ route('student.profile') }}" class="btn btn-primary">
                 <i class="fas fa-user-edit"></i> Update Profile
             </a>
+
+            <a href="{{ route('student.career-adviser') }}" class="btn btn-outline">
+                <i class="fas fa-comments"></i> Career Adviser
+            </a>
+
             <a href="{{ route('student.milestones') }}" class="btn btn-outline">
                 <i class="fas fa-flag-checkered"></i> Track Milestones
             </a>
+
             <a href="{{ route('student.biicf-explorer.index') }}" class="btn btn-outline">
                 <i class="fas fa-compass"></i> BIICF Explorer
             </a>
