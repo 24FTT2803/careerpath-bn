@@ -1115,6 +1115,20 @@ document.addEventListener(
 
                     phoneInitialising =
                         false;
+
+                        setTimeout(
+                        function() {
+                            if (
+                                typeof window
+                                    .refreshProfileFormBaseline
+                                === 'function'
+                            ) {
+                                window
+                                    .refreshProfileFormBaseline();
+                            }
+                        },
+                        0
+                    );
                 }
             );
 
@@ -1713,170 +1727,473 @@ document.addEventListener(
             );
 
         if (form) {
+            let baselineState =
+                null;
+
             let formChanged =
                 false;
 
-            function markChanged(event) {
-                /*
-                * Ignore changes fired programmatically by
-                * components such as intl-tel-input while
-                * the form is initialising.
-                */
+            let baselineReady =
+                false;
+
+            let hasUserInteraction =
+                false;
+
+            let isSubmitting =
+                false;
+
+            function setDirtyState(
+                value
+            ) {
+                formChanged =
+                    Boolean(value);
+
+                window.formChanged =
+                    formChanged;
+            }
+
+            function captureFormState() {
+                const fields =
+                    [];
+
+                form
+                    .querySelectorAll(
+                        'input, select, textarea'
+                    )
+                    .forEach(
+                        function(
+                            field,
+                            index
+                        ) {
+                            /*
+                             * These are temporary fields
+                             * generated only while the form
+                             * is being submitted.
+                             */
+                            if (
+                                field.dataset
+                                    .generatedOtherInterest
+                                === '1'
+                            ) {
+                                return;
+                            }
+
+                            const type =
+                                (
+                                    field.type
+                                    || ''
+                                ).toLowerCase();
+
+                            if (
+                                [
+                                    'submit',
+                                    'button',
+                                    'reset',
+                                ].includes(
+                                    type
+                                )
+                            ) {
+                                return;
+                            }
+
+                            const key =
+                                field.name
+                                || field.id
+                                || `field-${index}`;
+
+                            const state = {
+                                key:
+                                    key,
+
+                                tag:
+                                    field.tagName,
+
+                                type:
+                                    type,
+
+                                disabled:
+                                    Boolean(
+                                        field.disabled
+                                    ),
+                            };
+
+                            if (
+                                type === 'checkbox'
+                                || type === 'radio'
+                            ) {
+                                state.checked =
+                                    Boolean(
+                                        field.checked
+                                    );
+
+                                state.value =
+                                    field.value;
+
+                                fields.push(
+                                    state
+                                );
+
+                                return;
+                            }
+
+                            if (
+                                type === 'file'
+                            ) {
+                                state.files =
+                                    Array.from(
+                                        field.files
+                                        || []
+                                    ).map(
+                                        function(file) {
+                                            return {
+                                                name:
+                                                    file.name,
+
+                                                size:
+                                                    file.size,
+
+                                                type:
+                                                    file.type,
+
+                                                lastModified:
+                                                    file.lastModified,
+                                            };
+                                        }
+                                    );
+
+                                fields.push(
+                                    state
+                                );
+
+                                return;
+                            }
+
+                            if (
+                                field.tagName
+                                    === 'SELECT'
+                                && field.multiple
+                            ) {
+                                state.value =
+                                    Array.from(
+                                        field
+                                            .selectedOptions
+                                    ).map(
+                                        option =>
+                                            option.value
+                                    );
+
+                                fields.push(
+                                    state
+                                );
+
+                                return;
+                            }
+
+                            state.value =
+                                field.value;
+
+                            fields.push(
+                                state
+                            );
+                        }
+                    );
+
+                return JSON.stringify(
+                    fields
+                );
+            }
+
+            function recomputeDirtyState() {
                 if (
-                    event
-                    && event.isTrusted === false
+                    ! baselineReady
+                    || isSubmitting
                 ) {
                     return;
                 }
 
-                formChanged =
-                    true;
-
-                window.formChanged =
-                    true;
+                setDirtyState(
+                    captureFormState()
+                    !== baselineState
+                );
             }
 
-            form
-                .querySelectorAll(
-                    'input, select, textarea'
-                )
-                .forEach(
-                    function(input) {
-                        input.addEventListener(
-                            'change',
-                            markChanged
-                        );
-
-                        input.addEventListener(
-                            'input',
-                            markChanged
-                        );
-                    }
-                );
-
-            const observer =
-                new MutationObserver(
-                    function(mutations) {
-                        mutations.forEach(
-                            function(mutation) {
-                                mutation.addedNodes
-                                    .forEach(
-                                        function(node) {
-                                            if (
-                                                node.nodeType
-                                                !== 1
-                                                || ! node
-                                                    .querySelectorAll
-                                            ) {
-                                                return;
-                                            }
-
-                                            node
-                                                .querySelectorAll(
-                                                    'input, select, textarea'
-                                                )
-                                                .forEach(
-                                                    function(input) {
-                                                        input.addEventListener(
-                                                            'change',
-                                                            markChanged
-                                                        );
-
-                                                        input.addEventListener(
-                                                            'input',
-                                                            markChanged
-                                                        );
-                                                    }
-                                                );
-                                        }
-                                    );
-                            }
-                        );
-                    }
-                );
-
-            observer.observe(
-                form,
-                {
-                    childList: true,
-                    subtree: true
+            function refreshBaseline() {
+                /*
+                 * Do not silently replace the baseline
+                 * after the student has actually started
+                 * editing the form.
+                 */
+                if (
+                    hasUserInteraction
+                    || isSubmitting
+                ) {
+                    return;
                 }
+
+                baselineState =
+                    captureFormState();
+
+                baselineReady =
+                    true;
+
+                setDirtyState(
+                    false
+                );
+            }
+
+            function handleUserChange(
+                event
+            ) {
+                /*
+                 * Ignore programmatic events produced
+                 * while components such as the phone
+                 * selector initialise themselves.
+                 */
+                if (
+                    event
+                    && event.isTrusted
+                        === false
+                ) {
+                    return;
+                }
+
+                hasUserInteraction =
+                    true;
+
+                recomputeDirtyState();
+            }
+
+            /*
+             * Event delegation means inputs added later,
+             * such as projects and certifications, are
+             * automatically covered without needing a
+             * MutationObserver.
+             */
+            form.addEventListener(
+                'input',
+                handleUserChange
+            );
+
+            form.addEventListener(
+                'change',
+                handleUserChange
             );
 
             /*
-             * Reset the warning only when the browser is
-             * actually submitting the form.
+             * Existing dynamic controls already call
+             * setFormChanged(true) after adding/removing
+             * projects, certifications, skills, files,
+             * interests and phone countries.
              *
-             * Do not reset it merely because Save Profile
-             * was clicked; the user may still cancel the
-             * confirmation modal.
+             * Instead of permanently forcing the form
+             * dirty, recalculate its actual state.
+             */
+            window.setFormChanged =
+                function(value) {
+                    if (! value) {
+                        setDirtyState(
+                            false
+                        );
+
+                        return;
+                    }
+
+                    hasUserInteraction =
+                        true;
+
+                    recomputeDirtyState();
+                };
+
+            /*
+             * The phone widget may finish formatting the
+             * existing saved number after DOMContentLoaded.
+             * It can call this once its initialisation is
+             * complete so that formatting alone does not
+             * count as an edit.
+             */
+            window.refreshProfileFormBaseline =
+                refreshBaseline;
+
+            /*
+             * Wait until all normal DOMContentLoaded
+             * initialisers have completed before taking
+             * the first snapshot.
+             */
+            setTimeout(
+                refreshBaseline,
+                0
+            );
+
+            /*
+             * This listener is reached only when the form
+             * is genuinely proceeding with submission.
+             * The existing confirmation handler blocks
+             * the earlier unapproved submission attempt.
              */
             form.addEventListener(
                 'submit',
                 function() {
-                    formChanged =
-                        false;
+                    isSubmitting =
+                        true;
 
-                    window.formChanged =
-                        false;
+                    setDirtyState(
+                        false
+                    );
                 }
             );
 
+            /*
+             * Browser refresh, tab close and browser Back
+             * cannot use our custom modal. Browsers show
+             * their own standard warning here.
+             */
             window.addEventListener(
                 'beforeunload',
                 function(event) {
-                    if (! formChanged) {
+                    if (
+                        ! formChanged
+                        || isSubmitting
+                    ) {
                         return;
                     }
 
                     event.preventDefault();
+
                     event.returnValue =
                         '';
                 }
             );
 
-            document
-                .querySelectorAll(
-                    '.back, a[href*="profile"], a[href*="dashboard"], .nav-link, .nav-brand'
-                )
-                .forEach(
-                    function(link) {
-                        link.addEventListener(
-                            'click',
-                            function(event) {
-                                if (
-                                    ! formChanged
-                                ) {
-                                    return;
-                                }
-
-                                const confirmLeave =
-                                    window.confirm(
-                                        '⚠️ You have unsaved changes. Are you sure you want to leave?'
-                                    );
-
-                                if (
-                                    ! confirmLeave
-                                ) {
-                                    event.preventDefault();
-                                    event.stopPropagation();
-                                }
-                            }
-                        );
+            /*
+             * Links inside the application use the same
+             * CareerPath confirmation modal instead of a
+             * basic window.confirm().
+             */
+            document.addEventListener(
+                'click',
+                function(event) {
+                    if (
+                        ! formChanged
+                        || isSubmitting
+                    ) {
+                        return;
                     }
-                );
 
-            window.formChanged =
+                    if (
+                        event.button !== 0
+                        || event.ctrlKey
+                        || event.metaKey
+                        || event.shiftKey
+                        || event.altKey
+                    ) {
+                        return;
+                    }
+
+                    const link =
+                        event.target.closest(
+                            'a[href]'
+                        );
+
+                    if (! link) {
+                        return;
+                    }
+
+                    if (
+                        link.target === '_blank'
+                        || link.hasAttribute(
+                            'download'
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const href =
+                        link.getAttribute(
+                            'href'
+                        );
+
+                    if (
+                        ! href
+                        || href.startsWith(
+                            '#'
+                        )
+                        || href.startsWith(
+                            'javascript:'
+                        )
+                        || href.startsWith(
+                            'mailto:'
+                        )
+                        || href.startsWith(
+                            'tel:'
+                        )
+                    ) {
+                        return;
+                    }
+
+                    const destination =
+                        new URL(
+                            link.href,
+                            window.location.href
+                        );
+
+                    const current =
+                        new URL(
+                            window.location.href
+                        );
+
+                    /*
+                     * Moving to another anchor on the same
+                     * page does not discard the form.
+                     */
+                    if (
+                        destination.origin
+                            === current.origin
+                        && destination.pathname
+                            === current.pathname
+                        && destination.search
+                            === current.search
+                    ) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+
+                    showConfirmModal({
+                        title:
+                            'Unsaved Changes',
+
+                        message:
+                            'You have unsaved profile changes. If you leave this page, those changes will be lost.',
+
+                        confirmText:
+                            'Leave Page',
+
+                        cancelText:
+                            'Stay Here',
+
+                        type:
+                            'warning',
+
+                        onConfirm:
+                            function() {
+                                isSubmitting =
+                                    true;
+
+                                setDirtyState(
+                                    false
+                                );
+
+                                window.location.href =
+                                    link.href;
+                            }
+                    });
+                },
+                true
+            );
+
+                        window.formChanged =
                 false;
-
-            window.setFormChanged =
-                function(value) {
-                    formChanged =
-                        Boolean(value);
-
-                    window.formChanged =
-                        formChanged;
-                };
         }
     }
 );
