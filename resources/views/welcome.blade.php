@@ -358,10 +358,14 @@
             transition: var(--transition);
         }
 
-        .hero-illustration .icon-item:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateY(-4px);
-        }
+        .hero-illustration .icon-item {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    transition: none;
+    cursor: default;
+}
 
         .hero-illustration .icon-item i {
             font-size: 28px;
@@ -1144,12 +1148,73 @@
     <section class="cta-section">
         <div class="container">
             <h2>Ready to Discover Your Career Path?</h2>
-            <p>Join hundreds of students who are already building their future with CareerPath BN.</p>
+            <p>This website bridges the gap between students and industry by providing personalized career recommendations based on the BIICF framework. So Join Now !</p>
             <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-accent" style="font-size:16px;padding:14px 40px;">
                 <i class="fas fa-arrow-right"></i> Get Started Now
             </a>
         </div>
     </section>
+
+    <!-- ============================================
+   ABOUT SECTION
+   ============================================ -->
+<section class="about-section" id="about" style="padding:80px 0;background:white;">
+    <div class="container">
+        <div class="section-header">
+            <span class="tag"><i class="fas fa-bullseye"></i> About</span>
+            <h2>Our Vision & Mission</h2>
+            <p>Driving the future of career guidance for ICT students in Brunei.</p>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;">
+            <div style="background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:var(--radius);padding:40px;color:white;text-align:center;">
+                <div style="font-size:48px;margin-bottom:16px;color:var(--accent);">
+                    <i class="fas fa-eye"></i>
+                </div>
+                <h3 style="font-size:22px;font-weight:700;margin-bottom:12px;">Our Vision</h3>
+                <p style="color:rgba(255,255,255,0.85);font-size:15px;line-height:1.8;max-width:400px;margin:0 auto;">
+                    To empower every ICT student at Politeknik Brunei with the clarity and confidence 
+                    to pursue their ideal career path.
+                </p>
+            </div>
+            
+            <div style="background:linear-gradient(135deg,var(--accent-dark),var(--accent));border-radius:var(--radius);padding:40px;color:var(--primary-dark);text-align:center;">
+                <div style="font-size:48px;margin-bottom:16px;color:white;">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <h3 style="font-size:22px;font-weight:700;margin-bottom:12px;">Our Mission</h3>
+                <p style="color:rgba(13,31,51,0.85);font-size:15px;line-height:1.8;max-width:400px;margin:0 auto;">
+                    To bridge the gap between academic learning and industry demands by providing 
+                    AI-powered, BIICF-aligned career guidance for students.
+                </p>
+            </div>
+        </div>
+        
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px;">
+            <div style="text-align:center;padding:20px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);">
+                <div style="font-size:28px;color:var(--accent);margin-bottom:8px;">
+                    <i class="fas fa-lightbulb"></i>
+                </div>
+                <h5 style="font-weight:600;color:var(--primary);margin:0;font-size:13px;">Innovation</h5>
+                <p style="color:var(--text-muted);font-size:11px;margin:4px 0 0;">AI-driven career matching</p>
+            </div>
+            <div style="text-align:center;padding:20px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);">
+                <div style="font-size:28px;color:var(--primary);margin-bottom:8px;">
+                    <i class="fas fa-handshake"></i>
+                </div>
+                <h5 style="font-weight:600;color:var(--primary);margin:0;font-size:13px;">Collaboration</h5>
+                <p style="color:var(--text-muted);font-size:11px;margin:4px 0 0;">Industry & academic partnership</p>
+            </div>
+            <div style="text-align:center;padding:20px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);">
+                <div style="font-size:28px;color:var(--success);margin-bottom:8px;">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <h5 style="font-weight:600;color:var(--primary);margin:0;font-size:13px;">Empowerment</h5>
+                <p style="color:var(--text-muted);font-size:11px;margin:4px 0 0;">Student career success</p>
+            </div>
+        </div>
+    </div>
+</section>
 
     <!-- ============================================
     FOOTER
