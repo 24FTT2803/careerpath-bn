@@ -43,8 +43,37 @@
         <div class="lg:col-span-1">
             <div class="bg-white rounded-lg shadow p-6">
                 <div class="text-center mb-4">
-                    <div class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mx-auto">
-                        {{ substr($student->name, 0, 1) }}
+                    <div
+                        class="w-24 h-24 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-3xl font-bold mx-auto overflow-hidden"
+                    >
+                        @if($student->profile?->profile_picture)
+                            <img
+                                src="{{ asset(
+                                    'storage/' .
+                                    ltrim(
+                                        $student->profile->profile_picture,
+                                        '/'
+                                    )
+                                ) }}"
+                                alt="{{ $student->name }} profile picture"
+                                style="
+                                    width: 100%;
+                                    height: 100%;
+                                    object-fit: cover;
+                                    display: block;
+                                "
+                            >
+                        @else
+                            {{
+                                strtoupper(
+                                    substr(
+                                        $student->name,
+                                        0,
+                                        1
+                                    )
+                                )
+                            }}
+                        @endif
                     </div>
                     <h2 class="text-xl font-bold text-gray-800 mt-3">{{ $student->name }}</h2>
                     <p class="text-gray-500 text-sm">{{ $student->programme ?? 'Programme not set' }}</p>

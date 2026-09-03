@@ -73,6 +73,14 @@
         font-weight: 600;
         font-size: 16px;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .settings-sidebar .user-info .avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .settings-sidebar .user-info .name {
@@ -373,7 +381,31 @@
             <!-- Sidebar -->
             <aside class="settings-sidebar">
                 <div class="user-info">
-                    <div class="avatar">{{ substr(Auth::user()->name, 0, 1) }}</div>
+                    <div class="avatar">
+                        @if(Auth::user()->profile?->profile_picture)
+                            <img
+                                src="{{ asset(
+                                    'storage/' .
+                                    ltrim(
+                                        Auth::user()->profile->profile_picture,
+                                        '/'
+                                    )
+                                ) }}"
+                                alt="{{ Auth::user()->name }} profile picture"
+                            >
+                        @else
+                            {{
+                                strtoupper(
+                                    substr(
+                                        Auth::user()->first_name
+                                            ?? Auth::user()->name,
+                                        0,
+                                        1
+                                    )
+                                )
+                            }}
+                        @endif
+                    </div>
                     <div>
                         <div class="name">{{ Auth::user()->name }}</div>
                         <div class="email">{{ Auth::user()->email }}</div>

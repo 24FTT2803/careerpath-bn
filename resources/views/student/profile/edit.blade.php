@@ -638,7 +638,122 @@
         margin-top: 24px;
     }
 
+    /* Profile Picture */
+    .edit-profile .cpbn-profile-picture {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        padding: 18px;
+        margin-bottom: 20px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: var(--paper);
+    }
+
+    .edit-profile .cpbn-profile-picture-preview {
+        width: 96px;
+        height: 96px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+            135deg,
+            var(--primary),
+            var(--primary-light)
+        );
+        color: white;
+        font-size: 34px;
+        font-weight: 700;
+    }
+
+    .edit-profile .cpbn-profile-picture-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .edit-profile .cpbn-profile-picture-details {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .edit-profile .cpbn-profile-picture-details h4 {
+        margin: 0 0 4px;
+        font-size: 14px;
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-profile-picture-details p {
+        margin: 0 0 12px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: var(--ink-dim);
+    }
+
+    .edit-profile .cpbn-profile-picture-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .edit-profile .cpbn-profile-picture-input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        overflow: hidden;
+        pointer-events: none;
+    }
+
+    .edit-profile .cpbn-profile-picture-button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 8px 14px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        background: white;
+        color: var(--ink);
+        font-family: var(--font-body);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s ease;
+    }
+
+    .edit-profile .cpbn-profile-picture-button:hover {
+        border-color: var(--gold);
+        color: var(--gold);
+    }
+
+    .edit-profile .cpbn-profile-picture-button.remove {
+        color: var(--rose);
+    }
+
+    .edit-profile .cpbn-profile-picture-button.remove:hover {
+        border-color: var(--rose);
+    }
+
+    .edit-profile .cpbn-profile-picture-file-name {
+        margin-top: 8px;
+        font-size: 11px;
+        color: var(--ink-dim);
+        word-break: break-word;
+    }
+
     @media (max-width: 720px) {
+        .edit-profile .cpbn-profile-picture {
+            align-items: flex-start;
+        }
+
+        .edit-profile .cpbn-profile-picture-preview {
+            width: 82px;
+            height: 82px;
+        }
         .edit-profile .cpbn-fgrid {
             grid-template-columns: 1fr;
         }
@@ -666,6 +781,15 @@
     }
 
     @media (max-width: 480px) {
+        .edit-profile .cpbn-profile-picture {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .edit-profile .cpbn-profile-picture-actions {
+            justify-content: center;
+        }
         .edit-profile .cpbn-checks {
             grid-template-columns: 1fr;
         }
@@ -741,6 +865,116 @@
                         <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
                     </svg>
                     Personal Information
+                </div>
+
+                @php
+                    $profilePicturePath =
+                        $user->profile?->profile_picture;
+
+                    $profilePictureUrl =
+                        $profilePicturePath
+                            ? asset(
+                                'storage/' .
+                                ltrim(
+                                    $profilePicturePath,
+                                    '/'
+                                )
+                            )
+                            : null;
+
+                    $profileInitial =
+                        strtoupper(
+                            substr(
+                                $user->first_name
+                                    ?? $user->name
+                                    ?? 'S',
+                                0,
+                                1
+                            )
+                        );
+                @endphp
+
+                <div class="cpbn-profile-picture">
+                    <div
+                        class="cpbn-profile-picture-preview"
+                        id="profile-picture-preview"
+                        data-existing-url="{{ $profilePictureUrl ?? '' }}"
+                    >
+                        <img
+                            id="profile-picture-preview-image"
+                            src="{{ $profilePictureUrl ?? '' }}"
+                            alt="Profile picture"
+                            {{ $profilePictureUrl ? '' : 'hidden' }}
+                        >
+
+                        <span
+                            id="profile-picture-preview-fallback"
+                            {{ $profilePictureUrl ? 'hidden' : '' }}
+                        >
+                            {{ $profileInitial }}
+                        </span>
+                    </div>
+
+                    <div class="cpbn-profile-picture-details">
+                        <h4>Profile Picture</h4>
+
+                        <p>
+                            Upload a JPG, JPEG, PNG or WebP image.
+                            Maximum file size: 5 MB.
+                        </p>
+
+                        <div class="cpbn-profile-picture-actions">
+                            <input
+                                type="file"
+                                name="profile_picture"
+                                id="profile-picture-input"
+                                class="cpbn-profile-picture-input"
+                                accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                            >
+
+                            <label
+                                for="profile-picture-input"
+                                class="cpbn-profile-picture-button"
+                            >
+                                <i class="fas fa-camera"></i>
+                                Choose Photo
+                            </label>
+
+                            @if($profilePictureUrl)
+                                <input
+                                    type="checkbox"
+                                    name="remove_profile_picture"
+                                    value="1"
+                                    id="remove-profile-picture"
+                                    class="cpbn-profile-picture-input"
+                                    {{ old('remove_profile_picture') ? 'checked' : '' }}
+                                >
+
+                                <label
+                                    for="remove-profile-picture"
+                                    class="cpbn-profile-picture-button remove"
+                                    id="remove-profile-picture-button"
+                                >
+                                    <i class="fas fa-trash-alt"></i>
+
+                                    <span id="remove-profile-picture-label">
+                                        Remove Photo
+                                    </span>
+                                </label>
+                            @endif
+                        </div>
+
+                        <div
+                            class="cpbn-profile-picture-file-name"
+                            id="profile-picture-file-name"
+                        ></div>
+
+                        @error('profile_picture')
+                            <div class="error">
+                                {{ $message }}
+                            </div>
+                        @enderror
+                    </div>
                 </div>
 
                 <div class="cpbn-fgrid">

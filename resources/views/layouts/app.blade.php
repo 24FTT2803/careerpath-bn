@@ -229,6 +229,14 @@
             font-weight: 600;
             font-size: 13px;
             flex-shrink: 0;
+            overflow: hidden;
+        }
+
+        .nav-user .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
         .nav-user .name {
@@ -471,7 +479,29 @@
                     <div class="nav-user-wrapper" id="navUserWrapper">
                         <div class="nav-user" id="navUserToggle">
                             <div class="avatar">
-                                {{ substr(Auth::user()->first_name ?? Auth::user()->name, 0, 1) }}
+                                @if(Auth::user()->profile?->profile_picture)
+                                    <img
+                                        src="{{ asset(
+                                            'storage/' .
+                                            ltrim(
+                                                Auth::user()->profile->profile_picture,
+                                                '/'
+                                            )
+                                        ) }}"
+                                        alt="{{ Auth::user()->name }} profile picture"
+                                    >
+                                @else
+                                    {{
+                                        strtoupper(
+                                            substr(
+                                                Auth::user()->first_name
+                                                    ?? Auth::user()->name,
+                                                0,
+                                                1
+                                            )
+                                        )
+                                    }}
+                                @endif
                             </div>
                             <span class="name">{{ Auth::user()->first_name ?? Auth::user()->name }}</span>
                             <span class="chevron"><i class="fas fa-chevron-down"></i></span>

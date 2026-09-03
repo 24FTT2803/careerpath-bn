@@ -98,8 +98,35 @@
 
             <div class="user-card">
                 <div class="user-card-header">
-                    <div class="user-avatar" style="background: {{ $isAdmin ? 'linear-gradient(135deg, #c65b4e, #e08a7d)' : ($isLecturer ? 'linear-gradient(135deg, #c9a84c, #e8d4a0)' : 'linear-gradient(135deg, #1a3a5c, #2a5a8c)') }};">
-                        {{ substr($user->name, 0, 1) }}
+                    <div
+                        class="user-avatar"
+                        style="background: {{ $isAdmin ? 'linear-gradient(135deg, #c65b4e, #e08a7d)' : ($isLecturer ? 'linear-gradient(135deg, #c9a84c, #e8d4a0)' : 'linear-gradient(135deg, #1a3a5c, #2a5a8c)') }};"
+                    >
+                        @if(
+                            $isStudent
+                            && $user->profile?->profile_picture
+                        )
+                            <img
+                                src="{{ asset(
+                                    'storage/' .
+                                    ltrim(
+                                        $user->profile->profile_picture,
+                                        '/'
+                                    )
+                                ) }}"
+                                alt="{{ $user->name }} profile picture"
+                            >
+                        @else
+                            {{
+                                strtoupper(
+                                    substr(
+                                        $user->name,
+                                        0,
+                                        1
+                                    )
+                                )
+                            }}
+                        @endif
                     </div>
                     <div class="user-info">
                         <h4>
@@ -492,6 +519,14 @@
         font-weight: 700;
         font-size: 18px;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .user-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .user-info {

@@ -15,7 +15,8 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $query = User::query();
+        $query = User::query()
+            ->with('profile');
 
         if ($request->has('role') && $request->role) {
             $query->where('role', $request->role);

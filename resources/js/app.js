@@ -855,7 +855,184 @@ document.addEventListener(
                 }
             );
 
-                // ============================================
+        // ============================================
+        // PROFILE PICTURE PREVIEW
+        // ============================================
+
+        const profilePictureInput =
+            document.getElementById(
+                'profile-picture-input'
+            );
+
+        const profilePicturePreview =
+            document.getElementById(
+                'profile-picture-preview'
+            );
+
+        const profilePictureImage =
+            document.getElementById(
+                'profile-picture-preview-image'
+            );
+
+        const profilePictureFallback =
+            document.getElementById(
+                'profile-picture-preview-fallback'
+            );
+
+        const profilePictureFileName =
+            document.getElementById(
+                'profile-picture-file-name'
+            );
+
+        const removeProfilePicture =
+            document.getElementById(
+                'remove-profile-picture'
+            );
+
+        const removeProfilePictureLabel =
+            document.getElementById(
+                'remove-profile-picture-label'
+            );
+
+        let profilePictureObjectUrl = null;
+
+        const showProfilePicture =
+            function (url) {
+                if (
+                    !profilePictureImage
+                    || !profilePictureFallback
+                ) {
+                    return;
+                }
+
+                profilePictureImage.src = url;
+                profilePictureImage.hidden = false;
+                profilePictureFallback.hidden = true;
+            };
+
+        const showProfilePictureFallback =
+            function () {
+                if (
+                    !profilePictureImage
+                    || !profilePictureFallback
+                ) {
+                    return;
+                }
+
+                profilePictureImage.hidden = true;
+                profilePictureImage.removeAttribute(
+                    'src'
+                );
+                profilePictureFallback.hidden = false;
+            };
+
+        const restoreExistingProfilePicture =
+            function () {
+                if (!profilePicturePreview) {
+                    return;
+                }
+
+                const existingUrl =
+                    profilePicturePreview.dataset
+                        .existingUrl;
+
+                if (existingUrl) {
+                    showProfilePicture(
+                        existingUrl
+                    );
+                } else {
+                    showProfilePictureFallback();
+                }
+            };
+
+        if (profilePictureInput) {
+            profilePictureInput.addEventListener(
+                'change',
+                function () {
+                    const file =
+                        profilePictureInput.files?.[0];
+
+                    if (profilePictureObjectUrl) {
+                        URL.revokeObjectURL(
+                            profilePictureObjectUrl
+                        );
+
+                        profilePictureObjectUrl =
+                            null;
+                    }
+
+                    if (!file) {
+                        restoreExistingProfilePicture();
+
+                        if (
+                            profilePictureFileName
+                        ) {
+                            profilePictureFileName
+                                .textContent = '';
+                        }
+
+                        return;
+                    }
+
+                    profilePictureObjectUrl =
+                        URL.createObjectURL(file);
+
+                    showProfilePicture(
+                        profilePictureObjectUrl
+                    );
+
+                    if (profilePictureFileName) {
+                        profilePictureFileName
+                            .textContent =
+                            `Selected: ${file.name}`;
+                    }
+                }
+            );
+        }
+
+        if (removeProfilePicture) {
+            removeProfilePicture.addEventListener(
+                'change',
+                function () {
+                    const newFile =
+                        profilePictureInput
+                            ?.files?.[0];
+
+                    if (
+                        removeProfilePicture.checked
+                        && !newFile
+                    ) {
+                        showProfilePictureFallback();
+
+                        if (
+                            removeProfilePictureLabel
+                        ) {
+                            removeProfilePictureLabel
+                                .textContent =
+                                'Undo Remove';
+                        }
+
+                        return;
+                    }
+
+                    if (
+                        removeProfilePictureLabel
+                    ) {
+                        removeProfilePictureLabel
+                            .textContent =
+                            'Remove Photo';
+                    }
+
+                    if (newFile) {
+                        return;
+                    }
+
+                    restoreExistingProfilePicture();
+                }
+            );
+        }
+
+        // ============================================
         // INTERNATIONAL PHONE NUMBER VALIDATION
         // ============================================
 

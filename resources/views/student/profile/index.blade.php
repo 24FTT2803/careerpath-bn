@@ -35,6 +35,38 @@
         margin-top: 2px;
     }
 
+    .profile-header-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .profile-header-avatar {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        overflow: hidden;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(
+            135deg,
+            var(--primary),
+            var(--primary-light)
+        );
+        color: white;
+        font-size: 26px;
+        font-weight: 700;
+    }
+
+    .profile-header-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
     .btn {
         display: inline-flex;
         align-items: center;
@@ -383,6 +415,16 @@
             font-size: 24px;
         }
 
+        .profile-header-left {
+            align-items: flex-start;
+        }
+
+        .profile-header-avatar {
+            width: 60px;
+            height: 60px;
+            font-size: 22px;
+        }
+
         .completion-card .top .percentage {
             font-size: 22px;
         }
@@ -443,11 +485,40 @@
     <div class="container">
 
         <div class="profile-header">
-            <div>
-                <h1>My <span>Profile</span></h1>
-                <p class="subtitle">
-                    View and manage your personal information
-                </p>
+            <div class="profile-header-left">
+                <div class="profile-header-avatar">
+                    @if($user->profile?->profile_picture)
+                        <img
+                            src="{{ asset(
+                                'storage/' .
+                                ltrim(
+                                    $user->profile->profile_picture,
+                                    '/'
+                                )
+                            ) }}"
+                            alt="{{ $user->name }} profile picture"
+                        >
+                    @else
+                        {{
+                            strtoupper(
+                                substr(
+                                    $user->first_name
+                                        ?? $user->name
+                                        ?? 'S',
+                                    0,
+                                    1
+                                )
+                            )
+                        }}
+                    @endif
+                </div>
+
+                <div>
+                    <h1>My <span>Profile</span></h1>
+                    <p class="subtitle">
+                        View and manage your personal information
+                    </p>
+                </div>
             </div>
 
             <div class="action-buttons">
