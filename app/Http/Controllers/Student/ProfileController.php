@@ -210,6 +210,22 @@ class ProfileController extends Controller
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
             'bio' => ['nullable', 'string', 'max:1000'],
+            'profile_picture' => [
+                'nullable',
+                File::image()
+                    ->types([
+                        'jpg',
+                        'jpeg',
+                        'png',
+                        'webp',
+                    ])
+                    ->max('5mb'),
+            ],
+
+            'remove_profile_picture' => [
+                'nullable',
+                'boolean',
+            ],
             'programme' => [
                 'nullable',
                 'string',
@@ -352,6 +368,60 @@ class ProfileController extends Controller
             }
         }
 
+        // Process profile picture
+        $profilePicturePath =
+            $user->profile?->profile_picture;
+
+        if (
+            $request->hasFile(
+                'profile_picture'
+            )
+        ) {
+            $newProfilePicturePath =
+                $request
+                    ->file('profile_picture')
+                    ->store(
+                        'profile-pictures',
+                        'public'
+                    );
+
+            if (
+                $profilePicturePath
+                && Storage::disk('public')
+                    ->exists(
+                        $profilePicturePath
+                    )
+            ) {
+                Storage::disk('public')
+                    ->delete(
+                        $profilePicturePath
+                    );
+            }
+
+            $profilePicturePath =
+                $newProfilePicturePath;
+        } elseif (
+            $request->boolean(
+                'remove_profile_picture'
+            )
+        ) {
+            if (
+                $profilePicturePath
+                && Storage::disk('public')
+                    ->exists(
+                        $profilePicturePath
+                    )
+            ) {
+                Storage::disk('public')
+                    ->delete(
+                        $profilePicturePath
+                    );
+            }
+
+            $profilePicturePath =
+                null;
+        }
+
         // Combine first and last name into full name
         $fullName = $request->first_name . ' ' . $request->last_name;
 
@@ -374,6 +444,8 @@ class ProfileController extends Controller
                 'address' => $request->address,
                 'date_of_birth' => $request->date_of_birth,
                 'nationality' => $request->nationality,
+                'profile_picture' =>
+                    $profilePicturePath,
                 'bio' => $request->bio,
             ]
         );
@@ -530,6 +602,22 @@ class ProfileController extends Controller
     {
         /** @var User $user */
         $user = Auth::user();
+
+        $profilePicturePath =
+            $user->profile?->profile_picture;
+
+        if (
+            $profilePicturePath
+            && Storage::disk('public')
+                ->exists(
+                    $profilePicturePath
+                )
+        ) {
+            Storage::disk('public')
+                ->delete(
+                    $profilePicturePath
+                );
+        }
 
         Auth::logout();
 

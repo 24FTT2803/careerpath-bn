@@ -307,7 +307,28 @@
                             <td>
                                 <div class="student-cell">
                                     <div class="student-avatar">
-                                        {{ substr($student->name, 0, 1) }}
+                                        @if($student->profile?->profile_picture)
+                                            <img
+                                                src="{{ asset(
+                                                    'storage/' .
+                                                    ltrim(
+                                                        $student->profile->profile_picture,
+                                                        '/'
+                                                    )
+                                                ) }}"
+                                                alt="{{ $student->name }} profile picture"
+                                            >
+                                        @else
+                                            {{
+                                                strtoupper(
+                                                    substr(
+                                                        $student->name,
+                                                        0,
+                                                        1
+                                                    )
+                                                )
+                                            }}
+                                        @endif
                                     </div>
                                     <a href="{{ route('admin.students.show', $student) }}" class="student-name">
                                         {{ $student->name }}
@@ -1013,6 +1034,14 @@
         font-weight: 600;
         font-size: 13px;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .student-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .student-name {

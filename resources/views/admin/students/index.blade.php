@@ -74,7 +74,28 @@
             <div class="student-card">
                 <div class="student-card-header">
                     <div class="student-avatar-lg">
-                        {{ substr($student->name, 0, 1) }}
+                        @if($student->profile?->profile_picture)
+                            <img
+                                src="{{ asset(
+                                    'storage/' .
+                                    ltrim(
+                                        $student->profile->profile_picture,
+                                        '/'
+                                    )
+                                ) }}"
+                                alt="{{ $student->name }} profile picture"
+                            >
+                        @else
+                            {{
+                                strtoupper(
+                                    substr(
+                                        $student->name,
+                                        0,
+                                        1
+                                    )
+                                )
+                            }}
+                        @endif
                     </div>
                     <div class="student-card-info">
                         <h4>
@@ -373,6 +394,14 @@
         font-weight: 700;
         font-size: 20px;
         flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .student-avatar-lg img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
     }
 
     .student-card-info {
