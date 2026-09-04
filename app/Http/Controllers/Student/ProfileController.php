@@ -25,6 +25,8 @@ use Illuminate\Support\Str;
 use App\Helpers\NotificationHelper;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use Propaganistas\LaravelPhone\Rules\Phone;
+use App\Models\BiicfCompetency;
+use App\Models\BiicfProficiencyLevel;
 
 class ProfileController extends Controller
 {
@@ -128,7 +130,12 @@ class ProfileController extends Controller
         ]);
 
         $profileCompletion = $user->profile_completion;
-        $skillOptions = self::PREDEFINED_SKILLS;
+
+        $skillOptions = BiicfCompetency::query()
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+
         $interestOptions = self::PREDEFINED_INTERESTS;
 
         return view(
@@ -161,8 +168,21 @@ class ProfileController extends Controller
         ]);
 
         $profileCompletion = $user->profile_completion;
-        $skillOptions = self::PREDEFINED_SKILLS;
         $skillAliasGroups = self::SKILL_ALIAS_GROUPS;
+
+        $biicfCompetencies = BiicfCompetency::query()
+            ->orderBy('type')
+            ->orderBy('name')
+            ->get();
+
+        $proficiencyLevels = BiicfProficiencyLevel::query()
+            ->orderBy('level_number')
+            ->get();
+
+        $skillOptions = $biicfCompetencies
+            ->pluck('name')
+            ->all();
+
         $interestOptions = self::PREDEFINED_INTERESTS;
         $interestAliasGroups = self::INTEREST_ALIAS_GROUPS;
 
@@ -173,6 +193,8 @@ class ProfileController extends Controller
                 'profileCompletion',
                 'skillOptions',
                 'skillAliasGroups',
+                'biicfCompetencies',
+                'proficiencyLevels',
                 'interestOptions',
                 'interestAliasGroups'
             )
@@ -244,11 +266,48 @@ class ProfileController extends Controller
                 Rule::in(self::PREDEFINED_SKILLS),
             ],
 
+            'biicf_mode' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'biicf_competencies' => [
+                'nullable',
+                'array',
+            ],
+
+            'biicf_competencies.*' => [
+                'nullable',
+                'array',
+            ],
+
+            'biicf_competencies.*.selected' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'biicf_competencies.*.proficiency_level_id' => [
+                'nullable',
+                'integer',
+                'exists:biicf_proficiency_levels,id',
+            ],
+
             'custom_skills' => ['nullable', 'array'],
             'custom_skills.*' => [
                 'nullable',
                 'string',
                 'max:60',
+            ],
+
+            'custom_skill_levels' => [
+                'nullable',
+                'array',
+            ],
+
+            'custom_skill_levels.*' => [
+                'nullable',
+                'integer',
+                'exists:biicf_proficiency_levels,id',
             ],
 
             'interests' => ['nullable', 'array'],
@@ -331,6 +390,41 @@ class ProfileController extends Controller
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
+
+        /*
+        * Prepare skills before any profile data is written.
+        *
+        * This ensures an invalid competency selection, such as
+        * a selected competency without a proficiency level,
+        * returns the user to the form before anything is saved.
+        */
+        if ($request->boolean('biicf_mode')) {
+            $skills = $this->prepareBiicfSkills(
+                $request->input(
+                    'biicf_competencies',
+                    []
+                ),
+                $request->input(
+                    'custom_skills',
+                    []
+                ),
+                $request->input(
+                    'custom_skill_levels',
+                    []
+                )
+            );
+        } else {
+            $skills = $this->prepareSkills(
+                $request->input(
+                    'skills',
+                    []
+                ),
+                $request->input(
+                    'custom_skills',
+                    []
+                )
+            );
+        }
 
         $normalizedPhone =
             null;
@@ -450,12 +544,7 @@ class ProfileController extends Controller
             ]
         );
 
-        // Process Skills
-        $skills = $this->prepareSkills(
-            $request->input('skills', []),
-            $request->input('custom_skills', [])
-        );
-
+        // Sync Skills
         $this->syncSkills(
             $user,
             $skills
@@ -999,6 +1088,31 @@ class ProfileController extends Controller
             ->delete();
 
         foreach ($skills as $skill) {
+            /*
+            * BIICF-aligned skills are prepared as structured
+            * arrays containing their real competency type and
+            * proficiency level.
+            *
+            * Plain strings remain supported temporarily for
+            * the legacy profile UI.
+            */
+            if (is_array($skill)) {
+                $user
+                    ->competencies()
+                    ->create([
+                        'skill_name' =>
+                            $skill['skill_name'],
+
+                        'category' =>
+                            $skill['category'],
+
+                        'proficiency_level' =>
+                            $skill['proficiency_level'],
+                    ]);
+
+                continue;
+            }
+
             $user
                 ->competencies()
                 ->create([
@@ -1007,6 +1121,220 @@ class ProfileController extends Controller
                     'proficiency_level' => 'intermediate',
                 ]);
         }
+    }
+
+    /**
+     * Prepare BIICF competencies and additional skills for storage.
+     *
+     * BIICF competencies use the authoritative name and type stored
+     * in the BIICF database. StudentCompetency remains the storage
+     * model so existing profile, admin, export and recommendation
+     * features continue to work.
+     */
+    private function prepareBiicfSkills(
+        array $competencySelections,
+        array $customSkills,
+        array $customSkillLevels
+    ): array {
+        $competencies =
+            BiicfCompetency::query()
+                ->get()
+                ->keyBy(
+                    fn ($competency) =>
+                        (string) $competency->id
+                );
+
+        $proficiencyLevels =
+            BiicfProficiencyLevel::query()
+                ->get()
+                ->keyBy(
+                    fn ($level) =>
+                        (string) $level->id
+                );
+
+        /*
+        * Build a lookup of every official BIICF competency.
+        * This prevents a student from entering an official
+        * competency again as an additional skill.
+        */
+        $biicfKeys = [];
+
+        foreach ($competencies as $competency) {
+            $biicfKeys[
+                $this->canonicalSkillKey(
+                    $competency->name
+                )
+            ] = $competency->name;
+        }
+
+        $seenKeys = [];
+        $prepared = [];
+
+        /*
+        * Prepare officially selected BIICF competencies.
+        */
+        foreach (
+            $competencySelections
+            as $competencyId => $selection
+        ) {
+            if (
+                ! is_array($selection)
+                || empty($selection['selected'])
+            ) {
+                continue;
+            }
+
+            $competency =
+                $competencies->get(
+                    (string) $competencyId
+                );
+
+            if (! $competency) {
+                throw ValidationException::withMessages([
+                    'biicf_competencies' =>
+                        'One of the selected BIICF competencies is invalid.',
+                ]);
+            }
+
+            $levelId =
+                $selection[
+                    'proficiency_level_id'
+                ] ?? null;
+
+            $level =
+                $proficiencyLevels->get(
+                    (string) $levelId
+                );
+
+            if (! $level) {
+                throw ValidationException::withMessages([
+                    "biicf_competencies.$competencyId.proficiency_level_id" =>
+                        'Select a proficiency level for '
+                        . $competency->name
+                        . '.',
+                ]);
+            }
+
+            $key =
+                $this->canonicalSkillKey(
+                    $competency->name
+                );
+
+            $seenKeys[$key] =
+                $competency->name;
+
+            $prepared[] = [
+                'skill_name' =>
+                    $competency->name,
+
+                'category' =>
+                    $competency->type,
+
+                'proficiency_level' =>
+                    $level->name,
+            ];
+        }
+
+        /*
+        * Prepare additional student-entered skills.
+        *
+        * Additional skills remain technical by default because
+        * official BIICF soft-skill competencies are available
+        * separately through the BIICF competency list.
+        */
+        foreach ($customSkills as $index => $skill) {
+            $clean = preg_replace(
+                '/\s+/u',
+                ' ',
+                trim((string) $skill)
+            );
+
+            $clean =
+                $clean
+                ?? trim((string) $skill);
+
+            if ($clean === '') {
+                continue;
+            }
+
+            if (mb_strlen($clean) > 60) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        'Each additional skill must be 60 characters or fewer.',
+                ]);
+            }
+
+            if (
+                $this->isClearlyInvalidSkill(
+                    $clean
+                )
+            ) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        '"' . $clean . '" does not look like a usable skill. '
+                        . 'Please enter a skill, technology, tool, method, or competency you have.',
+                ]);
+            }
+
+            $key =
+                $this->canonicalSkillKey(
+                    $clean
+                );
+
+            if (isset($biicfKeys[$key])) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        '"' . $clean
+                        . '" matches the BIICF competency "'
+                        . $biicfKeys[$key]
+                        . '". Select that competency instead.',
+                ]);
+            }
+
+            if (isset($seenKeys[$key])) {
+                throw ValidationException::withMessages([
+                    'custom_skills' =>
+                        '"' . $clean
+                        . '" duplicates "'
+                        . $seenKeys[$key]
+                        . '". Each skill should only be added once.',
+                ]);
+            }
+
+            $levelId =
+                $customSkillLevels[$index]
+                ?? null;
+
+            $level =
+                $proficiencyLevels->get(
+                    (string) $levelId
+                );
+
+            if (! $level) {
+                throw ValidationException::withMessages([
+                    "custom_skill_levels.$index" =>
+                        'Select a proficiency level for '
+                        . $clean
+                        . '.',
+                ]);
+            }
+
+            $seenKeys[$key] =
+                $clean;
+
+            $prepared[] = [
+                'skill_name' =>
+                    $clean,
+
+                'category' =>
+                    'technical',
+
+                'proficiency_level' =>
+                    $level->name,
+            ];
+        }
+
+        return $prepared;
     }
 
     /**

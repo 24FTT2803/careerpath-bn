@@ -285,6 +285,145 @@
         font-family: var(--font-body);
     }
 
+    .edit-profile .cpbn-competency-group {
+        margin-top: 20px;
+    }
+
+    .edit-profile .cpbn-competency-heading {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+    }
+
+    .edit-profile .cpbn-competency-heading > div {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .edit-profile .cpbn-competency-heading strong {
+        font-size: 14px;
+        color: var(--ink);
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-competency-heading span {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 24px;
+        height: 24px;
+        padding: 0 7px;
+        border-radius: 100px;
+        background: var(--gold-wash);
+        color: #7b5c23;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .edit-profile .cpbn-competency-heading small {
+        color: var(--ink-dim);
+        font-size: 11px;
+    }
+
+    .edit-profile .cpbn-competency-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .edit-profile .cpbn-competency-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 11px 12px;
+        border: 1px solid var(--line);
+        border-radius: 9px;
+        background: #fff;
+        transition:
+            border-color 0.15s ease,
+            background 0.15s ease;
+    }
+
+    .edit-profile .cpbn-competency-item.selected {
+        border-color: var(--gold);
+        background: var(--gold-wash);
+    }
+
+    .edit-profile .cpbn-competency-choice {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-competency-choice input {
+        flex: 0 0 auto;
+    }
+
+    .edit-profile .cpbn-competency-choice span {
+        line-height: 1.35;
+    }
+
+    .edit-profile .biicf-proficiency-select,
+    .edit-profile .cpbn-custom-level-select {
+        min-width: 132px;
+        padding: 7px 9px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink);
+        font-size: 11px;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .biicf-proficiency-select:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .edit-profile .cpbn-additional-toggle {
+        margin-top: 20px;
+    }
+
+    .edit-profile .cpbn-custom-chip {
+        border-radius: 10px;
+    }
+
+    .edit-profile .cpbn-custom-chip select {
+        margin-left: 3px;
+    }
+
+    @media (max-width: 850px) {
+        .edit-profile .cpbn-competency-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .edit-profile .cpbn-competency-item {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .edit-profile .biicf-proficiency-select,
+        .edit-profile .cpbn-custom-level-select {
+            width: 100%;
+        }
+
+        .edit-profile .cpbn-competency-heading {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+    }
+
     /* Additional Skills / Interests */
     .edit-profile .cpbn-additional {
         margin-top: 18px;
@@ -1224,94 +1363,530 @@
             <!-- SECTION 3: Skills -->
             <div class="section">
                 <div class="title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"
+                        />
                     </svg>
+
                     Skills &amp; Competencies
                 </div>
 
-                <p class="desc">Select your technical skills</p>
+                <p class="desc">
+                    Select your current BIICF competencies and the proficiency
+                    level that best represents your ability.
+                </p>
+
+                <input
+                    type="hidden"
+                    name="biicf_mode"
+                    value="1"
+                >
 
                 @php
-                    $skillOptions = $skillOptions ?? [];
+                    $biicfCompetencies =
+                        $biicfCompetencies ?? collect();
 
-                    $storedSkillNames = $user
+                    $proficiencyLevels =
+                        $proficiencyLevels ?? collect();
+
+                    $proficiencyLevelOptions =
+                        $proficiencyLevels
+                            ->map(
+                                fn ($level) => [
+                                    'id' => $level->id,
+                                    'level_number' =>
+                                        $level->level_number,
+                                    'name' => $level->name,
+                                ]
+                            )
+                            ->values()
+                            ->all();
+
+                    $officialSkillNames = $biicfCompetencies
+                        ->pluck('name')
+                        ->map(
+                            fn ($name) =>
+                                mb_strtolower(
+                                    trim((string) $name)
+                                )
+                        )
+                        ->all();
+
+                    $storedSkillsByName = $user
                         ->competencies
-                        ->pluck('skill_name')
-                        ->toArray();
+                        ->keyBy(
+                            fn ($skill) =>
+                                mb_strtolower(
+                                    trim(
+                                        (string) $skill->skill_name
+                                    )
+                                )
+                        );
 
-                    $storedPredefinedSkills = array_values(
-                        array_filter(
-                            $storedSkillNames,
-                            fn ($skill) => in_array(
-                                $skill,
-                                $skillOptions,
-                                true
-                            )
+                    $levelsByName = $proficiencyLevels
+                        ->keyBy(
+                            fn ($level) =>
+                                mb_strtolower(
+                                    trim((string) $level->name)
+                                )
+                        );
+
+                    /*
+                    * Existing student records may still use the
+                    * old proficiency scale.
+                    */
+                    $legacyLevelNames = [
+                        'beginner' => 'follow',
+                        'intermediate' => 'assist',
+                        'advanced' => 'apply',
+                        'expert' => 'ensure',
+                    ];
+
+                    $oldBiicfSelections =
+                        old('biicf_competencies');
+
+                    $technicalCompetencies =
+                        $biicfCompetencies
+                            ->where(
+                                'type',
+                                'technical'
+                            );
+
+                    $softCompetencies =
+                        $biicfCompetencies
+                            ->where(
+                                'type',
+                                'soft_skill'
+                            );
+
+                    /*
+                    * Anything that does not match an official BIICF
+                    * competency remains an additional skill.
+                    */
+                    $storedAdditionalSkills = $user
+                        ->competencies
+                        ->filter(
+                            fn ($skill) =>
+                                ! in_array(
+                                    mb_strtolower(
+                                        trim(
+                                            (string)
+                                            $skill->skill_name
+                                        )
+                                    ),
+                                    $officialSkillNames,
+                                    true
+                                )
                         )
-                    );
+                        ->values();
 
-                    $storedAdditionalSkills = array_values(
-                        array_filter(
-                            $storedSkillNames,
-                            fn ($skill) => ! in_array(
-                                $skill,
-                                $skillOptions,
-                                true
-                            )
-                        )
-                    );
+                    $oldCustomSkills =
+                        old('custom_skills');
 
-                    $savedSkills = old(
-                        'skills',
-                        $storedPredefinedSkills
-                    );
+                    $oldCustomLevels =
+                        old(
+                            'custom_skill_levels',
+                            []
+                        );
 
-                    $savedAdditionalSkills = old(
-                        'custom_skills',
-                        $storedAdditionalSkills
-                    );
+                    if (is_array($oldCustomSkills)) {
+                        $savedAdditionalSkills = [];
 
-                    $savedAdditionalSkills = is_array($savedAdditionalSkills)
-                        ? array_values(
-                            array_filter(
-                                $savedAdditionalSkills,
-                                fn ($skill) => trim((string) $skill) !== ''
-                            )
-                        )
-                        : [];
+                        foreach (
+                            $oldCustomSkills
+                            as $index => $skill
+                        ) {
+                            if (
+                                trim(
+                                    (string) $skill
+                                ) === ''
+                            ) {
+                                continue;
+                            }
 
-                    $hasAdditionalSkills = ! empty(
-                        $savedAdditionalSkills
-                    );
+                            $savedAdditionalSkills[] = [
+                                'name' => $skill,
+                                'level_id' =>
+                                    $oldCustomLevels[
+                                        $index
+                                    ] ?? null,
+                            ];
+                        }
+                    } else {
+                        $savedAdditionalSkills =
+                            $storedAdditionalSkills
+                                ->map(
+                                    function ($skill)
+                                    use (
+                                        $levelsByName,
+                                        $legacyLevelNames
+                                    ) {
+                                        $storedLevel =
+                                            mb_strtolower(
+                                                trim(
+                                                    (string)
+                                                    $skill
+                                                        ->proficiency_level
+                                                )
+                                            );
+
+                                        $levelName =
+                                            $legacyLevelNames[
+                                                $storedLevel
+                                            ] ?? $storedLevel;
+
+                                        $level =
+                                            $levelsByName
+                                                ->get(
+                                                    $levelName
+                                                );
+
+                                        return [
+                                            'name' =>
+                                                $skill
+                                                    ->skill_name,
+
+                                            'level_id' =>
+                                                $level?->id,
+                                        ];
+                                    }
+                                )
+                                ->values()
+                                ->all();
+                    }
+
+                    $hasAdditionalSkills =
+                        ! empty(
+                            $savedAdditionalSkills
+                        );
                 @endphp
 
-                <div class="cpbn-checks">
-                    @foreach($skillOptions as $skill)
-                        <label class="cpbn-check">
-                            <input
-                                type="checkbox"
-                                name="skills[]"
-                                value="{{ $skill }}"
-                                {{ in_array($skill, $savedSkills ?? [], true) ? 'checked' : '' }}
-                            >
-                            <span>{{ $skill }}</span>
-                        </label>
-                    @endforeach
+                <div class="cpbn-competency-group">
+                    <div class="cpbn-competency-heading">
+                        <div>
+                            <strong>
+                                Technical Competencies
+                            </strong>
 
+                            <span>
+                                {{ $technicalCompetencies->count() }}
+                            </span>
+                        </div>
+
+                        <small>
+                            BIICF technical competencies
+                        </small>
+                    </div>
+
+                    <div class="cpbn-competency-grid">
+                        @foreach(
+                            $technicalCompetencies
+                            as $competency
+                        )
+                            @php
+                                $storedSkill =
+                                    $storedSkillsByName
+                                        ->get(
+                                            mb_strtolower(
+                                                trim(
+                                                    $competency
+                                                        ->name
+                                                )
+                                            )
+                                        );
+
+                                if (
+                                    is_array(
+                                        $oldBiicfSelections
+                                    )
+                                ) {
+                                    $oldSelection =
+                                        $oldBiicfSelections[
+                                            $competency->id
+                                        ] ?? [];
+
+                                    $isSelected =
+                                        ! empty(
+                                            $oldSelection[
+                                                'selected'
+                                            ] ?? null
+                                        );
+
+                                    $selectedLevelId =
+                                        $oldSelection[
+                                            'proficiency_level_id'
+                                        ] ?? null;
+                                } else {
+                                    $isSelected =
+                                        (bool) $storedSkill;
+
+                                    $storedLevel =
+                                        $storedSkill
+                                            ? mb_strtolower(
+                                                trim(
+                                                    (string)
+                                                    $storedSkill
+                                                        ->proficiency_level
+                                                )
+                                            )
+                                            : null;
+
+                                    $levelName =
+                                        $storedLevel
+                                            ? (
+                                                $legacyLevelNames[
+                                                    $storedLevel
+                                                ] ?? $storedLevel
+                                            )
+                                            : null;
+
+                                    $selectedLevelId =
+                                        $levelName
+                                            ? $levelsByName
+                                                ->get(
+                                                    $levelName
+                                                )?->id
+                                            : null;
+                                }
+                            @endphp
+
+                            <div
+                                class="cpbn-competency-item {{ $isSelected ? 'selected' : '' }}"
+                                data-biicf-competency
+                            >
+                                <label class="cpbn-competency-choice">
+                                    <input
+                                        type="checkbox"
+                                        class="biicf-competency-checkbox"
+                                        name="biicf_competencies[{{ $competency->id }}][selected]"
+                                        value="1"
+                                        {{ $isSelected ? 'checked' : '' }}
+                                    >
+
+                                    <span>
+                                        {{ $competency->name }}
+                                    </span>
+                                </label>
+
+                                <select
+                                    class="biicf-proficiency-select"
+                                    name="biicf_competencies[{{ $competency->id }}][proficiency_level_id]"
+                                    {{ $isSelected ? 'required' : 'disabled' }}
+                                >
+                                    <option value="">
+                                        Choose level
+                                    </option>
+
+                                    @foreach(
+                                        $proficiencyLevels
+                                            as $level
+                                    )
+                                        <option
+                                            value="{{ $level->id }}"
+                                            {{
+                                                (string)
+                                                $selectedLevelId
+                                                ===
+                                                (string)
+                                                $level->id
+                                                    ? 'selected'
+                                                    : ''
+                                            }}
+                                        >
+                                            Level
+                                            {{ $level->level_number }}
+                                            —
+                                            {{ $level->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error(
+                                    "biicf_competencies.{$competency->id}.proficiency_level_id"
+                                )
+                                    <div class="cpbn-error">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <div class="cpbn-competency-group">
+                    <div class="cpbn-competency-heading">
+                        <div>
+                            <strong>
+                                Soft Skill Competencies
+                            </strong>
+
+                            <span>
+                                {{ $softCompetencies->count() }}
+                            </span>
+                        </div>
+
+                        <small>
+                            BIICF behavioural and interpersonal competencies
+                        </small>
+                    </div>
+
+                    <div class="cpbn-competency-grid">
+                        @foreach(
+                            $softCompetencies
+                            as $competency
+                        )
+                            @php
+                                $storedSkill =
+                                    $storedSkillsByName
+                                        ->get(
+                                            mb_strtolower(
+                                                trim(
+                                                    $competency
+                                                        ->name
+                                                )
+                                            )
+                                        );
+
+                                if (
+                                    is_array(
+                                        $oldBiicfSelections
+                                    )
+                                ) {
+                                    $oldSelection =
+                                        $oldBiicfSelections[
+                                            $competency->id
+                                        ] ?? [];
+
+                                    $isSelected =
+                                        ! empty(
+                                            $oldSelection[
+                                                'selected'
+                                            ] ?? null
+                                        );
+
+                                    $selectedLevelId =
+                                        $oldSelection[
+                                            'proficiency_level_id'
+                                        ] ?? null;
+                                } else {
+                                    $isSelected =
+                                        (bool) $storedSkill;
+
+                                    $storedLevel =
+                                        $storedSkill
+                                            ? mb_strtolower(
+                                                trim(
+                                                    (string)
+                                                    $storedSkill
+                                                        ->proficiency_level
+                                                )
+                                            )
+                                            : null;
+
+                                    $levelName =
+                                        $storedLevel
+                                            ? (
+                                                $legacyLevelNames[
+                                                    $storedLevel
+                                                ] ?? $storedLevel
+                                            )
+                                            : null;
+
+                                    $selectedLevelId =
+                                        $levelName
+                                            ? $levelsByName
+                                                ->get(
+                                                    $levelName
+                                                )?->id
+                                            : null;
+                                }
+                            @endphp
+
+                            <div
+                                class="cpbn-competency-item {{ $isSelected ? 'selected' : '' }}"
+                                data-biicf-competency
+                            >
+                                <label class="cpbn-competency-choice">
+                                    <input
+                                        type="checkbox"
+                                        class="biicf-competency-checkbox"
+                                        name="biicf_competencies[{{ $competency->id }}][selected]"
+                                        value="1"
+                                        {{ $isSelected ? 'checked' : '' }}
+                                    >
+
+                                    <span>
+                                        {{ $competency->name }}
+                                    </span>
+                                </label>
+
+                                <select
+                                    class="biicf-proficiency-select"
+                                    name="biicf_competencies[{{ $competency->id }}][proficiency_level_id]"
+                                    {{ $isSelected ? 'required' : 'disabled' }}
+                                >
+                                    <option value="">
+                                        Choose level
+                                    </option>
+
+                                    @foreach(
+                                        $proficiencyLevels
+                                            as $level
+                                    )
+                                        <option
+                                            value="{{ $level->id }}"
+                                            {{
+                                                (string)
+                                                $selectedLevelId
+                                                ===
+                                                (string)
+                                                $level->id
+                                                    ? 'selected'
+                                                    : ''
+                                            }}
+                                        >
+                                            Level
+                                            {{ $level->level_number }}
+                                            —
+                                            {{ $level->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                @error(
+                                    "biicf_competencies.{$competency->id}.proficiency_level_id"
+                                )
+                                    <div class="cpbn-error">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+
+                <p class="cpbn-check-note">
+                    BIICF proficiency levels:
+                    Follow, Assist, Apply, Ensure and Strategise.
+                </p>
+
+                <div class="cpbn-additional-toggle">
                     <label class="cpbn-check">
                         <input
                             type="checkbox"
                             id="additional-skills-toggle"
                             {{ $hasAdditionalSkills ? 'checked' : '' }}
                         >
-                        <span>Others</span>
+
+                        <span>
+                            Add skills outside the BIICF list
+                        </span>
                     </label>
                 </div>
-
-                <p class="cpbn-check-note">
-                    Select all that apply. More skills = better career matching.
-                </p>
 
                 <div
                     id="additional-skills-section"
@@ -1322,21 +1897,66 @@
                         Additional Skills
                     </div>
 
+                    <p class="cpbn-check-note">
+                        Use this for technologies, tools or other
+                        skills that are not listed as BIICF competencies.
+                    </p>
+
                     <div
                         id="additional-skill-chips"
                         class="cpbn-custom-chips"
                     >
-                        @foreach($savedAdditionalSkills as $skill)
+                        @foreach(
+                            $savedAdditionalSkills
+                            as $skill
+                        )
                             <span
                                 class="cpbn-custom-chip"
-                                data-value="{{ $skill }}"
+                                data-value="{{ $skill['name'] }}"
                             >
-                                <span>{{ $skill }}</span>
+                                <span>
+                                    {{ $skill['name'] }}
+                                </span>
+
+                                <select
+                                    name="custom_skill_levels[]"
+                                    class="cpbn-custom-level-select"
+                                    required
+                                >
+                                    <option value="">
+                                        Choose level
+                                    </option>
+
+                                    @foreach(
+                                        $proficiencyLevels
+                                            as $level
+                                    )
+                                        <option
+                                            value="{{ $level->id }}"
+                                            {{
+                                                (string)
+                                                ($skill[
+                                                    'level_id'
+                                                ] ?? '')
+                                                ===
+                                                (string)
+                                                $level->id
+                                                    ? 'selected'
+                                                    : ''
+                                            }}
+                                        >
+                                            Level
+                                            {{ $level->level_number }}
+                                            —
+                                            {{ $level->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
 
                                 <button
                                     type="button"
                                     class="cpbn-remove-custom-chip"
-                                    aria-label="Remove {{ $skill }}"
+                                    aria-label="Remove {{ $skill['name'] }}"
                                     title="Remove"
                                 >
                                     &times;
@@ -1345,7 +1965,7 @@
                                 <input
                                     type="hidden"
                                     name="custom_skills[]"
-                                    value="{{ $skill }}"
+                                    value="{{ $skill['name'] }}"
                                 >
                             </span>
                         @endforeach
@@ -1382,7 +2002,9 @@
                         class="cpbn-custom-feedback"
                         hidden
                     >
-                        <span id="additional-skill-feedback-text"></span>
+                        <span
+                            id="additional-skill-feedback-text"
+                        ></span>
 
                         <div
                             id="additional-skill-warning-actions"
@@ -1408,13 +2030,29 @@
                     </div>
 
                     @error('custom_skills')
-                        <div class="cpbn-error">{{ $message }}</div>
+                        <div class="cpbn-error">
+                            {{ $message }}
+                        </div>
                     @enderror
 
                     @error('custom_skills.*')
-                        <div class="cpbn-error">{{ $message }}</div>
+                        <div class="cpbn-error">
+                            {{ $message }}
+                        </div>
+                    @enderror
+
+                    @error('custom_skill_levels.*')
+                        <div class="cpbn-error">
+                            {{ $message }}
+                        </div>
                     @enderror
                 </div>
+
+                @error('biicf_competencies')
+                    <div class="cpbn-error">
+                        {{ $message }}
+                    </div>
+                @enderror
             </div>
 
             <!-- SECTION 4: Interests -->
@@ -1667,17 +2305,18 @@
                 >
                     @foreach($projectRows as $index => $project)
                         @php
+                            $technologiesUsed =
+                                $project['technologies_used']
+                                ?? [];
+
                             $technologies = is_array(
-                                $project['technologies_used'] ?? []
+                                $technologiesUsed
                             )
                                 ? implode(
                                     ', ',
-                                    $project['technologies_used']
+                                    $technologiesUsed
                                 )
-                                : (string) (
-                                    $project['technologies_used']
-                                    ?? ''
-                                );
+                                : (string) $technologiesUsed;
                         @endphp
 
                         <div class="cpbn-project-card">
@@ -2395,8 +3034,69 @@ document.addEventListener('DOMContentLoaded', function () {
             hidden.name = config.hiddenName;
             hidden.value = value;
 
+            chip.appendChild(label);
+
+            if (
+                Array.isArray(
+                    config.proficiencyLevels
+                )
+                && config.levelName
+            ) {
+                const levelSelect =
+                    document.createElement(
+                        'select'
+                    );
+
+                levelSelect.name =
+                    config.levelName;
+
+                levelSelect.className =
+                    'cpbn-custom-level-select';
+
+                levelSelect.required = true;
+
+                const placeholder =
+                    document.createElement(
+                        'option'
+                    );
+
+                placeholder.value = '';
+                placeholder.textContent =
+                    'Choose level';
+
+                levelSelect.appendChild(
+                    placeholder
+                );
+
+                config.proficiencyLevels
+                    .forEach(level => {
+                        const option =
+                            document.createElement(
+                                'option'
+                            );
+
+                        option.value =
+                            level.id;
+
+                        option.textContent =
+                            `Level ${level.level_number} — ${level.name}`;
+
+                        levelSelect.appendChild(
+                            option
+                        );
+                    });
+
+                levelSelect.addEventListener(
+                    'change',
+                    markChanged
+                );
+
+                chip.appendChild(
+                    levelSelect
+                );
+            }
+
             chip.append(
-                label,
                 removeButton,
                 hidden
             );
@@ -2466,7 +3166,10 @@ document.addEventListener('DOMContentLoaded', function () {
             createChip(value);
         };
 
-        const setEnabled = function (enabled) {
+        const setEnabled = function (
+            enabled,
+            shouldFocus = false
+        ) {
             section.hidden = ! enabled;
 
             section
@@ -2477,31 +3180,38 @@ document.addEventListener('DOMContentLoaded', function () {
                     hidden.disabled = ! enabled;
                 });
 
-            if (enabled) {
+            if (config.levelName) {
+                section
+                    .querySelectorAll(
+                        `select[name="${config.levelName}"]`
+                    )
+                    .forEach(select => {
+                        select.disabled = ! enabled;
+                    });
+            }
+
+            if (enabled && shouldFocus) {
                 input.focus();
-            } else {
-                /*
-                 * Important:
-                 * Chips are NOT deleted here.
-                 *
-                 * Unticking Others only prevents them from
-                 * being submitted. If the user changes their
-                 * mind before saving, checking Others again
-                 * restores the same chips.
-                 *
-                 * If the page is refreshed without saving,
-                 * the database remains unchanged.
-                 */
+            }
+
+            if (! enabled) {
                 hideFeedback();
             }
         };
 
-        setEnabled(toggle.checked);
+        setEnabled(
+            toggle.checked,
+            false
+        );
 
         toggle.addEventListener(
             'change',
             function () {
-                setEnabled(this.checked);
+                setEnabled(
+                    this.checked,
+                    this.checked
+                );
+
                 markChanged();
             }
         );
@@ -2573,6 +3283,64 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     };
 
+    /*
+     * BIICF competency controls.
+     *
+     * A proficiency level is only enabled when
+     * its competency is selected.
+     */
+    document
+        .querySelectorAll(
+            '[data-biicf-competency]'
+        )
+        .forEach(item => {
+            const checkbox =
+                item.querySelector(
+                    '.biicf-competency-checkbox'
+                );
+
+            const select =
+                item.querySelector(
+                    '.biicf-proficiency-select'
+                );
+
+            if (! checkbox || ! select) {
+                return;
+            }
+
+            const syncState = function () {
+                select.disabled =
+                    ! checkbox.checked;
+
+                select.required =
+                    checkbox.checked;
+
+                item.classList.toggle(
+                    'selected',
+                    checkbox.checked
+                );
+
+                if (! checkbox.checked) {
+                    select.value = '';
+                }
+            };
+
+            checkbox.addEventListener(
+                'change',
+                function () {
+                    syncState();
+                    markChanged();
+                }
+            );
+
+            select.addEventListener(
+                'change',
+                markChanged
+            );
+
+            syncState();
+        });
+
     initialiseAdditionalField({
         toggleId: 'additional-skills-toggle',
         sectionId: 'additional-skills-section',
@@ -2584,7 +3352,11 @@ document.addEventListener('DOMContentLoaded', function () {
         warningActionsId: 'additional-skill-warning-actions',
         editButtonId: 'edit-additional-skill',
         addAnywayButtonId: 'add-additional-skill-anyway',
+
         hiddenName: 'custom_skills[]',
+        levelName: 'custom_skill_levels[]',
+        proficiencyLevels: @json($proficiencyLevelOptions),
+
         singular: 'skill',
         plural: 'skills',
         predefined: @json($skillOptions ?? []),
