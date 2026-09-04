@@ -99,6 +99,14 @@ class BiicfExplorerController extends Controller
         $jobRole->load(['competencies' => fn ($q) => $q->orderBy('type')]);
 
         $levelMap = [
+            // Current BIICF proficiency scale.
+            'follow' => 1,
+            'assist' => 2,
+            'apply' => 3,
+            'ensure' => 4,
+            'strategise' => 5,
+
+            // Legacy student profile values.
             'beginner' => 1,
             'intermediate' => 2,
             'advanced' => 3,
