@@ -2,8 +2,10 @@
 
 namespace App\Providers;
 
+use App\Contracts\CareerAdviserClient;
 use App\Contracts\CareerAiClient;
 use App\Services\AI\HttpCareerAiClient;
+use App\Services\AI\MockCareerAdviserClient;
 use App\Services\AI\MockCareerAiClient;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +26,15 @@ class AppServiceProvider extends ServiceProvider
                     ),
                 };
             }
+        );
+
+        /*
+         * Career Adviser uses the mock client until the
+         * external Adviser API contract is available.
+         */
+        $this->app->bind(
+            CareerAdviserClient::class,
+            MockCareerAdviserClient::class
         );
     }
 

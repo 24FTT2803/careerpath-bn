@@ -207,6 +207,34 @@
         max-width: 760px;
     }
 
+    .adviser-message + .adviser-message {
+        margin-top: 18px;
+    }
+
+    .adviser-message.student-message {
+        margin-left: auto;
+        flex-direction: row-reverse;
+    }
+
+    .student-message .message-bubble {
+        border-radius: 12px 4px 12px 12px;
+        background: #f4f7fb;
+    }
+
+    .student-message .message-name {
+        text-align: right;
+    }
+
+    .adviser-message.loading-message .message-bubble {
+        color: var(--adviser-muted);
+        font-style: italic;
+    }
+
+    .adviser-message.error-message .message-bubble {
+        border-color: #e5b8b8;
+        background: #fff8f8;
+    }
+
     .message-avatar {
         width: 32px;
         height: 32px;
@@ -240,6 +268,11 @@
 
     .message-bubble p:last-child {
         margin-bottom: 0;
+    }
+
+    .message-text {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
     }
 
     /*
@@ -701,7 +734,7 @@
 
         <div class="adviser-preview-badge">
             <i class="fas fa-flask"></i>
-            Preview Mode
+            Prototype Mode
         </div>
     </div>
 
@@ -709,9 +742,9 @@
         <i class="fas fa-circle-info"></i>
 
         <div>
-            This is the Career Adviser interface preview.
-            AI responses are not connected yet; the current page establishes
-            the experience that will later connect to the Career Adviser service.
+            The Career Adviser is currently running in prototype mode.
+            Responses use your CareerPath profile, recommendations and BIICF data
+            through a mock Adviser service while the external AI API is still being developed.
         </div>
     </div>
 
@@ -737,12 +770,15 @@
 
                 <div class="preview-status">
                     <span class="preview-status-dot"></span>
-                    Interface preview
+                    Prototype adviser active
                 </div>
 
             </div>
 
-            <div class="conversation-body">
+            <div
+                id="careerAdviserConversation"
+                class="conversation-body"
+            >
 
                 <div class="adviser-message">
 
@@ -842,9 +878,10 @@
 
                     <button
                         type="button"
+                        id="careerAdviserSend"
                         class="composer-send"
                         disabled
-                        title="AI integration is not connected yet"
+                        title="Send message"
                     >
                         <i class="fas fa-paper-plane"></i>
                         <span>Send</span>
@@ -853,8 +890,8 @@
                 </div>
 
                 <p class="composer-note">
-                    Preview only — message processing will be enabled during
-                    Career Adviser integration.
+                    Prototype mode — responses use your current CareerPath data
+                    while the external AI service is still being developed.
                 </p>
 
             </div>
@@ -1086,10 +1123,223 @@
                     'careerAdviserPrompt'
                 );
 
+            const sendButton =
+                document.getElementById(
+                    'careerAdviserSend'
+                );
+
+            const conversation =
+                document.getElementById(
+                    'careerAdviserConversation'
+                );
+
             const promptButtons =
                 document.querySelectorAll(
                     '.suggested-prompt'
                 );
+
+            const adviserUrl =
+                @json(route('student.career-adviser.ask'));
+
+            const csrfToken =
+                document.querySelector(
+                    'meta[name="csrf-token"]'
+                )?.content;
+
+            let isSending = false;
+
+            function updateSendState() {
+                const hasMessage =
+                    promptInput.value.trim() !== '';
+
+                sendButton.disabled =
+                    ! hasMessage || isSending;
+
+                sendButton.style.cursor =
+                    sendButton.disabled
+                        ? 'not-allowed'
+                        : 'pointer';
+
+                if (sendButton.disabled) {
+                    sendButton.style.background =
+                        '#d6dbe1';
+
+                    sendButton.style.color =
+                        '#7c8794';
+                } else {
+                    sendButton.style.background =
+                        'var(--adviser-primary)';
+
+                    sendButton.style.color =
+                        '#ffffff';
+                }
+            }
+
+            function addMessage(
+                type,
+                message,
+                extraClass = ''
+            ) {
+                const wrapper =
+                    document.createElement('div');
+
+                wrapper.className =
+                    'adviser-message '
+                    + (
+                        type === 'student'
+                            ? 'student-message '
+                            : ''
+                    )
+                    + extraClass;
+
+                const avatar =
+                    document.createElement('div');
+
+                avatar.className =
+                    'message-avatar';
+
+                const icon =
+                    document.createElement('i');
+
+                icon.className =
+                    type === 'student'
+                        ? 'fas fa-user'
+                        : 'fas fa-compass';
+
+                avatar.appendChild(icon);
+
+                const bubble =
+                    document.createElement('div');
+
+                bubble.className =
+                    'message-bubble';
+
+                const name =
+                    document.createElement('p');
+
+                name.className =
+                    'message-name';
+
+                name.textContent =
+                    type === 'student'
+                        ? 'You'
+                        : 'Career Adviser';
+
+                const text =
+                    document.createElement('p');
+
+                text.className =
+                    'message-text';
+
+                text.textContent = message;
+
+                bubble.appendChild(name);
+                bubble.appendChild(text);
+
+                wrapper.appendChild(avatar);
+                wrapper.appendChild(bubble);
+
+                conversation.appendChild(
+                    wrapper
+                );
+
+                wrapper.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'nearest'
+                });
+
+                return wrapper;
+            }
+
+            async function sendMessage() {
+                const message =
+                    promptInput.value.trim();
+
+                if (
+                    message === ''
+                    || isSending
+                ) {
+                    return;
+                }
+
+                isSending = true;
+
+                addMessage(
+                    'student',
+                    message
+                );
+
+                promptInput.value = '';
+
+                updateSendState();
+
+                const loadingMessage =
+                    addMessage(
+                        'adviser',
+                        'Career Adviser is thinking...',
+                        'loading-message'
+                    );
+
+                try {
+                    const response =
+                        await fetch(
+                            adviserUrl,
+                            {
+                                method: 'POST',
+
+                                headers: {
+                                    'Content-Type':
+                                        'application/json',
+
+                                    'Accept':
+                                        'application/json',
+
+                                    'X-Requested-With':
+                                        'XMLHttpRequest',
+
+                                    'X-CSRF-TOKEN':
+                                        csrfToken
+                                },
+
+                                body: JSON.stringify({
+                                    message: message
+                                })
+                            }
+                        );
+
+                    const data =
+                        await response.json();
+
+                    loadingMessage.remove();
+
+                    if (! response.ok) {
+                        throw new Error(
+                            data.message
+                            || 'The Career Adviser could not process your question.'
+                        );
+                    }
+
+                    addMessage(
+                        'adviser',
+                        data.message
+                    );
+                } catch (error) {
+                    loadingMessage.remove();
+
+                    addMessage(
+                        'adviser',
+                        error.message
+                        || 'The Career Adviser is temporarily unavailable. Please try again.',
+                        'error-message'
+                    );
+                } finally {
+                    isSending = false;
+
+                    updateSendState();
+
+                    promptInput.focus();
+                }
+            }
 
             promptButtons.forEach(
                 function (button) {
@@ -1097,13 +1347,42 @@
                         'click',
                         function () {
                             promptInput.value =
-                                button.dataset.prompt || '';
+                                button.dataset.prompt
+                                || '';
+
+                            updateSendState();
 
                             promptInput.focus();
                         }
                     );
                 }
             );
+
+            promptInput.addEventListener(
+                'input',
+                updateSendState
+            );
+
+            promptInput.addEventListener(
+                'keydown',
+                function (event) {
+                    if (
+                        event.key === 'Enter'
+                        && ! event.shiftKey
+                    ) {
+                        event.preventDefault();
+
+                        sendMessage();
+                    }
+                }
+            );
+
+            sendButton.addEventListener(
+                'click',
+                sendMessage
+            );
+
+            updateSendState();
         }
     );
 </script>

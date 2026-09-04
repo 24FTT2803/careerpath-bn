@@ -71,6 +71,11 @@ Route::middleware(['auth'])
             [CareerAdviserController::class, 'index']
         )->name('career-adviser');
 
+        Route::post(
+            '/career-adviser/ask',
+            [CareerAdviserController::class, 'ask']
+        )->name('career-adviser.ask');
+
         // Dashboard
         Route::get(
             '/dashboard',
