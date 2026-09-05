@@ -27,6 +27,7 @@ use Propaganistas\LaravelPhone\PhoneNumber;
 use Propaganistas\LaravelPhone\Rules\Phone;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProfileController extends Controller
 {
@@ -750,11 +751,15 @@ class ProfileController extends Controller
         $profileCompletion = $user->profile_completion;
         $readinessScore = $user->readiness_score ?? 0;
 
-        return view('student.profile.export', compact(
+        $pdf = Pdf::loadView('student.profile.export', compact(
             'user',
             'profileCompletion',
             'readinessScore'
-        ));
+        ))->setPaper('a4', 'portrait');
+
+        $filename = 'CareerPath-BN-' . Str::slug($user->name) . '-Profile.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**
@@ -795,11 +800,15 @@ class ProfileController extends Controller
         $profileCompletion = $user->profile_completion;
         $readinessScore = $user->readiness_score ?? 0;
 
-        return view('student.profile.export', compact(
+        $pdf = Pdf::loadView('student.profile.export', compact(
             'user',
             'profileCompletion',
             'readinessScore'
-        ));
+        ))->setPaper('a4', 'portrait');
+
+        $filename = 'CareerPath-BN-' . Str::slug($user->name) . '-Profile.pdf';
+
+        return $pdf->download($filename);
     }
 
     // ============================================
