@@ -334,6 +334,56 @@
         gap: 10px;
     }
 
+    .edit-profile .cpbn-competency-item[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-competency-controls {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .edit-profile .cpbn-competency-page-button,
+    .edit-profile .cpbn-competency-toggle {
+        border: 1px solid var(--gold);
+        border-radius: 7px;
+        padding: 8px 14px;
+        background: var(--gold-wash);
+        color: #7b5c23;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: var(--font-body);
+        cursor: pointer;
+        transition: 0.15s ease;
+    }
+
+    .edit-profile .cpbn-competency-page-button:hover:not(:disabled),
+    .edit-profile .cpbn-competency-toggle:hover {
+        background: var(--gold);
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-competency-page-button:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+    }
+
+    .edit-profile .cpbn-competency-page-status {
+        min-width: 90px;
+        text-align: center;
+        color: var(--ink-dim);
+        font-size: 12px;
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-competency-controls [hidden] {
+        display: none;
+    }
+
     .edit-profile .cpbn-competency-item {
         display: flex;
         align-items: center;
@@ -1124,6 +1174,7 @@
                             type="text"
                             name="first_name"
                             value="{{ old('first_name', $user->first_name ?? '') }}"
+                            maxlength="100"
                             required
                         >
 
@@ -1139,6 +1190,7 @@
                             type="text"
                             name="last_name"
                             value="{{ old('last_name', $user->last_name ?? '') }}"
+                            maxlength="100"
                             required
                         >
 
@@ -1164,6 +1216,7 @@
                             type="text"
                             name="student_id"
                             value="{{ old('student_id', $user->student_id) }}"
+                            maxlength="20"
                             required
                         >
 
@@ -1180,6 +1233,7 @@
                             id="phone"
                             name="phone"
                             value="{{ old('phone', $user->phone ?? '') }}"
+                            maxlength="30"
                             autocomplete="tel"
                         >
 
@@ -1259,6 +1313,7 @@
                         <textarea
                             name="address"
                             rows="2"
+                            maxlength="300"
                         >{{ old('address', $user->profile->address ?? '') }}</textarea>
 
                         @error('address')
@@ -1272,7 +1327,13 @@
                         <textarea
                             name="bio"
                             rows="3"
+                            maxlength="500"
+                            placeholder="e.g. Application Development student interested in web development and AI."
                         >{{ old('bio', $user->profile->bio ?? '') }}</textarea>
+
+                        <span class="hint">
+                            Briefly introduce yourself, your interests and what you are currently working towards.
+                        </span>
 
                         @error('bio')
                             <div class="error">{{ $message }}</div>
@@ -1584,7 +1645,10 @@
                         </small>
                     </div>
 
-                    <div class="cpbn-competency-grid">
+                    <div
+                        class="cpbn-competency-grid"
+                        id="technical-competency-grid"
+                    >
                         @foreach(
                             $technicalCompetencies
                             as $competency
@@ -1659,6 +1723,7 @@
                             <div
                                 class="cpbn-competency-item {{ $isSelected ? 'selected' : '' }}"
                                 data-biicf-competency
+                                data-technical-competency
                             >
                                 <label class="cpbn-competency-choice">
                                     <input
@@ -1716,6 +1781,43 @@
                             </div>
                         @endforeach
                     </div>
+
+                    <div
+                        class="cpbn-competency-controls"
+                        id="technical-competency-controls"
+                    >
+                        <button
+                            type="button"
+                            class="cpbn-competency-page-button"
+                            id="technical-competency-previous"
+                        >
+                            Previous
+                        </button>
+
+                        <span
+                            class="cpbn-competency-page-status"
+                            id="technical-competency-page-status"
+                        >
+                            Page 1
+                        </span>
+
+                        <button
+                            type="button"
+                            class="cpbn-competency-page-button"
+                            id="technical-competency-next"
+                        >
+                            Next
+                        </button>
+
+                        <button
+                            type="button"
+                            class="cpbn-competency-toggle"
+                            id="technical-competency-toggle"
+                            aria-expanded="false"
+                        >
+                            Show All ({{ $technicalCompetencies->count() }})
+                        </button>
+                    </div>
                 </div>
 
                 <div class="cpbn-competency-group">
@@ -1735,7 +1837,10 @@
                         </small>
                     </div>
 
-                    <div class="cpbn-competency-grid">
+                    <div
+                        class="cpbn-competency-grid"
+                        id="soft-competency-grid"
+                    >
                         @foreach(
                             $softCompetencies
                             as $competency
@@ -1810,6 +1915,7 @@
                             <div
                                 class="cpbn-competency-item {{ $isSelected ? 'selected' : '' }}"
                                 data-biicf-competency
+                                data-soft-competency
                             >
                                 <label class="cpbn-competency-choice">
                                     <input
@@ -1866,6 +1972,43 @@
                                 @enderror
                             </div>
                         @endforeach
+                    </div>
+
+                    <div
+                        class="cpbn-competency-controls"
+                        id="soft-competency-controls"
+                    >
+                        <button
+                            type="button"
+                            class="cpbn-competency-page-button"
+                            id="soft-competency-previous"
+                        >
+                            Previous
+                        </button>
+
+                        <span
+                            class="cpbn-competency-page-status"
+                            id="soft-competency-page-status"
+                        >
+                            Page 1
+                        </span>
+
+                        <button
+                            type="button"
+                            class="cpbn-competency-page-button"
+                            id="soft-competency-next"
+                        >
+                            Next
+                        </button>
+
+                        <button
+                            type="button"
+                            class="cpbn-competency-toggle"
+                            id="soft-competency-toggle"
+                            aria-expanded="false"
+                        >
+                            Show All ({{ $softCompetencies->count() }})
+                        </button>
                     </div>
                 </div>
 
@@ -1975,7 +2118,7 @@
                         <input
                             type="text"
                             id="additional-skill-input"
-                            maxlength="60"
+                            maxlength="40"
                             autocomplete="off"
                             placeholder="Type another skill..."
                             aria-describedby="additional-skill-example additional-skill-feedback"
@@ -2185,7 +2328,7 @@
                         <input
                             type="text"
                             id="additional-interest-input"
-                            maxlength="60"
+                            maxlength="40"
                             autocomplete="off"
                             placeholder="Type another interest..."
                             aria-describedby="additional-interest-example additional-interest-feedback"
@@ -2342,6 +2485,8 @@
                                         type="text"
                                         name="projects[{{ $index }}][title]"
                                         value="{{ $project['title'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="e.g. Hobbee Apps"
                                         required
                                     >
                                 </div>
@@ -2352,6 +2497,8 @@
                                         type="text"
                                         name="projects[{{ $index }}][role]"
                                         value="{{ $project['role'] ?? '' }}"
+                                        maxlength="100"
+                                        placeholder="e.g. Laravel Developer, UI Designer, Team Member"
                                     >
                                 </div>
 
@@ -2361,6 +2508,8 @@
                                         type="url"
                                         name="projects[{{ $index }}][project_url]"
                                         value="{{ $project['project_url'] ?? '' }}"
+                                        maxlength="255"
+                                        placeholder="e.g. GitHub repository or live project link"
                                     >
                                 </div>
 
@@ -2369,6 +2518,8 @@
                                     <textarea
                                         name="projects[{{ $index }}][description]"
                                         rows="2"
+                                        maxlength="1000"
+                                        placeholder="Briefly describe what the project does and your contribution."
                                     >{{ $project['description'] ?? '' }}</textarea>
                                 </div>
 
@@ -2378,9 +2529,12 @@
                                         type="text"
                                         name="projects[{{ $index }}][technologies_used]"
                                         value="{{ $technologies }}"
+                                        maxlength="500"
+                                        placeholder="e.g. Laravel, MySQL, JavaScript"
                                     >
+
                                     <span class="cpbn-file-note">
-                                        Separate with commas
+                                        Separate technologies with commas
                                     </span>
                                 </div>
 
@@ -2407,6 +2561,8 @@
                                     <textarea
                                         name="projects[{{ $index }}][achievements]"
                                         rows="2"
+                                        maxlength="500"
+                                        placeholder="e.g. Completed the authentication module and integrated the recommendation API."
                                     >{{ $project['achievements'] ?? '' }}</textarea>
                                 </div>
                             </div>
@@ -2531,6 +2687,8 @@
                                         type="text"
                                         name="certifications[{{ $index }}][certification_name]"
                                         value="{{ $certification['certification_name'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="e.g. AWS Certified Cloud Practitioner"
                                         required
                                     >
                                 </div>
@@ -2542,6 +2700,8 @@
                                         type="text"
                                         name="certifications[{{ $index }}][issuing_organization]"
                                         value="{{ $certification['issuing_organization'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="e.g. Amazon Web Services, Cisco, Politeknik Brunei"
                                     >
                                 </div>
 
@@ -2661,16 +2821,24 @@
                             type="text"
                             name="career_goals_text"
                             value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}"
+                            maxlength="100"
                             placeholder="e.g. Software Engineer"
                         >
                     </div>
 
                     <div class="cpbn-field full">
                         <label>Vision Statement</label>
+
                         <textarea
                             name="vision_statement"
                             rows="2"
+                            maxlength="500"
+                            placeholder="e.g. I want to use technology to build useful solutions that improve people's work and daily lives."
                         >{{ old('vision_statement', $user->aspirations->vision_statement ?? '') }}</textarea>
+
+                        <span class="hint">
+                            Describe the kind of impact or future you hope to create through your career.
+                        </span>
                     </div>
 
                     <div class="cpbn-field full">
@@ -2678,7 +2846,13 @@
                         <textarea
                             name="long_term_goals"
                             rows="2"
+                            maxlength="500"
+                            placeholder="e.g. Become a senior developer and eventually lead software projects."
                         >{{ old('long_term_goals', $user->aspirations->long_term_goals ?? '') }}</textarea>
+
+                        <span class="hint">
+                            Describe what you would like to achieve in your career over the coming years.
+                        </span>
                     </div>
                 </div>
             </div>
@@ -2853,8 +3027,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `Enter a ${config.singular} before adding it.`;
             }
 
-            if (value.length > 60) {
-                return `Each additional ${config.singular} must be 60 characters or fewer.`;
+            if (value.length > 40) {
+                return `Each additional ${config.singular} must be 40 characters or fewer.`;
             }
 
             const lettersAndNumbers = value.replace(
@@ -3282,6 +3456,299 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         );
     };
+
+    const initialiseCompetencyPagination =
+        function(config) {
+            const grid =
+                document.getElementById(
+                    config.gridId
+                );
+
+            const toggle =
+                document.getElementById(
+                    config.toggleId
+                );
+
+            const previous =
+                document.getElementById(
+                    config.previousId
+                );
+
+            const next =
+                document.getElementById(
+                    config.nextId
+                );
+
+            const pageStatus =
+                document.getElementById(
+                    config.statusId
+                );
+
+            if (
+                ! grid
+                || ! toggle
+                || ! previous
+                || ! next
+                || ! pageStatus
+            ) {
+                return;
+            }
+
+            const pageSize =
+                config.pageSize || 10;
+
+            const items =
+                Array.from(
+                    grid.querySelectorAll(
+                        config.itemSelector
+                    )
+                );
+
+            const totalPages =
+                Math.max(
+                    1,
+                    Math.ceil(
+                        items.length
+                        / pageSize
+                    )
+                );
+
+            let currentPage = 0;
+            let showingAll = false;
+
+            const update =
+                function() {
+                    if (showingAll) {
+                        items.forEach(
+                            function(item) {
+                                item.hidden = false;
+                            }
+                        );
+
+                        previous.hidden = true;
+                        next.hidden = true;
+
+                        pageStatus.textContent =
+                            `Showing all ${items.length}`;
+
+                        toggle.textContent =
+                            'Show Less';
+
+                        toggle.setAttribute(
+                            'aria-expanded',
+                            'true'
+                        );
+
+                        return;
+                    }
+
+                    const start =
+                        currentPage
+                        * pageSize;
+
+                    const end =
+                        start
+                        + pageSize;
+
+                    items.forEach(
+                        function(item, index) {
+                            item.hidden =
+                                index < start
+                                || index >= end;
+                        }
+                    );
+
+                    previous.hidden = false;
+                    next.hidden = false;
+
+                    previous.disabled =
+                        currentPage === 0;
+
+                    next.disabled =
+                        currentPage
+                        >= totalPages - 1;
+
+                    pageStatus.textContent =
+                        `Page ${currentPage + 1} of ${totalPages}`;
+
+                    toggle.textContent =
+                        `Show All (${items.length})`;
+
+                    toggle.setAttribute(
+                        'aria-expanded',
+                        'false'
+                    );
+                };
+
+            previous.addEventListener(
+                'click',
+                function() {
+                    if (currentPage <= 0) {
+                        return;
+                    }
+
+                    currentPage--;
+
+                    update();
+                }
+            );
+
+            next.addEventListener(
+                'click',
+                function() {
+                    if (
+                        currentPage
+                        >= totalPages - 1
+                    ) {
+                        return;
+                    }
+
+                    currentPage++;
+
+                    update();
+                }
+            );
+
+            toggle.addEventListener(
+                'click',
+                function() {
+                    showingAll =
+                        ! showingAll;
+
+                    update();
+                }
+            );
+
+            update();
+        };
+
+    initialiseCompetencyPagination({
+        gridId:
+            'technical-competency-grid',
+
+        itemSelector:
+            '[data-technical-competency]',
+
+        previousId:
+            'technical-competency-previous',
+
+        nextId:
+            'technical-competency-next',
+
+        statusId:
+            'technical-competency-page-status',
+
+        toggleId:
+            'technical-competency-toggle',
+
+        pageSize:
+            10
+    });
+
+    initialiseCompetencyPagination({
+        gridId:
+            'soft-competency-grid',
+
+        itemSelector:
+            '[data-soft-competency]',
+
+        previousId:
+            'soft-competency-previous',
+
+        nextId:
+            'soft-competency-next',
+
+        statusId:
+            'soft-competency-page-status',
+
+        toggleId:
+            'soft-competency-toggle',
+
+        pageSize:
+            10
+    });
+
+    /*
+    * If native form validation finds a required
+    * proficiency level on a hidden competency page,
+    * reveal that competency list before the browser
+    * tries to focus the invalid field.
+    */
+    const profileForm =
+        document.getElementById(
+            'profile-form'
+        );
+
+    if (profileForm) {
+        profileForm.addEventListener(
+            'invalid',
+            function(event) {
+                const field =
+                    event.target;
+
+                if (
+                    ! field.classList.contains(
+                        'biicf-proficiency-select'
+                    )
+                ) {
+                    return;
+                }
+
+                const competencyItem =
+                    field.closest(
+                        '.cpbn-competency-item'
+                    );
+
+                if (
+                    ! competencyItem
+                    || ! competencyItem.hidden
+                ) {
+                    return;
+                }
+
+                const grid =
+                    competencyItem.closest(
+                        '.cpbn-competency-grid'
+                    );
+
+                if (! grid) {
+                    return;
+                }
+
+                let toggle = null;
+
+                if (
+                    grid.id
+                    === 'technical-competency-grid'
+                ) {
+                    toggle =
+                        document.getElementById(
+                            'technical-competency-toggle'
+                        );
+                }
+
+                if (
+                    grid.id
+                    === 'soft-competency-grid'
+                ) {
+                    toggle =
+                        document.getElementById(
+                            'soft-competency-toggle'
+                        );
+                }
+
+                if (
+                    toggle
+                    && toggle.getAttribute(
+                        'aria-expanded'
+                    ) === 'false'
+                ) {
+                    toggle.click();
+                }
+            },
+            true
+        );
+    }
 
     /*
      * BIICF competency controls.

@@ -1489,6 +1489,7 @@ document.addEventListener(
                                         <input
                                             type="text"
                                             name="projects[${projectIndex}][title]"
+                                            maxlength="150"
                                             placeholder="e.g. Hobbee Apps"
                                             required
                                         >
@@ -1500,7 +1501,8 @@ document.addEventListener(
                                         <input
                                             type="text"
                                             name="projects[${projectIndex}][role]"
-                                            placeholder="e.g. Lead Developer"
+                                            maxlength="100"
+                                            placeholder="e.g. Laravel Developer, UI Designer, Team Member"
                                         >
                                     </div>
 
@@ -1510,7 +1512,8 @@ document.addEventListener(
                                         <input
                                             type="url"
                                             name="projects[${projectIndex}][project_url]"
-                                            placeholder="https://github.com/your-project"
+                                            maxlength="255"
+                                            placeholder="e.g. GitHub repository or live project link"
                                         >
                                     </div>
 
@@ -1520,7 +1523,8 @@ document.addEventListener(
                                         <textarea
                                             name="projects[${projectIndex}][description]"
                                             rows="2"
-                                            placeholder="Brief description"
+                                            maxlength="1000"
+                                            placeholder="Briefly describe what the project does and your contribution."
                                         ></textarea>
                                     </div>
 
@@ -1530,7 +1534,8 @@ document.addEventListener(
                                         <input
                                             type="text"
                                             name="projects[${projectIndex}][technologies_used]"
-                                            placeholder="e.g. Python, React, MySQL"
+                                            maxlength="500"
+                                            placeholder="e.g. Laravel, MySQL, JavaScript"
                                         >
 
                                         <small class="cpbn-file-note">
@@ -1562,7 +1567,8 @@ document.addEventListener(
                                         <textarea
                                             name="projects[${projectIndex}][achievements]"
                                             rows="2"
-                                            placeholder="What did you accomplish?"
+                                            maxlength="500"
+                                            placeholder="e.g. Completed the authentication module and integrated the recommendation API."
                                         ></textarea>
                                     </div>
                                 </div>
@@ -1648,7 +1654,8 @@ document.addEventListener(
                                         <input
                                             type="text"
                                             name="certifications[${certificationIndex}][certification_name]"
-                                            placeholder="e.g. AWS Cloud Practitioner"
+                                            maxlength="150"
+                                            placeholder="e.g. AWS Certified Cloud Practitioner"
                                             required
                                         >
                                     </div>
@@ -1659,7 +1666,8 @@ document.addEventListener(
                                         <input
                                             type="text"
                                             name="certifications[${certificationIndex}][issuing_organization]"
-                                            placeholder="e.g. AWS, Cisco, Politeknik Brunei"
+                                            maxlength="150"
+                                            placeholder="e.g. Amazon Web Services, Cisco, Politeknik Brunei"
                                         >
                                     </div>
 
