@@ -211,9 +211,9 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
-            'student_id' => ['nullable', 'string', 'max:50', 'unique:users,student_id,' . $user->id],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
+            'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,' . $user->id],
             'phone' => [
                 'nullable',
                 'string',
@@ -229,10 +229,10 @@ class ProfileController extends Controller
                 'string',
                 'size:2',
             ],
-            'address' => ['nullable', 'string', 'max:500'],
+            'address' => ['nullable', 'string', 'max:300'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
-            'bio' => ['nullable', 'string', 'max:1000'],
+            'bio' => ['nullable', 'string', 'max:500'],
             'profile_picture' => [
                 'nullable',
                 File::image()
@@ -297,7 +297,7 @@ class ProfileController extends Controller
             'custom_skills.*' => [
                 'nullable',
                 'string',
-                'max:60',
+                'max:40',
             ],
 
             'custom_skill_levels' => [
@@ -321,10 +321,62 @@ class ProfileController extends Controller
             'custom_interests.*' => [
                 'nullable',
                 'string',
-                'max:60',
+                'max:40',
             ],
 
             'projects' => ['nullable', 'array'],
+
+            'projects.*.id' => [
+                'nullable',
+                'integer',
+                'distinct',
+            ],
+
+            'projects.*.title' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'projects.*.role' => [
+                'nullable',
+                'string',
+                'max:100',
+            ],
+
+            'projects.*.project_url' => [
+                'nullable',
+                'url',
+                'max:255',
+            ],
+
+            'projects.*.description' => [
+                'nullable',
+                'string',
+                'max:1000',
+            ],
+
+            'projects.*.technologies_used' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
+            'projects.*.start_date' => [
+                'nullable',
+                'date',
+            ],
+
+            'projects.*.end_date' => [
+                'nullable',
+                'date',
+            ],
+
+            'projects.*.achievements' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
 
             'certifications' => ['nullable', 'array'],
 
@@ -337,13 +389,13 @@ class ProfileController extends Controller
             'certifications.*.certification_name' => [
                 'required',
                 'string',
-                'max:255',
+                'max:150',
             ],
 
             'certifications.*.issuing_organization' => [
                 'nullable',
                 'string',
-                'max:255',
+                'max:150',
             ],
 
             'certifications.*.issue_date' => [
@@ -372,7 +424,7 @@ class ProfileController extends Controller
                 'distinct',
             ],
 
-            'career_goals_text' => ['nullable', 'string'],
+            'career_goals_text' => ['nullable', 'string', 'max:100'],
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
         ], [
@@ -1266,10 +1318,10 @@ class ProfileController extends Controller
                 continue;
             }
 
-            if (mb_strlen($clean) > 60) {
+            if (mb_strlen($clean) > 40) {
                 throw ValidationException::withMessages([
                     'custom_skills' =>
-                        'Each additional skill must be 60 characters or fewer.',
+                        'Each additional skill must be 40 characters or fewer.',
                 ]);
             }
 
@@ -1402,10 +1454,10 @@ class ProfileController extends Controller
                 continue;
             }
 
-            if (mb_strlen($clean) > 60) {
+            if (mb_strlen($clean) > 40) {
                 throw ValidationException::withMessages([
                     'custom_skills' =>
-                        'Each additional skill must be 60 characters or fewer.',
+                        'Each additional skill must be 40 characters or fewer.',
                 ]);
             }
 
@@ -1571,10 +1623,10 @@ class ProfileController extends Controller
                 continue;
             }
 
-            if (mb_strlen($clean) > 60) {
+            if (mb_strlen($clean) > 40) {
                 throw ValidationException::withMessages([
                     'custom_interests' =>
-                        'Each additional interest must be 60 characters or fewer.',
+                        'Each additional interest must be 40 characters or fewer.',
                 ]);
             }
 
