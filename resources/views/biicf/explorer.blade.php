@@ -172,6 +172,70 @@
         color: var(--text-muted);
     }
 
+    /* Explorer Search Bar (job roles + competencies glossary) */
+    .explorer-search-bar {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 10px 14px;
+        margin-bottom: 14px;
+    }
+
+    .explorer-search-bar i.fa-search {
+        color: var(--text-muted);
+        font-size: 13px;
+    }
+
+    .explorer-search-bar input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 13px;
+        font-family: inherit;
+        color: var(--text);
+    }
+
+    .explorer-search-bar .clear {
+        cursor: pointer;
+        color: var(--text-muted);
+        font-size: 16px;
+        line-height: 1;
+        padding: 0 2px;
+    }
+
+    .explorer-search-bar .clear:hover {
+        color: var(--primary);
+    }
+
+    .filter-pills {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .filter-pills .pill {
+        border: 1px solid var(--border);
+        background: var(--card);
+        color: var(--text-muted);
+        border-radius: 100px;
+        padding: 5px 14px;
+        font-size: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: var(--transition);
+        font-family: inherit;
+    }
+
+    .filter-pills .pill.active {
+        background: var(--primary);
+        color: #fff;
+        border-color: var(--primary);
+    }
+
     /* Job Role List */
     .role-list {
         display: grid;
@@ -549,31 +613,43 @@
                 <section x-show="activeSection === 'job-roles'" x-cloak>
                     <div class="section-title"><i class="fas fa-briefcase"></i> Job Roles</div>
 
+                    <div class="explorer-search-bar">
+                        <i class="fas fa-search"></i>
+                        <input
+                            type="text"
+                            placeholder="Search all {{ $jobRoleCount ?? 0 }} job roles by title..."
+                            x-model="roleSearch"
+                            @input.debounce.350ms="searchRoles()"
+                        >
+                        <span class="clear" x-show="roleSearch" @click="roleSearch = ''; searchRoles()">×</span>
+                    </div>
+
                     <template x-if="selectedSubSectorName">
                         <div class="selected-filter">
                             <i class="fas fa-filter"></i>
                             <span x-text="selectedSubSectorName"></span>
-                            <span class="remove" @click="selectedSubSectorSlug = null; selectedSubSectorName = null; loadRoles()">×</span>
+                            <span class="remove" @click="selectedSubSectorSlug = null; selectedSubSectorName = null; roleSearch = ''; loadRoles()">×</span>
                         </div>
                     </template>
 
-                    <div class="empty-state" x-show="!selectedSubSectorSlug && roles.length === 0" style="padding:20px;">
+                    <div class="empty-state" x-show="!selectedSubSectorSlug && !roleSearch && roles.length === 0" style="padding:20px;">
                         <i class="fas fa-hand-point-left"></i>
-                        <h4>Select a sub-sector first</h4>
-                        <p>Or browse all {{ $jobRoleCount ?? 0 }} job roles below.</p>
+                        <h4>Search above, or select a sub-sector</h4>
+                        <p>Browse all {{ $jobRoleCount ?? 0 }} job roles by typing a title, or pick a sub-sector from "ICT Sub-sectors".</p>
                     </div>
 
                     <div class="role-list">
                         <template x-for="role in roles" :key="role.id">
                             <button class="role-item" @click="selectJobRole(role.slug)">
                                 <span class="title" x-text="role.title"></span>
+                                <span class="level" x-show="role.sub_sector && !selectedSubSectorSlug" x-text="role.sub_sector?.name"></span>
                                 <span class="level">Level <span x-text="role.career_path_level"></span></span>
                             </button>
                         </template>
-                        <div x-show="selectedSubSectorSlug && roles.length === 0" class="empty-state" style="padding:20px;">
+                        <div x-show="(selectedSubSectorSlug || roleSearch) && roles.length === 0" class="empty-state" style="padding:20px;">
                             <i class="fas fa-search"></i>
                             <h4>No roles found</h4>
-                            <p>Try selecting a different sub-sector.</p>
+                            <p>Try a different search term or sub-sector.</p>
                         </div>
                     </div>
                 </section>
@@ -662,10 +738,45 @@
                         </div>
                     </template>
 
-                    <div x-show="!selectedRole" class="empty-state" style="padding:40px;">
-                        <i class="fas fa-hand-point-up"></i>
-                        <h4>Select a job role first</h4>
-                        <p>Go to "Job Roles" to see required competencies, or browse the full glossary of {{ $competencyCount ?? 0 }} competencies.</p>
+                    <!-- Full glossary browser (shown when no specific job role is selected) -->
+                    <div x-show="!selectedRole">
+                        <div class="explorer-search-bar">
+                            <i class="fas fa-search"></i>
+                            <input
+                                type="text"
+                                placeholder="Search all {{ $competencyCount ?? 0 }} competencies by name..."
+                                x-model="competencySearch"
+                                @input.debounce.350ms="searchCompetencies()"
+                            >
+                            <span class="clear" x-show="competencySearch" @click="competencySearch = ''; searchCompetencies()">×</span>
+                        </div>
+
+                        <div class="filter-pills">
+                            <button class="pill" :class="{ active: competencyTypeFilter === '' }" @click="competencyTypeFilter = ''; searchCompetencies()">All</button>
+                            <button class="pill" :class="{ active: competencyTypeFilter === 'technical' }" @click="competencyTypeFilter = 'technical'; searchCompetencies()">Technical</button>
+                            <button class="pill" :class="{ active: competencyTypeFilter === 'soft_skill' }" @click="competencyTypeFilter = 'soft_skill'; searchCompetencies()">Soft Skill</button>
+                        </div>
+
+                        <div class="comp-group" x-show="competencyResults.length">
+                            <template x-for="comp in competencyResults" :key="comp.id">
+                                <div class="comp-item">
+                                    <span class="name" x-text="comp.name"></span>
+                                    <span class="status" x-text="comp.type === 'technical' ? 'Technical' : 'Soft Skill'"></span>
+                                </div>
+                            </template>
+                        </div>
+
+                        <div class="empty-state" x-show="competencySearched && competencyResults.length === 0" style="padding:20px;">
+                            <i class="fas fa-search"></i>
+                            <h4>No competencies found</h4>
+                            <p>Try a different search term or filter.</p>
+                        </div>
+
+                        <div class="empty-state" x-show="!competencySearched" style="padding:40px;">
+                            <i class="fas fa-hand-point-up"></i>
+                            <h4>Search the glossary, or select a job role</h4>
+                            <p>Go to "Job Roles" to see competencies required for a specific role, or search all {{ $competencyCount ?? 0 }} competencies above.</p>
+                        </div>
                     </div>
                 </section>
 
@@ -763,8 +874,13 @@ function biicfExplorer() {
         selectedSubSectorSlug: null,
         selectedSubSectorName: null,
         roles: [],
+        roleSearch: '',
         selectedRole: null,
         comparison: null,
+        competencySearch: '',
+        competencyTypeFilter: '',
+        competencyResults: [],
+        competencySearched: false,
 
         init() {
             // no-op - sections load lazily
@@ -773,6 +889,7 @@ function biicfExplorer() {
         selectSubSector(slug, name) {
             this.selectedSubSectorSlug = slug;
             this.selectedSubSectorName = name;
+            this.roleSearch = '';
             this.activeSection = 'job-roles';
             this.loadRoles();
         },
@@ -784,6 +901,36 @@ function biicfExplorer() {
             }
             const res = await fetch(`/student/biicf-explorer/sub-sectors/${this.selectedSubSectorSlug}/roles`);
             this.roles = await res.json();
+        },
+
+        // Search job roles by title, either across all sub-sectors or scoped to the
+        // currently selected one. Falls back to the normal sub-sector list when the
+        // search box is cleared.
+        async searchRoles() {
+            if (!this.roleSearch) {
+                this.loadRoles();
+                return;
+            }
+            const params = new URLSearchParams({ q: this.roleSearch });
+            if (this.selectedSubSectorSlug) {
+                params.set('sub_sector', this.selectedSubSectorSlug);
+            }
+            const res = await fetch(`/student/biicf-explorer/job-roles-search?${params.toString()}`);
+            this.roles = await res.json();
+        },
+
+        // Search/browse the full competency glossary (independent of a selected job role).
+        async searchCompetencies() {
+            this.competencySearched = true;
+            const params = new URLSearchParams();
+            if (this.competencySearch) {
+                params.set('q', this.competencySearch);
+            }
+            if (this.competencyTypeFilter) {
+                params.set('type', this.competencyTypeFilter);
+            }
+            const res = await fetch(`/student/biicf-explorer/competencies?${params.toString()}`);
+            this.competencyResults = await res.json();
         },
 
         async selectJobRole(slug) {

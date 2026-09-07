@@ -47,6 +47,28 @@ class BiicfExplorerController extends Controller
     }
 
     /**
+     * Search/browse job roles across ALL sub-sectors (used by the explorer's search box).
+     * Supports optional free-text search (?q=) and optional sub-sector scoping (?sub_sector=slug).
+     */
+    public function searchJobRoles(Request $request)
+    {
+        $query = BiicfJobRole::query()->with('subSector:id,name,slug');
+
+        if ($search = $request->get('q')) {
+            $query->where('title', 'like', "%{$search}%");
+        }
+
+        if ($subSectorSlug = $request->get('sub_sector')) {
+            $query->whereHas('subSector', fn ($q) => $q->where('slug', $subSectorSlug));
+        }
+
+        $roles = $query->orderBy('title')
+            ->get(['id', 'sub_sector_id', 'title', 'slug', 'career_path_level']);
+
+        return response()->json($roles);
+    }
+
+    /**
      * Full detail for a single job role: description, competencies (grouped by type),
      * proficiency levels, entry requirements, and recommended trainings.
      */

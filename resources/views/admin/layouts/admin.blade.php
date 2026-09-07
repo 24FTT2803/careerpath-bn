@@ -415,7 +415,12 @@
 
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>
-            <a href="{{ route('admin.dashboard') }}" class="sidebar-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            @php
+                $isLecturerOnly = auth()->user()->role === 'lecturer';
+                $dashboardRoute = $isLecturerOnly ? route('lecturer.dashboard') : route('admin.dashboard');
+                $dashboardActive = request()->routeIs('admin.dashboard') || request()->routeIs('lecturer.dashboard');
+            @endphp
+            <a href="{{ $dashboardRoute }}" class="sidebar-link {{ $dashboardActive ? 'active' : '' }}">
                 <i class="fas fa-th-large"></i>
                 <span>Dashboard</span>
             </a>

@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\BiicfController;
+use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -35,8 +36,11 @@ Route::get('/privacy', function () {
 // DASHBOARD SHORTCUT
 // ============================================
 Route::get('/dashboard', function () {
-    if (auth()->user()->role === 'admin' || auth()->user()->role === 'lecturer') {
+    if (auth()->user()->role === 'admin') {
         return redirect()->route('admin.dashboard');
+    }
+    if (auth()->user()->role === 'lecturer') {
+        return redirect()->route('lecturer.dashboard');
     }
     return redirect()->route('student.dashboard');
 })->name('dashboard');
@@ -190,6 +194,11 @@ Route::middleware(['auth'])
                 )->name('sub-sector.roles');
 
                 Route::get(
+                    '/job-roles-search',
+                    [BiicfExplorerController::class, 'searchJobRoles']
+                )->name('job-roles.search');
+
+                Route::get(
                     '/job-roles/{jobRole:slug}',
                     [BiicfExplorerController::class, 'jobRole']
                 )->name('job-role.show');
@@ -325,4 +334,17 @@ Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function (
             Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('users.update');
             Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
         });
+    });
+
+// ============================================
+// LECTURER ROUTES
+// ============================================
+Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
+    ->prefix('lecturer')
+    ->name('lecturer.')
+    ->group(function () {
+        Route::get(
+            '/dashboard',
+            [LecturerDashboardController::class, 'index']
+        )->name('dashboard');
     });
