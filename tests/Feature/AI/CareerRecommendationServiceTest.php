@@ -4,6 +4,8 @@ use App\Contracts\CareerAiClient;
 use App\Models\BIICFCareer;
 use App\Models\User;
 use App\Services\AI\CareerAiPayloadBuilder;
+use App\Services\AI\CareerRecommendationContextBuilder;
+use App\Services\AI\CareerRecommendationEnricher;
 use App\Services\AI\CareerRecommendationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -62,6 +64,35 @@ function failingCareerAiClient(): CareerAiClient
             );
         }
     };
+}
+
+/**
+ * Build the Career Recommendation service with
+ * all dependencies required by the current implementation.
+ */
+function makeCareerRecommendationService(
+    CareerAiClient $careerAi
+): CareerRecommendationService {
+    /*
+     * These tests exercise the existing legacy/mock
+     * recommendation contract, regardless of the
+     * developer's local CAREER_AI_DRIVER setting.
+     */
+    config([
+        'career-ai.driver' => 'mock',
+    ]);
+
+    $payloadBuilder =
+        new CareerAiPayloadBuilder();
+
+    return new CareerRecommendationService(
+        $careerAi,
+        $payloadBuilder,
+        new CareerRecommendationContextBuilder(
+            $payloadBuilder
+        ),
+        new CareerRecommendationEnricher()
+    );
 }
 
 /**
@@ -152,11 +183,10 @@ test(
             ],
         ];
 
-        $service = new CareerRecommendationService(
+        $service = makeCareerRecommendationService(
             careerAiClientReturning(
                 $invalidResponse
-            ),
-            new CareerAiPayloadBuilder()
+            )
         );
 
         expect(
@@ -219,9 +249,8 @@ test(
                     'Recommendation before API failure.',
             ]);
 
-        $service = new CareerRecommendationService(
-            failingCareerAiClient(),
-            new CareerAiPayloadBuilder()
+        $service = makeCareerRecommendationService(
+            failingCareerAiClient()
         );
 
         expect(
@@ -311,11 +340,10 @@ test(
             ],
         ];
 
-        $service = new CareerRecommendationService(
+        $service = makeCareerRecommendationService(
             careerAiClientReturning(
                 $validResponse
-            ),
-            new CareerAiPayloadBuilder()
+            )
         );
 
         $recommendations = $service

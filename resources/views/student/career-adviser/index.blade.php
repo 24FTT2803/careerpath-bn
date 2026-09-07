@@ -742,9 +742,9 @@
         <i class="fas fa-circle-info"></i>
 
         <div>
-            The Career Adviser is currently running in prototype mode.
-            Responses use your CareerPath profile, recommendations and BIICF data
-            through a mock Adviser service while the external AI API is still being developed.
+            The Career Adviser uses your CareerPath profile,
+            current recommendations and available BIICF data to provide
+            personalised AI-assisted career guidance.
         </div>
     </div>
 
@@ -890,8 +890,8 @@
                 </div>
 
                 <p class="composer-note">
-                    Prototype mode — responses use your current CareerPath data
-                    while the external AI service is still being developed.
+                    Responses use your current CareerPath profile,
+                    recommendations and available BIICF data.
                 </p>
 
             </div>
@@ -966,10 +966,20 @@
                     Top Career Match
                 </div>
 
-                @if($topRecommendation && $topRecommendation->career)
+                @if(
+                    $topRecommendation
+                    && (
+                        $topRecommendation->jobRole
+                        || $topRecommendation->career
+                    )
+                )
 
                     <p class="context-value career-name">
-                        {{ $topRecommendation->career->job_title }}
+                        {{
+                            $topRecommendation->jobRole?->title
+                            ?? $topRecommendation->career?->job_title
+                            ?? 'Career'
+                        }}
                     </p>
 
                     <p class="context-description">

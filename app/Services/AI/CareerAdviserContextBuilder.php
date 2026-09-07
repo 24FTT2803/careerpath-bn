@@ -20,16 +20,22 @@ class CareerAdviserContextBuilder
     public function build(User $student): array
     {
         /*
-         * Reuse the existing Career AI profile builder so the
-         * recommendation system and Career Adviser receive the
+         * Reuse the Career AI profile builder so both
+         * recommendation and Adviser features receive the
          * same representation of the student's profile.
          */
         $profilePayload = $this->profileBuilder->build(
             $student
         );
 
+        /*
+         * Support both:
+         * - legacy BIICFCareer recommendations
+         * - current BiicfJobRole recommendations
+         */
         $student->loadMissing([
             'careerRecommendations.career',
+            'careerRecommendations.jobRole.subSector',
         ]);
 
         $recommendations = $student
@@ -37,11 +43,18 @@ class CareerAdviserContextBuilder
             ->sortBy('rank')
             ->values()
             ->map(function ($recommendation) {
-                $career = $recommendation->career;
+                $legacyCareer =
+                    $recommendation->career;
+
+                $jobRole =
+                    $recommendation->jobRole;
 
                 return [
                     'biicf_career_id' =>
                         $recommendation->biicf_career_id,
+
+                    'biicf_job_role_id' =>
+                        $recommendation->biicf_job_role_id,
 
                     'rank' =>
                         $recommendation->rank,
@@ -55,8 +68,17 @@ class CareerAdviserContextBuilder
                     'matched_skills' =>
                         $recommendation->matched_skills ?? [],
 
+                    'skill_gap_count' =>
+                        count(
+                            $recommendation->skill_gaps ?? []
+                        ),
+
                     'skill_gaps' =>
-                        $recommendation->skill_gaps ?? [],
+                        array_slice(
+                            $recommendation->skill_gaps ?? [],
+                            0,
+                            5
+                        ),
 
                     'development_plan' =>
                         $recommendation->development_plan ?? [],
@@ -65,49 +87,71 @@ class CareerAdviserContextBuilder
                         $recommendation->explanation,
 
                     /*
-                     * Current recommendation records use the
-                     * legacy BIICFCareer model. Keep this
-                     * information separate from the newer
-                     * BIICF Explorer job-role catalogue.
+                     * Legacy five-role recommendation details.
                      */
-                    'career' => $career
+                    'career' => $legacyCareer
                         ? [
                             'job_title' =>
-                                $career->job_title,
+                                $legacyCareer->job_title,
 
                             'subsector' =>
-                                $career->subsector,
+                                $legacyCareer->subsector,
 
                             'technical_skills' =>
                                 $this->normaliseArray(
-                                    $career->technical_skills
+                                    $legacyCareer->technical_skills
                                 ),
 
                             'soft_skills' =>
                                 $this->normaliseArray(
-                                    $career->soft_skills
+                                    $legacyCareer->soft_skills
                                 ),
 
                             'entry_requirements' =>
                                 $this->normaliseArray(
-                                    $career->entry_requirements
+                                    $legacyCareer->entry_requirements
                                 ),
 
                             'recommended_training' =>
                                 $this->normaliseArray(
-                                    $career->recommended_training
+                                    $legacyCareer->recommended_training
                                 ),
 
                             'certifications' =>
                                 $this->normaliseArray(
-                                    $career->certifications
+                                    $legacyCareer->certifications
                                 ),
 
                             'job_description' =>
-                                $career->job_description,
+                                $legacyCareer->job_description,
 
                             'demand_level' =>
-                                $career->demand_level,
+                                $legacyCareer->demand_level,
+                        ]
+                        : null,
+
+                    /*
+                     * Current BIICF Explorer recommendation details.
+                     */
+                    'job_role' => $jobRole
+                        ? [
+                            'id' =>
+                                $jobRole->id,
+
+                            'title' =>
+                                $jobRole->title,
+
+                            'sub_sector' =>
+                                $jobRole->subSector?->name,
+
+                            'functional_group' =>
+                                $jobRole->functional_group,
+
+                            'job_description' =>
+                                $jobRole->job_description,
+
+                            'career_path_level' =>
+                                $jobRole->career_path_level,
                         ]
                         : null,
                 ];
@@ -115,18 +159,17 @@ class CareerAdviserContextBuilder
             ->all();
 
         /*
-         * BIICF Explorer data is supplied as a separate reference
-         * catalogue. We deliberately do not assume that a legacy
-         * BIICFCareer record maps directly to a BiicfJobRole.
+         * Current BIICF Explorer data is provided as the
+         * authoritative reference catalogue available to
+         * the Career Adviser.
          */
         $jobRoles = BiicfJobRole::query()
+            ->with('subSector:id,name')
             ->orderBy('title')
             ->get([
                 'id',
                 'sub_sector_id',
                 'title',
-                'slug',
-                'functional_group',
                 'job_description',
                 'career_path_level',
             ])
@@ -134,17 +177,11 @@ class CareerAdviserContextBuilder
                 'id' =>
                     $role->id,
 
-                'sub_sector_id' =>
-                    $role->sub_sector_id,
-
                 'title' =>
                     $role->title,
 
-                'slug' =>
-                    $role->slug,
-
-                'functional_group' =>
-                    $role->functional_group,
+                'sub_sector' =>
+                    $role->subSector?->name,
 
                 'job_description' =>
                     $role->job_description,
@@ -160,7 +197,6 @@ class CareerAdviserContextBuilder
             ->get([
                 'id',
                 'name',
-                'slug',
                 'type',
                 'description',
             ])
@@ -171,9 +207,6 @@ class CareerAdviserContextBuilder
                 'name' =>
                     $competency->name,
 
-                'slug' =>
-                    $competency->slug,
-
                 'type' =>
                     $competency->type,
 
@@ -183,7 +216,8 @@ class CareerAdviserContextBuilder
             ->all();
 
         return [
-            'schema_version' => '1.0',
+            'schema_version' =>
+                '1.0',
 
             'student_profile' =>
                 $profilePayload['student_profile'] ?? [],
@@ -214,13 +248,17 @@ class CareerAdviserContextBuilder
      * Ensure legacy JSON fields are represented as arrays
      * in the Career Adviser context.
      */
-    private function normaliseArray(mixed $value): array
-    {
+    private function normaliseArray(
+        mixed $value
+    ): array {
         if (is_array($value)) {
             return $value;
         }
 
-        if (is_string($value) && trim($value) !== '') {
+        if (
+            is_string($value)
+            && trim($value) !== ''
+        ) {
             $decoded = json_decode(
                 $value,
                 true

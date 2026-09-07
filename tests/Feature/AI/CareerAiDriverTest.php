@@ -1,6 +1,7 @@
 <?php
 
 use App\Contracts\CareerAiClient;
+use App\Services\AI\GroqCareerAiClient;
 use App\Services\AI\HttpCareerAiClient;
 use App\Services\AI\MockCareerAiClient;
 
@@ -31,6 +32,21 @@ test('HTTP driver resolves the HTTP career AI client', function () {
     expect($client)
         ->toBeInstanceOf(
             HttpCareerAiClient::class
+        );
+});
+
+test('Groq driver resolves the Groq career AI client', function () {
+    config([
+        'career-ai.driver' => 'groq',
+    ]);
+
+    $client = app(
+        CareerAiClient::class
+    );
+
+    expect($client)
+        ->toBeInstanceOf(
+            GroqCareerAiClient::class
         );
 });
 

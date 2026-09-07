@@ -498,12 +498,11 @@
             <div class="cpbn-hero-top">
                 <div>
                     <h1>
-                        {{ $careerRecommendation->career->job_title ?? 'Career' }}
+                        {{ $careerPresentation['title'] }}
                     </h1>
 
                     <p class="cpbn-subsector">
-                        {{ $careerRecommendation->career->subsector
-                            ?? 'Sub-sector unavailable' }}
+                        {{ $careerPresentation['subsector'] }}
                     </p>
                 </div>
 
@@ -541,8 +540,7 @@
                 <h3>Job Description</h3>
 
                 <p class="cpbn-copy">
-                    {{ $careerRecommendation->career->job_description
-                        ?? 'Job description is currently unavailable.' }}
+                    {{ $careerPresentation['job_description'] }}
                 </p>
 
                 <h3>Entry Requirements</h3>
@@ -1006,9 +1004,9 @@
                     @endif
 
                     <div class="cpbn-gap-note">
-                        Competency levels currently use temporary mock values
-                        while the Career AI and authoritative career
-                        requirement data are still being integrated.
+                        Skill gaps are calculated from your recorded competencies
+                        and the BIICF role requirements currently available in
+                        CareerPath BN.
                     </div>
 
                 @else

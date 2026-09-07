@@ -618,8 +618,21 @@
                         <div class="rec-card">
                             <div class="rec-top">
                                 <div>
-                                    <div class="rec-title">{{ $rec->career->job_title ?? 'Career' }}</div>
-                                    <div class="rec-subsector">{{ $rec->career->subsector ?? '' }}</div>
+                                    <div class="rec-title">
+                                        {{
+                                            $rec->jobRole?->title
+                                            ?? $rec->career?->job_title
+                                            ?? 'Career'
+                                        }}
+                                    </div>
+
+                                    <div class="rec-subsector">
+                                        {{
+                                            $rec->jobRole?->subSector?->name
+                                            ?? $rec->career?->subsector
+                                            ?? ''
+                                        }}
+                                    </div>
                                 </div>
                                 <span class="rec-match">{{ $rec->match_score ?? 0 }}% Match</span>
                             </div>

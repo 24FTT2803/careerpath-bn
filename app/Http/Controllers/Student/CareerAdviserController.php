@@ -12,6 +12,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Throwable;
 
 class CareerAdviserController extends Controller
@@ -33,7 +35,10 @@ class CareerAdviserController extends Controller
 
         $topRecommendation = $student
             ->careerRecommendations()
-            ->with('career')
+            ->with([
+                'career',
+                'jobRole.subSector',
+            ])
             ->orderBy('rank')
             ->orderByDesc('match_score')
             ->first();
@@ -126,6 +131,47 @@ class CareerAdviserController extends Controller
             return response()->json(
                 $response
             );
+        } catch (ConnectionException $exception) {
+            report($exception);
+
+            return response()->json(
+                [
+                    'schema_version' => '1.0',
+                    'status' => 'error',
+                    'message' =>
+                        'The Career Adviser could not reach the AI service. '
+                        . 'Please try again shortly.',
+                ],
+                503
+            );
+        } catch (RequestException $exception) {
+            report($exception);
+
+            if (
+                $exception->response->status() === 429
+            ) {
+                return response()->json(
+                    [
+                        'schema_version' => '1.0',
+                        'status' => 'error',
+                        'message' =>
+                            'The AI service is currently busy due to usage limits. '
+                            . 'Please wait a moment and try again.',
+                    ],
+                    429
+                );
+            }
+
+            return response()->json(
+                [
+                    'schema_version' => '1.0',
+                    'status' => 'error',
+                    'message' =>
+                        'The Career Adviser is temporarily unavailable. '
+                        . 'Please try again.',
+                ],
+                503
+            );
         } catch (Throwable $exception) {
             report($exception);
 
@@ -134,7 +180,7 @@ class CareerAdviserController extends Controller
                     'schema_version' => '1.0',
                     'status' => 'error',
                     'message' =>
-                        'The Career Adviser is temporarily unavailable. '
+                        'The Career Adviser could not process the response. '
                         . 'Please try again.',
                 ],
                 503
