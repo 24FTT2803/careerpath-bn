@@ -5,9 +5,11 @@ import Alpine from 'alpinejs';
 import { distance as levenshteinDistance } from 'fastest-levenshtein';
 import intlTelInput from 'intl-tel-input';
 import 'intl-tel-input/styles';
+import Chart from 'chart.js/auto';
 
 window.Alpine = Alpine;
 window.cpbnLevenshteinDistance = levenshteinDistance;
+window.Chart = Chart;
 
 // ============================================
 // CONFIRMATION MODAL

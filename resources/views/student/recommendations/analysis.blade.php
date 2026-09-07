@@ -223,6 +223,16 @@
         font-weight:500;
     }
 
+    .cpbn-gap-chart-wrap {
+        background:var(--paper, #faf8f2);
+        border:1px solid var(--line, #e5e0d3);
+        border-radius:14px;
+        padding:20px 20px 8px;
+        margin-bottom:24px;
+        position:relative;
+        box-sizing:border-box;
+    }
+
     .cpbn-gap-groups {
         display:grid;
         grid-template-columns:1fr 1fr;
@@ -442,6 +452,20 @@
                 )
         )
         ->values();
+
+    // Simple, flat array for the Chart.js visualisation. Built here
+    // (plain PHP) rather than inline inside @json() in the script tag,
+    // since a multi-line arrow function + array literal inside a Blade
+    // directive's arguments can trip up the directive parser.
+    $chartGaps = $skillGaps
+        ->map(function ($gap) {
+            return [
+                'name' => $gap['skill_name'] ?? 'Unnamed skill',
+                'current' => $gap['current_level_value'] ?? 0,
+                'required' => $gap['required_level'] ?? 0,
+            ];
+        })
+        ->values();
 @endphp
 
 <div class="cpbn-analysis">
@@ -598,6 +622,10 @@
                 <h2>Skill Gaps</h2>
 
                 @if($skillGaps->isNotEmpty())
+
+                    <div class="cpbn-gap-chart-wrap" style="height: {{ max(220, $skillGaps->count() * 55 + 60) }}px;">
+                        <canvas id="cpbnGapChart"></canvas>
+                    </div>
 
                     <div class="cpbn-gap-groups">
 
@@ -1064,5 +1092,70 @@
         </div>
     </div>
 </div>
+
+@if($skillGaps->isNotEmpty())
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const canvas = document.getElementById('cpbnGapChart');
+            if (!canvas || typeof Chart === 'undefined') {
+                return;
+            }
+
+            const gaps = @json($chartGaps);
+
+            new Chart(canvas.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: gaps.map(g => g.name),
+                    datasets: [
+                        {
+                            label: 'Your Current Level',
+                            data: gaps.map(g => g.current),
+                            backgroundColor: '#cf9a3d',
+                            borderRadius: 4,
+                        },
+                        {
+                            label: 'Required Level',
+                            data: gaps.map(g => g.required),
+                            backgroundColor: '#0d1a2b',
+                            borderRadius: 4,
+                        },
+                    ],
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 5,
+                            ticks: { stepSize: 1 },
+                            grid: { color: '#e7e2d4' },
+                        },
+                        y: {
+                            grid: { display: false },
+                        },
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                            labels: { font: { family: 'IBM Plex Sans, sans-serif' } },
+                        },
+                        tooltip: {
+                            callbacks: {
+                                afterBody: function (items) {
+                                    const idx = items[0].dataIndex;
+                                    const gap = gaps[idx].required - gaps[idx].current;
+                                    return gap > 0 ? `Gap: ${gap} level${gap === 1 ? '' : 's'}` : 'Requirement met';
+                                },
+                            },
+                        },
+                    },
+                },
+            });
+        });
+    </script>
+@endif
 
 @endsection
