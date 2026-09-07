@@ -9,6 +9,7 @@ class CareerRecommendation extends Model
     protected $fillable = [
         'user_id',
         'biicf_career_id',
+        'biicf_job_role_id',
         'rank',
         'match_score',
         'matched_skills',
@@ -32,11 +33,25 @@ class CareerRecommendation extends Model
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Legacy five-role CareerPath relationship.
+     */
     public function career()
     {
         return $this->belongsTo(
             BIICFCareer::class,
             'biicf_career_id'
+        );
+    }
+
+    /**
+     * Current BIICF job-role relationship.
+     */
+    public function jobRole()
+    {
+        return $this->belongsTo(
+            BiicfJobRole::class,
+            'biicf_job_role_id'
         );
     }
 }

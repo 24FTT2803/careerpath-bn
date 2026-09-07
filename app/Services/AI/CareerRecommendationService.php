@@ -7,12 +7,16 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use UnexpectedValueException;
 
 class CareerRecommendationService
 {
     public function __construct(
         private CareerAiClient $careerAi,
-        private CareerAiPayloadBuilder $payloadBuilder
+        private CareerAiPayloadBuilder $payloadBuilder,
+        private CareerRecommendationContextBuilder $contextBuilder,
+        private CareerRecommendationEnricher $enricher
     ) {
     }
 
@@ -21,172 +25,399 @@ class CareerRecommendationService
      */
     public function generateFor(User $student): Collection
     {
-        // Build the student profile payload.
-        $payload = $this->payloadBuilder->build($student);
+        $driver = config(
+            'career-ai.driver',
+            'mock'
+        );
 
-        // Send the payload to the configured AI client.
-        $response = $this->careerAi->recommend($payload);
+        /*
+         * The real Groq integration needs current BIICF role
+         * requirements in addition to the student profile.
+         *
+         * Legacy/mock clients keep receiving the original
+         * profile-only payload.
+         */
+        $payload = $driver === 'groq'
+            ? $this->contextBuilder->build($student)
+            : $this->payloadBuilder->build($student);
 
-        // Validate the AI response before storing it.
-        $validated = $this->validateResponse($response);
+        $response = $this->careerAi->recommend(
+            $payload
+        );
 
-        // Replace the student's previous recommendation set.
-        DB::transaction(function () use ($student, $validated) {
-            $student->careerRecommendations()->delete();
+        $validated = $driver === 'groq'
+            ? $this->validateAndEnrichCurrentResponse(
+                $student,
+                $response
+            )
+            : $this->validateLegacyResponse(
+                $response
+            );
 
-            foreach ($validated['recommendations'] as $recommendation) {
-                $student->careerRecommendations()->create([
-                    'biicf_career_id' =>
-                        $recommendation['biicf_career_id'],
+        DB::transaction(function () use (
+            $student,
+            $validated,
+            $driver
+        ) {
+            $student->careerRecommendations()
+                ->delete();
 
-                    'rank' =>
-                        $recommendation['rank'],
+            foreach (
+                $validated['recommendations']
+                as $recommendation
+            ) {
+                if ($driver === 'groq') {
+                    $student->careerRecommendations()
+                        ->create([
+                            'biicf_career_id' =>
+                                null,
 
-                    'match_score' =>
-                        $recommendation['match_score'],
+                            'biicf_job_role_id' =>
+                                $recommendation[
+                                    'biicf_job_role_id'
+                                ],
 
-                    'matched_skills' =>
-                        $recommendation['matched_skills'],
+                            'rank' =>
+                                $recommendation['rank'],
 
-                    'skill_gaps' =>
-                        $recommendation['skill_gaps'],
+                            'match_score' =>
+                                $recommendation[
+                                    'match_score'
+                                ],
 
-                    'development_plan' =>
-                        $recommendation['development_plan'],
+                            'matched_skills' =>
+                                $recommendation[
+                                    'matched_skills'
+                                ],
 
-                    'career_readiness_score' =>
-                        $recommendation['career_readiness_score'],
+                            'skill_gaps' =>
+                                $recommendation[
+                                    'skill_gaps'
+                                ],
 
-                    'explanation' =>
-                        $recommendation['explanation'] ?? null,
-                ]);
+                            'development_plan' =>
+                                $recommendation[
+                                    'development_plan'
+                                ],
+
+                            'career_readiness_score' =>
+                                $recommendation[
+                                    'career_readiness_score'
+                                ],
+
+                            'explanation' =>
+                                $recommendation[
+                                    'explanation'
+                                ] ?? null,
+                        ]);
+
+                    continue;
+                }
+
+                $student->careerRecommendations()
+                    ->create([
+                        'biicf_career_id' =>
+                            $recommendation[
+                                'biicf_career_id'
+                            ],
+
+                        'biicf_job_role_id' =>
+                            null,
+
+                        'rank' =>
+                            $recommendation['rank'],
+
+                        'match_score' =>
+                            $recommendation[
+                                'match_score'
+                            ],
+
+                        'matched_skills' =>
+                            $recommendation[
+                                'matched_skills'
+                            ],
+
+                        'skill_gaps' =>
+                            $recommendation[
+                                'skill_gaps'
+                            ],
+
+                        'development_plan' =>
+                            $recommendation[
+                                'development_plan'
+                            ],
+
+                        'career_readiness_score' =>
+                            $recommendation[
+                                'career_readiness_score'
+                            ],
+
+                        'explanation' =>
+                            $recommendation[
+                                'explanation'
+                            ] ?? null,
+                    ]);
             }
         });
 
-        return $student->careerRecommendations()
+        $query = $student
+            ->careerRecommendations()
+            ->orderBy('rank');
+
+        if ($driver === 'groq') {
+            return $query
+                ->with('jobRole')
+                ->get();
+        }
+
+        return $query
             ->with('career')
-            ->orderBy('rank')
             ->get();
     }
 
     /**
-     * Validate the structured response returned by the Career AI.
+     * Validate and enrich recommendations generated against
+     * the current BIICF job-role dataset.
      */
-    private function validateResponse(array $response): array
-    {
-        return Validator::make($response, [
-            'schema_version' => [
-                'required',
-                'string',
-            ],
+    private function validateAndEnrichCurrentResponse(
+        User $student,
+        array $response
+    ): array {
+        $validated = Validator::make(
+            $response,
+            [
+                'schema_version' => [
+                    'required',
+                    'string',
+                    'in:2.0',
+                ],
 
-            'status' => [
-                'required',
-                'in:completed',
-            ],
+                'status' => [
+                    'required',
+                    'in:completed',
+                ],
 
-            'recommendations' => [
-                'required',
-                'array',
-                'size:3',
-            ],
+                'recommendations' => [
+                    'required',
+                    'array',
+                    'size:3',
+                ],
 
-            'recommendations.*.biicf_career_id' => [
-                'required',
-                'integer',
-                'distinct',
-                'exists:biicf_careers,id',
-            ],
+                'recommendations.*.biicf_job_role_id' => [
+                    'required',
+                    'integer',
+                    'distinct',
+                    'exists:biicf_job_roles,id',
+                ],
 
-            'recommendations.*.rank' => [
-                'required',
-                'integer',
-                'between:1,3',
-                'distinct',
-            ],
+                'recommendations.*.rank' => [
+                    'required',
+                    'integer',
+                    'between:1,3',
+                    'distinct',
+                ],
 
-            'recommendations.*.match_score' => [
-                'required',
-                'numeric',
-                'between:0,100',
-            ],
+                'recommendations.*.match_score' => [
+                    'required',
+                    'numeric',
+                    'between:0,100',
+                ],
 
-            'recommendations.*.matched_skills' => [
-                'present',
-                'array',
-            ],
+                'recommendations.*.development_plan' => [
+                    'required',
+                    'array',
+                    'size:3',
+                ],
 
-            'recommendations.*.matched_skills.*' => [
-                'string',
-            ],
+                'recommendations.*.development_plan.*' => [
+                    'required',
+                    'string',
+                ],
 
-            'recommendations.*.skill_gaps' => [
-                'present',
-                'array',
-            ],
+                'recommendations.*.explanation' => [
+                    'required',
+                    'string',
+                ],
+            ]
+        )->validate();
 
-            'recommendations.*.skill_gaps.*.skill_name' => [
-                'required',
-                'string',
-            ],
+        $ranks = collect(
+            $validated['recommendations']
+        )
+            ->pluck('rank')
+            ->sort()
+            ->values()
+            ->all();
 
-            'recommendations.*.skill_gaps.*.skill_type' => [
-                'required',
-                'in:technical,soft',
-            ],
+        if ($ranks !== [1, 2, 3]) {
+            throw ValidationException::withMessages([
+                'recommendations' =>
+                    'Career Recommendation ranks must contain 1, 2 and 3 exactly once.',
+            ]);
+        }
 
-            'recommendations.*.skill_gaps.*.current_level' => [
-                'required',
-                'string',
-            ],
+        $enriched = collect(
+            $validated['recommendations']
+        )
+            ->map(
+                fn (array $recommendation) =>
+                    $this->enricher->enrich(
+                        $student,
+                        $recommendation
+                    )
+            )
+            ->sortBy('rank')
+            ->values()
+            ->all();
 
-            'recommendations.*.skill_gaps.*.current_level_value' => [
-                'required',
-                'integer',
-                'between:1,5',
-            ],
+        foreach ($enriched as $recommendation) {
+            if (
+                ! isset(
+                    $recommendation[
+                        'career_readiness_score'
+                    ]
+                )
+            ) {
+                throw new UnexpectedValueException(
+                    'Laravel failed to calculate career readiness.'
+                );
+            }
+        }
 
-            'recommendations.*.skill_gaps.*.recommended_level' => [
-                'required',
-                'string',
-            ],
+        return [
+            'schema_version' =>
+                $validated['schema_version'],
 
-            'recommendations.*.skill_gaps.*.required_level' => [
-                'required',
-                'integer',
-                'between:1,5',
-            ],
+            'status' =>
+                $validated['status'],
 
-            'recommendations.*.skill_gaps.*.required_label' => [
-                'required',
-                'string',
-            ],
+            'recommendations' =>
+                $enriched,
+        ];
+    }
 
-            'recommendations.*.skill_gaps.*.gap' => [
-                'required',
-                'integer',
-                'between:0,4',
-            ],
+    /**
+     * Validate the existing legacy/mock Career AI response.
+     */
+    private function validateLegacyResponse(
+        array $response
+    ): array {
+        return Validator::make(
+            $response,
+            [
+                'schema_version' => [
+                    'required',
+                    'string',
+                ],
 
-            'recommendations.*.development_plan' => [
-                'present',
-                'array',
-            ],
+                'status' => [
+                    'required',
+                    'in:completed',
+                ],
 
-            'recommendations.*.development_plan.*' => [
-                'string',
-            ],
+                'recommendations' => [
+                    'required',
+                    'array',
+                    'size:3',
+                ],
 
-            'recommendations.*.career_readiness_score' => [
-                'required',
-                'numeric',
-                'between:0,100',
-            ],
+                'recommendations.*.biicf_career_id' => [
+                    'required',
+                    'integer',
+                    'distinct',
+                    'exists:biicf_careers,id',
+                ],
 
-            'recommendations.*.explanation' => [
-                'nullable',
-                'string',
-            ],
-        ])->validate();
+                'recommendations.*.rank' => [
+                    'required',
+                    'integer',
+                    'between:1,3',
+                    'distinct',
+                ],
+
+                'recommendations.*.match_score' => [
+                    'required',
+                    'numeric',
+                    'between:0,100',
+                ],
+
+                'recommendations.*.matched_skills' => [
+                    'present',
+                    'array',
+                ],
+
+                'recommendations.*.matched_skills.*' => [
+                    'string',
+                ],
+
+                'recommendations.*.skill_gaps' => [
+                    'present',
+                    'array',
+                ],
+
+                'recommendations.*.skill_gaps.*.skill_name' => [
+                    'required',
+                    'string',
+                ],
+
+                'recommendations.*.skill_gaps.*.skill_type' => [
+                    'required',
+                    'in:technical,soft',
+                ],
+
+                'recommendations.*.skill_gaps.*.current_level' => [
+                    'required',
+                    'string',
+                ],
+
+                'recommendations.*.skill_gaps.*.current_level_value' => [
+                    'required',
+                    'integer',
+                    'between:1,5',
+                ],
+
+                'recommendations.*.skill_gaps.*.recommended_level' => [
+                    'required',
+                    'string',
+                ],
+
+                'recommendations.*.skill_gaps.*.required_level' => [
+                    'required',
+                    'integer',
+                    'between:1,5',
+                ],
+
+                'recommendations.*.skill_gaps.*.required_label' => [
+                    'required',
+                    'string',
+                ],
+
+                'recommendations.*.skill_gaps.*.gap' => [
+                    'required',
+                    'integer',
+                    'between:0,4',
+                ],
+
+                'recommendations.*.development_plan' => [
+                    'present',
+                    'array',
+                ],
+
+                'recommendations.*.development_plan.*' => [
+                    'string',
+                ],
+
+                'recommendations.*.career_readiness_score' => [
+                    'required',
+                    'numeric',
+                    'between:0,100',
+                ],
+
+                'recommendations.*.explanation' => [
+                    'nullable',
+                    'string',
+                ],
+            ]
+        )->validate();
     }
 }

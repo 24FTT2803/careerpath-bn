@@ -7,27 +7,48 @@ return [
     | Career AI Driver
     |--------------------------------------------------------------------------
     |
-    | "mock" is used while the actual AI API is unavailable.
-    | This can later be changed to "http" when the AI service is ready.
+    | "mock" keeps the local mock implementation.
+    | "groq" will use Groq with the configured GPT-OSS model.
+    | "http" preserves the earlier generic HTTP integration.
     |
     */
 
-    'driver' => env('CAREER_AI_DRIVER', 'mock'),
+    'driver' => env(
+        'CAREER_AI_DRIVER',
+        'mock'
+    ),
 
     /*
     |--------------------------------------------------------------------------
-    | AI API Connection
+    | Career Adviser Driver
     |--------------------------------------------------------------------------
     |
-    | These values configure communication with the external Career AI API.
-    | The endpoint and authentication requirements are provisional until the
-    | final API contract is provided.
+    | Allows the Career Adviser to use Groq independently while the
+    | Career Recommendation integration is still being completed.
     |
     */
 
-    'base_url' => env('CAREER_AI_BASE_URL'),
+    'adviser_driver' => env(
+        'CAREER_ADVISER_DRIVER',
+        'mock'
+    ),
 
-    'api_key' => env('CAREER_AI_API_KEY'),
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy Generic HTTP Client
+    |--------------------------------------------------------------------------
+    |
+    | These settings are retained for the existing HttpCareerAiClient.
+    |
+    */
+
+    'base_url' => env(
+        'CAREER_AI_BASE_URL'
+    ),
+
+    'api_key' => env(
+        'CAREER_AI_API_KEY'
+    ),
 
     'endpoint' => env(
         'CAREER_AI_ENDPOINT',
@@ -36,13 +57,43 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Request Timeouts
+    | Groq
     |--------------------------------------------------------------------------
     |
-    | timeout controls the maximum duration of the full HTTP request.
-    | connect_timeout controls how long Laravel waits to establish the
-    | connection to the Career AI service.
+    | Groq provides the inference API used to run GPT-OSS.
     |
+    */
+
+    'groq' => [
+        'base_url' => env(
+            'GROQ_BASE_URL',
+            'https://api.groq.com/openai/v1'
+        ),
+
+        'api_key' => env(
+            'GROQ_API_KEY'
+        ),
+
+        'endpoint' => env(
+            'GROQ_CHAT_ENDPOINT',
+            '/chat/completions'
+        ),
+
+        'model' => env(
+            'GROQ_MODEL',
+            'openai/gpt-oss-20b'
+        ),
+
+        'reasoning_effort' => env(
+            'GROQ_REASONING_EFFORT',
+            'medium'
+        ),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Request Timeouts
+    |--------------------------------------------------------------------------
     */
 
     'timeout' => (int) env(

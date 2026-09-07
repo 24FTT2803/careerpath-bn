@@ -4,6 +4,8 @@ namespace App\Providers;
 
 use App\Contracts\CareerAdviserClient;
 use App\Contracts\CareerAiClient;
+use App\Services\AI\GroqCareerAdviserClient;
+use App\Services\AI\GroqCareerAiClient;
 use App\Services\AI\HttpCareerAiClient;
 use App\Services\AI\MockCareerAdviserClient;
 use App\Services\AI\MockCareerAiClient;
@@ -15,10 +17,19 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(
             CareerAiClient::class,
-            function () {
+            function ($app) {
                 return match (config('career-ai.driver')) {
-                    'mock' => new MockCareerAiClient(),
-                    'http' => new HttpCareerAiClient(),
+                    'mock' => $app->make(
+                        MockCareerAiClient::class
+                    ),
+
+                    'http' => $app->make(
+                        HttpCareerAiClient::class
+                    ),
+
+                    'groq' => $app->make(
+                        GroqCareerAiClient::class
+                    ),
 
                     default => throw new \RuntimeException(
                         'Unsupported Career AI driver: '
@@ -28,13 +39,24 @@ class AppServiceProvider extends ServiceProvider
             }
         );
 
-        /*
-         * Career Adviser uses the mock client until the
-         * external Adviser API contract is available.
-         */
         $this->app->bind(
             CareerAdviserClient::class,
-            MockCareerAdviserClient::class
+            function ($app) {
+                return match (config('career-ai.adviser_driver')) {
+                    'mock' => $app->make(
+                        MockCareerAdviserClient::class
+                    ),
+
+                    'groq' => $app->make(
+                        GroqCareerAdviserClient::class
+                    ),
+
+                    default => throw new \RuntimeException(
+                        'Unsupported Career Adviser driver: '
+                        . config('career-ai.adviser_driver')
+                    ),
+                };
+            }
         );
     }
 
