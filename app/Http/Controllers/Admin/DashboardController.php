@@ -18,6 +18,14 @@ class DashboardController extends Controller
         $user = Auth::user();
         $isAdmin = $user->role === 'admin';
 
+        // Lecturers get their own dedicated dashboard. Redirect here
+        // regardless of how they arrived (browser back/forward, an old
+        // bookmark, a typed URL) so there's only ever one dashboard a
+        // lecturer actually lands on.
+        if (! $isAdmin) {
+            return redirect()->route('lecturer.dashboard');
+        }
+
         // ============================================
         // SAFE QUERIES WITH TRY-CATCH
         // ============================================
@@ -27,6 +35,13 @@ class DashboardController extends Controller
 
         // Total lecturers - always works
         $totalLecturers = User::where('role', 'lecturer')->count();
+
+        // Lecturers currently online (active within the last 5 minutes),
+        // for the "Active Lecturers" stat card - distinct from the total
+        // lecturer count used in the welcome banner chip.
+        $activeLecturers = User::where('role', 'lecturer')
+            ->where('last_active_at', '>=', now()->subMinutes(5))
+            ->count();
 
         // Career-related queries - may fail if tables don't exist
         $totalCareers = 0;
@@ -83,6 +98,7 @@ class DashboardController extends Controller
         $stats = [
             'total_students' => $totalStudents,
             'total_lecturers' => $totalLecturers,
+            'active_lecturers' => $activeLecturers,
             'total_careers' => $totalCareers,
             'total_recommendations' => $totalRecommendations,
             'avg_readiness' => $avgReadiness,
