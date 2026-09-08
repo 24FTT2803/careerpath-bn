@@ -47,6 +47,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_login_at' => 'datetime',
+            'last_active_at' => 'datetime',
         ];
     }
 
@@ -282,6 +283,19 @@ class User extends Authenticatable
         return round(
             ($completed / count($sections)) * 100
         );
+    }
+
+    /**
+     * Whether this user is currently "online" - i.e. made a request
+     * within the last 5 minutes. Backed by last_active_at, which is
+     * stamped on every request by the TrackLastActive middleware.
+     * Works identically in local dev and in production - it's just a
+     * timestamp comparison, no special server/domain setup required.
+     */
+    public function getIsOnlineAttribute(): bool
+    {
+        return $this->last_active_at !== null
+            && $this->last_active_at->gt(now()->subMinutes(5));
     }
 
     /**
