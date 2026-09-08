@@ -2,6 +2,7 @@
 
 namespace App\Services\Business;
 
+use App\Models\FeatureDefinition;
 use App\Models\OrganisationGroup;
 use App\Models\Plan;
 use App\Models\SponsoredAccessGrant;
@@ -11,16 +12,23 @@ use App\Models\UserPlanGrant;
 class EntitlementService
 {
     /**
-     * Resolve the plan currently applying to a user.
+     * Resolve both the plan and where that access
+     * came from.
      *
      * Priority:
      * 1. Direct user grant
-     * 2. Sponsored organisation/group grant
-     * 3. System default plan
+     * 2. Sponsored access
+     * 3. Default plan
+     *
+     * @return array{
+     *     plan: ?Plan,
+     *     source: string,
+     *     grant: UserPlanGrant|SponsoredAccessGrant|null
+     * }
      */
-    public function planFor(
+    public function accessFor(
         User $user
-    ): ?Plan {
+    ): array {
         $directGrant = UserPlanGrant::query()
             ->currentlyActive()
             ->where(
@@ -40,7 +48,16 @@ class EntitlementService
             ->first();
 
         if ($directGrant) {
-            return $directGrant->plan;
+            return [
+                'plan' =>
+                    $directGrant->plan,
+
+                'source' =>
+                    'direct',
+
+                'grant' =>
+                    $directGrant,
+            ];
         }
 
         $sponsoredGrant =
@@ -49,19 +66,52 @@ class EntitlementService
             );
 
         if ($sponsoredGrant) {
-            return $sponsoredGrant->plan;
+            return [
+                'plan' =>
+                    $sponsoredGrant->plan,
+
+                'source' =>
+                    'sponsored',
+
+                'grant' =>
+                    $sponsoredGrant,
+            ];
         }
 
-        return Plan::query()
+        $defaultPlan = Plan::query()
             ->where('is_active', true)
             ->where('is_default', true)
             ->with('features')
             ->first();
+
+        return [
+            'plan' =>
+                $defaultPlan,
+
+            'source' =>
+                $defaultPlan
+                    ? 'default'
+                    : 'none',
+
+            'grant' =>
+                null,
+        ];
+    }
+
+    /**
+     * Resolve the plan currently applying to a user.
+     */
+    public function planFor(
+        User $user
+    ): ?Plan {
+        return $this->accessFor(
+            $user
+        )['plan'];
     }
 
     /**
      * Resolve the active sponsored grant applying
-     * to the user through organisation membership.
+     * through organisation/group membership.
      */
     public function sponsoredGrantFor(
         User $user
@@ -110,10 +160,9 @@ class EntitlementService
             ->where(function ($query) use (
                 $groupIds
             ) {
-                $query
-                    ->whereNull(
-                        'organisation_group_id'
-                    );
+                $query->whereNull(
+                    'organisation_group_id'
+                );
 
                 if (! empty($groupIds)) {
                     $query->orWhereIn(
@@ -141,13 +190,9 @@ class EntitlementService
                 'sponsor',
                 'organisation',
                 'organisationGroup',
+                'featureOverrides.featureDefinition',
             ])
             ->orderByDesc('priority')
-            /*
-             * At equal priority, a group-specific
-             * sponsorship is more specific than an
-             * organisation-wide sponsorship.
-             */
             ->orderByRaw(
                 'organisation_group_id IS NULL ASC'
             )
@@ -156,12 +201,146 @@ class EntitlementService
     }
 
     /**
+     * Read the effective feature value.
+     *
+     * Resolution:
+     *
+     * Global maintenance switch
+     *      ↓
+     * Parent feature
+     *      ↓
+     * Sponsored override, when sponsored access wins
+     *      ↓
+     * Current plan value
+     */
+    public function value(
+        User $user,
+        string $key,
+        mixed $default = null
+    ): mixed {
+        $access = $this->accessFor(
+            $user
+        );
+
+        return $this->resolveValue(
+            $access,
+            $key,
+            $default,
+            []
+        );
+    }
+
+    /**
+     * Determine whether a boolean feature is
+     * effectively enabled.
+     */
+    public function allows(
+        User $user,
+        string $key,
+        bool $default = false
+    ): bool {
+        return (bool) $this->value(
+            $user,
+            $key,
+            $default
+        );
+    }
+
+    /**
+     * Resolve feature values recursively so parent
+     * switches can disable their child features.
+     */
+    private function resolveValue(
+        array $access,
+        string $key,
+        mixed $default,
+        array $visited
+    ): mixed {
+        if (isset($visited[$key])) {
+            return $default;
+        }
+
+        $visited[$key] = true;
+
+        $definition = FeatureDefinition::query()
+            ->where(
+                'key',
+                $key
+            )
+            ->first();
+
+        /*
+         * A missing definition is treated as an older
+         * uncatalogued plan feature for backwards
+         * compatibility.
+         */
+        if (
+            $definition
+            && ! $definition->global_enabled
+        ) {
+            return $default;
+        }
+
+        if (
+            $definition
+            && $definition->parent_key
+        ) {
+            $parentEnabled = (bool)
+                $this->resolveValue(
+                    $access,
+                    $definition->parent_key,
+                    false,
+                    $visited
+                );
+
+            if (! $parentEnabled) {
+                return $default;
+            }
+        }
+
+        $plan = $access['plan'];
+
+        if (! $plan) {
+            return $default;
+        }
+
+        if (
+            $access['source'] === 'sponsored'
+            && $access['grant']
+                instanceof SponsoredAccessGrant
+        ) {
+            $override = $access['grant']
+                ->featureOverrides
+                ->first(
+                    fn ($override) =>
+                        $override
+                            ->featureDefinition
+                            ?->key
+                        === $key
+                );
+
+            if ($override) {
+                return $override->value;
+            }
+        }
+
+        $feature = $plan
+            ->features
+            ->firstWhere(
+                'key',
+                $key
+            );
+
+        if (! $feature) {
+            return $default;
+        }
+
+        return $feature->value;
+    }
+
+    /**
      * Build the organisation and ancestor-group
      * scope represented by a user's memberships.
-     *
-     * A user assigned only to DADT04 therefore also
-     * falls within its parent groups for sponsorship
-     * targeting purposes.
      *
      * @return array{
      *     0: array<int>,
@@ -196,10 +375,6 @@ class EntitlementService
             ->values()
             ->all();
 
-        /*
-         * Load the relevant hierarchy once, rather
-         * than querying the database for each parent.
-         */
         $groups = OrganisationGroup::query()
             ->whereIn(
                 'organisation_id',
@@ -215,19 +390,20 @@ class EntitlementService
         $scopeGroupIds = [];
 
         foreach ($membershipGroups as $membership) {
-            $currentId = $membership->id;
+            $currentId =
+                $membership->id;
+
             $visited = [];
 
             while ($currentId) {
-                /*
-                 * Protect against malformed circular
-                 * parent relationships.
-                 */
-                if (isset($visited[$currentId])) {
+                if (isset(
+                    $visited[$currentId]
+                )) {
                     break;
                 }
 
-                $visited[$currentId] = true;
+                $visited[$currentId] =
+                    true;
 
                 $group = $groups->get(
                     $currentId
@@ -255,59 +431,8 @@ class EntitlementService
     }
 
     /**
-     * Read a configurable feature value for the
-     * user's current plan.
-     */
-    public function value(
-        User $user,
-        string $key,
-        mixed $default = null
-    ): mixed {
-        $plan = $this->planFor(
-            $user
-        );
-
-        if (! $plan) {
-            return $default;
-        }
-
-        $feature = $plan
-            ->features
-            ->firstWhere(
-                'key',
-                $key
-            );
-
-        if (! $feature) {
-            return $default;
-        }
-
-        return $feature->value;
-    }
-
-    /**
-     * Determine whether a boolean plan feature
-     * is enabled for the user.
-     */
-    public function allows(
-        User $user,
-        string $key,
-        bool $default = false
-    ): bool {
-        return (bool) $this->value(
-            $user,
-            $key,
-            $default
-        );
-    }
-
-    /**
-     * Determine whether advertisements may be
-     * rendered for this user.
-     *
-     * CareerPath currently treats advertisements
-     * as student-facing only. Students must also
-     * explicitly opt in.
+     * Advertisements are student-facing only and
+     * still require the student's personal opt-in.
      */
     public function shouldShowAds(
         User $user

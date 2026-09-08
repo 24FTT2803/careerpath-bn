@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SponsoredAccessGrant extends Model
 {
@@ -17,6 +18,7 @@ class SponsoredAccessGrant extends Model
         'ends_at',
         'is_active',
         'priority',
+        'funding_type',
     ];
 
     protected function casts(): array
@@ -55,6 +57,13 @@ class SponsoredAccessGrant extends Model
     {
         return $this->belongsTo(
             OrganisationGroup::class
+        );
+    }
+
+    public function featureOverrides(): HasMany
+    {
+        return $this->hasMany(
+            SponsoredAccessFeatureOverride::class
         );
     }
 

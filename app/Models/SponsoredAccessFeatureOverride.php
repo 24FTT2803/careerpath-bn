@@ -5,11 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PlanFeature extends Model
+class SponsoredAccessFeatureOverride extends Model
 {
     protected $fillable = [
-        'plan_id',
-        'key',
+        'sponsored_access_grant_id',
+        'feature_definition_id',
         'value',
     ];
 
@@ -20,19 +20,17 @@ class PlanFeature extends Model
         ];
     }
 
-    public function plan(): BelongsTo
+    public function sponsoredAccessGrant(): BelongsTo
     {
         return $this->belongsTo(
-            Plan::class
+            SponsoredAccessGrant::class
         );
     }
 
     public function featureDefinition(): BelongsTo
     {
         return $this->belongsTo(
-            FeatureDefinition::class,
-            'key',
-            'key'
+            FeatureDefinition::class
         );
     }
 }

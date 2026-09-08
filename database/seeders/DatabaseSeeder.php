@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             OrganisationGroupSeeder::class,
+            FeatureDefinitionSeeder::class,
             PlanSeeder::class,
         ]);
     }

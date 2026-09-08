@@ -39,10 +39,15 @@ test('users without a grant receive the default free plan', function () {
         ->and(
             $service->value(
                 $user,
-                'career_recommendations.generation_limit'
+                'career_recommendations.generation_quota'
             )
         )
-        ->toBe(3);
+        ->toBe([
+            'mode' => 'recurring',
+            'amount' => 3,
+            'period_value' => 1,
+            'period_unit' => 'month',
+        ]);
 });
 
 test('an active user plan grant overrides the default plan', function () {
@@ -72,10 +77,12 @@ test('an active user plan grant overrides the default plan', function () {
         ->and(
             $service->value(
                 $user,
-                'career_recommendations.generation_limit'
+                'career_recommendations.generation_quota'
             )
         )
-        ->toBeNull();
+        ->toBe([
+            'mode' => 'unlimited',
+        ]);
 });
 
 test('inactive grants do not override the default plan', function () {
@@ -283,7 +290,7 @@ test('plan feature seeding is idempotent', function () {
                 ->features()
                 ->count()
         )
-        ->toBe(4)
+        ->toBe(21)
         ->and(
             Plan::where(
                 'code',
@@ -293,5 +300,42 @@ test('plan feature seeding is idempotent', function () {
                 ->features()
                 ->count()
         )
-        ->toBe(4);
+        ->toBe(21);
+});
+
+test('plan seeding preserves administrator configured feature values', function () {
+    $free = Plan::where(
+        'code',
+        'free'
+    )->firstOrFail();
+
+    $quota = $free
+        ->features()
+        ->where(
+            'key',
+            'career_recommendations.generation_quota'
+        )
+        ->firstOrFail();
+
+    $quota->update([
+        'value' => [
+            'mode' => 'recurring',
+            'amount' => 100,
+            'period_value' => 7,
+            'period_unit' => 'day',
+        ],
+    ]);
+
+    $this->seed(
+        PlanSeeder::class
+    );
+
+    expect(
+        $quota->fresh()->value
+    )->toBe([
+        'mode' => 'recurring',
+        'amount' => 100,
+        'period_value' => 7,
+        'period_unit' => 'day',
+    ]);
 });
