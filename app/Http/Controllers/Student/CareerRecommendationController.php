@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\CareerRecommendation;
 use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
+use App\Services\Business\EntitlementService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -16,7 +17,8 @@ use Illuminate\Http\Client\RequestException;
 class CareerRecommendationController extends Controller
 {
     public function __construct(
-        private CareerRecommendationService $recommendationService
+        private CareerRecommendationService $recommendationService,
+        private EntitlementService $entitlements
     ) {
     }
 
@@ -26,9 +28,26 @@ class CareerRecommendationController extends Controller
      */
     public function analysis(
         int $recommendation
-    ): View {
+    ): View|RedirectResponse {
         /** @var User $student */
         $student = Auth::user();
+
+        $generationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_recommendations.enabled'
+                );
+
+        if (! $generationAccess['allowed']) {
+            return redirect()
+                ->route('student.dashboard')
+                ->with(
+                    'warning',
+                    'Career recommendation generation is unavailable. '
+                    . $generationAccess['message']
+                );
+        }
 
         abort_unless(
             $student->isStudent(),
@@ -166,6 +185,23 @@ class CareerRecommendationController extends Controller
     {
         /** @var User $student */
         $student = Auth::user();
+
+        $generationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_recommendations.enabled'
+                );
+
+        if (! $generationAccess['allowed']) {
+            return redirect()
+                ->route('student.dashboard')
+                ->with(
+                    'warning',
+                    'Career recommendation generation is unavailable. '
+                    . $generationAccess['message']
+                );
+        }
 
         try {
             $recommendations =

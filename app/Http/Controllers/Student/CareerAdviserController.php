@@ -14,10 +14,15 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use App\Services\Business\EntitlementService;
 use Throwable;
 
 class CareerAdviserController extends Controller
 {
+    public function __construct(
+        private EntitlementService $entitlements
+    ) {
+    }
     /**
      * Display the Career Adviser interface.
      */
@@ -30,6 +35,13 @@ class CareerAdviserController extends Controller
             $student && $student->isStudent(),
             403
         );
+
+        $careerAdviserAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_adviser.enabled'
+                );
 
         $profileCompletion = (int) $student->profile_completion;
 
@@ -66,7 +78,8 @@ class CareerAdviserController extends Controller
                 'skillGapCount',
                 'biicfRoleCount',
                 'biicfSubSectorCount',
-                'biicfAvailable'
+                'biicfAvailable',
+                'careerAdviserAccess'
             )
         );
     }
@@ -85,6 +98,37 @@ class CareerAdviserController extends Controller
             $student && $student->isStudent(),
             403
         );
+
+        $careerAdviserAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_adviser.enabled'
+                );
+
+        if (! $careerAdviserAccess['allowed']) {
+            $status =
+                $careerAdviserAccess['reason']
+                === 'maintenance'
+                    ? 503
+                    : 403;
+
+            return response()->json(
+                [
+                    'schema_version' => '1.0',
+                    'status' => 'unavailable',
+                    'message' =>
+                        $careerAdviserAccess[
+                            'message'
+                        ],
+                    'reason' =>
+                        $careerAdviserAccess[
+                            'reason'
+                        ],
+                ],
+                $status
+            );
+        }
 
         $validator = Validator::make(
             $request->all(),

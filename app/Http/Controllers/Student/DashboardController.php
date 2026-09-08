@@ -4,20 +4,26 @@ namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\Business\EntitlementService;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private EntitlementService $entitlements
+    ) {
+    }
+
     public function index()
     {
         /** @var User $user */
         $user = Auth::user();
 
-        // Profile completion
-        $profileCompletion = $user->profile_completion;
+        $profileCompletion =
+            $user->profile_completion;
 
-        // Career recommendations
-        $recommendations = $user->careerRecommendations()
+        $recommendations = $user
+            ->careerRecommendations()
             ->with([
                 'career',
                 'jobRole.subSector',
@@ -26,19 +32,53 @@ class DashboardController extends Controller
             ->limit(3)
             ->get();
 
-        $recommendationCount = $recommendations->count();
+        $recommendationCount =
+            $recommendations->count();
 
-        // Readiness score
-        $readinessScore = $this->calculateReadinessScore($user);
+        $readinessScore =
+            $this->calculateReadinessScore(
+                $user
+            );
 
-        // Milestones
-        $milestones = $user->milestones;
+        $milestones =
+            $user->milestones;
+
         $milestoneCount = $milestones
-            ->where('is_completed', true)
+            ->where(
+                'is_completed',
+                true
+            )
             ->count();
 
-        // Recent activity
-        $recentActivities = $this->getRecentActivities($user);
+        $recentActivities =
+            $this->getRecentActivities(
+                $user
+            );
+
+        /*
+         * Features remain visible in the UI even
+         * when access is unavailable.
+         */
+        $careerAdviserAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $user,
+                    'career_adviser.enabled'
+                );
+
+        $recommendationGenerationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $user,
+                    'career_recommendations.enabled'
+                );
+
+        $detailedAnalysisAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $user,
+                    'career_recommendations.detailed_analysis.enabled'
+                );
 
         return view(
             'student.dashboard.index',
@@ -50,42 +90,70 @@ class DashboardController extends Controller
                 'readinessScore',
                 'milestones',
                 'milestoneCount',
-                'recentActivities'
+                'recentActivities',
+                'careerAdviserAccess',
+                'recommendationGenerationAccess',
+                'detailedAnalysisAccess'
             )
         );
     }
 
-    private function calculateReadinessScore($user)
-    {
+    private function calculateReadinessScore(
+        $user
+    ) {
         $score = 0;
         $count = 0;
 
         if ($user->cgpa) {
-            $score += ($user->cgpa / 4.0) * 30;
+            $score +=
+                ($user->cgpa / 4.0)
+                * 30;
+
             $count++;
         }
 
-        if ($user->competencies()->exists()) {
+        if (
+            $user
+                ->competencies()
+                ->exists()
+        ) {
             $score += min(
-                $user->competencies()->count() * 3,
+                $user
+                    ->competencies()
+                    ->count()
+                * 3,
                 30
             );
 
             $count++;
         }
 
-        if ($user->certifications()->exists()) {
+        if (
+            $user
+                ->certifications()
+                ->exists()
+        ) {
             $score += min(
-                $user->certifications()->count() * 7,
+                $user
+                    ->certifications()
+                    ->count()
+                * 7,
                 20
             );
 
             $count++;
         }
 
-        if ($user->projects()->exists()) {
+        if (
+            $user
+                ->projects()
+                ->exists()
+        ) {
             $score += min(
-                $user->projects()->count() * 7,
+                $user
+                    ->projects()
+                    ->count()
+                * 7,
                 20
             );
 
@@ -97,15 +165,18 @@ class DashboardController extends Controller
             : 0;
     }
 
-    private function getRecentActivities($user)
-    {
+    private function getRecentActivities(
+        $user
+    ) {
         $iconMap = [
             'profile' => 'user-edit',
             'career' => 'briefcase',
-            'milestone' => 'flag-checkered',
+            'milestone' =>
+                'flag-checkered',
         ];
 
-        return $user->notifications()
+        return $user
+            ->notifications()
             ->whereIn(
                 'type',
                 [
@@ -117,15 +188,29 @@ class DashboardController extends Controller
             ->latest()
             ->limit(5)
             ->get()
-            ->map(function ($notification) use ($iconMap) {
-                return [
-                    'message' => $notification->message,
-                    'time' => $notification->created_at
-                        ->diffForHumans(),
-                    'icon' => $iconMap[$notification->type]
-                        ?? 'bell',
-                ];
-            })
+            ->map(
+                function (
+                    $notification
+                ) use ($iconMap) {
+                    return [
+                        'message' =>
+                            $notification
+                                ->message,
+
+                        'time' =>
+                            $notification
+                                ->created_at
+                                ->diffForHumans(),
+
+                        'icon' =>
+                            $iconMap[
+                                $notification
+                                    ->type
+                            ]
+                            ?? 'bell',
+                    ];
+                }
+            )
             ->all();
     }
 }

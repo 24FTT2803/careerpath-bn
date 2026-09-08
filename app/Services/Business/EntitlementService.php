@@ -247,6 +247,244 @@ class EntitlementService
     }
 
     /**
+     * Resolve whether a boolean feature is available
+     * and explain why it may be unavailable.
+     *
+     * @return array{
+     *     allowed: bool,
+     *     reason: ?string,
+     *     message: ?string,
+     *     feature_key: string,
+     *     feature_name: string,
+     *     source: string,
+     *     plan_code: ?string
+     * }
+     */
+    public function featureAccess(
+        User $user,
+        string $key,
+        bool $default = false
+    ): array {
+        $access = $this->accessFor(
+            $user
+        );
+
+        return $this->resolveFeatureAccess(
+            $access,
+            $key,
+            $default,
+            []
+        );
+    }
+
+    /**
+     * Resolve a feature state while preserving the
+     * reason that access is unavailable.
+     */
+    private function resolveFeatureAccess(
+        array $access,
+        string $key,
+        bool $default,
+        array $visited
+    ): array {
+        if (isset($visited[$key])) {
+            return [
+                'allowed' => false,
+                'reason' => 'parent_restriction',
+                'message' =>
+                    'This feature is unavailable because its access hierarchy could not be resolved safely.',
+                'feature_key' => $key,
+                'feature_name' => $key,
+                'source' => $access['source'],
+                'plan_code' =>
+                    $access['plan']?->code,
+            ];
+        }
+
+        $visited[$key] = true;
+
+        $definition = FeatureDefinition::query()
+            ->where('key', $key)
+            ->first();
+
+        $featureName =
+            $definition?->name
+            ?? $key;
+
+        /*
+        * Global OFF always means maintenance /
+        * operational unavailability, regardless
+        * of the user's plan or sponsorship.
+        */
+        if (
+            $definition
+            && ! $definition->global_enabled
+        ) {
+            return [
+                'allowed' => false,
+                'reason' => 'maintenance',
+                'message' =>
+                    'Temporarily unavailable due to maintenance.',
+                'feature_key' => $key,
+                'feature_name' => $featureName,
+                'source' => $access['source'],
+                'plan_code' =>
+                    $access['plan']?->code,
+            ];
+        }
+
+        /*
+        * A child cannot be available when its parent
+        * capability is unavailable.
+        */
+        if (
+            $definition
+            && $definition->parent_key
+        ) {
+            $parentAccess =
+                $this->resolveFeatureAccess(
+                    $access,
+                    $definition->parent_key,
+                    false,
+                    $visited
+                );
+
+            if (! $parentAccess['allowed']) {
+                $maintenance =
+                    $parentAccess['reason']
+                    === 'maintenance';
+
+                return [
+                    'allowed' => false,
+
+                    'reason' =>
+                        $maintenance
+                            ? 'maintenance'
+                            : 'parent_restriction',
+
+                    'message' =>
+                        $maintenance
+                            ? 'Temporarily unavailable because '
+                                . $parentAccess['feature_name']
+                                . ' is under maintenance.'
+                            : 'Unavailable because '
+                                . $parentAccess['feature_name']
+                                . ' is not available with your current access.',
+
+                    'feature_key' => $key,
+                    'feature_name' => $featureName,
+                    'source' => $access['source'],
+                    'plan_code' =>
+                        $access['plan']?->code,
+                ];
+            }
+        }
+
+        $allowed = (bool)
+            $this->rawValueForAccess(
+                $access,
+                $key,
+                $default
+            );
+
+        if ($allowed) {
+            return [
+                'allowed' => true,
+                'reason' => null,
+                'message' => null,
+                'feature_key' => $key,
+                'feature_name' => $featureName,
+                'source' => $access['source'],
+                'plan_code' =>
+                    $access['plan']?->code,
+            ];
+        }
+
+        if (
+            $access['source']
+            === 'sponsored'
+        ) {
+            return [
+                'allowed' => false,
+                'reason' =>
+                    'sponsored_restriction',
+
+                'message' =>
+                    'Not included in your current sponsored access.',
+
+                'feature_key' => $key,
+                'feature_name' => $featureName,
+                'source' => $access['source'],
+                'plan_code' =>
+                    $access['plan']?->code,
+            ];
+        }
+
+        return [
+            'allowed' => false,
+            'reason' =>
+                'plan_restriction',
+
+            'message' =>
+                'Not included in your current plan.',
+
+            'feature_key' => $key,
+            'feature_name' => $featureName,
+            'source' => $access['source'],
+            'plan_code' =>
+                $access['plan']?->code,
+        ];
+    }
+
+    /**
+     * Read the plan/sponsorship value without applying
+     * global or parent feature switches.
+     */
+    private function rawValueForAccess(
+        array $access,
+        string $key,
+        mixed $default = null
+    ): mixed {
+        $plan = $access['plan'];
+
+        if (! $plan) {
+            return $default;
+        }
+
+        if (
+            $access['source']
+                === 'sponsored'
+            && $access['grant']
+                instanceof SponsoredAccessGrant
+        ) {
+            $override = $access['grant']
+                ->featureOverrides
+                ->first(
+                    fn ($override) =>
+                        $override
+                            ->featureDefinition
+                            ?->key
+                        === $key
+                );
+
+            if ($override) {
+                return $override->value;
+            }
+        }
+
+        $feature = $plan
+            ->features
+            ->firstWhere(
+                'key',
+                $key
+            );
+
+        return $feature
+            ? $feature->value
+            : $default;
+    }
+
+    /**
      * Resolve feature values recursively so parent
      * switches can disable their child features.
      */
@@ -298,44 +536,11 @@ class EntitlementService
             }
         }
 
-        $plan = $access['plan'];
-
-        if (! $plan) {
-            return $default;
-        }
-
-        if (
-            $access['source'] === 'sponsored'
-            && $access['grant']
-                instanceof SponsoredAccessGrant
-        ) {
-            $override = $access['grant']
-                ->featureOverrides
-                ->first(
-                    fn ($override) =>
-                        $override
-                            ->featureDefinition
-                            ?->key
-                        === $key
-                );
-
-            if ($override) {
-                return $override->value;
-            }
-        }
-
-        $feature = $plan
-            ->features
-            ->firstWhere(
-                'key',
-                $key
-            );
-
-        if (! $feature) {
-            return $default;
-        }
-
-        return $feature->value;
+        return $this->rawValueForAccess(
+            $access,
+            $key,
+            $default
+        );
     }
 
     /**

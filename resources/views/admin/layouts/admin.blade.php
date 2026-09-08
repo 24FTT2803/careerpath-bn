@@ -503,28 +503,54 @@
                 <span>Careers</span>
             </a>
             @if(auth()->user()->role === 'admin')
-    <div class="nav-label" style="margin-top:16px;">BIICF Management</div>
-    <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}">
-        <i class="fas fa-layer-group"></i>
-        <span>Sub-Sectors <span class="badge">{{ \App\Models\BiicfSubSector::count() }}</span></span>
-    </a>
-    <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}">
-        <i class="fas fa-briefcase"></i>
-        <span>Job Roles <span class="badge">{{ \App\Models\BiicfJobRole::count() }}</span></span>
-    </a>
-    <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}">
-        <i class="fas fa-tools"></i>
-        <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
-    </a>
-    <a href="{{ route('admin.biicf.proficiency-levels') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.proficiency-levels*') ? 'active' : '' }}">
-        <i class="fas fa-level-up-alt"></i>
-        <span>Proficiency Levels</span>
-    </a>
-    <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
-        <i class="fas fa-graduation-cap"></i>
-        <span>Trainings</span>
-    </a>
-@endif
+                <div class="nav-label" style="margin-top:16px;">BIICF Management</div>
+                <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}">
+                    <i class="fas fa-layer-group"></i>
+                    <span>Sub-Sectors <span class="badge">{{ \App\Models\BiicfSubSector::count() }}</span></span>
+                </a>
+                <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}">
+                    <i class="fas fa-briefcase"></i>
+                    <span>Job Roles <span class="badge">{{ \App\Models\BiicfJobRole::count() }}</span></span>
+                </a>
+                <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}">
+                    <i class="fas fa-tools"></i>
+                    <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
+                </a>
+                <a href="{{ route('admin.biicf.proficiency-levels') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.proficiency-levels*') ? 'active' : '' }}">
+                    <i class="fas fa-level-up-alt"></i>
+                    <span>Proficiency Levels</span>
+                </a>
+                <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span>Trainings</span>
+                </a>
+            @endif
+            @if(auth()->user()->role === 'admin')
+                <div
+                    class="nav-label"
+                    style="margin-top:16px;"
+                >
+                    Business Management
+                </div>
+
+                <a
+                    href="{{ route(
+                        'admin.business.plans.index'
+                    ) }}"
+                    class="sidebar-link {{
+                        request()->routeIs(
+                            'admin.business.plans.*'
+                        )
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-sliders-h"></i>
+                    <span>
+                        Plans & Features
+                    </span>
+                </a>
+            @endif
             @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i>

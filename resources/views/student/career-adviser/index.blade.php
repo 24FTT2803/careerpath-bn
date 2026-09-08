@@ -748,6 +748,56 @@
         </div>
     </div>
 
+    @if(! $careerAdviserAccess['allowed'])
+        <div
+            class="preview-notice"
+            style="
+                margin-top:12px;
+                border-color:{{
+                    $careerAdviserAccess['reason']
+                    === 'maintenance'
+                        ? '#e8d4a0'
+                        : '#d5dbe3'
+                }};
+            "
+        >
+            <i
+                class="fas {{
+                    $careerAdviserAccess['reason']
+                    === 'maintenance'
+                        ? 'fa-screwdriver-wrench'
+                        : (
+                            $careerAdviserAccess['reason']
+                            === 'sponsored_restriction'
+                                ? 'fa-building'
+                                : 'fa-lock'
+                        )
+                }}"
+            ></i>
+
+            <div>
+                <strong>
+                    Career Adviser
+                    —
+                    {{
+                        $careerAdviserAccess['reason']
+                        === 'maintenance'
+                            ? 'Maintenance'
+                            : 'Access Restricted'
+                    }}
+                </strong>
+
+                <div style="margin-top:4px;">
+                    {{
+                        $careerAdviserAccess[
+                            'message'
+                        ]
+                    }}
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="adviser-workspace">
 
         {{-- ============================================================
@@ -873,7 +923,16 @@
                         class="composer-input"
                         rows="1"
                         maxlength="500"
-                        placeholder="Ask about your career options, competencies or next steps..."
+                        placeholder="{{
+                            $careerAdviserAccess['allowed']
+                                ? 'Ask about your career options, competencies or next steps...'
+                                : $careerAdviserAccess['message']
+                        }}"
+                        {{
+                            $careerAdviserAccess['allowed']
+                                ? ''
+                                : 'disabled'
+                        }}
                     ></textarea>
 
                     <button
@@ -1158,12 +1217,20 @@
 
             let isSending = false;
 
+            const adviserAvailable =
+            @json(
+                (bool)
+                $careerAdviserAccess['allowed']
+            );
+
             function updateSendState() {
                 const hasMessage =
                     promptInput.value.trim() !== '';
 
                 sendButton.disabled =
-                    ! hasMessage || isSending;
+                    ! adviserAvailable
+                    || ! hasMessage
+                    || isSending;
 
                 sendButton.style.cursor =
                     sendButton.disabled
@@ -1266,7 +1333,8 @@
                     promptInput.value.trim();
 
                 if (
-                    message === ''
+                    ! adviserAvailable
+                    || message === ''
                     || isSending
                 ) {
                     return;
@@ -1349,6 +1417,17 @@
 
                     promptInput.focus();
                 }
+            }
+
+            if (! adviserAvailable) {
+                promptInput.disabled = true;
+                sendButton.disabled = true;
+
+                promptButtons.forEach(
+                    function (button) {
+                        button.disabled = true;
+                    }
+                );
             }
 
             promptButtons.forEach(

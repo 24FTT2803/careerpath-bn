@@ -621,20 +621,161 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <a href="{{ route('student.profile') }}" class="btn btn-primary">
-                <i class="fas fa-user-edit"></i> Update Profile
+            <a
+                href="{{ route('student.profile') }}"
+                class="btn btn-primary"
+            >
+                <i class="fas fa-user-edit"></i>
+                Update Profile
             </a>
 
-            <a href="{{ route('student.career-adviser') }}" class="btn btn-outline">
-                <i class="fas fa-comments"></i> Career Adviser
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <a
+                    href="{{ route('student.career-adviser') }}"
+                    class="btn btn-outline"
+                    title="{{
+                        $careerAdviserAccess['message']
+                        ?? 'Career Adviser'
+                    }}"
+                >
+                    <i
+                        class="fas {{
+                            $careerAdviserAccess['allowed']
+                                ? 'fa-comments'
+                                : (
+                                    $careerAdviserAccess['reason']
+                                    === 'maintenance'
+                                        ? 'fa-screwdriver-wrench'
+                                        : 'fa-lock'
+                                )
+                        }}"
+                    ></i>
+
+                    Career Adviser
+
+                    @if(! $careerAdviserAccess['allowed'])
+                        <span style="font-size:10px;">
+                            —
+                            {{
+                                $careerAdviserAccess['reason']
+                                === 'maintenance'
+                                    ? 'Maintenance'
+                                    : 'Restricted'
+                            }}
+                        </span>
+                    @endif
+                </a>
+
+                @if(! $careerAdviserAccess['allowed'])
+                    <small
+                        style="
+                            color:#6b7280;
+                            max-width:220px;
+                            line-height:1.35;
+                        "
+                    >
+                        {{ $careerAdviserAccess['message'] }}
+                    </small>
+                @endif
+            </div>
+
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                @if(
+                    $recommendationGenerationAccess[
+                        'allowed'
+                    ]
+                )
+                    <form
+                        method="POST"
+                        action="{{
+                            route(
+                                'student.recommendations.generate'
+                            )
+                        }}"
+                        style="margin:0;"
+                    >
+                        @csrf
+
+                        <button
+                            type="submit"
+                            class="btn btn-outline"
+                        >
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                            Generate Recommendations
+                        </button>
+                    </form>
+                @else
+                    <button
+                        type="button"
+                        class="btn btn-outline"
+                        disabled
+                        title="{{
+                            $recommendationGenerationAccess[
+                                'message'
+                            ]
+                        }}"
+                        style="
+                            opacity:.65;
+                            cursor:not-allowed;
+                        "
+                    >
+                        <i
+                            class="fas {{
+                                $recommendationGenerationAccess[
+                                    'reason'
+                                ]
+                                === 'maintenance'
+                                    ? 'fa-screwdriver-wrench'
+                                    : 'fa-lock'
+                            }}"
+                        ></i>
+
+                        Generate Recommendations
+                        —
+                        {{
+                            $recommendationGenerationAccess[
+                                'reason'
+                            ]
+                            === 'maintenance'
+                                ? 'Maintenance'
+                                : 'Restricted'
+                        }}
+                    </button>
+
+                    <small
+                        style="
+                            color:#6b7280;
+                            max-width:240px;
+                            line-height:1.35;
+                        "
+                    >
+                        {{
+                            $recommendationGenerationAccess[
+                                'message'
+                            ]
+                        }}
+                    </small>
+                @endif
+            </div>
+
+            <a
+                href="{{ route('student.milestones') }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-flag-checkered"></i>
+                Track Milestones
             </a>
 
-            <a href="{{ route('student.milestones') }}" class="btn btn-outline">
-                <i class="fas fa-flag-checkered"></i> Track Milestones
-            </a>
-
-            <a href="{{ route('student.biicf-explorer.index') }}" class="btn btn-outline">
-                <i class="fas fa-compass"></i> BIICF Explorer
+            <a
+                href="{{
+                    route(
+                        'student.biicf-explorer.index'
+                    )
+                }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-compass"></i>
+                BIICF Explorer
             </a>
         </div>
 
@@ -669,9 +810,71 @@
                                 </div>
                                 <span class="rec-match">{{ $rec->match_score ?? 0 }}% Match</span>
                             </div>
-                            <a href="{{ route('student.recommendations.analysis', $rec->id) }}" class="rec-link">
-                                View Career Analysis <i class="fas fa-arrow-right"></i>
+                            <a
+                                href="{{
+                                    route(
+                                        'student.recommendations.analysis',
+                                        $rec->id
+                                    )
+                                }}"
+                                class="rec-link"
+                                title="{{
+                                    $detailedAnalysisAccess['message']
+                                    ?? 'View Career Analysis'
+                                }}"
+                            >
+                                View Career Analysis
+
+                                @if(
+                                    ! $detailedAnalysisAccess[
+                                        'allowed'
+                                    ]
+                                )
+                                    <i
+                                        class="fas {{
+                                            $detailedAnalysisAccess[
+                                                'reason'
+                                            ]
+                                            === 'maintenance'
+                                                ? 'fa-screwdriver-wrench'
+                                                : 'fa-lock'
+                                        }}"
+                                    ></i>
+
+                                    <span style="font-size:10px;">
+                                        {{
+                                            $detailedAnalysisAccess[
+                                                'reason'
+                                            ]
+                                            === 'maintenance'
+                                                ? 'Maintenance'
+                                                : 'Restricted'
+                                        }}
+                                    </span>
+                                @else
+                                    <i class="fas fa-arrow-right"></i>
+                                @endif
                             </a>
+
+                            @if(
+                                ! $detailedAnalysisAccess[
+                                    'allowed'
+                                ]
+                            )
+                                <div
+                                    style="
+                                        margin-top:5px;
+                                        color:#6b7280;
+                                        font-size:11px;
+                                    "
+                                >
+                                    {{
+                                        $detailedAnalysisAccess[
+                                            'message'
+                                        ]
+                                    }}
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 @else
