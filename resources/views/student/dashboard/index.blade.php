@@ -423,6 +423,27 @@
     }
 
     /* Activity Feed */
+    .dashboard-side {
+        position: relative;
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .recent-activity-panel {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .recent-activity-list {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding-right: 6px;
+    }
+
     .activity-item {
         padding: 12px 0;
         border-bottom: 1px solid var(--border);
@@ -484,6 +505,18 @@
     }
 
     @media (max-width: 768px) {
+        .dashboard-side {
+            position: static;
+        }
+
+        .recent-activity-panel {
+            position: static;
+        }
+
+        .recent-activity-list {
+            max-height: 220px;
+        }
+
         .dashboard-grid {
             grid-template-columns: 1fr;
         }
@@ -654,59 +687,31 @@
             </div>
 
             <!-- Right Column -->
-            <div>
-                <!-- Profile Status -->
-                <div class="panel profile-status">
-                    <div class="panel-header">
-                        <h3><i class="fas fa-user-circle"></i> Profile Status</h3>
-                    </div>
-
-                    <div class="status-row">
-                        <span>Completion</span>
-                        <span class="value">{{ $profileCompletion ?? 0 }}%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="fill" style="width: {{ $profileCompletion ?? 0 }}%"></div>
-                    </div>
-
-                    <div>
-                        @if(($profileCompletion ?? 0) >= 70)
-                            <span class="status-badge complete">
-                                <i class="fas fa-check-circle"></i> Profile Complete
-                            </span>
-                        @else
-                            <span class="status-badge incomplete">
-                                <i class="fas fa-exclamation-circle"></i> {{ 100 - ($profileCompletion ?? 0) }}% Remaining
-                            </span>
-                        @endif
-                    </div>
-
-                    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
-                        <div class="status-row">
-                            <span>Readiness Score</span>
-                            <span class="value">{{ $readinessScore ?? 0 }}%</span>
-                        </div>
-                    </div>
-                </div>
-
+            <div class="dashboard-side">
                 <!-- Recent Activity -->
-                <div class="panel" style="margin-top:16px;">
+                <div class="panel recent-activity-panel">
                     <div class="panel-header">
                         <h3><i class="fas fa-clock"></i> Recent Activity</h3>
                     </div>
 
                     @if(isset($recentActivities) && count($recentActivities) > 0)
-                        @foreach($recentActivities as $activity)
-                            <div class="activity-item">
-                                <div class="activity-icon">
-                                    <i class="fas fa-{{ $activity['icon'] ?? 'bell' }}"></i>
+                        <div class="recent-activity-list">
+                            @foreach($recentActivities as $activity)
+                                <div class="activity-item">
+                                    <div class="activity-icon">
+                                        <i class="fas fa-{{ $activity['icon'] ?? 'bell' }}"></i>
+                                    </div>
+                                    <div class="activity-content">
+                                        <div class="message">
+                                            {{ $activity['message'] ?? 'Activity logged' }}
+                                        </div>
+                                        <div class="time">
+                                            {{ $activity['time'] ?? 'Just now' }}
+                                        </div>
+                                    </div>
                                 </div>
-                                <div class="activity-content">
-                                    <div class="message">{{ $activity['message'] ?? 'Activity logged' }}</div>
-                                    <div class="time">{{ $activity['time'] ?? 'Just now' }}</div>
-                                </div>
-                            </div>
-                        @endforeach
+                            @endforeach
+                        </div>
                     @else
                         <div class="no-activity">
                             <i class="fas fa-inbox"></i>
