@@ -233,16 +233,6 @@
         box-sizing:border-box;
     }
 
-    .cpbn-gap-groups {
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:20px;
-    }
-
-    .cpbn-gap-group {
-        min-width:0;
-    }
-
     .cpbn-gap-group-title {
         display:flex;
         align-items:center;
@@ -383,12 +373,6 @@
         font-weight:500;
     }
 
-    @media (max-width:900px) {
-        .cpbn-gap-groups {
-            grid-template-columns:1fr;
-        }
-    }
-
     @media (max-width:760px) {
         .cpbn-grid {
             grid-template-columns:1fr;
@@ -471,16 +455,15 @@
 <div class="cpbn-analysis">
     <div class="cpbn-analysis-wrap">
 
-        <div class="cpbn-analysis-nav">
-            <a
-                href="{{ route('student.dashboard') }}"
-                class="cpbn-back"
-            >
+                        <div class="cpbn-analysis-nav">
+            <a href="{{ route('student.dashboard') }}" class="cpbn-back">
                 <svg
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     stroke-width="2"
+                    width="14"
+                    height="14"
                 >
                     <path d="M19 12H5"/>
                     <path d="M12 19l-7-7 7-7"/>
@@ -498,11 +481,12 @@
             <div class="cpbn-hero-top">
                 <div>
                     <h1>
-                        {{ $careerPresentation['title'] }}
+                        {{ $careerRecommendation->career->job_title ?? 'Career' }}
                     </h1>
 
                     <p class="cpbn-subsector">
-                        {{ $careerPresentation['subsector'] }}
+                        {{ $careerRecommendation->career->subsector
+                            ?? 'Sub-sector unavailable' }}
                     </p>
                 </div>
 
@@ -540,7 +524,8 @@
                 <h3>Job Description</h3>
 
                 <p class="cpbn-copy">
-                    {{ $careerPresentation['job_description'] }}
+                    {{ $careerRecommendation->career->job_description
+                        ?? 'Job description is currently unavailable.' }}
                 </p>
 
                 <h3>Entry Requirements</h3>
@@ -623,290 +608,6 @@
 
                     <div class="cpbn-gap-chart-wrap" style="height: {{ max(220, $skillGaps->count() * 55 + 60) }}px;">
                         <canvas id="cpbnGapChart"></canvas>
-                    </div>
-
-                    <div class="cpbn-gap-groups">
-
-                        <div class="cpbn-gap-group">
-                            <div class="cpbn-gap-group-title">
-                                <h3>
-                                    Technical Competencies
-                                </h3>
-
-                                <span class="cpbn-gap-count">
-                                    {{ $technicalGaps->count() }}
-                                </span>
-                            </div>
-
-                            @if($technicalGaps->isNotEmpty())
-                                <div class="cpbn-gaps">
-                                    @foreach($technicalGaps as $gap)
-                                        <div class="cpbn-gap">
-                                            <div class="cpbn-gap-name">
-                                                {{ $gap['skill_name']
-                                                    ?? 'Competency' }}
-                                            </div>
-
-                                            <div class="cpbn-gap-values">
-
-                                                <div
-                                                    class="cpbn-gap-value
-                                                    cpbn-gap-value-current"
-                                                >
-                                                    <span class="cpbn-gap-label">
-                                                        Current
-                                                    </span>
-
-                                                    <span class="cpbn-gap-main">
-                                                        @if(
-                                                            isset(
-                                                                $gap[
-                                                                    'current_level_value'
-                                                                ]
-                                                            )
-                                                        )
-                                                            Level
-                                                            {{
-                                                                $gap[
-                                                                    'current_level_value'
-                                                                ]
-                                                            }}
-                                                        @else
-                                                            Current Level
-                                                        @endif
-                                                    </span>
-
-                                                    <span class="cpbn-gap-sub">
-                                                        {{
-                                                            $gap[
-                                                                'current_level'
-                                                            ]
-                                                            ?? 'Not specified'
-                                                        }}
-                                                    </span>
-                                                </div>
-
-                                                <div
-                                                    class="cpbn-gap-value
-                                                    cpbn-gap-value-required"
-                                                >
-                                                    <span class="cpbn-gap-label">
-                                                        Required
-                                                    </span>
-
-                                                    <span class="cpbn-gap-main">
-                                                        @if(
-                                                            isset(
-                                                                $gap[
-                                                                    'required_level'
-                                                                ]
-                                                            )
-                                                        )
-                                                            Level
-                                                            {{
-                                                                $gap[
-                                                                    'required_level'
-                                                                ]
-                                                            }}
-                                                        @else
-                                                            Required Level
-                                                        @endif
-                                                    </span>
-
-                                                    <span class="cpbn-gap-sub">
-                                                        {{
-                                                            $gap[
-                                                                'required_label'
-                                                            ]
-                                                            ?? $gap[
-                                                                'recommended_level'
-                                                            ]
-                                                            ?? 'Not specified'
-                                                        }}
-                                                    </span>
-                                                </div>
-
-                                                <div
-                                                    class="cpbn-gap-value
-                                                    cpbn-gap-value-difference"
-                                                >
-                                                    <span class="cpbn-gap-label">
-                                                        Gap
-                                                    </span>
-
-                                                    <span class="cpbn-gap-main">
-                                                        @if(
-                                                            isset(
-                                                                $gap['gap']
-                                                            )
-                                                        )
-                                                            {{ $gap['gap'] }}
-                                                            {{
-                                                                $gap['gap'] === 1
-                                                                    ? 'level'
-                                                                    : 'levels'
-                                                            }}
-                                                        @else
-                                                            Not calculated
-                                                        @endif
-                                                    </span>
-
-                                                    <span class="cpbn-gap-sub">
-                                                        To improve
-                                                    </span>
-                                                </div>
-
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <p class="cpbn-empty-text">
-                                    No technical competency gaps were identified.
-                                </p>
-                            @endif
-                        </div>
-
-                        <div class="cpbn-gap-group">
-                            <div class="cpbn-gap-group-title">
-                                <h3>
-                                    Soft Competencies
-                                </h3>
-
-                                <span class="cpbn-gap-count">
-                                    {{ $softGaps->count() }}
-                                </span>
-                            </div>
-
-                            @if($softGaps->isNotEmpty())
-                                <div class="cpbn-gaps">
-                                    @foreach($softGaps as $gap)
-                                        <div class="cpbn-gap">
-                                            <div class="cpbn-gap-name">
-                                                {{ $gap['skill_name']
-                                                    ?? 'Competency' }}
-                                            </div>
-
-                                            <div class="cpbn-gap-values">
-
-                                                <div
-                                                    class="cpbn-gap-value
-                                                    cpbn-gap-value-current"
-                                                >
-                                                    <span class="cpbn-gap-label">
-                                                        Current
-                                                    </span>
-
-                                                    <span class="cpbn-gap-main">
-                                                        @if(
-                                                            isset(
-                                                                $gap[
-                                                                    'current_level_value'
-                                                                ]
-                                                            )
-                                                        )
-                                                            Level
-                                                            {{
-                                                                $gap[
-                                                                    'current_level_value'
-                                                                ]
-                                                            }}
-                                                        @else
-                                                            Current Level
-                                                        @endif
-                                                    </span>
-
-                                                    <span class="cpbn-gap-sub">
-                                                        {{
-                                                            $gap[
-                                                                'current_level'
-                                                            ]
-                                                            ?? 'Not specified'
-                                                        }}
-                                                    </span>
-                                                </div>
-
-                                                <div
-                                                    class="cpbn-gap-value
-                                                    cpbn-gap-value-required"
-                                                >
-                                                    <span class="cpbn-gap-label">
-                                                        Required
-                                                    </span>
-
-                                                    <span class="cpbn-gap-main">
-                                                        @if(
-                                                            isset(
-                                                                $gap[
-                                                                    'required_level'
-                                                                ]
-                                                            )
-                                                        )
-                                                            Level
-                                                            {{
-                                                                $gap[
-                                                                    'required_level'
-                                                                ]
-                                                            }}
-                                                        @else
-                                                            Required Level
-                                                        @endif
-                                                    </span>
-
-                                                    <span class="cpbn-gap-sub">
-                                                        {{
-                                                            $gap[
-                                                                'required_label'
-                                                            ]
-                                                            ?? $gap[
-                                                                'recommended_level'
-                                                            ]
-                                                            ?? 'Not specified'
-                                                        }}
-                                                    </span>
-                                                </div>
-
-                                                <div
-                                                    class="cpbn-gap-value
-                                                    cpbn-gap-value-difference"
-                                                >
-                                                    <span class="cpbn-gap-label">
-                                                        Gap
-                                                    </span>
-
-                                                    <span class="cpbn-gap-main">
-                                                        @if(
-                                                            isset(
-                                                                $gap['gap']
-                                                            )
-                                                        )
-                                                            {{ $gap['gap'] }}
-                                                            {{
-                                                                $gap['gap'] === 1
-                                                                    ? 'level'
-                                                                    : 'levels'
-                                                            }}
-                                                        @else
-                                                            Not calculated
-                                                        @endif
-                                                    </span>
-
-                                                    <span class="cpbn-gap-sub">
-                                                        To improve
-                                                    </span>
-                                                </div>
-
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <p class="cpbn-empty-text">
-                                    No soft competency gaps were identified.
-                                </p>
-                            @endif
-                        </div>
-
                     </div>
 
                     @if($uncategorisedGaps->isNotEmpty())
@@ -1004,9 +705,9 @@
                     @endif
 
                     <div class="cpbn-gap-note">
-                        Skill gaps are calculated from your recorded competencies
-                        and the BIICF role requirements currently available in
-                        CareerPath BN.
+                        Competency levels currently use temporary mock values
+                        while the Career AI and authoritative career
+                        requirement data are still being integrated.
                     </div>
 
                 @else
@@ -1101,8 +802,36 @@
 
             const gaps = @json($chartGaps);
 
+            // Custom plugin: draws the actual level number at the end of
+            // each bar, so the value is visible at a glance without having
+            // to hover for the tooltip. Registered directly (Chart.js's
+            // public plugin API) - no extra npm package needed for this.
+            const gapValueLabels = {
+                id: 'gapValueLabels',
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        if (meta.hidden) {
+                            return;
+                        }
+                        meta.data.forEach((bar, index) => {
+                            const value = dataset.data[index];
+                            ctx.save();
+                            ctx.font = '600 11px "IBM Plex Sans", sans-serif';
+                            ctx.fillStyle = '#0d1a2b';
+                            ctx.textAlign = 'left';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText(value, bar.x + 6, bar.y);
+                            ctx.restore();
+                        });
+                    });
+                },
+            };
+
             new Chart(canvas.getContext('2d'), {
                 type: 'bar',
+                plugins: [gapValueLabels],
                 data: {
                     labels: gaps.map(g => g.name),
                     datasets: [
@@ -1124,6 +853,9 @@
                     indexAxis: 'y',
                     responsive: true,
                     maintainAspectRatio: false,
+                    layout: {
+                        padding: { right: 24 },
+                    },
                     scales: {
                         x: {
                             min: 0,
