@@ -11,6 +11,10 @@ use App\Models\SponsoredAccessFeatureOverride;
 use App\Models\SponsoredAccessGrant;
 use App\Models\User;
 use App\Services\Business\EntitlementService;
+use App\Services\Business\FeatureUsageService;
+use App\Services\AI\CareerAdviserService;
+use App\Services\AI\CareerRecommendationService;
+use Illuminate\Database\Eloquent\Collection;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
 
@@ -395,6 +399,320 @@ test('recommendation analysis is blocked during maintenance', function () {
             'warning',
             'Career recommendation generation is unavailable. Temporarily unavailable due to maintenance.'
         );
+});
+
+test('successful recommendation generation consumes one quota use', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    $recommendationService =
+        \Mockery::mock(
+            CareerRecommendationService::class
+        );
+
+    $recommendationService
+        ->shouldReceive('generateFor')
+        ->once()
+        ->andReturn(
+            new Collection()
+        );
+
+    app()->instance(
+        CareerRecommendationService::class,
+        $recommendationService
+    );
+
+    $this
+        ->actingAs($student)
+        ->post(
+            route(
+                'student.recommendations.generate'
+            )
+        )
+        ->assertRedirect(
+            route(
+                'student.dashboard'
+            )
+        )
+        ->assertSessionHas(
+            'success',
+            'Career recommendations generated successfully.'
+        );
+
+    expect(
+        $student
+            ->featureUsages()
+            ->where(
+                'feature_key',
+                'career_recommendations.generation_quota'
+            )
+            ->count()
+    )->toBe(1);
+});
+
+test('failed recommendation generation does not consume quota', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    $recommendationService =
+        \Mockery::mock(
+            CareerRecommendationService::class
+        );
+
+    $recommendationService
+        ->shouldReceive('generateFor')
+        ->once()
+        ->andThrow(
+            new \RuntimeException(
+                'Simulated recommendation failure.'
+            )
+        );
+
+    app()->instance(
+        CareerRecommendationService::class,
+        $recommendationService
+    );
+
+    $this
+        ->actingAs($student)
+        ->post(
+            route(
+                'student.recommendations.generate'
+            )
+        )
+        ->assertRedirect(
+            route(
+                'student.dashboard'
+            )
+        )
+        ->assertSessionHas(
+            'warning',
+            'Career recommendations could not be processed. Please try again later.'
+        );
+
+    expect(
+        $student
+            ->featureUsages()
+            ->where(
+                'feature_key',
+                'career_recommendations.generation_quota'
+            )
+            ->count()
+    )->toBe(0);
+});
+
+test('recommendation generation is blocked when quota is exhausted', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    $usage = app(
+        FeatureUsageService::class
+    );
+
+    foreach (range(1, 3) as $attempt) {
+        $usage->recordUsage(
+            $student,
+            'career_recommendations.generation_quota'
+        );
+    }
+
+    $this
+        ->actingAs($student)
+        ->post(
+            route(
+                'student.recommendations.generate'
+            )
+        )
+        ->assertRedirect(
+            route(
+                'student.dashboard'
+            )
+        )
+        ->assertSessionHas(
+            'warning',
+            'Career recommendation generation is unavailable. '
+            . 'You have reached the usage limit for this feature. '
+            . 'Please try again after your usage window allows another request.'
+        );
+
+    expect(
+        $student
+            ->featureUsages()
+            ->where(
+                'feature_key',
+                'career_recommendations.generation_quota'
+            )
+            ->count()
+    )->toBe(3);
+});
+
+test('successful career adviser request consumes one quota use', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    $adviser =
+        \Mockery::mock(
+            CareerAdviserService::class
+        );
+
+    $adviser
+        ->shouldReceive('ask')
+        ->once()
+        ->andReturn([
+            'schema_version' => '1.0',
+            'status' => 'completed',
+            'message' => 'Test adviser response.',
+        ]);
+
+    app()->instance(
+        CareerAdviserService::class,
+        $adviser
+    );
+
+    $this
+        ->actingAs($student)
+        ->postJson(
+            route(
+                'student.career-adviser.ask'
+            ),
+            [
+                'message' =>
+                    'What career suits me?',
+            ]
+        )
+        ->assertOk()
+        ->assertJson([
+            'status' => 'completed',
+            'message' =>
+                'Test adviser response.',
+        ]);
+
+    expect(
+        $student
+            ->featureUsages()
+            ->where(
+                'feature_key',
+                'career_adviser.usage_quota'
+            )
+            ->count()
+    )->toBe(1);
+});
+
+test('failed career adviser request does not consume quota', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    $adviser =
+        \Mockery::mock(
+            CareerAdviserService::class
+        );
+
+    $adviser
+        ->shouldReceive('ask')
+        ->once()
+        ->andThrow(
+            new \RuntimeException(
+                'Simulated adviser failure.'
+            )
+        );
+
+    app()->instance(
+        CareerAdviserService::class,
+        $adviser
+    );
+
+    $this
+        ->actingAs($student)
+        ->postJson(
+            route(
+                'student.career-adviser.ask'
+            ),
+            [
+                'message' =>
+                    'What career suits me?',
+            ]
+        )
+        ->assertStatus(503)
+        ->assertJson([
+            'status' => 'error',
+        ]);
+
+    expect(
+        $student
+            ->featureUsages()
+            ->where(
+                'feature_key',
+                'career_adviser.usage_quota'
+            )
+            ->count()
+    )->toBe(0);
+});
+
+test('career adviser ask endpoint is blocked when quota is exhausted', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+    ]);
+
+    PlanFeature::whereHas(
+        'plan',
+        fn ($query) =>
+            $query->where(
+                'code',
+                'free'
+            )
+    )
+        ->where(
+            'key',
+            'career_adviser.usage_quota'
+        )
+        ->firstOrFail()
+        ->update([
+            'value' => [
+                'mode' => 'total',
+                'amount' => 1,
+            ],
+        ]);
+
+    $usage = app(
+        FeatureUsageService::class
+    );
+
+    $usage->recordUsage(
+        $student,
+        'career_adviser.usage_quota'
+    );
+
+    $this
+        ->actingAs($student)
+        ->postJson(
+            route(
+                'student.career-adviser.ask'
+            ),
+            [
+                'message' =>
+                    'What career suits me?',
+            ]
+        )
+        ->assertStatus(429)
+        ->assertJson([
+            'status' => 'unavailable',
+            'reason' => 'quota_exceeded',
+        ]);
+
+    expect(
+        $student
+            ->featureUsages()
+            ->where(
+                'feature_key',
+                'career_adviser.usage_quota'
+            )
+            ->count()
+    )->toBe(1);
 });
 
 test('dashboard keeps unavailable features visible with indicators', function () {

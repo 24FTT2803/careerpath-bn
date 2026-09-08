@@ -238,6 +238,16 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Get feature usage records belonging to the user.
+     */
+    public function featureUsages()
+    {
+        return $this->hasMany(
+            FeatureUsage::class
+        );
+    }
+
     // ============================================
     // HELPER METHODS
     // ============================================

@@ -8,6 +8,7 @@ use App\Models\CareerRecommendation;
 use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
 use App\Services\Business\EntitlementService;
+use App\Services\Business\FeatureUsageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -18,7 +19,8 @@ class CareerRecommendationController extends Controller
 {
     public function __construct(
         private CareerRecommendationService $recommendationService,
-        private EntitlementService $entitlements
+        private EntitlementService $entitlements,
+        private FeatureUsageService $featureUsage
     ) {
     }
 
@@ -186,6 +188,10 @@ class CareerRecommendationController extends Controller
         /** @var User $student */
         $student = Auth::user();
 
+        /*
+        * Feature availability always takes precedence
+        * over quota enforcement.
+        */
         $generationAccess =
             $this->entitlements
                 ->featureAccess(
@@ -203,10 +209,41 @@ class CareerRecommendationController extends Controller
                 );
         }
 
+        /*
+        * Quota is checked only when the parent feature
+        * itself is available.
+        */
+        $quotaStatus =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_recommendations.generation_quota'
+                );
+
+        if (! $quotaStatus['allowed']) {
+            return redirect()
+                ->route('student.dashboard')
+                ->with(
+                    'warning',
+                    'Career recommendation generation is unavailable. '
+                    . $quotaStatus['message']
+                );
+        }
+
         try {
             $recommendations =
                 $this->recommendationService
                     ->generateFor($student);
+
+            /*
+            * A quota use is consumed only after recommendation
+            * generation has completed successfully.
+            */
+            $this->featureUsage
+                ->recordUsage(
+                    $student,
+                    'career_recommendations.generation_quota'
+                );
 
             NotificationHelper::logCareerRecommendation(
                 $student->id,

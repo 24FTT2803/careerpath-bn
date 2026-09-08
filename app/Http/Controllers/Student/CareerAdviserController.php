@@ -7,6 +7,7 @@ use App\Models\BiicfJobRole;
 use App\Models\BiicfSubSector;
 use App\Models\User;
 use App\Services\AI\CareerAdviserService;
+use App\Services\Business\FeatureUsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,8 @@ use Throwable;
 class CareerAdviserController extends Controller
 {
     public function __construct(
-        private EntitlementService $entitlements
+        private EntitlementService $entitlements,
+        private FeatureUsageService $featureUsage
     ) {
     }
     /**
@@ -166,11 +168,48 @@ class CareerAdviserController extends Controller
 
         $validated = $validator->validated();
 
+        $quotaStatus =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_adviser.usage_quota'
+                );
+
+        if (! $quotaStatus['allowed']) {
+            $status =
+                $quotaStatus['reason']
+                    === 'quota_exceeded'
+                        ? 429
+                        : 503;
+
+            return response()->json(
+                [
+                    'schema_version' => '1.0',
+                    'status' => 'unavailable',
+                    'message' =>
+                        $quotaStatus['message'],
+                    'reason' =>
+                        $quotaStatus['reason'],
+                ],
+                $status
+            );
+        }
+
         try {
             $response = $adviser->ask(
                 $student,
                 $validated['message']
             );
+
+            /*
+            * Consume quota only after the adviser has returned
+            * a successful response.
+            */
+            $this->featureUsage
+                ->recordUsage(
+                    $student,
+                    'career_adviser.usage_quota'
+                );
 
             return response()->json(
                 $response
