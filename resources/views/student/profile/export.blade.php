@@ -108,7 +108,7 @@
         }
 
         .summary-table td {
-            width: 25%;
+            width: 33.33%;
             padding: 12px 6px;
             text-align: center;
             border: 1px solid #dde3ea;
@@ -343,6 +343,10 @@
             color: #8a94a1;
         }
 
+        .page-number:after {
+            content: counter(page) " of " counter(pages);
+        }
+
         .avoid-break {
             page-break-inside: avoid;
         }
@@ -388,7 +392,8 @@
 <div class="footer">
     CareerPath BN — Politeknik Brunei |
     Student Career Profile Report |
-    Generated {{ now()->format('d M Y') }}
+    Generated {{ now()->format('d M Y') }} |
+    Page <span class="page-number"></span>
 </div>
 
 <!-- Header -->
@@ -492,15 +497,6 @@
                 </span>
                 <span class="summary-label">
                     Competencies
-                </span>
-            </td>
-
-            <td>
-                <span class="summary-number">
-                    {{ $recommendations->count() }}
-                </span>
-                <span class="summary-label">
-                    Recommendations
                 </span>
             </td>
         </tr>
