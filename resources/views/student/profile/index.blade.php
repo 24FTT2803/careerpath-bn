@@ -178,6 +178,7 @@
     .info-row .value {
         font-weight: 500;
         color: var(--text);
+        text-align: right;
     }
 
     .tags {
