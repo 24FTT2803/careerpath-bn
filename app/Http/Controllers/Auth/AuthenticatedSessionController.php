@@ -30,12 +30,14 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
         
-        // Check if user is admin or lecturer
-        if ($user->role === 'admin' || $user->role === 'lecturer') {
+        if ($user->role === 'admin') {
             return redirect()->route('admin.dashboard');
         }
 
-        // Default redirect for students
+        if ($user->role === 'lecturer') {
+            return redirect()->route('lecturer.dashboard');
+        }
+
         return redirect()->route('student.dashboard');
     }
 

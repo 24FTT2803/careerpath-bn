@@ -39,11 +39,15 @@ Route::get('/dashboard', function () {
     if (auth()->user()->role === 'admin') {
         return redirect()->route('admin.dashboard');
     }
+
     if (auth()->user()->role === 'lecturer') {
         return redirect()->route('lecturer.dashboard');
     }
+
     return redirect()->route('student.dashboard');
-})->name('dashboard');
+})
+    ->middleware('auth')
+    ->name('dashboard');
 
 // ============================================
 // AUTHENTICATION ROUTES (Provided by Breeze)
@@ -53,7 +57,10 @@ require __DIR__.'/auth.php';
 // ============================================
 // STUDENT ROUTES
 // ============================================
-Route::middleware(['auth'])
+Route::middleware([
+    'auth',
+    \App\Http\Middleware\RoleMiddleware::class . ':student',
+])
     ->prefix('student')
     ->name('student.')
     ->group(function () {
@@ -112,11 +119,6 @@ Route::middleware(['auth'])
             '/profile/export',
             [ProfileController::class, 'export']
         )->name('profile.export');
-
-        Route::get(
-            '/profile/export/{userId}',
-            [ProfileController::class, 'exportAdmin']
-        )->name('profile.export.admin');
 
         // Certification Evidence
         Route::get(
@@ -214,6 +216,19 @@ Route::middleware(['auth'])
                 )->name('competencies');
             });
     });
+
+// ============================================
+// STAFF ACCESS TO STUDENT PROFILE EXPORT
+// ============================================
+Route::middleware([
+    'auth',
+    \App\Http\Middleware\LecturerMiddleware::class,
+])
+    ->get(
+        '/student/profile/export/{userId}',
+        [ProfileController::class, 'exportAdmin']
+    )
+    ->name('student.profile.export.admin');
 
 // ============================================
 // ADMIN ROUTES
