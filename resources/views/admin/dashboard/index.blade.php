@@ -27,9 +27,11 @@
                 </div>
             </div>
             <div class="welcome-actions">
-                <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-user-plus"></i> Add User
-                </a>
+                @if($isAdmin)
+                    <a href="{{ route('admin.users.create') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-user-plus"></i> Add User
+                    </a>
+                @endif
                 <button onclick="window.location.reload()" class="btn btn-outline btn-lg">
                     <i class="fas fa-sync-alt"></i> Refresh
                 </button>
@@ -68,13 +70,13 @@
             </div>
             <div class="stat-info">
                 <span class="stat-label">Active Lecturers</span>
-                <span class="stat-value">{{ $stats['total_lecturers'] ?? 0 }}</span>
+                <span class="stat-value">{{ $stats['active_lecturers'] ?? 0 }}</span>
                 <span class="stat-change neutral">
-                    <i class="fas fa-minus"></i> Current
+                    <i class="fas fa-circle" style="font-size: 6px;"></i> Online now
                 </span>
             </div>
             <div class="stat-progress">
-                <div class="progress-bar" style="width: {{ min(($stats['total_lecturers'] / 50) * 100, 100) }}%"></div>
+                <div class="progress-bar" style="width: {{ $stats['total_lecturers'] > 0 ? min((($stats['active_lecturers'] ?? 0) / $stats['total_lecturers']) * 100, 100) : 0 }}%"></div>
             </div>
         </div>
 
@@ -165,30 +167,34 @@
                 <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
             </div>
             <div class="actions-grid">
-                <a href="{{ route('admin.users.create') }}" class="action-card">
-                    <div class="action-icon" style="background: #e8f5e9; color: #2e7d32;">
-                        <i class="fas fa-user-plus"></i>
-                    </div>
-                    <span>Add User</span>
-                </a>
+                @if($isAdmin)
+                    <a href="{{ route('admin.users.create') }}" class="action-card">
+                        <div class="action-icon" style="background: #e8f5e9; color: #2e7d32;">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <span>Add User</span>
+                    </a>
+                @endif
                 <a href="{{ route('admin.students.index') }}" class="action-card">
                     <div class="action-icon" style="background: #e3f2fd; color: #1565c0;">
                         <i class="fas fa-search"></i>
                     </div>
                     <span>View Students</span>
                 </a>
-                <a href="{{ route('admin.biicf.sub-sectors') }}" class="action-card">
-            <div class="action-icon" style="background: #fff3e0; color: #e65100;">
-                <i class="fas fa-layer-group"></i>
-            </div>
-            <span>Manage BIICF</span>
-        </a>
+                @if($isAdmin)
+                    <a href="{{ route('admin.biicf.sub-sectors') }}" class="action-card">
+                        <div class="action-icon" style="background: #fff3e0; color: #e65100;">
+                            <i class="fas fa-layer-group"></i>
+                        </div>
+                        <span>Manage BIICF</span>
+                    </a>
+                @endif
                 <a href="{{ route('admin.careers.index') }}" class="action-card">
-    <div class="action-icon" style="background: #fce4ec; color: #c62828;">
-        <i class="fas fa-briefcase"></i>
-    </div>
-    <span>View Careers</span>
-</a>
+                    <div class="action-icon" style="background: #fce4ec; color: #c62828;">
+                        <i class="fas fa-briefcase"></i>
+                    </div>
+                    <span>View Careers</span>
+                </a>
             </div>
         </div>
     </div>
@@ -342,9 +348,15 @@
                                 <span class="skill-count">{{ $student->competencies->count() }} skills</span>
                             </td>
                             <td>
-                                <span class="status-badge active">
-                                    <span class="dot"></span> Active
-                                </span>
+                                @if($student->is_online)
+                                    <span class="status-badge active">
+                                        <span class="dot"></span> Online
+                                    </span>
+                                @else
+                                    <span class="status-badge offline">
+                                        <span class="dot"></span> Offline
+                                    </span>
+                                @endif
                             </td>
                         </tr>
                     @empty
@@ -1081,6 +1093,15 @@
         background: #2d8f5c;
         display: inline-block;
         animation: pulse 2s infinite;
+    }
+
+    .status-badge.offline {
+        color: #9ca3af;
+    }
+
+    .status-badge.offline .dot {
+        background: #9ca3af;
+        animation: none;
     }
 
     @keyframes pulse {

@@ -23,9 +23,9 @@
                 <span class="stat-number">{{ $completionRate ?? 0 }}%</span>
                 <span class="stat-label">Profile Completion</span>
             </div>
-            <div class="header-stat">
+            <div class="header-stat" title="Students with a career readiness score below 40%">
                 <span class="stat-number">{{ $atRiskStudents ?? 0 }}</span>
-                <span class="stat-label">At Risk</span>
+                <span class="stat-label">At Risk <i class="fas fa-circle-info" style="font-size: 9px; opacity: 0.6;"></i></span>
             </div>
         </div>
     </div>
@@ -58,14 +58,6 @@
                 </a>
             </div>
         </form>
-        <div class="filter-actions">
-            <button class="btn btn-outline btn-sm" onclick="window.print()">
-                <i class="fas fa-print"></i> Print
-            </button>
-            <button class="btn btn-outline btn-sm">
-                <i class="fas fa-file-export"></i> Export
-            </button>
-        </div>
     </div>
 
     <!-- Students Grid -->
@@ -107,9 +99,15 @@
                         <span class="student-programme">{{ $student->programme ?? 'No Programme' }}</span>
                     </div>
                     <div class="student-card-status">
-                        <span class="status-badge active">
-                            <span class="dot"></span> Active
-                        </span>
+                        @if($student->is_online)
+                            <span class="status-badge active">
+                                <span class="dot"></span> Online
+                            </span>
+                        @else
+                            <span class="status-badge offline">
+                                <span class="dot"></span> Offline
+                            </span>
+                        @endif
                     </div>
                 </div>
 
@@ -577,6 +575,16 @@
         background: #2d8f5c;
         display: inline-block;
         animation: pulse 2s infinite;
+    }
+
+    .status-badge.offline {
+        color: #9ca3af;
+        background: #f3f4f6;
+    }
+
+    .status-badge.offline .dot {
+        background: #9ca3af;
+        animation: none;
     }
 
     @keyframes pulse {
