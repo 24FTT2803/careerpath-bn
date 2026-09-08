@@ -309,6 +309,76 @@
             overflow-y: auto;
         }
 
+        /* Footer */
+        .admin-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .admin-footer p {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .admin-footer-logos {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .admin-footer-logo-link {
+            display: inline-block;
+            transition: var(--transition);
+        }
+
+        .admin-footer-logo-link:hover {
+            transform: translateY(-2px);
+        }
+
+        .admin-footer-logo {
+            height: 26px;
+            width: auto;
+            object-fit: contain;
+            opacity: 0.75;
+            transition: var(--transition);
+        }
+
+        .admin-footer-logo:hover {
+            opacity: 1;
+        }
+
+        .admin-footer-logo-fallback {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            background: var(--gold-wash);
+            border-radius: 100px;
+            color: var(--accent-dark);
+            font-size: 11px;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .admin-footer-credit {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 768px) {
+            .admin-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+
         /* Alerts */
         .alert {
             padding: 12px 16px;
@@ -507,6 +577,40 @@
         @endif
 
         @yield('content')
+
+                <!-- Footer -->
+        <footer class="admin-footer">
+            <p>&copy; {{ date('Y') }} CareerPath BN &middot; Politeknik Brunei</p>
+            <div class="admin-footer-logos">
+                @if(file_exists(public_path('images/politeknik-logo.png')))
+                    <a href="https://www.pb.edu.bn" target="_blank" class="admin-footer-logo-link">
+                        <img src="{{ asset('images/politeknik-logo.png') }}" alt="Politeknik Brunei" class="admin-footer-logo">
+                    </a>
+                @else
+                    <a href="https://www.pb.edu.bn" target="_blank" class="admin-footer-logo-fallback">
+                        <i class="fas fa-university"></i> Politeknik Brunei
+                    </a>
+                @endif
+                @if(file_exists(public_path('images/biicf-logo.png')))
+                    <a href="https://www.biicf.bn" target="_blank" class="admin-footer-logo-link">
+                        <img src="{{ asset('images/biicf-logo.png') }}" alt="BIICF" class="admin-footer-logo">
+                    </a>
+                @else
+                    <a href="https://www.biicf.bn" target="_blank" class="admin-footer-logo-fallback">
+                        <i class="fas fa-certificate"></i> BIICF
+                    </a>
+                @endif
+                @if(file_exists(public_path('images/aiti-logo.png')))
+                    <a href="https://www.aiti.gov.bn" target="_blank" class="admin-footer-logo-link">
+                        <img src="{{ asset('images/aiti-logo.png') }}" alt="AITI" class="admin-footer-logo">
+                    </a>
+                @else
+                    <a href="https://www.aiti.gov.bn" target="_blank" class="admin-footer-logo-fallback">
+                        <i class="fas fa-satellite-dish"></i> AITI
+                    </a>
+                @endif
+            </div>
+        </footer>
     </main>
 
     <!-- Dropdown Toggle JavaScript -->

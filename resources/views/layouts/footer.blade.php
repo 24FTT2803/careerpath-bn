@@ -19,6 +19,13 @@
                             <span class="logo-fallback"><i class="fas fa-certificate"></i> BIICF</span>
                         @endif
                     </a>
+                    <a href="https://www.aiti.gov.bn" target="_blank" class="logo-link">
+                        @if(file_exists(public_path('images/aiti-logo.png')))
+                            <img src="{{ asset('images/aiti-logo.png') }}" alt="AITI" class="footer-logo">
+                        @else
+                            <span class="logo-fallback"><i class="fas fa-satellite-dish"></i> AITI</span>
+                        @endif
+                    </a>
                 </div>
             </div>
             <div class="footer-col">
