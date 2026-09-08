@@ -99,38 +99,33 @@ class DashboardController extends Controller
 
     private function getRecentActivities($user)
     {
-        $activities = [];
+        $iconMap = [
+            'profile' => 'user-edit',
+            'career' => 'briefcase',
+            'milestone' => 'flag-checkered',
+        ];
 
-        if (
-            $user->updated_at
-            && $user->updated_at->diffInDays(now()) < 7
-        ) {
-            $activities[] = [
-                'message' =>
-                    'Updated your profile information',
-
-                'time' =>
-                    $user->updated_at->diffForHumans(),
-            ];
-        }
-
-        $recentMilestone = $user->milestones()
-            ->where('is_completed', true)
-            ->orderBy('completed_date', 'desc')
-            ->first();
-
-        if ($recentMilestone) {
-            $activities[] = [
-                'message' =>
-                    "Completed milestone: {$recentMilestone->title}",
-
-                'time' =>
-                    $recentMilestone
-                        ->completed_date
+        return $user->notifications()
+            ->whereIn(
+                'type',
+                [
+                    'profile',
+                    'career',
+                    'milestone',
+                ]
+            )
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(function ($notification) use ($iconMap) {
+                return [
+                    'message' => $notification->message,
+                    'time' => $notification->created_at
                         ->diffForHumans(),
-            ];
-        }
-
-        return $activities;
+                    'icon' => $iconMap[$notification->type]
+                        ?? 'bell',
+                ];
+            })
+            ->all();
     }
 }
