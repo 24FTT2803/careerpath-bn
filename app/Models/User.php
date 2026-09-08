@@ -208,6 +208,25 @@ class User extends Authenticatable
         return $this->hasMany(CareerRecommendation::class);
     }
 
+    /**
+     * Get the user's organisation group memberships.
+     */
+    public function groupMemberships()
+    {
+        return $this->hasMany(GroupMembership::class);
+    }
+
+    /**
+     * Get the organisation groups the user belongs to.
+     */
+    public function organisationGroups()
+    {
+        return $this->belongsToMany(
+            OrganisationGroup::class,
+            'group_memberships'
+        )->withTimestamps();
+    }
+
     // ============================================
     // HELPER METHODS
     // ============================================
