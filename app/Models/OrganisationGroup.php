@@ -63,6 +63,13 @@ class OrganisationGroup extends Model
         );
     }
 
+    public function sponsoredAccessGrants(): HasMany
+    {
+        return $this->hasMany(
+            SponsoredAccessGrant::class
+        );
+    }
+
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(

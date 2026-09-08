@@ -33,4 +33,11 @@ class Organisation extends Model
             OrganisationGroup::class
         );
     }
+
+    public function sponsoredAccessGrants(): HasMany
+    {
+        return $this->hasMany(
+            SponsoredAccessGrant::class
+        );
+    }
 }
