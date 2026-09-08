@@ -20,24 +20,11 @@
                 <span class="stat-label">Total Careers</span>
             </div>
             <div class="header-stat">
-                <span class="stat-number">
-                    @php
-                        $subsectors = $careers->pluck('subsector')->unique()->count();
-                    @endphp
-                    {{ $subsectors }}
-                </span>
+                <span class="stat-number">{{ $totalSubsectors }}</span>
                 <span class="stat-label">Sub-Sectors</span>
             </div>
             <div class="header-stat">
-                <span class="stat-number">
-                    @php
-                        $highDemand = $careers->filter(function($c) {
-                            return str_contains(strtolower($c->demand_level ?? ''), 'high') ||
-                                   str_contains(strtolower($c->demand_level ?? ''), 'very');
-                        })->count();
-                    @endphp
-                    {{ $highDemand }}
-                </span>
+                <span class="stat-number">{{ $totalHighDemand }}</span>
                 <span class="stat-label">High Demand</span>
             </div>
         </div>
@@ -54,12 +41,9 @@
                 </div>
                 <div class="filter-field">
                     <i class="fas fa-layer-group"></i>
-                    <select name="subsector">
+                    <select name="subsector" onchange="this.form.submit()">
                         <option value="">All Sub-Sectors</option>
-                        @php
-                            $uniqueSubsectors = $careers->pluck('subsector')->unique()->filter();
-                        @endphp
-                        @foreach($uniqueSubsectors as $subsector)
+                        @foreach($allSubsectors as $subsector)
                             <option value="{{ $subsector }}" {{ request('subsector') == $subsector ? 'selected' : '' }}>
                                 {{ $subsector }}
                             </option>
@@ -68,7 +52,7 @@
                 </div>
                 <div class="filter-field">
                     <i class="fas fa-chart-line"></i>
-                    <select name="demand">
+                    <select name="demand" onchange="this.form.submit()">
                         <option value="">All Demand Levels</option>
                         <option value="Very High" {{ request('demand') == 'Very High' ? 'selected' : '' }}>Very High</option>
                         <option value="High" {{ request('demand') == 'High' ? 'selected' : '' }}>High</option>
