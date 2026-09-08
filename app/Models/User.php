@@ -34,7 +34,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'name', 'email', 'phone', 'password', 'student_id', 'programme',
-        'cgpa', 'role', 'avatar', 'last_login_at'
+        'cgpa', 'role', 'avatar', 'show_ads', 'last_login_at'
     ];
 
     protected $hidden = [
@@ -47,7 +47,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_login_at' => 'datetime',
-            'last_active_at' => 'datetime',
+            'show_ads' => 'boolean',
         ];
     }
 
@@ -225,6 +225,16 @@ class User extends Authenticatable
             OrganisationGroup::class,
             'group_memberships'
         )->withTimestamps();
+    }
+
+    /**
+     * Get direct plan grants assigned to the user.
+     */
+    public function planGrants()
+    {
+        return $this->hasMany(
+            UserPlanGrant::class
+        );
     }
 
     // ============================================

@@ -22,8 +22,9 @@ class DatabaseSeeder extends Seeder
             'email' => 'test@example.com',
         ]);
 
-        $this->call(
-            OrganisationGroupSeeder::class
-        );
+        $this->call([
+            OrganisationGroupSeeder::class,
+            PlanSeeder::class,
+        ]);
     }
 }
