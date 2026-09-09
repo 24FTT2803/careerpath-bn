@@ -7,6 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\CareerRecommendation;
 use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
+use App\Services\Business\EntitlementService;
+use App\Services\Business\FeatureUsageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -16,8 +18,59 @@ use Illuminate\Http\Client\RequestException;
 class CareerRecommendationController extends Controller
 {
     public function __construct(
-        private CareerRecommendationService $recommendationService
+        private CareerRecommendationService $recommendationService,
+        private EntitlementService $entitlements,
+        private FeatureUsageService $featureUsage
     ) {
+    }
+
+    /**
+     * Display the student's career recommendations.
+     */
+    public function index(): View
+    {
+        /** @var User $student */
+        $student = Auth::user();
+
+        abort_unless(
+            $student && $student->isStudent(),
+            403
+        );
+
+        $generationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_recommendations.enabled'
+                );
+
+        $generationQuota =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_recommendations.generation_quota'
+                );
+
+        $recommendations =
+            $student
+                ->careerRecommendations()
+                ->with([
+                    'career',
+                    'jobRole.subSector',
+                ])
+                ->orderBy('rank')
+                ->orderByDesc('match_score')
+                ->get();
+
+        return view(
+            'student.recommendations.index',
+            compact(
+                'student',
+                'recommendations',
+                'generationAccess',
+                'generationQuota'
+            )
+        );
     }
 
     /**
@@ -26,9 +79,26 @@ class CareerRecommendationController extends Controller
      */
     public function analysis(
         int $recommendation
-    ): View {
+    ): View|RedirectResponse {
         /** @var User $student */
         $student = Auth::user();
+
+        $generationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_recommendations.enabled'
+                );
+
+        if (! $generationAccess['allowed']) {
+            return redirect()
+                ->route('student.recommendations.index')
+                ->with(
+                    'warning',
+                    'Career recommendation generation is unavailable. '
+                    . $generationAccess['message']
+                );
+        }
 
         abort_unless(
             $student->isStudent(),
@@ -167,10 +237,62 @@ class CareerRecommendationController extends Controller
         /** @var User $student */
         $student = Auth::user();
 
+        /*
+        * Feature availability always takes precedence
+        * over quota enforcement.
+        */
+        $generationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_recommendations.enabled'
+                );
+
+        if (! $generationAccess['allowed']) {
+            return redirect()
+                ->route('student.recommendations.index')
+                ->with(
+                    'warning',
+                    'Career recommendation generation is unavailable. '
+                    . $generationAccess['message']
+                );
+        }
+
+        /*
+        * Quota is checked only when the parent feature
+        * itself is available.
+        */
+        $quotaStatus =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_recommendations.generation_quota'
+                );
+
+        if (! $quotaStatus['allowed']) {
+            return redirect()
+                ->route('student.recommendations.index')
+                ->with(
+                    'warning',
+                    'Career recommendation generation is unavailable. '
+                    . $quotaStatus['message']
+                );
+        }
+
         try {
             $recommendations =
                 $this->recommendationService
                     ->generateFor($student);
+
+            /*
+            * A quota use is consumed only after recommendation
+            * generation has completed successfully.
+            */
+            $this->featureUsage
+                ->recordUsage(
+                    $student,
+                    'career_recommendations.generation_quota'
+                );
 
             NotificationHelper::logCareerRecommendation(
                 $student->id,
@@ -181,7 +303,7 @@ class CareerRecommendationController extends Controller
             report($exception);
 
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'CareerPath could not reach the AI service. Please try again shortly.'
@@ -195,7 +317,7 @@ class CareerRecommendationController extends Controller
                     : 'The Career Recommendation AI is temporarily unavailable. Please try again later.';
 
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     $message
@@ -204,7 +326,7 @@ class CareerRecommendationController extends Controller
             report($exception);
 
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'Career recommendations could not be processed. Please try again later.'
@@ -212,11 +334,7 @@ class CareerRecommendationController extends Controller
         }
 
         return redirect()
-            ->route('student.dashboard')
-            ->with(
-                'success',
-                'Career recommendations generated successfully.'
-            );
+            ->route('student.recommendations.index');
     }
 
     /**

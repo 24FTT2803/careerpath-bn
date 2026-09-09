@@ -405,6 +405,30 @@
         font-size: 10.5px;
     }
 
+    .adviser-quota {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin: 9px 0 0;
+        padding: 5px 9px;
+        border-radius: 7px;
+        color: var(--adviser-muted);
+        background: #f4f6f8;
+        font-size: 10.5px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .adviser-quota.warning {
+        color: var(--adviser-warning);
+        background: rgba(197, 138, 36, 0.09);
+    }
+
+    .adviser-quota.exhausted {
+        color: #a33a32;
+        background: rgba(192, 57, 43, 0.08);
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Career Context
@@ -748,6 +772,56 @@
         </div>
     </div>
 
+    @if(! $careerAdviserAccess['allowed'])
+        <div
+            class="preview-notice"
+            style="
+                margin-top:12px;
+                border-color:{{
+                    $careerAdviserAccess['reason']
+                    === 'maintenance'
+                        ? '#e8d4a0'
+                        : '#d5dbe3'
+                }};
+            "
+        >
+            <i
+                class="fas {{
+                    $careerAdviserAccess['reason']
+                    === 'maintenance'
+                        ? 'fa-screwdriver-wrench'
+                        : (
+                            $careerAdviserAccess['reason']
+                            === 'sponsored_restriction'
+                                ? 'fa-building'
+                                : 'fa-lock'
+                        )
+                }}"
+            ></i>
+
+            <div>
+                <strong>
+                    Career Adviser
+                    —
+                    {{
+                        $careerAdviserAccess['reason']
+                        === 'maintenance'
+                            ? 'Maintenance'
+                            : 'Access Restricted'
+                    }}
+                </strong>
+
+                <div style="margin-top:4px;">
+                    {{
+                        $careerAdviserAccess[
+                            'message'
+                        ]
+                    }}
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="adviser-workspace">
 
         {{-- ============================================================
@@ -873,7 +947,16 @@
                         class="composer-input"
                         rows="1"
                         maxlength="500"
-                        placeholder="Ask about your career options, competencies or next steps..."
+                        placeholder="{{
+                            $careerAdviserAccess['allowed']
+                                ? 'Ask about your career options, competencies or next steps...'
+                                : $careerAdviserAccess['message']
+                        }}"
+                        {{
+                            $careerAdviserAccess['allowed']
+                                ? ''
+                                : 'disabled'
+                        }}
                     ></textarea>
 
                     <button
@@ -888,6 +971,78 @@
                     </button>
 
                 </div>
+
+                <p
+                    id="careerAdviserQuota"
+                    class="adviser-quota {{
+                        ! $careerAdviserQuota['allowed']
+                            && $careerAdviserQuota['reason']
+                                === 'quota_exceeded'
+                            ? 'exhausted'
+                            : (
+                                $careerAdviserQuota['allowed']
+                                && $careerAdviserQuota['mode']
+                                    !== 'unlimited'
+                                && $careerAdviserQuota['remaining']
+                                    !== null
+                                && $careerAdviserQuota['remaining']
+                                    <= 1
+                                    ? 'warning'
+                                    : ''
+                            )
+                    }}"
+                >
+                    @if($careerAdviserQuota['mode'] === 'unlimited')
+                        <i class="fas fa-infinity"></i>
+                        <span>Unlimited questions</span>
+
+                    @elseif(
+                        ! $careerAdviserQuota['allowed']
+                        && $careerAdviserQuota['reason']
+                            === 'quota_exceeded'
+                    )
+                        <i class="fas fa-circle-exclamation"></i>
+
+                        <span>
+                            Usage limit reached.
+
+                            @if($careerAdviserQuota['next_available_at'])
+                                Next question available
+                                {{
+                                    $careerAdviserQuota[
+                                        'next_available_at'
+                                    ]->format('d M, g:i A')
+                                }}.
+                            @endif
+                        </span>
+
+                    @elseif($careerAdviserQuota['remaining'] !== null)
+                        @if($careerAdviserQuota['remaining'] <= 1)
+                            <i class="fas fa-triangle-exclamation"></i>
+                        @endif
+
+                        <span>
+                            {{
+                                $careerAdviserQuota[
+                                    'remaining'
+                                ]
+                            }}
+                            of
+                            {{
+                                $careerAdviserQuota[
+                                    'amount'
+                                ]
+                            }}
+                            questions remaining
+                        </span>
+
+                    @else
+                        <i class="fas fa-circle-exclamation"></i>
+                        <span>
+                            {{ $careerAdviserQuota['message'] }}
+                        </span>
+                    @endif
+                </p>
 
                 <p class="composer-note">
                     Responses use your current CareerPath profile,
@@ -1158,12 +1313,32 @@
 
             let isSending = false;
 
+            const adviserAvailable =
+            @json(
+                (bool)
+                $careerAdviserAccess['allowed']
+            );
+
+            let quotaAvailable =
+                @json(
+                    (bool)
+                    $careerAdviserQuota['allowed']
+                );
+
+            const quotaNotice =
+                document.getElementById(
+                    'careerAdviserQuota'
+                );
+
             function updateSendState() {
                 const hasMessage =
                     promptInput.value.trim() !== '';
 
                 sendButton.disabled =
-                    ! hasMessage || isSending;
+                    ! adviserAvailable
+                    || ! quotaAvailable
+                    || ! hasMessage
+                    || isSending;
 
                 sendButton.style.cursor =
                     sendButton.disabled
@@ -1261,12 +1436,133 @@
                 return wrapper;
             }
 
+            function formatQuotaDate(value) {
+                if (! value) {
+                    return null;
+                }
+
+                const date = new Date(value);
+
+                return new Intl.DateTimeFormat(
+                    undefined,
+                    {
+                        day: '2-digit',
+                        month: 'short',
+                        hour: 'numeric',
+                        minute: '2-digit'
+                    }
+                ).format(date);
+            }
+
+            function updateQuotaNotice(quota) {
+                if (! quotaNotice || ! quota) {
+                    return;
+                }
+
+                quotaNotice.classList.remove(
+                    'warning',
+                    'exhausted'
+                );
+
+                let iconClass = '';
+                let text = '';
+
+                if (quota.mode === 'unlimited') {
+                    iconClass = 'fas fa-infinity';
+                    text = 'Unlimited questions';
+                } else if (
+                    ! quota.allowed
+                    && quota.reason === 'quota_exceeded'
+                ) {
+                    quotaNotice.classList.add(
+                        'exhausted'
+                    );
+
+                    iconClass =
+                        'fas fa-circle-exclamation';
+
+                    const nextAvailable =
+                        formatQuotaDate(
+                            quota.next_available_at
+                        );
+
+                    text = nextAvailable
+                        ? 'Usage limit reached. '
+                            + 'Next question available '
+                            + nextAvailable
+                            + '.'
+                        : 'Usage limit reached.';
+                } else if (
+                    quota.remaining !== null
+                    && quota.remaining !== undefined
+                ) {
+                    if (quota.remaining <= 1) {
+                        quotaNotice.classList.add(
+                            'warning'
+                        );
+
+                        iconClass =
+                            'fas fa-triangle-exclamation';
+                    }
+
+                    text =
+                        quota.remaining
+                        + ' of '
+                        + quota.amount
+                        + ' questions remaining';
+                } else {
+                    iconClass =
+                        'fas fa-circle-exclamation';
+
+                    text =
+                        'Career Adviser usage is '
+                        + 'temporarily unavailable.';
+                }
+
+                quotaNotice.innerHTML = '';
+
+                const icon =
+                    document.createElement('i');
+
+                icon.className = iconClass;
+
+                const textElement =
+                    document.createElement('span');
+
+                textElement.textContent = text;
+
+                quotaNotice.appendChild(icon);
+                quotaNotice.appendChild(
+                    textElement
+                );
+            }
+
+            function updateInteractionAvailability() {
+                const available =
+                    adviserAvailable
+                    && quotaAvailable;
+
+                promptInput.disabled =
+                    ! available;
+
+                promptButtons.forEach(
+                    function (button) {
+                        button.disabled =
+                            ! available;
+                    }
+                );
+
+                updateSendState();
+            }
+
             async function sendMessage() {
                 const message =
                     promptInput.value.trim();
 
                 if (
-                    message === ''
+                    ! adviserAvailable
+                    || ! quotaAvailable
+                    || message === ''
                     || isSending
                 ) {
                     return;
@@ -1322,6 +1618,19 @@
 
                     loadingMessage.remove();
 
+                    if (data.quota) {
+                        quotaAvailable =
+                            Boolean(
+                                data.quota.allowed
+                            );
+
+                        updateQuotaNotice(
+                            data.quota
+                        );
+
+                        updateInteractionAvailability();
+                    }
+
                     if (! response.ok) {
                         throw new Error(
                             data.message
@@ -1350,6 +1659,8 @@
                     promptInput.focus();
                 }
             }
+
+            updateInteractionAvailability();
 
             promptButtons.forEach(
                 function (button) {

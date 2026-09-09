@@ -34,7 +34,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'name', 'email', 'phone', 'password', 'student_id', 'programme',
-        'cgpa', 'role', 'avatar', 'last_login_at'
+        'cgpa', 'role', 'avatar', 'show_ads', 'last_login_at'
     ];
 
     protected $hidden = [
@@ -48,6 +48,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'last_login_at' => 'datetime',
             'last_active_at' => 'datetime',
+            'show_ads' => 'boolean',
         ];
     }
 
@@ -206,6 +207,45 @@ class User extends Authenticatable
     public function careerRecommendations()
     {
         return $this->hasMany(CareerRecommendation::class);
+    }
+
+    /**
+     * Get the user's organisation group memberships.
+     */
+    public function groupMemberships()
+    {
+        return $this->hasMany(GroupMembership::class);
+    }
+
+    /**
+     * Get the organisation groups the user belongs to.
+     */
+    public function organisationGroups()
+    {
+        return $this->belongsToMany(
+            OrganisationGroup::class,
+            'group_memberships'
+        )->withTimestamps();
+    }
+
+    /**
+     * Get direct plan grants assigned to the user.
+     */
+    public function planGrants()
+    {
+        return $this->hasMany(
+            UserPlanGrant::class
+        );
+    }
+
+    /**
+     * Get feature usage records belonging to the user.
+     */
+    public function featureUsages()
+    {
+        return $this->hasMany(
+            FeatureUsage::class
+        );
     }
 
     // ============================================

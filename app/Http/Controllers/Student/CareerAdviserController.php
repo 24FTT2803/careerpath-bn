@@ -7,6 +7,7 @@ use App\Models\BiicfJobRole;
 use App\Models\BiicfSubSector;
 use App\Models\User;
 use App\Services\AI\CareerAdviserService;
+use App\Services\Business\FeatureUsageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,10 +15,16 @@ use Illuminate\View\View;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
+use App\Services\Business\EntitlementService;
 use Throwable;
 
 class CareerAdviserController extends Controller
 {
+    public function __construct(
+        private EntitlementService $entitlements,
+        private FeatureUsageService $featureUsage
+    ) {
+    }
     /**
      * Display the Career Adviser interface.
      */
@@ -30,6 +37,20 @@ class CareerAdviserController extends Controller
             $student && $student->isStudent(),
             403
         );
+
+        $careerAdviserAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_adviser.enabled'
+                );
+
+        $careerAdviserQuota =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_adviser.usage_quota'
+                );
 
         $profileCompletion = (int) $student->profile_completion;
 
@@ -66,7 +87,9 @@ class CareerAdviserController extends Controller
                 'skillGapCount',
                 'biicfRoleCount',
                 'biicfSubSectorCount',
-                'biicfAvailable'
+                'biicfAvailable',
+                'careerAdviserAccess',
+                'careerAdviserQuota'
             )
         );
     }
@@ -85,6 +108,37 @@ class CareerAdviserController extends Controller
             $student && $student->isStudent(),
             403
         );
+
+        $careerAdviserAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_adviser.enabled'
+                );
+
+        if (! $careerAdviserAccess['allowed']) {
+            $status =
+                $careerAdviserAccess['reason']
+                === 'maintenance'
+                    ? 503
+                    : 403;
+
+            return response()->json(
+                [
+                    'schema_version' => '1.0',
+                    'status' => 'unavailable',
+                    'message' =>
+                        $careerAdviserAccess[
+                            'message'
+                        ],
+                    'reason' =>
+                        $careerAdviserAccess[
+                            'reason'
+                        ],
+                ],
+                $status
+            );
+        }
 
         $validator = Validator::make(
             $request->all(),
@@ -122,11 +176,136 @@ class CareerAdviserController extends Controller
 
         $validated = $validator->validated();
 
+        $quotaStatus =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_adviser.usage_quota'
+                );
+
+        if (! $quotaStatus['allowed']) {
+            $status =
+                $quotaStatus['reason']
+                    === 'quota_exceeded'
+                    ? 429
+                    : 503;
+
+            return response()->json(
+                [
+                    'schema_version' => '1.0',
+
+                    'status' =>
+                        'unavailable',
+
+                    'message' =>
+                        $quotaStatus['message'],
+
+                    'reason' =>
+                        $quotaStatus['reason'],
+
+                    'quota' => [
+                        'allowed' =>
+                            $quotaStatus[
+                                'allowed'
+                            ],
+
+                        'reason' =>
+                            $quotaStatus[
+                                'reason'
+                            ],
+
+                        'mode' =>
+                            $quotaStatus[
+                                'mode'
+                            ],
+
+                        'amount' =>
+                            $quotaStatus[
+                                'amount'
+                            ],
+
+                        'used' =>
+                            $quotaStatus[
+                                'used'
+                            ],
+
+                        'remaining' =>
+                            $quotaStatus[
+                                'remaining'
+                            ],
+
+                        'next_available_at' =>
+                            $quotaStatus[
+                                'next_available_at'
+                            ]?->toIso8601String(),
+
+                        'period_value' =>
+                            $quotaStatus[
+                                'period_value'
+                            ],
+
+                        'period_unit' =>
+                            $quotaStatus[
+                                'period_unit'
+                            ],
+                    ],
+                ],
+                $status
+            );
+        }
+
         try {
             $response = $adviser->ask(
                 $student,
                 $validated['message']
             );
+
+            /*
+            * Consume quota only after the adviser has returned
+            * a successful response.
+            */
+            $this->featureUsage
+                ->recordUsage(
+                    $student,
+                    'career_adviser.usage_quota'
+                );
+
+            $updatedQuota =
+                $this->featureUsage
+                    ->status(
+                        $student,
+                        'career_adviser.usage_quota'
+                    );
+
+            $response['quota'] = [
+                'allowed' =>
+                    $updatedQuota['allowed'],
+
+                'reason' =>
+                    $updatedQuota['reason'],
+
+                'mode' =>
+                    $updatedQuota['mode'],
+
+                'amount' =>
+                    $updatedQuota['amount'],
+
+                'used' =>
+                    $updatedQuota['used'],
+
+                'remaining' =>
+                    $updatedQuota['remaining'],
+
+                'next_available_at' =>
+                    $updatedQuota['next_available_at']
+                        ?->toIso8601String(),
+
+                'period_value' =>
+                    $updatedQuota['period_value'],
+
+                'period_unit' =>
+                    $updatedQuota['period_unit'],
+            ];
 
             return response()->json(
                 $response

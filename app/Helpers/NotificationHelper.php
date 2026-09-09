@@ -29,22 +29,30 @@ class NotificationHelper
             $userId,
             'system',
             'Profile Complete! 🎉',
-            'Your profile is now complete. View your personalised career recommendations on the dashboard!',
-            route('student.dashboard', absolute: false)
+            'Your profile is ready. Generate your personalised career recommendations when you are ready!',
+            route(
+                'student.recommendations.index',
+                absolute: false
+            )
         );
     }
 
     /**
      * Notify user about new career recommendation.
      */
-    public static function notifyNewRecommendation($userId, $careerName)
-    {
+    public static function notifyNewRecommendation(
+        $userId,
+        $careerName
+    ) {
         return self::create(
             $userId,
             'recommendation',
             'New Career Recommendation',
             "We found a great match for you: {$careerName}. Check it out!",
-            route('student.dashboard', absolute: false)
+            route(
+                'student.recommendations.index',
+                absolute: false
+            )
         );
     }
 
@@ -120,14 +128,20 @@ class NotificationHelper
     /**
      * Log career recommendation generation activity (for admin dashboard)
      */
-    public static function logCareerRecommendation($userId, $name, $count)
-    {
+    public static function logCareerRecommendation(
+        $userId,
+        $name,
+        $count
+    ) {
         return self::create(
             $userId,
             'career',
             'Career Recommendations Generated',
             "{$count} new career recommendations generated for {$name}",
-            route('student.dashboard', absolute: false)
+            route(
+                'student.recommendations.index',
+                absolute: false
+            )
         );
     }
 

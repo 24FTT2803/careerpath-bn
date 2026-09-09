@@ -178,10 +178,22 @@
 
     /* Quick Actions */
     .quick-actions {
-        display: flex;
+        display: grid;
+        grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(175px, 1fr)
+            );
         gap: 12px;
-        flex-wrap: wrap;
         margin-bottom: 24px;
+    }
+
+    .quick-actions .btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
     }
 
     .btn {
@@ -544,7 +556,7 @@
         }
 
         .quick-actions {
-            flex-direction: column;
+            grid-template-columns: 1fr;
         }
 
         .quick-actions .btn {
@@ -621,21 +633,55 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
-            <a href="{{ route('student.profile') }}" class="btn btn-primary">
-                <i class="fas fa-user-edit"></i> Update Profile
+
+            <a
+                href="{{ route('student.profile') }}"
+                class="btn btn-primary"
+            >
+                <i class="fas fa-user-edit"></i>
+                Update Profile
             </a>
 
-            <a href="{{ route('student.career-adviser') }}" class="btn btn-outline">
-                <i class="fas fa-comments"></i> Career Adviser
+            <a
+                href="{{
+                    route(
+                        'student.recommendations.index'
+                    )
+                }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-bullseye"></i>
+                Career Recommendations
             </a>
 
-            <a href="{{ route('student.milestones') }}" class="btn btn-outline">
-                <i class="fas fa-flag-checkered"></i> Track Milestones
+            <a
+                href="{{ route('student.career-adviser') }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-comments"></i>
+                Career Adviser
             </a>
 
-            <a href="{{ route('student.biicf-explorer.index') }}" class="btn btn-outline">
-                <i class="fas fa-compass"></i> BIICF Explorer
+            <a
+                href="{{ route('student.milestones') }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-flag-checkered"></i>
+                Track Milestones
             </a>
+
+            <a
+                href="{{
+                    route(
+                        'student.biicf-explorer.index'
+                    )
+                }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-compass"></i>
+                BIICF Explorer
+            </a>
+
         </div>
 
         <!-- Main Content -->
@@ -669,9 +715,71 @@
                                 </div>
                                 <span class="rec-match">{{ $rec->match_score ?? 0 }}% Match</span>
                             </div>
-                            <a href="{{ route('student.recommendations.analysis', $rec->id) }}" class="rec-link">
-                                View Career Analysis <i class="fas fa-arrow-right"></i>
+                            <a
+                                href="{{
+                                    route(
+                                        'student.recommendations.analysis',
+                                        $rec->id
+                                    )
+                                }}"
+                                class="rec-link"
+                                title="{{
+                                    $detailedAnalysisAccess['message']
+                                    ?? 'View Career Analysis'
+                                }}"
+                            >
+                                View Career Analysis
+
+                                @if(
+                                    ! $detailedAnalysisAccess[
+                                        'allowed'
+                                    ]
+                                )
+                                    <i
+                                        class="fas {{
+                                            $detailedAnalysisAccess[
+                                                'reason'
+                                            ]
+                                            === 'maintenance'
+                                                ? 'fa-screwdriver-wrench'
+                                                : 'fa-lock'
+                                        }}"
+                                    ></i>
+
+                                    <span style="font-size:10px;">
+                                        {{
+                                            $detailedAnalysisAccess[
+                                                'reason'
+                                            ]
+                                            === 'maintenance'
+                                                ? 'Maintenance'
+                                                : 'Restricted'
+                                        }}
+                                    </span>
+                                @else
+                                    <i class="fas fa-arrow-right"></i>
+                                @endif
                             </a>
+
+                            @if(
+                                ! $detailedAnalysisAccess[
+                                    'allowed'
+                                ]
+                            )
+                                <div
+                                    style="
+                                        margin-top:5px;
+                                        color:#6b7280;
+                                        font-size:11px;
+                                    "
+                                >
+                                    {{
+                                        $detailedAnalysisAccess[
+                                            'message'
+                                        ]
+                                    }}
+                                </div>
+                            @endif
                         </div>
                     @endforeach
                 @else
