@@ -35,6 +35,20 @@ class BiicfExplorerController extends Controller
     }
 
     /**
+     * All job roles across every sub-sector, for browsing/searching without
+     * first picking a sub-sector. Used by the Job Roles tab's "browse all" view.
+     */
+    public function allRoles()
+    {
+        $roles = BiicfJobRole::with('subSector:id,name,slug')
+            ->orderBy('sub_sector_id')
+            ->orderBy('career_path_level')
+            ->get(['id', 'sub_sector_id', 'title', 'slug', 'career_path_level', 'box_colour']);
+
+        return response()->json($roles);
+    }
+
+    /**
      * Job roles + career path edges for a given sub-sector (used to render the tree/diagram).
      */
     public function subSectorRoles(BiicfSubSector $subSector)
@@ -42,28 +56,6 @@ class BiicfExplorerController extends Controller
         $roles = $subSector->jobRoles()
             ->with(['progressesTo:id,title,slug', 'progressesFrom:id,title,slug'])
             ->get(['id', 'sub_sector_id', 'title', 'slug', 'career_path_level', 'box_colour']);
-
-        return response()->json($roles);
-    }
-
-    /**
-     * Search/browse job roles across ALL sub-sectors (used by the explorer's search box).
-     * Supports optional free-text search (?q=) and optional sub-sector scoping (?sub_sector=slug).
-     */
-    public function searchJobRoles(Request $request)
-    {
-        $query = BiicfJobRole::query()->with('subSector:id,name,slug');
-
-        if ($search = $request->get('q')) {
-            $query->where('title', 'like', "%{$search}%");
-        }
-
-        if ($subSectorSlug = $request->get('sub_sector')) {
-            $query->whereHas('subSector', fn ($q) => $q->where('slug', $subSectorSlug));
-        }
-
-        $roles = $query->orderBy('title')
-            ->get(['id', 'sub_sector_id', 'title', 'slug', 'career_path_level']);
 
         return response()->json($roles);
     }
@@ -121,14 +113,6 @@ class BiicfExplorerController extends Controller
         $jobRole->load(['competencies' => fn ($q) => $q->orderBy('type')]);
 
         $levelMap = [
-            // Current BIICF proficiency scale.
-            'follow' => 1,
-            'assist' => 2,
-            'apply' => 3,
-            'ensure' => 4,
-            'strategise' => 5,
-
-            // Legacy student profile values.
             'beginner' => 1,
             'intermediate' => 2,
             'advanced' => 3,
