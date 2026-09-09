@@ -321,7 +321,7 @@ test('recommendation generation is blocked during maintenance', function () {
         )
         ->assertRedirect(
             route(
-                'student.dashboard'
+                'student.recommendations.index'
             )
         )
         ->assertSessionHas(
@@ -361,7 +361,7 @@ test('recommendation generation is blocked by plan restriction', function () {
         )
         ->assertRedirect(
             route(
-                'student.dashboard'
+                'student.recommendations.index'
             )
         )
         ->assertSessionHas(
@@ -392,7 +392,7 @@ test('recommendation analysis is blocked during maintenance', function () {
         )
         ->assertRedirect(
             route(
-                'student.dashboard'
+                'student.recommendations.index'
             )
         )
         ->assertSessionHas(
@@ -432,13 +432,18 @@ test('successful recommendation generation consumes one quota use', function () 
         )
         ->assertRedirect(
             route(
-                'student.dashboard'
+                'student.recommendations.index'
             )
-        )
-        ->assertSessionHas(
-            'success',
-            'Career recommendations generated successfully.'
         );
+
+    $this->assertDatabaseHas(
+        'notifications',
+        [
+            'user_id' => $student->id,
+            'title' =>
+                'Career Recommendations Generated',
+        ]
+    );
 
     expect(
         $student
@@ -484,7 +489,7 @@ test('failed recommendation generation does not consume quota', function () {
         )
         ->assertRedirect(
             route(
-                'student.dashboard'
+                'student.recommendations.index'
             )
         )
         ->assertSessionHas(
@@ -528,7 +533,7 @@ test('recommendation generation is blocked when quota is exhausted', function ()
         )
         ->assertRedirect(
             route(
-                'student.dashboard'
+                'student.recommendations.index'
             )
         )
         ->assertSessionHas(
@@ -715,35 +720,28 @@ test('career adviser ask endpoint is blocked when quota is exhausted', function 
     )->toBe(1);
 });
 
-test('dashboard keeps unavailable features visible with indicators', function () {
-    $student = User::factory()->create([
-        'role' => 'student',
-    ]);
+test(
+    'dashboard keeps core career navigation visible',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
 
-    FeatureDefinition::whereIn(
-        'key',
-        [
-            'career_adviser.enabled',
-            'career_recommendations.enabled',
-        ]
-    )->update([
-        'global_enabled' => false,
-    ]);
-
-    $this
-        ->actingAs($student)
-        ->get(
-            route(
-                'student.dashboard'
+        $this
+            ->actingAs($student)
+            ->get(
+                route('student.dashboard')
             )
-        )
-        ->assertOk()
-        ->assertSee('Career Adviser')
-        ->assertSee(
-            'Generate Recommendations'
-        )
-        ->assertSee('Maintenance')
-        ->assertSee(
-            'Temporarily unavailable due to maintenance.'
-        );
-});
+            ->assertOk()
+            ->assertSee('Update Profile')
+            ->assertSee(
+                'Career Recommendations'
+            )
+            ->assertSee('Career Adviser')
+            ->assertSee('Track Milestones')
+            ->assertSee('BIICF Explorer')
+            ->assertDontSee(
+                'Generate Recommendations'
+            );
+    }
+);

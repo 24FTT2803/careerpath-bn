@@ -25,6 +25,55 @@ class CareerRecommendationController extends Controller
     }
 
     /**
+     * Display the student's career recommendations.
+     */
+    public function index(): View
+    {
+        /** @var User $student */
+        $student = Auth::user();
+
+        abort_unless(
+            $student && $student->isStudent(),
+            403
+        );
+
+        $generationAccess =
+            $this->entitlements
+                ->featureAccess(
+                    $student,
+                    'career_recommendations.enabled'
+                );
+
+        $generationQuota =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_recommendations.generation_quota'
+                );
+
+        $recommendations =
+            $student
+                ->careerRecommendations()
+                ->with([
+                    'career',
+                    'jobRole.subSector',
+                ])
+                ->orderBy('rank')
+                ->orderByDesc('match_score')
+                ->get();
+
+        return view(
+            'student.recommendations.index',
+            compact(
+                'student',
+                'recommendations',
+                'generationAccess',
+                'generationQuota'
+            )
+        );
+    }
+
+    /**
      * Display the analysis for one of the student's
      * career recommendations.
      */
@@ -43,7 +92,7 @@ class CareerRecommendationController extends Controller
 
         if (! $generationAccess['allowed']) {
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'Career recommendation generation is unavailable. '
@@ -201,7 +250,7 @@ class CareerRecommendationController extends Controller
 
         if (! $generationAccess['allowed']) {
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'Career recommendation generation is unavailable. '
@@ -222,7 +271,7 @@ class CareerRecommendationController extends Controller
 
         if (! $quotaStatus['allowed']) {
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'Career recommendation generation is unavailable. '
@@ -254,7 +303,7 @@ class CareerRecommendationController extends Controller
             report($exception);
 
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'CareerPath could not reach the AI service. Please try again shortly.'
@@ -268,7 +317,7 @@ class CareerRecommendationController extends Controller
                     : 'The Career Recommendation AI is temporarily unavailable. Please try again later.';
 
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     $message
@@ -277,7 +326,7 @@ class CareerRecommendationController extends Controller
             report($exception);
 
             return redirect()
-                ->route('student.dashboard')
+                ->route('student.recommendations.index')
                 ->with(
                     'warning',
                     'Career recommendations could not be processed. Please try again later.'
@@ -285,11 +334,7 @@ class CareerRecommendationController extends Controller
         }
 
         return redirect()
-            ->route('student.dashboard')
-            ->with(
-                'success',
-                'Career recommendations generated successfully.'
-            );
+            ->route('student.recommendations.index');
     }
 
     /**

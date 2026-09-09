@@ -178,10 +178,22 @@
 
     /* Quick Actions */
     .quick-actions {
-        display: flex;
+        display: grid;
+        grid-template-columns:
+            repeat(
+                auto-fit,
+                minmax(175px, 1fr)
+            );
         gap: 12px;
-        flex-wrap: wrap;
         margin-bottom: 24px;
+    }
+
+    .quick-actions .btn {
+        width: 100%;
+        min-height: 44px;
+        justify-content: center;
+        text-align: center;
+        white-space: normal;
     }
 
     .btn {
@@ -544,7 +556,7 @@
         }
 
         .quick-actions {
-            flex-direction: column;
+            grid-template-columns: 1fr;
         }
 
         .quick-actions .btn {
@@ -621,6 +633,7 @@
 
         <!-- Quick Actions -->
         <div class="quick-actions">
+
             <a
                 href="{{ route('student.profile') }}"
                 class="btn btn-primary"
@@ -629,134 +642,25 @@
                 Update Profile
             </a>
 
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                <a
-                    href="{{ route('student.career-adviser') }}"
-                    class="btn btn-outline"
-                    title="{{
-                        $careerAdviserAccess['message']
-                        ?? 'Career Adviser'
-                    }}"
-                >
-                    <i
-                        class="fas {{
-                            $careerAdviserAccess['allowed']
-                                ? 'fa-comments'
-                                : (
-                                    $careerAdviserAccess['reason']
-                                    === 'maintenance'
-                                        ? 'fa-screwdriver-wrench'
-                                        : 'fa-lock'
-                                )
-                        }}"
-                    ></i>
+            <a
+                href="{{
+                    route(
+                        'student.recommendations.index'
+                    )
+                }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-bullseye"></i>
+                Career Recommendations
+            </a>
 
-                    Career Adviser
-
-                    @if(! $careerAdviserAccess['allowed'])
-                        <span style="font-size:10px;">
-                            —
-                            {{
-                                $careerAdviserAccess['reason']
-                                === 'maintenance'
-                                    ? 'Maintenance'
-                                    : 'Restricted'
-                            }}
-                        </span>
-                    @endif
-                </a>
-
-                @if(! $careerAdviserAccess['allowed'])
-                    <small
-                        style="
-                            color:#6b7280;
-                            max-width:220px;
-                            line-height:1.35;
-                        "
-                    >
-                        {{ $careerAdviserAccess['message'] }}
-                    </small>
-                @endif
-            </div>
-
-            <div style="display:flex; flex-direction:column; gap:4px;">
-                @if(
-                    $recommendationGenerationAccess[
-                        'allowed'
-                    ]
-                )
-                    <form
-                        method="POST"
-                        action="{{
-                            route(
-                                'student.recommendations.generate'
-                            )
-                        }}"
-                        style="margin:0;"
-                    >
-                        @csrf
-
-                        <button
-                            type="submit"
-                            class="btn btn-outline"
-                        >
-                            <i class="fas fa-wand-magic-sparkles"></i>
-                            Generate Recommendations
-                        </button>
-                    </form>
-                @else
-                    <button
-                        type="button"
-                        class="btn btn-outline"
-                        disabled
-                        title="{{
-                            $recommendationGenerationAccess[
-                                'message'
-                            ]
-                        }}"
-                        style="
-                            opacity:.65;
-                            cursor:not-allowed;
-                        "
-                    >
-                        <i
-                            class="fas {{
-                                $recommendationGenerationAccess[
-                                    'reason'
-                                ]
-                                === 'maintenance'
-                                    ? 'fa-screwdriver-wrench'
-                                    : 'fa-lock'
-                            }}"
-                        ></i>
-
-                        Generate Recommendations
-                        —
-                        {{
-                            $recommendationGenerationAccess[
-                                'reason'
-                            ]
-                            === 'maintenance'
-                                ? 'Maintenance'
-                                : 'Restricted'
-                        }}
-                    </button>
-
-                    <small
-                        style="
-                            color:#6b7280;
-                            max-width:240px;
-                            line-height:1.35;
-                        "
-                    >
-                        {{
-                            $recommendationGenerationAccess[
-                                'message'
-                            ]
-                        }}
-                    </small>
-                @endif
-            </div>
+            <a
+                href="{{ route('student.career-adviser') }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-comments"></i>
+                Career Adviser
+            </a>
 
             <a
                 href="{{ route('student.milestones') }}"
@@ -777,6 +681,7 @@
                 <i class="fas fa-compass"></i>
                 BIICF Explorer
             </a>
+
         </div>
 
         <!-- Main Content -->

@@ -72,6 +72,11 @@ Route::middleware([
             [CareerRecommendationController::class, 'analysis']
         )->name('recommendations.analysis');
 
+        Route::get(
+            '/recommendations',
+            [CareerRecommendationController::class, 'index']
+        )->name('recommendations.index');
+
         Route::post(
             '/recommendations/generate',
             [CareerRecommendationController::class, 'generate']

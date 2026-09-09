@@ -55,24 +55,6 @@ class DashboardController extends Controller
                 $user
             );
 
-        /*
-         * Features remain visible in the UI even
-         * when access is unavailable.
-         */
-        $careerAdviserAccess =
-            $this->entitlements
-                ->featureAccess(
-                    $user,
-                    'career_adviser.enabled'
-                );
-
-        $recommendationGenerationAccess =
-            $this->entitlements
-                ->featureAccess(
-                    $user,
-                    'career_recommendations.enabled'
-                );
-
         $detailedAnalysisAccess =
             $this->entitlements
                 ->featureAccess(
@@ -91,8 +73,6 @@ class DashboardController extends Controller
                 'milestones',
                 'milestoneCount',
                 'recentActivities',
-                'careerAdviserAccess',
-                'recommendationGenerationAccess',
                 'detailedAnalysisAccess'
             )
         );

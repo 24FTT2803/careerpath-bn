@@ -45,6 +45,13 @@ class CareerAdviserController extends Controller
                     'career_adviser.enabled'
                 );
 
+        $careerAdviserQuota =
+            $this->featureUsage
+                ->status(
+                    $student,
+                    'career_adviser.usage_quota'
+                );
+
         $profileCompletion = (int) $student->profile_completion;
 
         $topRecommendation = $student
@@ -81,7 +88,8 @@ class CareerAdviserController extends Controller
                 'biicfRoleCount',
                 'biicfSubSectorCount',
                 'biicfAvailable',
-                'careerAdviserAccess'
+                'careerAdviserAccess',
+                'careerAdviserQuota'
             )
         );
     }
@@ -179,17 +187,68 @@ class CareerAdviserController extends Controller
             $status =
                 $quotaStatus['reason']
                     === 'quota_exceeded'
-                        ? 429
-                        : 503;
+                    ? 429
+                    : 503;
 
             return response()->json(
                 [
                     'schema_version' => '1.0',
-                    'status' => 'unavailable',
+
+                    'status' =>
+                        'unavailable',
+
                     'message' =>
                         $quotaStatus['message'],
+
                     'reason' =>
                         $quotaStatus['reason'],
+
+                    'quota' => [
+                        'allowed' =>
+                            $quotaStatus[
+                                'allowed'
+                            ],
+
+                        'reason' =>
+                            $quotaStatus[
+                                'reason'
+                            ],
+
+                        'mode' =>
+                            $quotaStatus[
+                                'mode'
+                            ],
+
+                        'amount' =>
+                            $quotaStatus[
+                                'amount'
+                            ],
+
+                        'used' =>
+                            $quotaStatus[
+                                'used'
+                            ],
+
+                        'remaining' =>
+                            $quotaStatus[
+                                'remaining'
+                            ],
+
+                        'next_available_at' =>
+                            $quotaStatus[
+                                'next_available_at'
+                            ]?->toIso8601String(),
+
+                        'period_value' =>
+                            $quotaStatus[
+                                'period_value'
+                            ],
+
+                        'period_unit' =>
+                            $quotaStatus[
+                                'period_unit'
+                            ],
+                    ],
                 ],
                 $status
             );
@@ -210,6 +269,43 @@ class CareerAdviserController extends Controller
                     $student,
                     'career_adviser.usage_quota'
                 );
+
+            $updatedQuota =
+                $this->featureUsage
+                    ->status(
+                        $student,
+                        'career_adviser.usage_quota'
+                    );
+
+            $response['quota'] = [
+                'allowed' =>
+                    $updatedQuota['allowed'],
+
+                'reason' =>
+                    $updatedQuota['reason'],
+
+                'mode' =>
+                    $updatedQuota['mode'],
+
+                'amount' =>
+                    $updatedQuota['amount'],
+
+                'used' =>
+                    $updatedQuota['used'],
+
+                'remaining' =>
+                    $updatedQuota['remaining'],
+
+                'next_available_at' =>
+                    $updatedQuota['next_available_at']
+                        ?->toIso8601String(),
+
+                'period_value' =>
+                    $updatedQuota['period_value'],
+
+                'period_unit' =>
+                    $updatedQuota['period_unit'],
+            ];
 
             return response()->json(
                 $response

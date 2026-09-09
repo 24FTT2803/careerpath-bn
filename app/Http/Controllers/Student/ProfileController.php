@@ -16,7 +16,6 @@ use App\Models\StudentMilestone;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use App\Services\AI\CareerRecommendationService;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\Rule;
@@ -106,11 +105,6 @@ class ProfileController extends Controller
         'zxcvbn',
         'zxcvbnm',
     ];
-
-    public function __construct(
-        private CareerRecommendationService $recommendationService
-    ) {
-    }
 
     /**
      * Display the student's profile.
@@ -659,46 +653,12 @@ class ProfileController extends Controller
         // ============================================
         NotificationHelper::logProfileUpdate($user->id, $user->name);
 
-        // Generate or refresh career recommendations only
-        // when the profile is at or above the threshold.
-        $recommendationWarning = null;
-
-        if ($profileIsComplete) {
-            $user->refresh();
-
-            try {
-                $recommendations = $this->recommendationService->generateFor($user);
-
-                // Log career recommendations generated
-                NotificationHelper::logCareerRecommendation(
-                    $user->id,
-                    $user->name,
-                    $recommendations->count()
-                );
-            } catch (\Throwable $exception) {
-                report($exception);
-
-                $recommendationWarning = $user
-                    ->careerRecommendations()
-                    ->exists()
-                    ? 'Your profile was updated, but career recommendations could not be refreshed. Your previous recommendations are still available.'
-                    : 'Your profile was updated, but career recommendations could not be generated. Please try again later.';
-            }
-        }
-
         $response = redirect()
             ->route('student.profile')
             ->with(
                 'success',
                 'Profile updated successfully!'
             );
-
-        if ($recommendationWarning) {
-            $response->with(
-                'warning',
-                $recommendationWarning
-            );
-        }
 
         return $response;
     }
