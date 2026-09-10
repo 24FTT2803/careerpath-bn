@@ -51,6 +51,19 @@ Route::middleware(['auth'])->prefix('student')->name('student.')->group(function
         [CareerRecommendationController::class, 'assessment']
     )->name('recommendations.assessment');
 
+    // Alias for dashboard views that reference the "index" name
+    Route::get(
+        '/career-assessment',
+        [CareerRecommendationController::class, 'assessment']
+    )->name('recommendations.index');
+
+    // Stub: AI Career Adviser feature not built yet, prevents dashboard crash
+    Route::get('/career-adviser', function () {
+        return redirect()
+            ->route('student.dashboard')
+            ->with('warning', 'AI Career Adviser is coming soon.');
+    })->name('career-adviser');
+
     Route::get(
         '/career-analysis/{recommendation}',
         [CareerRecommendationController::class, 'analysis']
