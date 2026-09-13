@@ -829,6 +829,34 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the student's advertising preference.
+     *
+     * Off by default. Advertising only ever appears because a
+     * student chose it, and they can withdraw that at any time.
+     */
+    public function updatePreferences(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user && $user->isStudent(),
+            403
+        );
+
+        $user->update([
+            'show_ads' => $request->boolean('show_ads'),
+        ]);
+
+        return redirect()
+            ->route('student.settings')
+            ->with(
+                'success',
+                'Your preferences have been saved.'
+            );
+    }
+
+    /**
      * Update user password.
      */
     public function updatePassword(Request $request)

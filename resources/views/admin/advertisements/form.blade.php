@@ -220,7 +220,7 @@
                 <input
                     type="date"
                     name="starts_at"
-                    value="{{ old('starts_at', $advertisement->starts_at?->format('Y-m-d')) }}"
+                    value="{{ old('starts_at', $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('Y-m-d')) }}"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
             </div>
@@ -233,7 +233,7 @@
                 <input
                     type="date"
                     name="ends_at"
-                    value="{{ old('ends_at', $advertisement->ends_at?->format('Y-m-d')) }}"
+                    value="{{ old('ends_at', $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('Y-m-d')) }}"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
             </div>

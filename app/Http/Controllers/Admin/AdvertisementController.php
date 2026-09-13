@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use App\Models\OrganisationGroup;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -56,7 +57,9 @@ class AdvertisementController extends Controller
             $request
         );
 
-        Advertisement::create($validated);
+        Advertisement::create(
+            $this->withScheduleWindow($validated)
+        );
 
         return redirect()
             ->route('admin.business.advertisements.index')
@@ -91,7 +94,9 @@ class AdvertisementController extends Controller
             $validated['asset_path'] = $uploaded;
         }
 
-        $advertisement->update($validated);
+        $advertisement->update(
+            $this->withScheduleWindow($validated)
+        );
 
         return redirect()
             ->route('admin.business.advertisements.index')
@@ -187,6 +192,54 @@ class AdvertisementController extends Controller
         ) + [
             'is_active' => $request->boolean('is_active'),
         ];
+    }
+
+    /**
+     * Turn the two dates into a usable window.
+     *
+     * A date field has no time, and taking midnight literally
+     * breaks both ends: an advertisement starting today would
+     * not be live until tomorrow morning in Brunei, and one
+     * ending today would stop at the very start of that day.
+     *
+     * Dates are read in the institution's timezone, then the
+     * window is widened to cover the whole of both days.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function withScheduleWindow(array $validated): array
+    {
+        $zone = config('app.business_timezone');
+
+        $storage = config('app.timezone');
+
+        /*
+         * Converted back to the storage timezone before saving.
+         * Eloquent formats a date using whatever timezone the
+         * instance carries and discards the offset, so a Brunei
+         * midnight would otherwise be written as a UTC midnight
+         * eight hours later than intended.
+         */
+        if (! empty($validated['starts_at'])) {
+            $validated['starts_at'] = Carbon::parse(
+                $validated['starts_at'],
+                $zone
+            )
+                ->startOfDay()
+                ->setTimezone($storage);
+        }
+
+        if (! empty($validated['ends_at'])) {
+            $validated['ends_at'] = Carbon::parse(
+                $validated['ends_at'],
+                $zone
+            )
+                ->endOfDay()
+                ->setTimezone($storage);
+        }
+
+        return $validated;
     }
 
     /**

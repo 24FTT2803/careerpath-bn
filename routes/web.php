@@ -186,6 +186,11 @@ Route::middleware([
         )->name('settings');
 
         Route::put(
+            '/settings/preferences',
+            [ProfileController::class, 'updatePreferences']
+        )->name('settings.preferences');
+
+        Route::put(
             '/settings/password',
             [ProfileController::class, 'updatePassword']
         )->name('settings.password');

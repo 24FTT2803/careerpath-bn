@@ -68,6 +68,23 @@ return [
     'timezone' => 'UTC',
 
     /*
+    |--------------------------------------------------------------
+    | Business Timezone
+    |--------------------------------------------------------------
+    |
+    | Where the institution actually is. Timestamps are stored in
+    | UTC, but a date an administrator types is meant in local
+    | time: "starts today" means today in Brunei, not today in
+    | Greenwich.
+    |
+    */
+
+    'business_timezone' => env(
+        'APP_BUSINESS_TIMEZONE',
+        'Asia/Brunei'
+    ),
+
+    /*
     |--------------------------------------------------------------------------
     | Application Locale Configuration
     |--------------------------------------------------------------------------

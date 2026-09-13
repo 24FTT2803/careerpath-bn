@@ -372,6 +372,127 @@
         }
 
         /* ============================================
+           ADVERTISING
+           ============================================ */
+
+        /*
+         * One node per advertisement, repositioned by the grid.
+         * Rendering the same advertisement twice and hiding one
+         * would double asset loading and impressions.
+         */
+        .page-shell {
+            display: grid;
+            grid-template-areas:
+                "ad-one"
+                "page"
+                "ad-two";
+            grid-template-columns: minmax(0, 1fr);
+            gap: 20px;
+        }
+
+        .page-shell > .page-body {
+            grid-area: page;
+            min-width: 0;
+        }
+
+        .page-shell > .ad-slot:nth-of-type(1) {
+            grid-area: ad-one;
+        }
+
+        .page-shell > .ad-slot:nth-of-type(2) {
+            grid-area: ad-two;
+        }
+
+        /*
+         * Stacked advertisements sit above and below the page,
+         * so they are held to banner proportions. Letting one
+         * fill the full content width would push the page itself
+         * off the screen.
+         */
+        .page-shell > .ad-slot {
+            justify-self: center;
+            width: 100%;
+            max-width: 728px;
+        }
+
+        .page-shell > .ad-slot .ad-slot-media {
+            max-height: 120px;
+            object-fit: contain;
+        }
+
+        /*
+         * Side columns live in the margin beside the page, never
+         * inside it. The container is capped at 1200px, so rails
+         * only appear once the viewport is wide enough to hold
+         * 1200px of content plus two columns without taking a
+         * single pixel from the page.
+         */
+        @media (min-width: 1800px) {
+            .page-shell.has-rails {
+                grid-template-areas: "ad-one page ad-two";
+                grid-template-columns:
+                    160px
+                    minmax(0, 1fr)
+                    160px;
+
+                margin-left: -180px;
+                margin-right: -180px;
+            }
+
+            .page-shell.has-rails > .ad-slot {
+                max-width: none;
+                position: sticky;
+                top: 90px;
+            }
+
+            .page-shell.has-rails > .ad-slot .ad-slot-media {
+                max-height: 600px;
+                object-fit: cover;
+            }
+        }
+
+        .ad-slot {
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--card);
+            padding: 10px;
+            overflow: hidden;
+            align-self: start;
+        }
+
+        .ad-slot-label {
+            display: block;
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .ad-slot-media {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        .ad-slot-frame {
+            display: block;
+            width: 100%;
+            height: 250px;
+            border: 0;
+            border-radius: 8px;
+        }
+
+        .ad-slot-text {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* ============================================
         CAREER ADVISER FLOATING ACCESS
         ============================================ */
 
@@ -587,7 +708,31 @@
                 </div>
             @endif
 
-            @yield('content')
+            @php
+                $advertisements = $pageAdvertisements ?? collect();
+
+                /*
+                 * Rails are all or nothing. One filled side
+                 * column with the other empty reads as a fault
+                 * rather than a layout, so a single
+                 * advertisement stays inline.
+                 */
+                $hasRails = $advertisements->count() === 2;
+            @endphp
+
+            <div @class(['page-shell', 'has-rails' => $hasRails])>
+                <x-advertisement
+                    :advertisement="$advertisements->get('one')"
+                />
+
+                <div class="page-body">
+                    @yield('content')
+                </div>
+
+                <x-advertisement
+                    :advertisement="$advertisements->get('two')"
+                />
+            </div>
         </div>
     </main>
 

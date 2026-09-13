@@ -76,6 +76,39 @@ test(
 );
 
 test(
+    'dates are read in the institution timezone',
+    function () {
+        $this->actingAs(adminUser())
+            ->post(
+                route('admin.business.advertisements.store'),
+                [
+                    'title' => 'Starting today',
+                    'type' => Advertisement::TYPE_IMAGE,
+                    'position' => Advertisement::POSITION_ONE,
+                    'external_url' => 'https://example.com/a.png',
+                    'starts_at' => now()
+                        ->timezone(config('app.business_timezone'))
+                        ->toDateString(),
+                    'ends_at' => now()
+                        ->timezone(config('app.business_timezone'))
+                        ->toDateString(),
+                    'is_active' => '1',
+                ]
+            )
+            ->assertRedirect();
+
+        /*
+         * An advertisement set to run today must be running
+         * today, at whatever hour an administrator happens to
+         * create it.
+         */
+        expect(
+            Advertisement::currentlyRunning()->count()
+        )->toBe(1);
+    }
+);
+
+test(
     'an end date before the start date is rejected',
     function () {
         $this->actingAs(adminUser())

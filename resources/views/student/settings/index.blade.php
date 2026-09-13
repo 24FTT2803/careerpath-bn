@@ -461,6 +461,57 @@
                     </a>
                 </div>
 
+                <!-- Advertising -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-bullhorn"></i> Advertising
+                    </div>
+
+                    <p class="hint" style="margin-bottom:16px;">
+                        CareerPath BN is free to use. You can
+                        choose to see advertisements to support
+                        it. This is off unless you turn it on,
+                        and you can change it whenever you like.
+                    </p>
+
+                    <form
+                        method="POST"
+                        action="{{ route('student.settings.preferences') }}"
+                    >
+                        @csrf
+                        @method('PUT')
+
+                        {{--
+                            An unchecked box sends nothing, so
+                            this carries the off value explicitly
+                            rather than relying on its absence.
+                        --}}
+                        <input type="hidden" name="show_ads" value="0">
+
+                        <div class="field" style="margin-bottom:20px;">
+                            <label
+                                for="show_ads"
+                                style="display:flex;align-items:center;gap:10px;cursor:pointer;"
+                            >
+                                <input
+                                    id="show_ads"
+                                    type="checkbox"
+                                    name="show_ads"
+                                    value="1"
+                                    @checked(Auth::user()->show_ads)
+                                    style="width:18px;height:18px;margin:0;flex-shrink:0;accent-color:var(--primary);cursor:pointer;"
+                                >
+
+                                <span>Show me advertisements</span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Preference
+                        </button>
+                    </form>
+                </div>
+
                 <!-- Change Password -->
                 <div class="panel">
                     <div class="panel-title"><i class="fas fa-lock"></i> Change Password</div>

@@ -9,6 +9,9 @@ use App\Services\AI\GroqCareerAiClient;
 use App\Services\AI\HttpCareerAiClient;
 use App\Services\AI\MockCareerAdviserClient;
 use App\Services\AI\MockCareerAiClient;
+use App\Services\Business\AdvertisementService;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -33,7 +36,7 @@ class AppServiceProvider extends ServiceProvider
 
                     default => throw new \RuntimeException(
                         'Unsupported Career AI driver: '
-                        . config('career-ai.driver')
+                        .config('career-ai.driver')
                     ),
                 };
             }
@@ -53,7 +56,7 @@ class AppServiceProvider extends ServiceProvider
 
                     default => throw new \RuntimeException(
                         'Unsupported Career Adviser driver: '
-                        . config('career-ai.adviser_driver')
+                        .config('career-ai.adviser_driver')
                     ),
                 };
             }
@@ -62,6 +65,25 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        /*
+         * The student layout needs to know whether it is drawing
+         * advertising columns before it draws anything, so the
+         * resolved advertisements are shared with the layout
+         * rather than being passed by every controller.
+         */
+        View::composer(
+            'layouts.app',
+            function ($view) {
+                $user = Auth::user();
+
+                $view->with(
+                    'pageAdvertisements',
+                    $user
+                        ? app(AdvertisementService::class)
+                            ->forStudent($user)
+                        : collect()
+                );
+            }
+        );
     }
 }
