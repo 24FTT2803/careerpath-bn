@@ -235,32 +235,40 @@ class User extends Authenticatable
     }
 
     /**
-     * Get the user's active recommendation generation.
+     * Get the user's newest recommendation generation.
+     *
+     * Selected by generation number rather than by status. An
+     * outdated generation is still the student's active set of
+     * results, so keying this on status would empty every screen
+     * the moment their profile changed.
      */
     public function currentRecommendationGeneration(): HasOne
     {
         return $this->hasOne(
             RecommendationGeneration::class
-        )->where(
-            'status',
-            RecommendationGeneration::STATUS_CURRENT
+        )->ofMany(
+            'generation_number',
+            'max'
         );
     }
 
     /**
      * Get only the recommendations belonging to the user's
-     * current generation.
+     * newest generation.
+     *
+     * The subquery resolves the newest generation per user, so
+     * this stays correct when eager loaded across many users.
      */
     public function currentRecommendations(): HasMany
     {
         return $this->hasMany(
             CareerRecommendation::class
-        )->whereHas(
-            'generation',
-            fn ($query) => $query->where(
-                'status',
-                RecommendationGeneration::STATUS_CURRENT
-            )
+        )->whereIn(
+            'recommendation_generation_id',
+            fn ($query) => $query
+                ->from('recommendation_generations')
+                ->selectRaw('MAX(id)')
+                ->groupBy('user_id')
         );
     }
 

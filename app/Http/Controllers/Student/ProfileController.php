@@ -12,6 +12,7 @@ use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
 use App\Models\StudentProject;
 use App\Models\User;
+use App\Services\AI\RecommendationStatusService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -195,8 +196,10 @@ class ProfileController extends Controller
     /**
      * Update the user's profile information.
      */
-    public function update(Request $request)
-    {
+    public function update(
+        Request $request,
+        RecommendationStatusService $recommendationStatus
+    ) {
         /** @var User $user */
         $user = Auth::user();
 
@@ -642,6 +645,14 @@ class ProfileController extends Controller
         // LOG ACTIVITY - Profile updated
         // ============================================
         NotificationHelper::logProfileUpdate($user->id, $user->name);
+
+        /*
+         * Recommendations are never regenerated automatically.
+         * Changing AI-relevant profile data only marks existing
+         * generations outdated, leaving the student in control
+         * of when to generate again.
+         */
+        $recommendationStatus->refreshFor($user->fresh());
 
         $response = redirect()
             ->route('student.profile')

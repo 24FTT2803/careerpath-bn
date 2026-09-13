@@ -61,11 +61,16 @@ class CareerRecommendationController extends Controller
                 ->orderByDesc('match_score')
                 ->get();
 
+        $currentGeneration = $student
+            ->currentRecommendationGeneration()
+            ->first();
+
         return view(
             'student.recommendations.index',
             compact(
                 'student',
                 'recommendations',
+                'currentGeneration',
                 'generationAccess',
                 'generationQuota'
             )

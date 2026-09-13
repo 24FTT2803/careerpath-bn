@@ -90,6 +90,33 @@
         color: #9a6700;
     }
 
+    .recommendation-status {
+        display: flex;
+        align-items: flex-start;
+        gap: 7px;
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 7px;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.5;
+        max-width: 460px;
+    }
+
+    .recommendation-status.current {
+        background: #f0fdf4;
+        color: #166534;
+    }
+
+    .recommendation-status.outdated {
+        background: #fff7ed;
+        color: #9a6700;
+    }
+
+    .recommendation-status i {
+        margin-top: 2px;
+    }
+
     .generate-button {
         min-height: 44px;
         display: inline-flex;
@@ -438,6 +465,34 @@
                         ></i>
 
                         {{ $quotaText }}
+                    </div>
+                @endif
+
+                @if(($currentGeneration?->status ?? null) === 'outdated')
+                    <div class="recommendation-status outdated">
+                        <i class="fas fa-triangle-exclamation"></i>
+
+                        Your profile has changed since these
+                        recommendations were generated on
+                        {{
+                            $currentGeneration
+                                ->generated_at
+                                ->format('j M Y')
+                        }}.
+                        Generate again to reflect your
+                        current profile.
+                    </div>
+                @elseif($currentGeneration)
+                    <div class="recommendation-status current">
+                        <i class="fas fa-circle-check"></i>
+
+                        Generated
+                        {{
+                            $currentGeneration
+                                ->generated_at
+                                ->format('j M Y')
+                        }}
+                        and up to date with your profile.
                     </div>
                 @endif
             </div>

@@ -3,8 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\StudentProfile;
+use App\Models\User;
+use App\Services\AI\RecommendationStatusService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -26,8 +27,8 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('student_id', 'LIKE', "%{$search}%");
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhere('student_id', 'LIKE', "%{$search}%");
             });
         }
 
@@ -101,14 +102,18 @@ class UserController extends Controller
     public function edit($id)
     {
         $user = User::with('profile')->findOrFail($id);
+
         return view('admin.users.edit', compact('user'));
     }
 
     /**
      * Update user (Admin only)
      */
-    public function update(Request $request, $id)
-    {
+    public function update(
+        Request $request,
+        $id,
+        RecommendationStatusService $recommendationStatus
+    ) {
         $user = User::with('profile')->findOrFail($id);
 
         $rules = [
@@ -118,18 +123,18 @@ class UserController extends Controller
 
         // Email validation with role-based domains
         $rules['email'] = User::getEmailValidationRules($request->role);
-        $rules['email'][] = 'unique:users,email,' . $id;
+        $rules['email'][] = 'unique:users,email,'.$id;
 
         // Phone validation
         $rules['phone'] = ['nullable', 'string', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'];
 
         // Only require student_id and programme if role is student
         if ($request->role === 'student') {
-            $rules['student_id'] = 'required|unique:users,student_id,' . $id;
+            $rules['student_id'] = 'required|unique:users,student_id,'.$id;
             $rules['programme'] =
                 'required|string|in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems';
         } else {
-            $rules['student_id'] = 'nullable|unique:users,student_id,' . $id;
+            $rules['student_id'] = 'nullable|unique:users,student_id,'.$id;
             $rules['programme'] = 'nullable|string';
         }
 
@@ -150,6 +155,12 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        /*
+         * An administrator can change a student's programme,
+         * which is part of the AI-relevant profile.
+         */
+        $recommendationStatus->refreshFor($user->fresh());
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
