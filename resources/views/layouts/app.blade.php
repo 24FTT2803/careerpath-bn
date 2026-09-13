@@ -465,6 +465,9 @@
                     <a href="{{ route('student.biicf-explorer.index') }}" class="nav-link {{ request()->routeIs('student.biicf-explorer*') ? 'active' : '' }}">
                         <i class="fas fa-compass"></i> BIICF
                     </a>
+                    <a href="{{ route('student.history') }}" class="nav-link {{ request()->routeIs('student.history') ? 'active' : '' }}">
+                        <i class="fas fa-clock-rotate-left"></i> History
+                    </a>
 
                     <a href="{{ route('student.notifications') }}" class="nav-notif">
                         <i class="fas fa-bell"></i>
@@ -535,6 +538,10 @@
 
                                 <a href="{{ route('student.biicf-explorer.index') }}" class="dropdown-item">
                                     <i class="fas fa-compass"></i> BIICF Explorer
+                                </a>
+
+                                <a href="{{ route('student.history') }}" class="dropdown-item">
+                                    <i class="fas fa-clock-rotate-left"></i> History
                                 </a>
                                 @if(Auth::user()->role === 'admin' || Auth::user()->role === 'lecturer')
                                     <div class="dropdown-divider"></div>
