@@ -70,6 +70,27 @@ class CareerAdviserController extends Controller
             ->filter(fn ($gap) => filled($gap))
             ->count();
 
+        /*
+         * Messages are always stored. This entitlement decides
+         * whether the student can see and continue the thread,
+         * so switching it on later reveals their history rather
+         * than starting them from nothing.
+         */
+        $adviserHistoryEnabled = $this->entitlements
+            ->allows(
+                $student,
+                'career_adviser.history.enabled'
+            );
+
+        $conversationMessages = $adviserHistoryEnabled
+            ? $student
+                ->careerAdviserConversation
+                ?->messages()
+                ->get()
+            : null;
+
+        $conversationMessages ??= collect();
+
         $biicfRoleCount = BiicfJobRole::count();
         $biicfSubSectorCount = BiicfSubSector::count();
 
@@ -84,6 +105,8 @@ class CareerAdviserController extends Controller
                 'student',
                 'profileCompletion',
                 'topRecommendation',
+                'conversationMessages',
+                'adviserHistoryEnabled',
                 'skillGapCount',
                 'biicfRoleCount',
                 'biicfSubSectorCount',
@@ -238,7 +261,11 @@ class CareerAdviserController extends Controller
         try {
             $response = $adviser->ask(
                 $student,
-                $validated['message']
+                $validated['message'],
+                $this->entitlements->allows(
+                    $student,
+                    'career_adviser.history.enabled'
+                )
             );
 
             /*

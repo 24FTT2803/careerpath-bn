@@ -221,6 +221,19 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the user's running Career Adviser thread.
+     *
+     * A student keeps one conversation rather than separate
+     * threads, so this is a single record.
+     */
+    public function careerAdviserConversation(): HasOne
+    {
+        return $this->hasOne(
+            CareerAdviserConversation::class
+        );
+    }
+
+    /**
      * Get the user's recommendation generations.
      *
      * Intentionally unordered. The relation is also used for

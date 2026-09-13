@@ -878,8 +878,39 @@
                         </p>
 
                     </div>
+                    </div>
 
-                </div>
+                @foreach($conversationMessages as $storedMessage)
+
+                    <div
+                        class="adviser-message @if($storedMessage->isFromStudent()) student-message @endif"
+                    >
+
+                        <div class="message-avatar">
+                            <i
+                                class="fas @if($storedMessage->isFromStudent()) fa-user @else fa-compass @endif"
+                            ></i>
+                        </div>
+
+                        <div class="message-bubble">
+
+                            <p class="message-name">
+                                @if($storedMessage->isFromStudent())
+                                    You
+                                @else
+                                    Career Adviser
+                                @endif
+                            </p>
+
+                            <p class="message-text">
+                                {{ $storedMessage->content }}
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                @endforeach
 
                 <div class="suggested-section">
 
