@@ -38,11 +38,11 @@ function createCareerForRecommendationTest(
 function careerAiClientReturning(
     array $response
 ): CareerAiClient {
-    return new class($response) implements CareerAiClient {
+    return new class($response) implements CareerAiClient
+    {
         public function __construct(
             private array $response
-        ) {
-        }
+        ) {}
 
         public function recommend(array $payload): array
         {
@@ -56,7 +56,8 @@ function careerAiClientReturning(
  */
 function failingCareerAiClient(): CareerAiClient
 {
-    return new class implements CareerAiClient {
+    return new class implements CareerAiClient
+    {
         public function recommend(array $payload): array
         {
             throw new RuntimeException(
@@ -83,7 +84,7 @@ function makeCareerRecommendationService(
     ]);
 
     $payloadBuilder =
-        new CareerAiPayloadBuilder();
+        new CareerAiPayloadBuilder;
 
     return new CareerRecommendationService(
         $careerAi,
@@ -91,7 +92,7 @@ function makeCareerRecommendationService(
         new CareerRecommendationContextBuilder(
             $payloadBuilder
         ),
-        new CareerRecommendationEnricher()
+        new CareerRecommendationEnricher
     );
 }
 
@@ -131,8 +132,7 @@ function validRecommendationItem(
 
         'career_readiness_score' => 70,
 
-        'explanation' =>
-            'Test career recommendation explanation.',
+        'explanation' => 'Test career recommendation explanation.',
     ];
 }
 
@@ -161,8 +161,7 @@ test(
                     'Existing development plan.',
                 ],
                 'career_readiness_score' => 76,
-                'explanation' =>
-                    'Existing valid recommendation.',
+                'explanation' => 'Existing valid recommendation.',
             ]);
 
         /*
@@ -207,8 +206,7 @@ test(
                 'user_id' => $student->id,
                 'biicf_career_id' => $career->id,
                 'rank' => 1,
-                'explanation' =>
-                    'Existing valid recommendation.',
+                'explanation' => 'Existing valid recommendation.',
             ]
         );
 
@@ -245,8 +243,7 @@ test(
                     'Existing development plan.',
                 ],
                 'career_readiness_score' => 74,
-                'explanation' =>
-                    'Recommendation before API failure.',
+                'explanation' => 'Recommendation before API failure.',
             ]);
 
         $service = makeCareerRecommendationService(
@@ -265,8 +262,7 @@ test(
             [
                 'id' => $existingRecommendation->id,
                 'user_id' => $student->id,
-                'explanation' =>
-                    'Recommendation before API failure.',
+                'explanation' => 'Recommendation before API failure.',
             ]
         );
 
@@ -278,71 +274,54 @@ test(
     }
 );
 
+/**
+ * Build a valid three-recommendation response.
+ *
+ * @param  array<int, BIICFCareer>  $careers
+ * @return array<string, mixed>
+ */
+function validRecommendationResponse(
+    array $careers
+): array {
+    return [
+        'schema_version' => '1.0',
+        'status' => 'completed',
+
+        'recommendations' => [
+            validRecommendationItem($careers[0], 1, 91),
+            validRecommendationItem($careers[1], 2, 82),
+            validRecommendationItem($careers[2], 3, 73),
+        ],
+    ];
+}
+
+/**
+ * Create the three careers a valid response needs.
+ *
+ * @return array<int, BIICFCareer>
+ */
+function careersForRecommendationTest(
+    string $prefix
+): array {
+    return [
+        createCareerForRecommendationTest($prefix.' One'),
+        createCareerForRecommendationTest($prefix.' Two'),
+        createCareerForRecommendationTest($prefix.' Three'),
+    ];
+}
+
 test(
-    'valid AI response replaces existing recommendations',
+    'valid AI response stores a current generation',
     function () {
         $student = User::factory()->create([
             'role' => 'student',
         ]);
 
-        $oldCareer = createCareerForRecommendationTest(
-            'Old Career'
-        );
-
-        $student
-            ->careerRecommendations()
-            ->create([
-                'biicf_career_id' => $oldCareer->id,
-                'rank' => 1,
-                'match_score' => 50,
-                'matched_skills' => [],
-                'skill_gaps' => [],
-                'development_plan' => [],
-                'career_readiness_score' => 40,
-                'explanation' =>
-                    'Old recommendation to replace.',
-            ]);
-
-        $careerOne = createCareerForRecommendationTest(
-            'Career One'
-        );
-
-        $careerTwo = createCareerForRecommendationTest(
-            'Career Two'
-        );
-
-        $careerThree = createCareerForRecommendationTest(
-            'Career Three'
-        );
-
-        $validResponse = [
-            'schema_version' => '1.0',
-            'status' => 'completed',
-
-            'recommendations' => [
-                validRecommendationItem(
-                    $careerOne,
-                    1,
-                    91
-                ),
-
-                validRecommendationItem(
-                    $careerTwo,
-                    2,
-                    82
-                ),
-
-                validRecommendationItem(
-                    $careerThree,
-                    3,
-                    73
-                ),
-            ],
-        ];
+        $careers = careersForRecommendationTest('Career');
 
         $service = makeCareerRecommendationService(
             careerAiClientReturning(
-                $validResponse
+                validRecommendationResponse($careers)
             )
         );
 
@@ -358,40 +337,162 @@ test(
             ->and($recommendations[2]->rank)
             ->toBe(3);
 
-        $this->assertDatabaseMissing(
-            'career_recommendations',
-            [
-                'user_id' => $student->id,
-                'explanation' =>
-                    'Old recommendation to replace.',
-            ]
-        );
+        $generation = $student
+            ->currentRecommendationGeneration()
+            ->first();
+
+        expect($generation)
+            ->not->toBeNull()
+            ->and($generation->generation_number)
+            ->toBe(1)
+            ->and($generation->recommendation_count)
+            ->toBe(3);
+
+        foreach ($careers as $index => $career) {
+            $this->assertDatabaseHas(
+                'career_recommendations',
+                [
+                    'user_id' => $student->id,
+                    'recommendation_generation_id' => $generation->id,
+                    'biicf_career_id' => $career->id,
+                    'rank' => $index + 1,
+                ]
+            );
+        }
+    }
+);
+
+test(
+    'generating again preserves the previous generation',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $firstCareers = careersForRecommendationTest('First');
+        $secondCareers = careersForRecommendationTest('Second');
+
+        makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($firstCareers)
+            )
+        )->generateFor($student);
+
+        $firstGeneration = $student
+            ->currentRecommendationGeneration()
+            ->first();
+
+        makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($secondCareers)
+            )
+        )->generateFor($student);
+
+        /*
+         * The point of Task 6: the earlier generation and its
+         * recommendations must survive.
+         */
+        expect(
+            $student->recommendationGenerations()->count()
+        )->toBe(2);
+
+        expect(
+            $student->careerRecommendations()->count()
+        )->toBe(6);
 
         $this->assertDatabaseHas(
             'career_recommendations',
             [
-                'user_id' => $student->id,
-                'biicf_career_id' => $careerOne->id,
-                'rank' => 1,
+                'recommendation_generation_id' => $firstGeneration->id,
+                'biicf_career_id' => $firstCareers[0]->id,
             ]
         );
 
-        $this->assertDatabaseHas(
-            'career_recommendations',
-            [
-                'user_id' => $student->id,
-                'biicf_career_id' => $careerTwo->id,
-                'rank' => 2,
-            ]
+        $secondGeneration = $student
+            ->currentRecommendationGeneration()
+            ->first();
+
+        expect($firstGeneration->fresh()->status)
+            ->toBe('previous')
+            ->and($secondGeneration->status)
+            ->toBe('current')
+            ->and($secondGeneration->generation_number)
+            ->toBe(2);
+    }
+);
+
+test(
+    'current recommendations exclude older generations',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $firstCareers = careersForRecommendationTest('Old');
+        $secondCareers = careersForRecommendationTest('New');
+
+        makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($firstCareers)
+            )
+        )->generateFor($student);
+
+        makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($secondCareers)
+            )
+        )->generateFor($student);
+
+        $current = $student
+            ->currentRecommendations()
+            ->orderBy('rank')
+            ->get();
+
+        expect($current)->toHaveCount(3);
+
+        expect(
+            $current->pluck('biicf_career_id')->all()
+        )->toBe(
+            collect($secondCareers)->pluck('id')->all()
+        );
+    }
+);
+
+test(
+    'generations are numbered per student',
+    function () {
+        $studentOne = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $studentTwo = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $careers = careersForRecommendationTest('Shared');
+
+        $service = makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($careers)
+            )
         );
 
-        $this->assertDatabaseHas(
-            'career_recommendations',
-            [
-                'user_id' => $student->id,
-                'biicf_career_id' => $careerThree->id,
-                'rank' => 3,
-            ]
-        );
+        $service->generateFor($studentOne);
+        $service->generateFor($studentOne);
+        $service->generateFor($studentTwo);
+
+        expect(
+            $studentOne
+                ->currentRecommendationGeneration()
+                ->first()
+                ->generation_number
+        )->toBe(2);
+
+        expect(
+            $studentTwo
+                ->currentRecommendationGeneration()
+                ->first()
+                ->generation_number
+        )->toBe(1);
     }
 );

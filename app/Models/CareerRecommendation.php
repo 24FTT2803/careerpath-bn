@@ -3,11 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CareerRecommendation extends Model
 {
     protected $fillable = [
         'user_id',
+        'recommendation_generation_id',
         'biicf_career_id',
         'biicf_job_role_id',
         'rank',
@@ -31,6 +33,17 @@ class CareerRecommendation extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * The historical generation this recommendation belongs to.
+     */
+    public function generation(): BelongsTo
+    {
+        return $this->belongsTo(
+            RecommendationGeneration::class,
+            'recommendation_generation_id'
+        );
     }
 
     /**

@@ -2,31 +2,27 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\StudentProfile;
-use App\Models\AcademicRecord;
+use App\Models\BiicfCompetency;
+use App\Models\BiicfProficiencyLevel;
+use App\Models\Notification;
 use App\Models\StudentCompetency;
 use App\Models\StudentInterest;
-use App\Models\StudentProject;
-use App\Models\StudentCertification;
-use App\Models\StudentAspiration;
-use App\Models\Notification;
 use App\Models\StudentMilestone;
+use App\Models\StudentProject;
+use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rules\File;
-use Illuminate\Validation\Rule;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
-use App\Helpers\NotificationHelper;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\ValidationException;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use Propaganistas\LaravelPhone\Rules\Phone;
-use App\Models\BiicfCompetency;
-use App\Models\BiicfProficiencyLevel;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProfileController extends Controller
 {
@@ -121,7 +117,7 @@ class ProfileController extends Controller
             'interests',
             'projects',
             'certifications',
-            'aspirations'
+            'aspirations',
         ]);
 
         $profileCompletion = $user->profile_completion;
@@ -159,7 +155,7 @@ class ProfileController extends Controller
             'interests',
             'projects',
             'certifications',
-            'aspirations'
+            'aspirations',
         ]);
 
         $profileCompletion = $user->profile_completion;
@@ -207,7 +203,7 @@ class ProfileController extends Controller
         $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,' . $user->id],
+            'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,'.$user->id],
             'phone' => [
                 'nullable',
                 'string',
@@ -404,7 +400,7 @@ class ProfileController extends Controller
                     'pdf',
                     'jpg',
                     'jpeg',
-                    'png'
+                    'png',
                 ])->max('5mb'),
             ],
 
@@ -422,17 +418,13 @@ class ProfileController extends Controller
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
         ], [
-            'phone.phone' =>
-                'Enter a valid phone number for the selected country.',
+            'phone.phone' => 'Enter a valid phone number for the selected country.',
 
-            'phone.max' =>
-                'The phone number is too long.',
+            'phone.max' => 'The phone number is too long.',
 
-            'phone_country.required_with' =>
-                'Please select a country for the phone number.',
+            'phone_country.required_with' => 'Please select a country for the phone number.',
 
-            'phone_country.size' =>
-                'The selected phone country is invalid.',
+            'phone_country.size' => 'The selected phone country is invalid.',
             'student_id.unique' => 'This Student ID is already taken.',
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
@@ -503,8 +495,7 @@ class ProfileController extends Controller
 
             if ($phoneAlreadyExists) {
                 throw ValidationException::withMessages([
-                    'phone' =>
-                        'This phone number is already registered to another account.',
+                    'phone' => 'This phone number is already registered to another account.',
                 ]);
             }
         }
@@ -564,7 +555,7 @@ class ProfileController extends Controller
         }
 
         // Combine first and last name into full name
-        $fullName = $request->first_name . ' ' . $request->last_name;
+        $fullName = $request->first_name.' '.$request->last_name;
 
         // Update User
         $user->update([
@@ -585,8 +576,7 @@ class ProfileController extends Controller
                 'address' => $request->address,
                 'date_of_birth' => $request->date_of_birth,
                 'nationality' => $request->nationality,
-                'profile_picture' =>
-                    $profilePicturePath,
+                'profile_picture' => $profilePicturePath,
                 'bio' => $request->bio,
             ]
         );
@@ -744,7 +734,7 @@ class ProfileController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        if (!$user->isStudent()) {
+        if (! $user->isStudent()) {
             abort(403, 'Only students can export profiles.');
         }
 
@@ -757,7 +747,7 @@ class ProfileController extends Controller
             'certifications',
             'aspirations',
             'milestones',
-            'careerRecommendations.career'
+            'currentRecommendations.career',
         ]);
 
         $profileCompletion = $user->profile_completion;
@@ -769,7 +759,7 @@ class ProfileController extends Controller
             'readinessScore'
         ))->setPaper('a4', 'portrait');
 
-        $filename = 'CareerPath-BN-' . Str::slug($user->name) . '-Profile.pdf';
+        $filename = 'CareerPath-BN-'.Str::slug($user->name).'-Profile.pdf';
 
         return $pdf->download($filename);
     }
@@ -793,7 +783,7 @@ class ProfileController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        if (!$user->isStudent()) {
+        if (! $user->isStudent()) {
             abort(403, 'Only students can export profiles.');
         }
 
@@ -806,7 +796,7 @@ class ProfileController extends Controller
             'certifications',
             'aspirations',
             'milestones',
-            'careerRecommendations.career'
+            'currentRecommendations.career',
         ]);
 
         $profileCompletion = $user->profile_completion;
@@ -818,7 +808,7 @@ class ProfileController extends Controller
             'readinessScore'
         ))->setPaper('a4', 'portrait');
 
-        $filename = 'CareerPath-BN-' . Str::slug($user->name) . '-Profile.pdf';
+        $filename = 'CareerPath-BN-'.Str::slug($user->name).'-Profile.pdf';
 
         return $pdf->download($filename);
     }
@@ -849,14 +839,14 @@ class ProfileController extends Controller
         $request->validate([
             'current_password' => [
                 'required',
-                'current_password'
+                'current_password',
             ],
 
             'password' => [
                 'required',
                 'string',
                 'min:8',
-                'confirmed'
+                'confirmed',
             ],
         ]);
 
@@ -992,24 +982,24 @@ class ProfileController extends Controller
             'title' => [
                 'required',
                 'string',
-                'max:255'
+                'max:255',
             ],
 
             'category' => [
                 'required',
                 'string',
-                'in:academic,career,personal,skill'
+                'in:academic,career,personal,skill',
             ],
 
             'description' => [
                 'nullable',
-                'string'
+                'string',
             ],
 
             'target_date' => [
                 'nullable',
                 'date',
-                'after:today'
+                'after:today',
             ],
         ]);
 
@@ -1121,14 +1111,11 @@ class ProfileController extends Controller
                 $user
                     ->competencies()
                     ->create([
-                        'skill_name' =>
-                            $skill['skill_name'],
+                        'skill_name' => $skill['skill_name'],
 
-                        'category' =>
-                            $skill['category'],
+                        'category' => $skill['category'],
 
-                        'proficiency_level' =>
-                            $skill['proficiency_level'],
+                        'proficiency_level' => $skill['proficiency_level'],
                     ]);
 
                 continue;
@@ -1161,16 +1148,14 @@ class ProfileController extends Controller
             BiicfCompetency::query()
                 ->get()
                 ->keyBy(
-                    fn ($competency) =>
-                        (string) $competency->id
+                    fn ($competency) => (string) $competency->id
                 );
 
         $proficiencyLevels =
             BiicfProficiencyLevel::query()
                 ->get()
                 ->keyBy(
-                    fn ($level) =>
-                        (string) $level->id
+                    fn ($level) => (string) $level->id
                 );
 
         /*
@@ -1195,8 +1180,7 @@ class ProfileController extends Controller
         * Prepare officially selected BIICF competencies.
         */
         foreach (
-            $competencySelections
-            as $competencyId => $selection
+            $competencySelections as $competencyId => $selection
         ) {
             if (
                 ! is_array($selection)
@@ -1212,8 +1196,7 @@ class ProfileController extends Controller
 
             if (! $competency) {
                 throw ValidationException::withMessages([
-                    'biicf_competencies' =>
-                        'One of the selected BIICF competencies is invalid.',
+                    'biicf_competencies' => 'One of the selected BIICF competencies is invalid.',
                 ]);
             }
 
@@ -1229,10 +1212,9 @@ class ProfileController extends Controller
 
             if (! $level) {
                 throw ValidationException::withMessages([
-                    "biicf_competencies.$competencyId.proficiency_level_id" =>
-                        'Select a proficiency level for '
-                        . $competency->name
-                        . '.',
+                    "biicf_competencies.$competencyId.proficiency_level_id" => 'Select a proficiency level for '
+                        .$competency->name
+                        .'.',
                 ]);
             }
 
@@ -1245,14 +1227,11 @@ class ProfileController extends Controller
                 $competency->name;
 
             $prepared[] = [
-                'skill_name' =>
-                    $competency->name,
+                'skill_name' => $competency->name,
 
-                'category' =>
-                    $competency->type,
+                'category' => $competency->type,
 
-                'proficiency_level' =>
-                    $level->name,
+                'proficiency_level' => $level->name,
             ];
         }
 
@@ -1280,8 +1259,7 @@ class ProfileController extends Controller
 
             if (mb_strlen($clean) > 40) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        'Each additional skill must be 40 characters or fewer.',
+                    'custom_skills' => 'Each additional skill must be 40 characters or fewer.',
                 ]);
             }
 
@@ -1291,9 +1269,8 @@ class ProfileController extends Controller
                 )
             ) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        '"' . $clean . '" does not look like a usable skill. '
-                        . 'Please enter a skill, technology, tool, method, or competency you have.',
+                    'custom_skills' => '"'.$clean.'" does not look like a usable skill. '
+                        .'Please enter a skill, technology, tool, method, or competency you have.',
                 ]);
             }
 
@@ -1304,21 +1281,19 @@ class ProfileController extends Controller
 
             if (isset($biicfKeys[$key])) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        '"' . $clean
-                        . '" matches the BIICF competency "'
-                        . $biicfKeys[$key]
-                        . '". Select that competency instead.',
+                    'custom_skills' => '"'.$clean
+                        .'" matches the BIICF competency "'
+                        .$biicfKeys[$key]
+                        .'". Select that competency instead.',
                 ]);
             }
 
             if (isset($seenKeys[$key])) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        '"' . $clean
-                        . '" duplicates "'
-                        . $seenKeys[$key]
-                        . '". Each skill should only be added once.',
+                    'custom_skills' => '"'.$clean
+                        .'" duplicates "'
+                        .$seenKeys[$key]
+                        .'". Each skill should only be added once.',
                 ]);
             }
 
@@ -1333,10 +1308,9 @@ class ProfileController extends Controller
 
             if (! $level) {
                 throw ValidationException::withMessages([
-                    "custom_skill_levels.$index" =>
-                        'Select a proficiency level for '
-                        . $clean
-                        . '.',
+                    "custom_skill_levels.$index" => 'Select a proficiency level for '
+                        .$clean
+                        .'.',
                 ]);
             }
 
@@ -1344,14 +1318,11 @@ class ProfileController extends Controller
                 $clean;
 
             $prepared[] = [
-                'skill_name' =>
-                    $clean,
+                'skill_name' => $clean,
 
-                'category' =>
-                    'technical',
+                'category' => 'technical',
 
-                'proficiency_level' =>
-                    $level->name,
+                'proficiency_level' => $level->name,
             ];
         }
 
@@ -1416,16 +1387,14 @@ class ProfileController extends Controller
 
             if (mb_strlen($clean) > 40) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        'Each additional skill must be 40 characters or fewer.',
+                    'custom_skills' => 'Each additional skill must be 40 characters or fewer.',
                 ]);
             }
 
             if ($this->isClearlyInvalidSkill($clean)) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        '"' . $clean . '" does not look like a usable skill. '
-                        . 'Please enter a skill, technology, tool, method, or competency you have.',
+                    'custom_skills' => '"'.$clean.'" does not look like a usable skill. '
+                        .'Please enter a skill, technology, tool, method, or competency you have.',
                 ]);
             }
 
@@ -1433,18 +1402,16 @@ class ProfileController extends Controller
 
             if (isset($predefinedKeys[$key])) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        '"' . $clean . '" matches the predefined skill '
-                        . '"' . $predefinedKeys[$key] . '". Select that option instead.',
+                    'custom_skills' => '"'.$clean.'" matches the predefined skill '
+                        .'"'.$predefinedKeys[$key].'". Select that option instead.',
                 ]);
             }
 
             if (isset($seenKeys[$key])) {
                 throw ValidationException::withMessages([
-                    'custom_skills' =>
-                        '"' . $clean . '" duplicates '
-                        . '"' . $seenKeys[$key] . '". '
-                        . 'Each skill should only be added once.',
+                    'custom_skills' => '"'.$clean.'" duplicates '
+                        .'"'.$seenKeys[$key].'". '
+                        .'Each skill should only be added once.',
                 ]);
             }
 
@@ -1585,16 +1552,14 @@ class ProfileController extends Controller
 
             if (mb_strlen($clean) > 40) {
                 throw ValidationException::withMessages([
-                    'custom_interests' =>
-                        'Each additional interest must be 40 characters or fewer.',
+                    'custom_interests' => 'Each additional interest must be 40 characters or fewer.',
                 ]);
             }
 
             if ($this->isClearlyInvalidInterest($clean)) {
                 throw ValidationException::withMessages([
-                    'custom_interests' =>
-                        '"' . $clean . '" does not look like a usable interest. '
-                        . 'Please enter a topic, field, technology, or activity you are interested in.',
+                    'custom_interests' => '"'.$clean.'" does not look like a usable interest. '
+                        .'Please enter a topic, field, technology, or activity you are interested in.',
                 ]);
             }
 
@@ -1602,18 +1567,16 @@ class ProfileController extends Controller
 
             if (isset($predefinedKeys[$key])) {
                 throw ValidationException::withMessages([
-                    'custom_interests' =>
-                        '"' . $clean . '" matches the predefined interest '
-                        . '"' . $predefinedKeys[$key] . '". Select that option instead.',
+                    'custom_interests' => '"'.$clean.'" matches the predefined interest '
+                        .'"'.$predefinedKeys[$key].'". Select that option instead.',
                 ]);
             }
 
             if (isset($seenKeys[$key])) {
                 throw ValidationException::withMessages([
-                    'custom_interests' =>
-                        '"' . $clean . '" duplicates '
-                        . '"' . $seenKeys[$key] . '". '
-                        . 'Each interest should only be added once.',
+                    'custom_interests' => '"'.$clean.'" duplicates '
+                        .'"'.$seenKeys[$key].'". '
+                        .'Each interest should only be added once.',
                 ]);
             }
 
@@ -1756,39 +1719,31 @@ class ProfileController extends Controller
 
                 if ($project) {
                     $project->update([
-                        'title' =>
-                            $projectData['title']
+                        'title' => $projectData['title']
                             ?? '',
 
-                        'description' =>
-                            $projectData['description']
+                        'description' => $projectData['description']
                             ?? '',
 
-                        'technologies_used' =>
-                            $this->processCommaList(
-                                $projectData[
-                                    'technologies_used'
-                                ] ?? ''
-                            ),
+                        'technologies_used' => $this->processCommaList(
+                            $projectData[
+                                'technologies_used'
+                            ] ?? ''
+                        ),
 
-                        'role' =>
-                            $projectData['role']
+                        'role' => $projectData['role']
                             ?? '',
 
-                        'project_url' =>
-                            $projectData['project_url']
+                        'project_url' => $projectData['project_url']
                             ?? '',
 
-                        'start_date' =>
-                            $projectData['start_date']
+                        'start_date' => $projectData['start_date']
                             ?? null,
 
-                        'end_date' =>
-                            $projectData['end_date']
+                        'end_date' => $projectData['end_date']
                             ?? null,
 
-                        'achievements' =>
-                            $projectData['achievements']
+                        'achievements' => $projectData['achievements']
                             ?? '',
                     ]);
 
@@ -1807,38 +1762,30 @@ class ProfileController extends Controller
             $project = StudentProject::create([
                 'user_id' => $user->id,
 
-                'title' =>
-                    $projectData['title'],
+                'title' => $projectData['title'],
 
-                'description' =>
-                    $projectData['description']
+                'description' => $projectData['description']
                     ?? '',
 
-                'technologies_used' =>
-                    $this->processCommaList(
-                        $projectData[
-                            'technologies_used'
-                        ] ?? ''
-                    ),
+                'technologies_used' => $this->processCommaList(
+                    $projectData[
+                        'technologies_used'
+                    ] ?? ''
+                ),
 
-                'role' =>
-                    $projectData['role']
+                'role' => $projectData['role']
                     ?? '',
 
-                'project_url' =>
-                    $projectData['project_url']
+                'project_url' => $projectData['project_url']
                     ?? '',
 
-                'start_date' =>
-                    $projectData['start_date']
+                'start_date' => $projectData['start_date']
                     ?? null,
 
-                'end_date' =>
-                    $projectData['end_date']
+                'end_date' => $projectData['end_date']
                     ?? null,
 
-                'achievements' =>
-                    $projectData['achievements']
+                'achievements' => $projectData['achievements']
                     ?? '',
             ]);
 
@@ -1889,8 +1836,7 @@ class ProfileController extends Controller
             $request->input(
                 'certifications',
                 []
-            )
-            as $index => $data
+            ) as $index => $data
         ) {
             $certification = null;
 
@@ -1944,27 +1890,22 @@ class ProfileController extends Controller
                 }
 
                 $values = [
-                    'certification_name' =>
-                        $data[
+                    'certification_name' => $data[
                             'certification_name'
                         ],
 
-                    'issuing_organization' =>
-                        $data[
+                    'issuing_organization' => $data[
                             'issuing_organization'
                         ] ?? null,
 
-                    'issue_date' =>
-                        $data[
+                    'issue_date' => $data[
                             'issue_date'
                         ] ?? null,
 
-                    'certificate_file_path' =>
-                        $newFilePath
+                    'certificate_file_path' => $newFilePath
                         ?? $oldFilePath,
 
-                    'certificate_original_name' =>
-                        $newFilePath
+                    'certificate_original_name' => $newFilePath
                             ? $newOriginalName
                             : $oldOriginalName,
                 ];
@@ -2050,8 +1991,7 @@ class ProfileController extends Controller
                 ->get();
 
         foreach (
-            $certificationsToDelete
-            as $certification
+            $certificationsToDelete as $certification
         ) {
             $filePath =
                 $certification

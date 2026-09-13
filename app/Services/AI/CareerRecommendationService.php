@@ -3,6 +3,7 @@
 namespace App\Services\AI;
 
 use App\Contracts\CareerAiClient;
+use App\Models\RecommendationGeneration;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -17,11 +18,14 @@ class CareerRecommendationService
         private CareerAiPayloadBuilder $payloadBuilder,
         private CareerRecommendationContextBuilder $contextBuilder,
         private CareerRecommendationEnricher $enricher
-    ) {
-    }
+    ) {}
 
     /**
-     * Generate and save the student's current career recommendations.
+     * Generate a new recommendation generation for the student.
+     *
+     * Previous generations are preserved. The newest generation
+     * becomes current and any earlier current generation becomes
+     * previous.
      */
     public function generateFor(User $student): Collection
     {
@@ -54,115 +58,38 @@ class CareerRecommendationService
                 $response
             );
 
-        DB::transaction(function () use (
+        /*
+         * Nothing is written until the AI response has been
+         * validated, so a failed generation leaves the student's
+         * existing current generation untouched.
+         */
+        $generation = DB::transaction(function () use (
             $student,
             $validated,
             $driver
-        ) {
-            $student->careerRecommendations()
-                ->delete();
+        ): RecommendationGeneration {
+            $generation = $this->openGeneration(
+                $student,
+                $validated,
+                $driver
+            );
 
             foreach (
-                $validated['recommendations']
-                as $recommendation
+                $validated['recommendations'] as $recommendation
             ) {
-                if ($driver === 'groq') {
-                    $student->careerRecommendations()
-                        ->create([
-                            'biicf_career_id' =>
-                                null,
-
-                            'biicf_job_role_id' =>
-                                $recommendation[
-                                    'biicf_job_role_id'
-                                ],
-
-                            'rank' =>
-                                $recommendation['rank'],
-
-                            'match_score' =>
-                                $recommendation[
-                                    'match_score'
-                                ],
-
-                            'matched_skills' =>
-                                $recommendation[
-                                    'matched_skills'
-                                ],
-
-                            'skill_gaps' =>
-                                $recommendation[
-                                    'skill_gaps'
-                                ],
-
-                            'development_plan' =>
-                                $recommendation[
-                                    'development_plan'
-                                ],
-
-                            'career_readiness_score' =>
-                                $recommendation[
-                                    'career_readiness_score'
-                                ],
-
-                            'explanation' =>
-                                $recommendation[
-                                    'explanation'
-                                ] ?? null,
-                        ]);
-
-                    continue;
-                }
-
-                $student->careerRecommendations()
-                    ->create([
-                        'biicf_career_id' =>
-                            $recommendation[
-                                'biicf_career_id'
-                            ],
-
-                        'biicf_job_role_id' =>
-                            null,
-
-                        'rank' =>
-                            $recommendation['rank'],
-
-                        'match_score' =>
-                            $recommendation[
-                                'match_score'
-                            ],
-
-                        'matched_skills' =>
-                            $recommendation[
-                                'matched_skills'
-                            ],
-
-                        'skill_gaps' =>
-                            $recommendation[
-                                'skill_gaps'
-                            ],
-
-                        'development_plan' =>
-                            $recommendation[
-                                'development_plan'
-                            ],
-
-                        'career_readiness_score' =>
-                            $recommendation[
-                                'career_readiness_score'
-                            ],
-
-                        'explanation' =>
-                            $recommendation[
-                                'explanation'
-                            ] ?? null,
-                    ]);
+                $generation->recommendations()->create(
+                    $this->recommendationAttributes(
+                        $student,
+                        $recommendation,
+                        $driver
+                    )
+                );
             }
+
+            return $generation;
         });
 
-        $query = $student
-            ->careerRecommendations()
-            ->orderBy('rank');
+        $query = $generation->recommendations();
 
         if ($driver === 'groq') {
             return $query
@@ -173,6 +100,93 @@ class CareerRecommendationService
         return $query
             ->with('career')
             ->get();
+    }
+
+    /**
+     * Supersede the student's current generation and open a new
+     * one for the incoming recommendations.
+     *
+     * @param  array<string, mixed>  $validated
+     */
+    private function openGeneration(
+        User $student,
+        array $validated,
+        string $driver
+    ): RecommendationGeneration {
+        $student->recommendationGenerations()
+            ->where(
+                'status',
+                RecommendationGeneration::STATUS_CURRENT
+            )
+            ->update([
+                'status' => RecommendationGeneration::STATUS_PREVIOUS,
+            ]);
+
+        $nextNumber = (int) $student
+            ->recommendationGenerations()
+            ->max('generation_number') + 1;
+
+        return $student->recommendationGenerations()->create([
+            'generation_number' => $nextNumber,
+
+            'status' => RecommendationGeneration::STATUS_CURRENT,
+
+            'driver' => $driver,
+
+            'schema_version' => $validated['schema_version'] ?? null,
+
+            /*
+             * Stored rather than derived because the number of
+             * recommendations per generation is plan-configurable
+             * and may differ between generations.
+             */
+            'recommendation_count' => count($validated['recommendations']),
+
+            'generated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Map a validated AI recommendation onto database columns.
+     *
+     * user_id is written alongside the generation so existing
+     * per-student queries keep working.
+     *
+     * @param  array<string, mixed>  $recommendation
+     * @return array<string, mixed>
+     */
+    private function recommendationAttributes(
+        User $student,
+        array $recommendation,
+        string $driver
+    ): array {
+        $isCurrentSchema = $driver === 'groq';
+
+        return [
+            'user_id' => $student->id,
+
+            'biicf_career_id' => $isCurrentSchema
+                ? null
+                : $recommendation['biicf_career_id'],
+
+            'biicf_job_role_id' => $isCurrentSchema
+                ? $recommendation['biicf_job_role_id']
+                : null,
+
+            'rank' => $recommendation['rank'],
+
+            'match_score' => $recommendation['match_score'],
+
+            'matched_skills' => $recommendation['matched_skills'],
+
+            'skill_gaps' => $recommendation['skill_gaps'],
+
+            'development_plan' => $recommendation['development_plan'],
+
+            'career_readiness_score' => $recommendation['career_readiness_score'],
+
+            'explanation' => $recommendation['explanation'] ?? null,
+        ];
     }
 
     /**
@@ -251,8 +265,7 @@ class CareerRecommendationService
 
         if ($ranks !== [1, 2, 3]) {
             throw ValidationException::withMessages([
-                'recommendations' =>
-                    'Career Recommendation ranks must contain 1, 2 and 3 exactly once.',
+                'recommendations' => 'Career Recommendation ranks must contain 1, 2 and 3 exactly once.',
             ]);
         }
 
@@ -260,11 +273,10 @@ class CareerRecommendationService
             $validated['recommendations']
         )
             ->map(
-                fn (array $recommendation) =>
-                    $this->enricher->enrich(
-                        $student,
-                        $recommendation
-                    )
+                fn (array $recommendation) => $this->enricher->enrich(
+                    $student,
+                    $recommendation
+                )
             )
             ->sortBy('rank')
             ->values()
@@ -285,14 +297,11 @@ class CareerRecommendationService
         }
 
         return [
-            'schema_version' =>
-                $validated['schema_version'],
+            'schema_version' => $validated['schema_version'],
 
-            'status' =>
-                $validated['status'],
+            'status' => $validated['status'],
 
-            'recommendations' =>
-                $enriched,
+            'recommendations' => $enriched,
         ];
     }
 

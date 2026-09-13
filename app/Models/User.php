@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -13,7 +15,7 @@ class User extends Authenticatable
     // ============================================
     // EMAIL DOMAIN VALIDATION CONSTANTS
     // ============================================
-    
+
     /**
      * Allowed email domains for registration
      */
@@ -34,7 +36,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'name', 'email', 'phone', 'password', 'student_id', 'programme',
-        'cgpa', 'role', 'avatar', 'show_ads', 'last_login_at'
+        'cgpa', 'role', 'avatar', 'show_ads', 'last_login_at',
     ];
 
     protected $hidden = [
@@ -69,8 +71,9 @@ class User extends Authenticatable
      */
     public static function validateEmailDomain(string $email, string $role): bool
     {
-        $domain = substr(strrchr($email, "@"), 1);
+        $domain = substr(strrchr($email, '@'), 1);
         $allowedDomains = self::getAllowedDomainsForRole($role);
+
         return in_array($domain, $allowedDomains);
     }
 
@@ -80,17 +83,17 @@ class User extends Authenticatable
     public static function getEmailValidationRules(string $role): array
     {
         $allowedDomains = self::getAllowedDomainsForRole($role);
-        
+
         // Build regex pattern for allowed domains
-        $pattern = '/^[a-zA-Z0-9._%+-]+@(' . implode('|', array_map('preg_quote', $allowedDomains)) . ')$/';
-        
+        $pattern = '/^[a-zA-Z0-9._%+-]+@('.implode('|', array_map('preg_quote', $allowedDomains)).')$/';
+
         return [
             'required',
             'string',
             'lowercase',
             'email',
             'max:255',
-            'regex:' . $pattern,
+            'regex:'.$pattern,
         ];
     }
 
@@ -160,7 +163,7 @@ class User extends Authenticatable
     }
 
     public function unreadNotifications()
-    {  
+    {
         return $this->notifications()->where('is_read', false);
     }
 
@@ -204,9 +207,61 @@ class User extends Authenticatable
         return $this->hasMany(StudentMilestone::class);
     }
 
+    /**
+     * Every recommendation the user has ever been given, across
+     * all generations.
+     *
+     * Screens showing the student's active results should use
+     * currentRecommendations() instead, otherwise they render
+     * the full history at once.
+     */
     public function careerRecommendations()
     {
         return $this->hasMany(CareerRecommendation::class);
+    }
+
+    /**
+     * Get the user's recommendation generations.
+     *
+     * Intentionally unordered. The relation is also used for
+     * aggregates and bulk status updates, and SQLite rejects
+     * UPDATE statements carrying an ORDER BY clause.
+     */
+    public function recommendationGenerations(): HasMany
+    {
+        return $this->hasMany(
+            RecommendationGeneration::class
+        );
+    }
+
+    /**
+     * Get the user's active recommendation generation.
+     */
+    public function currentRecommendationGeneration(): HasOne
+    {
+        return $this->hasOne(
+            RecommendationGeneration::class
+        )->where(
+            'status',
+            RecommendationGeneration::STATUS_CURRENT
+        );
+    }
+
+    /**
+     * Get only the recommendations belonging to the user's
+     * current generation.
+     */
+    public function currentRecommendations(): HasMany
+    {
+        return $this->hasMany(
+            CareerRecommendation::class
+        )->whereHas(
+            'generation',
+            fn ($query) => $query->where(
+                'status',
+                RecommendationGeneration::STATUS_CURRENT
+            )
+        );
     }
 
     /**

@@ -9,11 +9,11 @@ use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 
 class CareerRecommendationController extends Controller
 {
@@ -21,8 +21,7 @@ class CareerRecommendationController extends Controller
         private CareerRecommendationService $recommendationService,
         private EntitlementService $entitlements,
         private FeatureUsageService $featureUsage
-    ) {
-    }
+    ) {}
 
     /**
      * Display the student's career recommendations.
@@ -53,7 +52,7 @@ class CareerRecommendationController extends Controller
 
         $recommendations =
             $student
-                ->careerRecommendations()
+                ->currentRecommendations()
                 ->with([
                     'career',
                     'jobRole.subSector',
@@ -96,7 +95,7 @@ class CareerRecommendationController extends Controller
                 ->with(
                     'warning',
                     'Career recommendation generation is unavailable. '
-                    . $generationAccess['message']
+                    .$generationAccess['message']
                 );
         }
 
@@ -107,7 +106,7 @@ class CareerRecommendationController extends Controller
 
         /** @var CareerRecommendation $careerRecommendation */
         $careerRecommendation = $student
-            ->careerRecommendations()
+            ->currentRecommendations()
             ->with([
                 'career',
                 'jobRole.subSector',
@@ -128,18 +127,15 @@ class CareerRecommendationController extends Controller
          * consistent structure for the view.
          */
         $careerPresentation = [
-            'title' =>
-                $jobRole?->title
+            'title' => $jobRole?->title
                 ?? $legacyCareer?->job_title
                 ?? 'Career',
 
-            'subsector' =>
-                $jobRole?->subSector?->name
+            'subsector' => $jobRole?->subSector?->name
                 ?? $legacyCareer?->subsector
                 ?? 'Sub-sector unavailable',
 
-            'job_description' =>
-                $jobRole?->job_description
+            'job_description' => $jobRole?->job_description
                 ?? $legacyCareer?->job_description
                 ?? 'Job description is currently unavailable.',
         ];
@@ -149,73 +145,66 @@ class CareerRecommendationController extends Controller
                 $jobRole->entryRequirement;
 
             $careerDetails = [
-                'entry_requirements' =>
-                    array_values(
-                        array_filter([
-                            filled(
-                                $entryRequirement?->bdqf_level
-                            )
-                                ? 'BDQF Level: '
-                                    . $entryRequirement->bdqf_level
-                                : null,
-
-                            filled(
-                                $entryRequirement?->field_of_study
-                            )
-                                ? 'Field of Study: '
-                                    . $entryRequirement->field_of_study
-                                : null,
-
-                            filled(
-                                $entryRequirement?->alternative_pathway
-                            )
-                                ? 'Alternative Pathway: '
-                                    . $entryRequirement->alternative_pathway
-                                : null,
-
-                            filled(
-                                $entryRequirement?->years_experience
-                            )
-                                ? 'Years of Experience: '
-                                    . $entryRequirement->years_experience
-                                : null,
-                        ])
-                    ),
-
-                'recommended_training' =>
-                    $jobRole->trainings
-                        ->map(
-                            fn ($training) =>
-                                $training->name
+                'entry_requirements' => array_values(
+                    array_filter([
+                        filled(
+                            $entryRequirement?->bdqf_level
                         )
-                        ->filter()
-                        ->values()
-                        ->all(),
+                            ? 'BDQF Level: '
+                                .$entryRequirement->bdqf_level
+                            : null,
+
+                        filled(
+                            $entryRequirement?->field_of_study
+                        )
+                            ? 'Field of Study: '
+                                .$entryRequirement->field_of_study
+                            : null,
+
+                        filled(
+                            $entryRequirement?->alternative_pathway
+                        )
+                            ? 'Alternative Pathway: '
+                                .$entryRequirement->alternative_pathway
+                            : null,
+
+                        filled(
+                            $entryRequirement?->years_experience
+                        )
+                            ? 'Years of Experience: '
+                                .$entryRequirement->years_experience
+                            : null,
+                    ])
+                ),
+
+                'recommended_training' => $jobRole->trainings
+                    ->map(
+                        fn ($training) => $training->name
+                    )
+                    ->filter()
+                    ->values()
+                    ->all(),
 
                 /*
                  * No separate authoritative certification
                  * relationship currently exists for the
                  * current BIICF job-role dataset.
                  */
-                'certifications' =>
-                    [],
+                'certifications' => [],
             ];
         } else {
             $careerDetails = [
-                'entry_requirements' =>
-                    $this->normaliseList(
-                        $legacyCareer?->entry_requirements
-                    ),
+                'entry_requirements' => $this->normaliseList(
+                    $legacyCareer?->entry_requirements
+                ),
 
-                'recommended_training' =>
-                    $this->normaliseList(
-                        $legacyCareer?->recommended_training
-                    ),
+                'recommended_training' => $this->normaliseList(
+                    $legacyCareer?->recommended_training
+                ),
 
-                'certifications' =>
-                    $this->normaliseList(
-                        $legacyCareer?->certifications
-                    ),
+                'certifications' => $this->normaliseList(
+                    $legacyCareer?->certifications
+                ),
             ];
         }
 
@@ -254,7 +243,7 @@ class CareerRecommendationController extends Controller
                 ->with(
                     'warning',
                     'Career recommendation generation is unavailable. '
-                    . $generationAccess['message']
+                    .$generationAccess['message']
                 );
         }
 
@@ -275,7 +264,7 @@ class CareerRecommendationController extends Controller
                 ->with(
                     'warning',
                     'Career recommendation generation is unavailable. '
-                    . $quotaStatus['message']
+                    .$quotaStatus['message']
                 );
         }
 

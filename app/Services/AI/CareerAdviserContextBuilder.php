@@ -11,8 +11,7 @@ class CareerAdviserContextBuilder
 {
     public function __construct(
         private CareerAiPayloadBuilder $profileBuilder
-    ) {
-    }
+    ) {}
 
     /**
      * Build the CareerPath context available to the Career Adviser.
@@ -34,12 +33,12 @@ class CareerAdviserContextBuilder
          * - current BiicfJobRole recommendations
          */
         $student->loadMissing([
-            'careerRecommendations.career',
-            'careerRecommendations.jobRole.subSector',
+            'currentRecommendations.career',
+            'currentRecommendations.jobRole.subSector',
         ]);
 
         $recommendations = $student
-            ->careerRecommendations
+            ->currentRecommendations
             ->sortBy('rank')
             ->values()
             ->map(function ($recommendation) {
@@ -50,84 +49,65 @@ class CareerAdviserContextBuilder
                     $recommendation->jobRole;
 
                 return [
-                    'biicf_career_id' =>
-                        $recommendation->biicf_career_id,
+                    'biicf_career_id' => $recommendation->biicf_career_id,
 
-                    'biicf_job_role_id' =>
-                        $recommendation->biicf_job_role_id,
+                    'biicf_job_role_id' => $recommendation->biicf_job_role_id,
 
-                    'rank' =>
-                        $recommendation->rank,
+                    'rank' => $recommendation->rank,
 
-                    'match_score' =>
-                        $recommendation->match_score,
+                    'match_score' => $recommendation->match_score,
 
-                    'career_readiness_score' =>
-                        $recommendation->career_readiness_score,
+                    'career_readiness_score' => $recommendation->career_readiness_score,
 
-                    'matched_skills' =>
-                        $recommendation->matched_skills ?? [],
+                    'matched_skills' => $recommendation->matched_skills ?? [],
 
-                    'skill_gap_count' =>
-                        count(
-                            $recommendation->skill_gaps ?? []
-                        ),
+                    'skill_gap_count' => count(
+                        $recommendation->skill_gaps ?? []
+                    ),
 
-                    'skill_gaps' =>
-                        array_slice(
-                            $recommendation->skill_gaps ?? [],
-                            0,
-                            5
-                        ),
+                    'skill_gaps' => array_slice(
+                        $recommendation->skill_gaps ?? [],
+                        0,
+                        5
+                    ),
 
-                    'development_plan' =>
-                        $recommendation->development_plan ?? [],
+                    'development_plan' => $recommendation->development_plan ?? [],
 
-                    'explanation' =>
-                        $recommendation->explanation,
+                    'explanation' => $recommendation->explanation,
 
                     /*
                      * Legacy five-role recommendation details.
                      */
                     'career' => $legacyCareer
                         ? [
-                            'job_title' =>
-                                $legacyCareer->job_title,
+                        'job_title' => $legacyCareer->job_title,
 
-                            'subsector' =>
-                                $legacyCareer->subsector,
+                        'subsector' => $legacyCareer->subsector,
 
-                            'technical_skills' =>
-                                $this->normaliseArray(
-                                    $legacyCareer->technical_skills
-                                ),
+                        'technical_skills' => $this->normaliseArray(
+                            $legacyCareer->technical_skills
+                        ),
 
-                            'soft_skills' =>
-                                $this->normaliseArray(
-                                    $legacyCareer->soft_skills
-                                ),
+                        'soft_skills' => $this->normaliseArray(
+                            $legacyCareer->soft_skills
+                        ),
 
-                            'entry_requirements' =>
-                                $this->normaliseArray(
-                                    $legacyCareer->entry_requirements
-                                ),
+                        'entry_requirements' => $this->normaliseArray(
+                            $legacyCareer->entry_requirements
+                        ),
 
-                            'recommended_training' =>
-                                $this->normaliseArray(
-                                    $legacyCareer->recommended_training
-                                ),
+                        'recommended_training' => $this->normaliseArray(
+                            $legacyCareer->recommended_training
+                        ),
 
-                            'certifications' =>
-                                $this->normaliseArray(
-                                    $legacyCareer->certifications
-                                ),
+                        'certifications' => $this->normaliseArray(
+                            $legacyCareer->certifications
+                        ),
 
-                            'job_description' =>
-                                $legacyCareer->job_description,
+                        'job_description' => $legacyCareer->job_description,
 
-                            'demand_level' =>
-                                $legacyCareer->demand_level,
-                        ]
+                        'demand_level' => $legacyCareer->demand_level,
+                    ]
                         : null,
 
                     /*
@@ -135,23 +115,17 @@ class CareerAdviserContextBuilder
                      */
                     'job_role' => $jobRole
                         ? [
-                            'id' =>
-                                $jobRole->id,
+                            'id' => $jobRole->id,
 
-                            'title' =>
-                                $jobRole->title,
+                            'title' => $jobRole->title,
 
-                            'sub_sector' =>
-                                $jobRole->subSector?->name,
+                            'sub_sector' => $jobRole->subSector?->name,
 
-                            'functional_group' =>
-                                $jobRole->functional_group,
+                            'functional_group' => $jobRole->functional_group,
 
-                            'job_description' =>
-                                $jobRole->job_description,
+                            'job_description' => $jobRole->job_description,
 
-                            'career_path_level' =>
-                                $jobRole->career_path_level,
+                            'career_path_level' => $jobRole->career_path_level,
                         ]
                         : null,
                 ];
@@ -174,20 +148,15 @@ class CareerAdviserContextBuilder
                 'career_path_level',
             ])
             ->map(fn ($role) => [
-                'id' =>
-                    $role->id,
+                'id' => $role->id,
 
-                'title' =>
-                    $role->title,
+                'title' => $role->title,
 
-                'sub_sector' =>
-                    $role->subSector?->name,
+                'sub_sector' => $role->subSector?->name,
 
-                'job_description' =>
-                    $role->job_description,
+                'job_description' => $role->job_description,
 
-                'career_path_level' =>
-                    $role->career_path_level,
+                'career_path_level' => $role->career_path_level,
             ])
             ->all();
 
@@ -201,45 +170,33 @@ class CareerAdviserContextBuilder
                 'description',
             ])
             ->map(fn ($competency) => [
-                'id' =>
-                    $competency->id,
+                'id' => $competency->id,
 
-                'name' =>
-                    $competency->name,
+                'name' => $competency->name,
 
-                'type' =>
-                    $competency->type,
+                'type' => $competency->type,
 
-                'description' =>
-                    $competency->description,
+                'description' => $competency->description,
             ])
             ->all();
 
         return [
-            'schema_version' =>
-                '1.0',
+            'schema_version' => '1.0',
 
-            'student_profile' =>
-                $profilePayload['student_profile'] ?? [],
+            'student_profile' => $profilePayload['student_profile'] ?? [],
 
-            'career_recommendations' =>
-                $recommendations,
+            'career_recommendations' => $recommendations,
 
             'biicf_reference' => [
-                'job_role_count' =>
-                    count($jobRoles),
+                'job_role_count' => count($jobRoles),
 
-                'sub_sector_count' =>
-                    BiicfSubSector::count(),
+                'sub_sector_count' => BiicfSubSector::count(),
 
-                'competency_count' =>
-                    count($competencies),
+                'competency_count' => count($competencies),
 
-                'job_roles' =>
-                    $jobRoles,
+                'job_roles' => $jobRoles,
 
-                'competencies' =>
-                    $competencies,
+                'competencies' => $competencies,
             ],
         ];
     }

@@ -372,7 +372,7 @@
         return str_contains($category, 'soft');
     });
 
-    $recommendations = $user->careerRecommendations->sortBy('rank');
+    $recommendations = $user->currentRecommendations->sortBy('rank');
 
     $aspiration = $user->aspirations;
 

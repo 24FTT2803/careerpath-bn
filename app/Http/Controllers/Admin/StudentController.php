@@ -4,10 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\StudentProfile;
-use App\Models\CareerRecommendation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class StudentController extends Controller
 {
@@ -32,8 +31,8 @@ class StudentController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('student_id', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%");
+                    ->orWhere('student_id', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%");
             });
         }
 
@@ -49,12 +48,12 @@ class StudentController extends Controller
         // Calculate stats for header
         $totalStudents = User::where('role', 'student')->count();
         $completedProfiles = User::where('role', 'student')->get()
-            ->filter(function($student) {
+            ->filter(function ($student) {
                 return ($student->profile_completion ?? 0) >= 70;
             })->count();
         $completionRate = $totalStudents > 0 ? round(($completedProfiles / $totalStudents) * 100) : 0;
         $atRiskStudents = User::where('role', 'student')->get()
-            ->filter(function($student) {
+            ->filter(function ($student) {
                 return ($student->readiness_score ?? 0) < 40;
             })->count();
 
@@ -85,7 +84,7 @@ class StudentController extends Controller
                 'projects',
                 'certifications',
                 'aspirations',
-                'milestones'
+                'milestones',
             ])
             ->findOrFail($id);
 
@@ -99,23 +98,26 @@ class StudentController extends Controller
 
         try {
             // Check if table exists first
-            $hasTable = \Illuminate\Support\Facades\DB::table('information_schema.tables')
+            $hasTable = DB::table('information_schema.tables')
                 ->where('table_schema', env('DB_DATABASE'))
                 ->where('table_name', 'career_recommendations')
                 ->exists();
 
             if ($hasTable) {
                 // Load career recommendations
-                $student->load(['careerRecommendations.career']);
-                
-                $topRecommendations = $student->careerRecommendations()
-                    ->with('career')
+                $student->load([
+                    'currentRecommendations.career',
+                    'currentRecommendations.jobRole.subSector',
+                ]);
+
+                $topRecommendations = $student->currentRecommendations()
+                    ->with(['career', 'jobRole.subSector'])
                     ->orderBy('match_score', 'desc')
                     ->limit(3)
                     ->get();
 
                 // Get readiness score
-                $firstRec = $student->careerRecommendations()->first();
+                $firstRec = $student->currentRecommendations()->first();
                 if ($firstRec) {
                     $readinessScore = $firstRec->career_readiness_score ?? 0;
                     $skillGaps = $firstRec->skill_gaps ?? [];

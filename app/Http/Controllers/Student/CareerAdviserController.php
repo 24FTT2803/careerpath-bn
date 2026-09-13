@@ -7,15 +7,15 @@ use App\Models\BiicfJobRole;
 use App\Models\BiicfSubSector;
 use App\Models\User;
 use App\Services\AI\CareerAdviserService;
+use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\View\View;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
-use App\Services\Business\EntitlementService;
+use Illuminate\View\View;
 use Throwable;
 
 class CareerAdviserController extends Controller
@@ -23,8 +23,8 @@ class CareerAdviserController extends Controller
     public function __construct(
         private EntitlementService $entitlements,
         private FeatureUsageService $featureUsage
-    ) {
-    }
+    ) {}
+
     /**
      * Display the Career Adviser interface.
      */
@@ -55,7 +55,7 @@ class CareerAdviserController extends Controller
         $profileCompletion = (int) $student->profile_completion;
 
         $topRecommendation = $student
-            ->careerRecommendations()
+            ->currentRecommendations()
             ->with([
                 'career',
                 'jobRole.subSector',
@@ -127,12 +127,10 @@ class CareerAdviserController extends Controller
                 [
                     'schema_version' => '1.0',
                     'status' => 'unavailable',
-                    'message' =>
-                        $careerAdviserAccess[
+                    'message' => $careerAdviserAccess[
                             'message'
                         ],
-                    'reason' =>
-                        $careerAdviserAccess[
+                    'reason' => $careerAdviserAccess[
                             'reason'
                         ],
                 ],
@@ -150,25 +148,20 @@ class CareerAdviserController extends Controller
                 ],
             ],
             [
-                'message.required' =>
-                    'Please enter a question for the Career Adviser.',
+                'message.required' => 'Please enter a question for the Career Adviser.',
 
-                'message.string' =>
-                    'The Career Adviser question must be valid text.',
+                'message.string' => 'The Career Adviser question must be valid text.',
 
-                'message.max' =>
-                    'Your question may not exceed 500 characters.',
+                'message.max' => 'Your question may not exceed 500 characters.',
             ]
         );
 
         if ($validator->fails()) {
             return response()->json(
                 [
-                    'message' =>
-                        $validator->errors()->first('message'),
+                    'message' => $validator->errors()->first('message'),
 
-                    'errors' =>
-                        $validator->errors(),
+                    'errors' => $validator->errors(),
                 ],
                 422
             );
@@ -194,58 +187,46 @@ class CareerAdviserController extends Controller
                 [
                     'schema_version' => '1.0',
 
-                    'status' =>
-                        'unavailable',
+                    'status' => 'unavailable',
 
-                    'message' =>
-                        $quotaStatus['message'],
+                    'message' => $quotaStatus['message'],
 
-                    'reason' =>
-                        $quotaStatus['reason'],
+                    'reason' => $quotaStatus['reason'],
 
                     'quota' => [
-                        'allowed' =>
-                            $quotaStatus[
+                        'allowed' => $quotaStatus[
                                 'allowed'
                             ],
 
-                        'reason' =>
-                            $quotaStatus[
+                        'reason' => $quotaStatus[
                                 'reason'
                             ],
 
-                        'mode' =>
-                            $quotaStatus[
+                        'mode' => $quotaStatus[
                                 'mode'
                             ],
 
-                        'amount' =>
-                            $quotaStatus[
+                        'amount' => $quotaStatus[
                                 'amount'
                             ],
 
-                        'used' =>
-                            $quotaStatus[
+                        'used' => $quotaStatus[
                                 'used'
                             ],
 
-                        'remaining' =>
-                            $quotaStatus[
+                        'remaining' => $quotaStatus[
                                 'remaining'
                             ],
 
-                        'next_available_at' =>
-                            $quotaStatus[
+                        'next_available_at' => $quotaStatus[
                                 'next_available_at'
                             ]?->toIso8601String(),
 
-                        'period_value' =>
-                            $quotaStatus[
+                        'period_value' => $quotaStatus[
                                 'period_value'
                             ],
 
-                        'period_unit' =>
-                            $quotaStatus[
+                        'period_unit' => $quotaStatus[
                                 'period_unit'
                             ],
                     ],
@@ -278,33 +259,24 @@ class CareerAdviserController extends Controller
                     );
 
             $response['quota'] = [
-                'allowed' =>
-                    $updatedQuota['allowed'],
+                'allowed' => $updatedQuota['allowed'],
 
-                'reason' =>
-                    $updatedQuota['reason'],
+                'reason' => $updatedQuota['reason'],
 
-                'mode' =>
-                    $updatedQuota['mode'],
+                'mode' => $updatedQuota['mode'],
 
-                'amount' =>
-                    $updatedQuota['amount'],
+                'amount' => $updatedQuota['amount'],
 
-                'used' =>
-                    $updatedQuota['used'],
+                'used' => $updatedQuota['used'],
 
-                'remaining' =>
-                    $updatedQuota['remaining'],
+                'remaining' => $updatedQuota['remaining'],
 
-                'next_available_at' =>
-                    $updatedQuota['next_available_at']
-                        ?->toIso8601String(),
+                'next_available_at' => $updatedQuota['next_available_at']
+                    ?->toIso8601String(),
 
-                'period_value' =>
-                    $updatedQuota['period_value'],
+                'period_value' => $updatedQuota['period_value'],
 
-                'period_unit' =>
-                    $updatedQuota['period_unit'],
+                'period_unit' => $updatedQuota['period_unit'],
             ];
 
             return response()->json(
@@ -317,9 +289,8 @@ class CareerAdviserController extends Controller
                 [
                     'schema_version' => '1.0',
                     'status' => 'error',
-                    'message' =>
-                        'The Career Adviser could not reach the AI service. '
-                        . 'Please try again shortly.',
+                    'message' => 'The Career Adviser could not reach the AI service. '
+                        .'Please try again shortly.',
                 ],
                 503
             );
@@ -333,9 +304,8 @@ class CareerAdviserController extends Controller
                     [
                         'schema_version' => '1.0',
                         'status' => 'error',
-                        'message' =>
-                            'The AI service is currently busy due to usage limits. '
-                            . 'Please wait a moment and try again.',
+                        'message' => 'The AI service is currently busy due to usage limits. '
+                            .'Please wait a moment and try again.',
                     ],
                     429
                 );
@@ -345,9 +315,8 @@ class CareerAdviserController extends Controller
                 [
                     'schema_version' => '1.0',
                     'status' => 'error',
-                    'message' =>
-                        'The Career Adviser is temporarily unavailable. '
-                        . 'Please try again.',
+                    'message' => 'The Career Adviser is temporarily unavailable. '
+                        .'Please try again.',
                 ],
                 503
             );
@@ -358,9 +327,8 @@ class CareerAdviserController extends Controller
                 [
                     'schema_version' => '1.0',
                     'status' => 'error',
-                    'message' =>
-                        'The Career Adviser could not process the response. '
-                        . 'Please try again.',
+                    'message' => 'The Career Adviser could not process the response. '
+                        .'Please try again.',
                 ],
                 503
             );

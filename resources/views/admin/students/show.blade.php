@@ -127,8 +127,8 @@
                         <div class="border border-gray-200 rounded-lg p-4 mb-3 hover:shadow transition">
                             <div class="flex justify-between items-center">
                                 <div>
-                                    <h4 class="font-semibold">{{ $rec->career->job_title ?? 'N/A' }}</h4>
-                                    <p class="text-sm text-gray-500">{{ $rec->career->subsector ?? '' }}</p>
+                                    <h4 class="font-semibold">{{ $rec->jobRole?->title ?? $rec->career?->job_title ?? 'N/A' }}</h4>
+                                    <p class="text-sm text-gray-500">{{ $rec->jobRole?->subSector?->name ?? $rec->career?->subsector ?? '' }}</p>
                                 </div>
                                 <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold">
                                     {{ $rec->match_score }}% Match

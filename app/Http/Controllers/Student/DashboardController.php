@@ -11,8 +11,7 @@ class DashboardController extends Controller
 {
     public function __construct(
         private EntitlementService $entitlements
-    ) {
-    }
+    ) {}
 
     public function index()
     {
@@ -23,7 +22,7 @@ class DashboardController extends Controller
             $user->profile_completion;
 
         $recommendations = $user
-            ->careerRecommendations()
+            ->currentRecommendations()
             ->with([
                 'career',
                 'jobRole.subSector',
@@ -151,8 +150,7 @@ class DashboardController extends Controller
         $iconMap = [
             'profile' => 'user-edit',
             'career' => 'briefcase',
-            'milestone' =>
-                'flag-checkered',
+            'milestone' => 'flag-checkered',
         ];
 
         return $user
@@ -173,17 +171,14 @@ class DashboardController extends Controller
                     $notification
                 ) use ($iconMap) {
                     return [
-                        'message' =>
-                            $notification
-                                ->message,
+                        'message' => $notification
+                            ->message,
 
-                        'time' =>
-                            $notification
-                                ->created_at
-                                ->diffForHumans(),
+                        'time' => $notification
+                            ->created_at
+                            ->diffForHumans(),
 
-                        'icon' =>
-                            $iconMap[
+                        'icon' => $iconMap[
                                 $notification
                                     ->type
                             ]
