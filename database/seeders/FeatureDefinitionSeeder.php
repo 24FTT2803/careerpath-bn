@@ -55,8 +55,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Match / Readiness Score',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 110,
             ],
             [
@@ -64,8 +63,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Matched Competencies / Skills',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 120,
             ],
             [
@@ -73,8 +71,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Competency / Skill Gaps',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 130,
             ],
             [
@@ -82,8 +79,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Entry Requirements',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 140,
             ],
             [
@@ -91,8 +87,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Certification Suggestions',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 150,
             ],
             [
@@ -100,8 +95,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Training Suggestions',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 160,
             ],
             [
@@ -109,8 +103,7 @@ class FeatureDefinitionSeeder extends Seeder
                 'name' => 'Development Roadmap',
                 'category' => 'Detailed Career Analysis',
                 'value_type' => 'boolean',
-                'parent_key' =>
-                    'career_recommendations.detailed_analysis.enabled',
+                'parent_key' => 'career_recommendations.detailed_analysis.enabled',
                 'sort_order' => 170,
             ],
             [
@@ -185,6 +178,28 @@ class FeatureDefinitionSeeder extends Seeder
                 'parent_key' => null,
                 'sort_order' => 600,
             ],
+
+            /*
+             * Positions are switchable individually beneath the
+             * ads master switch, so a placement can be retired
+             * without withdrawing advertising altogether.
+             */
+            [
+                'key' => 'ads.position.one.enabled',
+                'name' => 'Ad Position One',
+                'category' => 'Advertising',
+                'value_type' => 'boolean',
+                'parent_key' => 'ads.available',
+                'sort_order' => 610,
+            ],
+            [
+                'key' => 'ads.position.two.enabled',
+                'name' => 'Ad Position Two',
+                'category' => 'Advertising',
+                'value_type' => 'boolean',
+                'parent_key' => 'ads.available',
+                'sort_order' => 620,
+            ],
         ];
 
         foreach ($features as $feature) {
@@ -195,20 +210,15 @@ class FeatureDefinitionSeeder extends Seeder
             $isNew = ! $definition->exists;
 
             $definition->fill([
-                'name' =>
-                    $feature['name'],
+                'name' => $feature['name'],
 
-                'category' =>
-                    $feature['category'],
+                'category' => $feature['category'],
 
-                'value_type' =>
-                    $feature['value_type'],
+                'value_type' => $feature['value_type'],
 
-                'parent_key' =>
-                    $feature['parent_key'],
+                'parent_key' => $feature['parent_key'],
 
-                'sort_order' =>
-                    $feature['sort_order'],
+                'sort_order' => $feature['sort_order'],
             ]);
 
             if ($isNew) {

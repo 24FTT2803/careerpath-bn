@@ -31,33 +31,25 @@ function createConfigurableFeatureTestScope(): array
 
     $groupType =
         OrganisationGroupType::create([
-            'organisation_id' =>
-                $organisation->id,
+            'organisation_id' => $organisation->id,
 
-            'name' =>
-                'Class',
+            'name' => 'Class',
         ]);
 
     $group = OrganisationGroup::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
-        'group_type_id' =>
-            $groupType->id,
+        'group_type_id' => $groupType->id,
 
-        'name' =>
-            'Feature Test Group',
+        'name' => 'Feature Test Group',
 
-        'code' =>
-            'FEATURE-GROUP',
+        'code' => 'FEATURE-GROUP',
     ]);
 
     $sponsor = BusinessSponsor::create([
-        'name' =>
-            'Feature Test Sponsor',
+        'name' => 'Feature Test Sponsor',
 
-        'code' =>
-            'FEATURE-SPONSOR',
+        'code' => 'FEATURE-SPONSOR',
     ]);
 
     return compact(
@@ -91,7 +83,7 @@ test('feature catalogue supports boolean number and quota types', function () {
         ->and(
             FeatureDefinition::count()
         )
-        ->toBe(21);
+        ->toBe(23);
 });
 
 test('feature catalogue supports parent child feature relationships', function () {
@@ -120,25 +112,19 @@ test('plan quotas support arbitrary amount and time intervals', function () {
 
     PlanFeature::updateOrCreate(
         [
-            'plan_id' =>
-                $free->id,
+            'plan_id' => $free->id,
 
-            'key' =>
-                'career_recommendations.generation_quota',
+            'key' => 'career_recommendations.generation_quota',
         ],
         [
             'value' => [
-                'mode' =>
-                    'recurring',
+                'mode' => 'recurring',
 
-                'amount' =>
-                    100,
+                'amount' => 100,
 
-                'period_value' =>
-                    7,
+                'period_value' => 7,
 
-                'period_unit' =>
-                    'day',
+                'period_unit' => 'day',
             ],
         ]
     );
@@ -172,19 +158,15 @@ test('quota values support total and unlimited modes', function () {
 
     PlanFeature::updateOrCreate(
         [
-            'plan_id' =>
-                $free->id,
+            'plan_id' => $free->id,
 
-            'key' =>
-                'career_recommendations.generation_quota',
+            'key' => 'career_recommendations.generation_quota',
         ],
         [
             'value' => [
-                'mode' =>
-                    'total',
+                'mode' => 'total',
 
-                'amount' =>
-                    25,
+                'amount' => 25,
             ],
         ]
     );
@@ -205,16 +187,13 @@ test('quota values support total and unlimited modes', function () {
 
     PlanFeature::updateOrCreate(
         [
-            'plan_id' =>
-                $free->id,
+            'plan_id' => $free->id,
 
-            'key' =>
-                'career_recommendations.generation_quota',
+            'key' => 'career_recommendations.generation_quota',
         ],
         [
             'value' => [
-                'mode' =>
-                    'unlimited',
+                'mode' => 'unlimited',
             ],
         ]
     );
@@ -265,29 +244,23 @@ test('disabled parent feature disables its child features', function () {
 
     PlanFeature::updateOrCreate(
         [
-            'plan_id' =>
-                $free->id,
+            'plan_id' => $free->id,
 
-            'key' =>
-                'career_recommendations.detailed_analysis.enabled',
+            'key' => 'career_recommendations.detailed_analysis.enabled',
         ],
         [
-            'value' =>
-                false,
+            'value' => false,
         ]
     );
 
     PlanFeature::updateOrCreate(
         [
-            'plan_id' =>
-                $free->id,
+            'plan_id' => $free->id,
 
-            'key' =>
-                'career_recommendations.detailed_analysis.match_score.enabled',
+            'key' => 'career_recommendations.detailed_analysis.match_score.enabled',
         ],
         [
-            'value' =>
-                true,
+            'value' => true,
         ]
     );
 
@@ -323,43 +296,31 @@ test('sponsored access can override boolean number and quota features', function
     )->firstOrFail();
 
     $grant = SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $scope['sponsor']->id,
+        'business_sponsor_id' => $scope['sponsor']->id,
 
-        'plan_id' =>
-            $free->id,
+        'plan_id' => $free->id,
 
-        'organisation_id' =>
-            $scope['organisation']->id,
+        'organisation_id' => $scope['organisation']->id,
 
-        'organisation_group_id' =>
-            $scope['group']->id,
+        'organisation_group_id' => $scope['group']->id,
 
-        'funding_type' =>
-            'partnership',
+        'funding_type' => 'partnership',
     ]);
 
     $overrides = [
-        'career_recommendations.download.enabled'
-            => true,
+        'career_recommendations.download.enabled' => true,
 
-        'career_recommendations.result_count'
-            => 100,
+        'career_recommendations.result_count' => 100,
 
-        'career_recommendations.generation_quota'
-            => [
-                'mode' =>
-                    'recurring',
+        'career_recommendations.generation_quota' => [
+            'mode' => 'recurring',
 
-                'amount' =>
-                    5,
+            'amount' => 5,
 
-                'period_value' =>
-                    2,
+            'period_value' => 2,
 
-                'period_unit' =>
-                    'hour',
-            ],
+            'period_unit' => 'hour',
+        ],
     ];
 
     foreach ($overrides as $key => $value) {
@@ -370,14 +331,11 @@ test('sponsored access can override boolean number and quota features', function
             )->firstOrFail();
 
         SponsoredAccessFeatureOverride::create([
-            'sponsored_access_grant_id' =>
-                $grant->id,
+            'sponsored_access_grant_id' => $grant->id,
 
-            'feature_definition_id' =>
-                $definition->id,
+            'feature_definition_id' => $definition->id,
 
-            'value' =>
-                $value,
+            'value' => $value,
         ]);
     }
 
@@ -432,17 +390,13 @@ test('sponsored access inherits plan value when no override exists', function ()
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $scope['sponsor']->id,
+        'business_sponsor_id' => $scope['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $scope['organisation']->id,
+        'organisation_id' => $scope['organisation']->id,
 
-        'organisation_group_id' =>
-            $scope['group']->id,
+        'organisation_group_id' => $scope['group']->id,
     ]);
 
     $service = app(
@@ -482,17 +436,13 @@ test('direct user grant takes precedence over sponsored feature overrides', func
     )->firstOrFail();
 
     $grant = SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $scope['sponsor']->id,
+        'business_sponsor_id' => $scope['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $scope['organisation']->id,
+        'organisation_id' => $scope['organisation']->id,
 
-        'organisation_group_id' =>
-            $scope['group']->id,
+        'organisation_group_id' => $scope['group']->id,
     ]);
 
     $definition =
@@ -502,25 +452,19 @@ test('direct user grant takes precedence over sponsored feature overrides', func
         )->firstOrFail();
 
     SponsoredAccessFeatureOverride::create([
-        'sponsored_access_grant_id' =>
-            $grant->id,
+        'sponsored_access_grant_id' => $grant->id,
 
-        'feature_definition_id' =>
-            $definition->id,
+        'feature_definition_id' => $definition->id,
 
-        'value' =>
-            100,
+        'value' => 100,
     ]);
 
     UserPlanGrant::create([
-        'user_id' =>
-            $student->id,
+        'user_id' => $student->id,
 
-        'plan_id' =>
-            $free->id,
+        'plan_id' => $free->id,
 
-        'source' =>
-            'admin',
+        'source' => 'admin',
     ]);
 
     $service = app(
@@ -551,17 +495,13 @@ test('sponsorship funding type is separate from entitlement', function () {
     )->firstOrFail();
 
     $grant = SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $scope['sponsor']->id,
+        'business_sponsor_id' => $scope['sponsor']->id,
 
-        'plan_id' =>
-            $free->id,
+        'plan_id' => $free->id,
 
-        'organisation_id' =>
-            $scope['organisation']->id,
+        'organisation_id' => $scope['organisation']->id,
 
-        'funding_type' =>
-            'complimentary',
+        'funding_type' => 'complimentary',
     ]);
 
     expect(
@@ -569,8 +509,7 @@ test('sponsorship funding type is separate from entitlement', function () {
     )->toBe('complimentary');
 
     $grant->update([
-        'funding_type' =>
-            'partnership',
+        'funding_type' => 'partnership',
     ]);
 
     expect(
@@ -593,7 +532,7 @@ test('feature definition seeding is idempotent', function () {
 
     expect($after)
         ->toBe($before)
-        ->toBe(21);
+        ->toBe(23);
 });
 
 test('feature seeding preserves global maintenance settings', function () {

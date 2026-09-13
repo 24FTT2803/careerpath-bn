@@ -290,7 +290,7 @@ test('plan feature seeding is idempotent', function () {
                 ->features()
                 ->count()
         )
-        ->toBe(21)
+        ->toBe(23)
         ->and(
             Plan::where(
                 'code',
@@ -300,7 +300,7 @@ test('plan feature seeding is idempotent', function () {
                 ->features()
                 ->count()
         )
-        ->toBe(21);
+        ->toBe(23);
 });
 
 test('plan seeding preserves administrator configured feature values', function () {

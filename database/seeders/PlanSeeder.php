@@ -54,11 +54,9 @@ class PlanSeeder extends Seeder
         $this->seedFeatures(
             $free,
             [
-                'career_recommendations.enabled'
-                    => true,
+                'career_recommendations.enabled' => true,
 
-                'career_recommendations.result_count'
-                    => 3,
+                'career_recommendations.result_count' => 3,
 
                 /*
                  * Initial seed only.
@@ -67,145 +65,113 @@ class PlanSeeder extends Seeder
                  * and interval to any valid values such as
                  * 100 every 7 days or 5 every 3 months.
                  */
-                'career_recommendations.generation_quota'
-                    => [
-                        'mode' => 'recurring',
-                        'amount' => 3,
-                        'period_value' => 1,
-                        'period_unit' => 'month',
-                    ],
+                'career_recommendations.generation_quota' => [
+                    'mode' => 'recurring',
+                    'amount' => 3,
+                    'period_value' => 1,
+                    'period_unit' => 'month',
+                ],
 
-                'career_recommendations.download.enabled'
-                    => false,
+                'career_recommendations.download.enabled' => false,
 
-                'career_recommendations.detailed_analysis.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.enabled' => true,
 
-                'career_recommendations.detailed_analysis.match_score.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.match_score.enabled' => true,
 
-                'career_recommendations.detailed_analysis.matched_competencies.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.matched_competencies.enabled' => true,
 
-                'career_recommendations.detailed_analysis.competency_gaps.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.competency_gaps.enabled' => true,
 
-                'career_recommendations.detailed_analysis.entry_requirements.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.entry_requirements.enabled' => true,
 
-                'career_recommendations.detailed_analysis.certification_suggestions.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.certification_suggestions.enabled' => true,
 
-                'career_recommendations.detailed_analysis.training_suggestions.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.training_suggestions.enabled' => true,
 
-                'career_recommendations.detailed_analysis.development_roadmap.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.development_roadmap.enabled' => true,
 
-                'career_recommendations.comparison.enabled'
-                    => false,
+                'career_recommendations.comparison.enabled' => false,
 
-                'career_adviser.enabled'
-                    => true,
+                'career_adviser.enabled' => true,
 
                 /*
                  * No adviser usage restriction is being
                  * introduced yet.
                  */
-                'career_adviser.usage_quota'
-                    => [
-                        'mode' => 'unlimited',
-                    ],
+                'career_adviser.usage_quota' => [
+                    'mode' => 'unlimited',
+                ],
 
-                'recommendation_history.enabled'
-                    => false,
+                'recommendation_history.enabled' => false,
 
-                'career_adviser.history.enabled'
-                    => false,
+                'career_adviser.history.enabled' => false,
 
-                'planning.milestones.enabled'
-                    => true,
+                'planning.milestones.enabled' => true,
 
-                'planning.development_plan.enabled'
-                    => true,
+                'planning.development_plan.enabled' => true,
 
-                'analytics.advanced.enabled'
-                    => false,
+                'analytics.advanced.enabled' => false,
 
-                'ads.available'
-                    => true,
+                'ads.available' => true,
+
+                'ads.position.one.enabled' => true,
+
+                'ads.position.two.enabled' => true,
             ]
         );
 
         $this->seedFeatures(
             $premium,
             [
-                'career_recommendations.enabled'
-                    => true,
+                'career_recommendations.enabled' => true,
 
-                'career_recommendations.result_count'
-                    => 5,
+                'career_recommendations.result_count' => 5,
 
-                'career_recommendations.generation_quota'
-                    => [
-                        'mode' => 'unlimited',
-                    ],
+                'career_recommendations.generation_quota' => [
+                    'mode' => 'unlimited',
+                ],
 
-                'career_recommendations.download.enabled'
-                    => true,
+                'career_recommendations.download.enabled' => true,
 
-                'career_recommendations.detailed_analysis.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.enabled' => true,
 
-                'career_recommendations.detailed_analysis.match_score.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.match_score.enabled' => true,
 
-                'career_recommendations.detailed_analysis.matched_competencies.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.matched_competencies.enabled' => true,
 
-                'career_recommendations.detailed_analysis.competency_gaps.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.competency_gaps.enabled' => true,
 
-                'career_recommendations.detailed_analysis.entry_requirements.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.entry_requirements.enabled' => true,
 
-                'career_recommendations.detailed_analysis.certification_suggestions.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.certification_suggestions.enabled' => true,
 
-                'career_recommendations.detailed_analysis.training_suggestions.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.training_suggestions.enabled' => true,
 
-                'career_recommendations.detailed_analysis.development_roadmap.enabled'
-                    => true,
+                'career_recommendations.detailed_analysis.development_roadmap.enabled' => true,
 
-                'career_recommendations.comparison.enabled'
-                    => true,
+                'career_recommendations.comparison.enabled' => true,
 
-                'career_adviser.enabled'
-                    => true,
+                'career_adviser.enabled' => true,
 
-                'career_adviser.usage_quota'
-                    => [
-                        'mode' => 'unlimited',
-                    ],
+                'career_adviser.usage_quota' => [
+                    'mode' => 'unlimited',
+                ],
 
-                'recommendation_history.enabled'
-                    => true,
+                'recommendation_history.enabled' => true,
 
-                'career_adviser.history.enabled'
-                    => true,
+                'career_adviser.history.enabled' => true,
 
-                'planning.milestones.enabled'
-                    => true,
+                'planning.milestones.enabled' => true,
 
-                'planning.development_plan.enabled'
-                    => true,
+                'planning.development_plan.enabled' => true,
 
-                'analytics.advanced.enabled'
-                    => true,
+                'analytics.advanced.enabled' => true,
 
-                'ads.available'
-                    => true,
+                'ads.available' => true,
+
+                'ads.position.one.enabled' => true,
+
+                'ads.position.two.enabled' => true,
             ]
         );
     }
@@ -217,15 +183,12 @@ class PlanSeeder extends Seeder
         foreach ($features as $key => $value) {
             PlanFeature::firstOrCreate(
                 [
-                    'plan_id' =>
-                        $plan->id,
+                    'plan_id' => $plan->id,
 
-                    'key' =>
-                        $key,
+                    'key' => $key,
                 ],
                 [
-                    'value' =>
-                        $value,
+                    'value' => $value,
                 ]
             );
         }
