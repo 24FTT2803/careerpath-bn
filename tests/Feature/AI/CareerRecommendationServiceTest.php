@@ -2,11 +2,13 @@
 
 use App\Contracts\CareerAiClient;
 use App\Models\BIICFCareer;
+use App\Models\ProfileSnapshot;
 use App\Models\User;
 use App\Services\AI\CareerAiPayloadBuilder;
 use App\Services\AI\CareerRecommendationContextBuilder;
 use App\Services\AI\CareerRecommendationEnricher;
 use App\Services\AI\CareerRecommendationService;
+use App\Services\AI\ProfileSnapshotService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 
@@ -92,7 +94,10 @@ function makeCareerRecommendationService(
         new CareerRecommendationContextBuilder(
             $payloadBuilder
         ),
-        new CareerRecommendationEnricher
+        new CareerRecommendationEnricher,
+        new ProfileSnapshotService(
+            $payloadBuilder
+        )
     );
 }
 
@@ -494,5 +499,157 @@ test(
                 ->first()
                 ->generation_number
         )->toBe(1);
+    }
+);
+
+test(
+    'a generation records the profile it was produced from',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $student->competencies()->create([
+            'skill_name' => 'PHP',
+            'category' => 'technical',
+            'proficiency_level' => 'advanced',
+        ]);
+
+        $careers = careersForRecommendationTest('Snapshot');
+
+        makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($careers)
+            )
+        )->generateFor($student);
+
+        $generation = $student
+            ->currentRecommendationGeneration()
+            ->first();
+
+        $snapshot = $generation->profileSnapshot;
+
+        expect($snapshot)
+            ->not->toBeNull()
+            ->and($snapshot->user_id)
+            ->toBe($student->id)
+            ->and($snapshot->snapshot_hash)
+            ->toHaveLength(64);
+
+        /*
+         * The snapshot must hold the profile the AI was given,
+         * not an empty placeholder.
+         */
+        expect(
+            collect($snapshot->snapshot_data['competencies'])
+                ->pluck('skill_name')
+                ->all()
+        )->toContain('PHP');
+    }
+);
+
+test(
+    'an unchanged profile reuses its existing snapshot',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $careers = careersForRecommendationTest('Reuse');
+
+        $service = makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($careers)
+            )
+        );
+
+        $service->generateFor($student);
+        $service->generateFor($student);
+
+        expect(
+            ProfileSnapshot::where(
+                'user_id',
+                $student->id
+            )->count()
+        )->toBe(1);
+
+        $snapshotIds = $student
+            ->recommendationGenerations()
+            ->pluck('profile_snapshot_id')
+            ->unique();
+
+        expect($snapshotIds)->toHaveCount(1);
+    }
+);
+
+test(
+    'editing the profile produces a different snapshot',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $careers = careersForRecommendationTest('Changed');
+
+        $service = makeCareerRecommendationService(
+            careerAiClientReturning(
+                validRecommendationResponse($careers)
+            )
+        );
+
+        $service->generateFor($student);
+
+        $firstHash = $student
+            ->currentRecommendationGeneration()
+            ->first()
+            ->profileSnapshot
+            ->snapshot_hash;
+
+        $student->competencies()->create([
+            'skill_name' => 'Python',
+            'category' => 'technical',
+            'proficiency_level' => 'intermediate',
+        ]);
+
+        $service->generateFor($student->fresh());
+
+        $secondHash = $student
+            ->currentRecommendationGeneration()
+            ->first()
+            ->profileSnapshot
+            ->snapshot_hash;
+
+        expect($secondHash)->not->toBe($firstHash);
+
+        expect(
+            ProfileSnapshot::where(
+                'user_id',
+                $student->id
+            )->count()
+        )->toBe(2);
+    }
+);
+
+test(
+    'a failed generation records no snapshot',
+    function () {
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $service = makeCareerRecommendationService(
+            failingCareerAiClient()
+        );
+
+        expect(
+            fn () => $service->generateFor($student)
+        )->toThrow(RuntimeException::class);
+
+        expect(
+            ProfileSnapshot::where(
+                'user_id',
+                $student->id
+            )->count()
+        )->toBe(0);
     }
 );

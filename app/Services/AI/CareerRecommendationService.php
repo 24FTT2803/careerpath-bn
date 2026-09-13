@@ -17,7 +17,8 @@ class CareerRecommendationService
         private CareerAiClient $careerAi,
         private CareerAiPayloadBuilder $payloadBuilder,
         private CareerRecommendationContextBuilder $contextBuilder,
-        private CareerRecommendationEnricher $enricher
+        private CareerRecommendationEnricher $enricher,
+        private ProfileSnapshotService $profileSnapshots
     ) {}
 
     /**
@@ -126,7 +127,17 @@ class CareerRecommendationService
             ->recommendationGenerations()
             ->max('generation_number') + 1;
 
+        /*
+         * Captured only once the AI response has been validated,
+         * so a failed generation never records a snapshot.
+         */
+        $snapshot = $this->profileSnapshots->captureFor(
+            $student
+        );
+
         return $student->recommendationGenerations()->create([
+            'profile_snapshot_id' => $snapshot->id,
+
             'generation_number' => $nextNumber,
 
             'status' => RecommendationGeneration::STATUS_CURRENT,

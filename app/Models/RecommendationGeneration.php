@@ -33,6 +33,7 @@ class RecommendationGeneration extends Model
 
     protected $fillable = [
         'user_id',
+        'profile_snapshot_id',
         'generation_number',
         'status',
         'driver',
@@ -54,6 +55,19 @@ class RecommendationGeneration extends Model
     {
         return $this->belongsTo(
             User::class
+        );
+    }
+
+    /**
+     * The AI-relevant profile this generation was produced from.
+     *
+     * Null for generations backfilled from rows written before
+     * profile snapshots existed.
+     */
+    public function profileSnapshot(): BelongsTo
+    {
+        return $this->belongsTo(
+            ProfileSnapshot::class
         );
     }
 
