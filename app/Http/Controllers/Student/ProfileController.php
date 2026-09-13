@@ -7,11 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\Notification;
+use App\Models\RecommendationGeneration;
 use App\Models\StudentCompetency;
 use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
 use App\Models\StudentProject;
 use App\Models\User;
+use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -740,7 +742,7 @@ class ProfileController extends Controller
     /**
      * Export student profile as PDF (for students)
      */
-    public function export()
+    public function export(CareerReportBuilder $reportBuilder)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -749,26 +751,10 @@ class ProfileController extends Controller
             abort(403, 'Only students can export profiles.');
         }
 
-        $user->load([
-            'profile',
-            'academicRecords',
-            'competencies',
-            'interests',
-            'projects',
-            'certifications',
-            'aspirations',
-            'milestones',
-            'currentRecommendations.career',
-        ]);
-
-        $profileCompletion = $user->profile_completion;
-        $readinessScore = $user->readiness_score ?? 0;
-
-        $pdf = Pdf::loadView('student.profile.export', compact(
-            'user',
-            'profileCompletion',
-            'readinessScore'
-        ))->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView(
+            'student.profile.export',
+            $reportBuilder->for($user)
+        )->setPaper('a4', 'portrait');
 
         $filename = 'CareerPath-BN-'.Str::slug($user->name).'-Profile.pdf';
 
@@ -778,8 +764,11 @@ class ProfileController extends Controller
     /**
      * Export student profile as PDF (for admin/lecturer)
      */
-    public function exportAdmin($userId)
-    {
+    public function exportAdmin(
+        $userId,
+        CareerReportBuilder $reportBuilder,
+        ?RecommendationGeneration $generation = null
+    ) {
         $user = User::findOrFail($userId);
         $currentUser = Auth::user();
 
@@ -798,26 +787,23 @@ class ProfileController extends Controller
             abort(403, 'Only students can export profiles.');
         }
 
-        $user->load([
-            'profile',
-            'academicRecords',
-            'competencies',
-            'interests',
-            'projects',
-            'certifications',
-            'aspirations',
-            'milestones',
-            'currentRecommendations.career',
-        ]);
+        /*
+         * Staff reviewing a student are not subject to the
+         * student's own download entitlement. That flag is a
+         * commercial gate on students, not a restriction on the
+         * institution.
+         */
+        if (
+            $generation !== null
+            && $generation->user_id !== $user->id
+        ) {
+            abort(404);
+        }
 
-        $profileCompletion = $user->profile_completion;
-        $readinessScore = $user->readiness_score ?? 0;
-
-        $pdf = Pdf::loadView('student.profile.export', compact(
-            'user',
-            'profileCompletion',
-            'readinessScore'
-        ))->setPaper('a4', 'portrait');
+        $pdf = Pdf::loadView(
+            'student.profile.export',
+            $reportBuilder->for($user, $generation)
+        )->setPaper('a4', 'portrait');
 
         $filename = 'CareerPath-BN-'.Str::slug($user->name).'-Profile.pdf';
 

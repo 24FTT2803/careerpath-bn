@@ -392,7 +392,7 @@
 <div class="footer">
     CareerPath BN — Politeknik Brunei |
     Student Career Profile Report |
-    Generated {{ now()->format('d M Y') }} |
+    Generated {{ ($reportDate ?? now())->format('d M Y') }} |
     Page <span class="page-number"></span>
 </div>
 
@@ -412,12 +412,26 @@
 
             <td class="generated">
                 <strong>{{ $user->name }}</strong><br>
-                Generated {{ now()->format('d M Y') }}<br>
-                {{ now()->format('h:i A') }}
+                Generated {{ ($reportDate ?? now())->format('d M Y') }}<br>
+                {{ ($reportDate ?? now())->format('h:i A') }}
             </td>
         </tr>
     </table>
 </div>
+
+@if(($snapshotAvailable ?? true) === false && ($generation ?? null))
+    <div class="section">
+        <div class="section-title">Archived Report</div>
+
+        <p>
+            These recommendations were generated on
+            {{ ($reportDate ?? now())->format('d M Y') }}.
+            The profile held at that time was not recorded, so
+            the profile shown below is the student's current
+            profile rather than a historical one.
+        </p>
+    </div>
+@endif
 
 <!-- Student Information -->
 <div class="section">
@@ -836,12 +850,18 @@
                                 </div>
 
                                 <div class="career-name">
-                                    {{ $recommendation->career?->job_title ?? 'Career Recommendation' }}
+                                    {{ $recommendation->jobRole?->title ?? $recommendation->career?->job_title ?? 'Career Recommendation' }}
                                 </div>
 
-                                @if($recommendation->career?->subsector)
+                                @php
+                                    $recommendationSubsector =
+                                        $recommendation->jobRole?->subSector?->name
+                                        ?? $recommendation->career?->subsector;
+                                @endphp
+
+                                @if($recommendationSubsector)
                                     <div class="career-subsector">
-                                        {{ $recommendation->career->subsector }}
+                                        {{ $recommendationSubsector }}
                                     </div>
                                 @endif
                             </td>

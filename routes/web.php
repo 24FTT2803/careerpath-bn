@@ -1,18 +1,21 @@
 <?php
 
-use App\Http\Controllers\Student\DashboardController;
-use App\Http\Controllers\Student\ProfileController;
-use App\Http\Controllers\Student\MilestoneController;
-use App\Http\Controllers\Student\CareerRecommendationController;
-use App\Http\Controllers\Student\CareerAdviserController;
-use App\Http\Controllers\Student\BiicfExplorerController;
+use App\Http\Controllers\Admin\BiicfController;
+use App\Http\Controllers\Admin\BusinessPlanController;
+use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\CareerController as AdminCareerController;
-use App\Http\Controllers\Admin\BiicfController;
-use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
+use App\Http\Controllers\Student\BiicfExplorerController;
+use App\Http\Controllers\Student\CareerAdviserController;
+use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\MilestoneController;
+use App\Http\Controllers\Student\ProfileController;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\LecturerMiddleware;
+use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -60,7 +63,7 @@ require __DIR__.'/auth.php';
 // ============================================
 Route::middleware([
     'auth',
-    \App\Http\Middleware\RoleMiddleware::class . ':student',
+    RoleMiddleware::class.':student',
 ])
     ->prefix('student')
     ->name('student.')
@@ -81,6 +84,15 @@ Route::middleware([
             '/recommendations/generate',
             [CareerRecommendationController::class, 'generate']
         )->name('recommendations.generate');
+
+        /*
+         * The career report for one historical generation.
+         * Ownership is checked in the controller.
+         */
+        Route::get(
+            '/recommendations/{generation}/report',
+            [CareerRecommendationController::class, 'report']
+        )->name('recommendations.report');
 
         // Career Adviser
         Route::get(
@@ -228,10 +240,10 @@ Route::middleware([
 // ============================================
 Route::middleware([
     'auth',
-    \App\Http\Middleware\LecturerMiddleware::class,
+    LecturerMiddleware::class,
 ])
     ->get(
-        '/student/profile/export/{userId}',
+        '/student/profile/export/{userId}/{generation?}',
         [ProfileController::class, 'exportAdmin']
     )
     ->name('student.profile.export.admin');
@@ -250,7 +262,7 @@ Route::middleware(['auth'])
         )
             ->name('dashboard')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         Route::get(
@@ -259,7 +271,7 @@ Route::middleware(['auth'])
         )
             ->name('students.index')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         Route::get(
@@ -268,7 +280,7 @@ Route::middleware(['auth'])
         )
             ->name('students.show')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         // CAREER ROUTES
@@ -278,7 +290,7 @@ Route::middleware(['auth'])
         )
             ->name('careers.index')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         Route::get(
@@ -287,19 +299,19 @@ Route::middleware(['auth'])
         )
             ->name('careers.show')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         // View milestone proof for admin/lecturer
         Route::get('/students/{studentId}/milestones/{milestoneId}/proof', [MilestoneController::class, 'viewProofAdmin'])
             ->name('milestones.proof')
-            ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+            ->middleware(LecturerMiddleware::class);
 
         // ============================================
         // BUSINESS MANAGEMENT (Admin ONLY)
         // ============================================
         Route::middleware(
-            \App\Http\Middleware\AdminMiddleware::class
+            AdminMiddleware::class
         )
             ->prefix('business')
             ->name('business.')
@@ -335,9 +347,9 @@ Route::middleware(['auth'])
         // ============================================
         // BIICF MANAGEMENT (Admin ONLY)
         // ============================================
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
-    
-            Route::get('/biicf', function() {
+        Route::middleware(AdminMiddleware::class)->group(function () {
+
+            Route::get('/biicf', function () {
                 return redirect()->route('admin.biicf.sub-sectors');
             })->name('biicf');
 
@@ -384,7 +396,7 @@ Route::middleware(['auth'])
         });
 
         // Admin ONLY routes - Users
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+        Route::middleware(AdminMiddleware::class)->group(function () {
             Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
             Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
@@ -397,7 +409,7 @@ Route::middleware(['auth'])
 // ============================================
 // LECTURER ROUTES
 // ============================================
-Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
+Route::middleware(['auth', LecturerMiddleware::class])
     ->prefix('lecturer')
     ->name('lecturer.')
     ->group(function () {

@@ -5,14 +5,18 @@ namespace App\Http\Controllers\Student;
 use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
 use App\Models\CareerRecommendation;
+use App\Models\RecommendationGeneration;
 use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
+use App\Services\AI\CareerReportBuilder;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class CareerRecommendationController extends Controller
@@ -220,6 +224,64 @@ class CareerRecommendationController extends Controller
                 'careerPresentation',
                 'careerDetails'
             )
+        );
+    }
+
+    /**
+     * Download the career report for one generation.
+     *
+     * The document is the same one the profile export produces.
+     * Passing a generation renders it as it stood then, so an
+     * archived report never shows newer recommendations than the
+     * ones it was produced from.
+     */
+    public function report(
+        RecommendationGeneration $generation,
+        CareerReportBuilder $reportBuilder
+    ) {
+        /** @var User $student */
+        $student = Auth::user();
+
+        abort_unless(
+            $student && $student->isStudent(),
+            403
+        );
+
+        /*
+         * 404 rather than 403 so one student cannot confirm
+         * which generations another student has.
+         */
+        abort_unless(
+            $generation->user_id === $student->id,
+            404
+        );
+
+        $downloadAccess = $this->entitlements
+            ->featureAccess(
+                $student,
+                'career_recommendations.download.enabled'
+            );
+
+        abort_unless(
+            $downloadAccess['allowed'],
+            $downloadAccess['reason'] === 'maintenance'
+                ? 503
+                : 403,
+            $downloadAccess['message']
+                ?? 'Report downloads are unavailable.'
+        );
+
+        $pdf = Pdf::loadView(
+            'student.profile.export',
+            $reportBuilder->for($student, $generation)
+        )->setPaper('a4', 'portrait');
+
+        return $pdf->download(
+            'CareerPath-BN-'
+            .Str::slug($student->name)
+            .'-Report-'
+            .$generation->generation_number
+            .'.pdf'
         );
     }
 
