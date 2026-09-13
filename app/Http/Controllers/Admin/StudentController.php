@@ -132,8 +132,26 @@ class StudentController extends Controller
             $matchedSkills = [];
         }
 
+        /*
+         * Staff access is defined by role, not by the student's
+         * plan, so no entitlement is consulted here.
+         */
+        $generations = $student
+            ->recommendationGenerations()
+            ->orderByDesc('generation_number')
+            ->get();
+
+        /*
+         * Adviser activity only. Staff are shown that a student
+         * uses the adviser and how often, never what was said,
+         * so students can speak freely to it.
+         */
+        $adviserActivity = $student->careerAdviserConversation;
+
         return view('admin.students.show', compact(
             'student',
+            'generations',
+            'adviserActivity',
             'topRecommendations',
             'readinessScore',
             'skillGaps',

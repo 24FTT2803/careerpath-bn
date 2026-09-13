@@ -202,6 +202,74 @@
                     <p class="text-gray-500 text-center py-4">No milestones recorded.</p>
                 @endif
             </div>
+
+            <!-- AI History -->
+            <div class="bg-white rounded-lg shadow p-6 mt-6">
+                <h3 class="font-semibold text-gray-800 mb-3">🕓 Recommendation History</h3>
+
+                @if($generations->count() > 0)
+                    @foreach($generations as $generation)
+                        <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                            <div>
+                                <span class="font-medium">
+                                    Generation #{{ $generation->generation_number }}
+                                </span>
+
+                                <span class="text-xs text-gray-500 ml-2">
+                                    {{ $generation->generated_at->format('j M Y') }}
+                                    &middot;
+                                    {{ $generation->recommendation_count }} {{ Str::plural('recommendation', $generation->recommendation_count) }}
+                                </span>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                @if($generation->isOutdated())
+                                    <span class="text-yellow-600 text-sm">Outdated</span>
+                                @elseif($generation->isCurrent())
+                                    <span class="text-green-600 text-sm">Current</span>
+                                @else
+                                    <span class="text-gray-500 text-sm">Previous</span>
+                                @endif
+
+                                <a
+                                    href="{{ route('student.profile.export.admin', [$student->id, $generation->id]) }}"
+                                    class="text-sm text-blue-600 hover:underline"
+                                >
+                                    Report
+                                </a>
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <p class="text-gray-500 text-center py-4">No recommendations generated yet.</p>
+                @endif
+            </div>
+
+            <!-- Career Adviser activity -->
+            <div class="bg-white rounded-lg shadow p-6 mt-6">
+                <h3 class="font-semibold text-gray-800 mb-3">💬 Career Adviser Activity</h3>
+
+                @if($adviserActivity && $adviserActivity->message_count > 0)
+                    <div class="py-2">
+                        <span class="font-medium">
+                            {{ $adviserActivity->message_count }} {{ Str::plural('message', $adviserActivity->message_count) }}
+                        </span>
+
+                        @if($adviserActivity->last_message_at)
+                            <span class="text-xs text-gray-500 ml-2">
+                                last active
+                                {{ $adviserActivity->last_message_at->diffForHumans() }}
+                            </span>
+                        @endif
+                    </div>
+
+                    <p class="text-xs text-gray-500 mt-2">
+                        Conversation contents are private to the student.
+                    </p>
+                @else
+                    <p class="text-gray-500 text-center py-4">Has not used the Career Adviser.</p>
+                @endif
+            </div>
         </div>
     </div>
 </div>

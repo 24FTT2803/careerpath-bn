@@ -11,6 +11,7 @@ use App\Http\Controllers\Student\BiicfExplorerController;
 use App\Http\Controllers\Student\CareerAdviserController;
 use App\Http\Controllers\Student\CareerRecommendationController;
 use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\HistoryController;
 use App\Http\Controllers\Student\MilestoneController;
 use App\Http\Controllers\Student\ProfileController;
 use App\Http\Middleware\AdminMiddleware;
@@ -93,6 +94,12 @@ Route::middleware([
             '/recommendations/{generation}/report',
             [CareerRecommendationController::class, 'report']
         )->name('recommendations.report');
+
+        // History / Archive
+        Route::get(
+            '/history',
+            [HistoryController::class, 'index']
+        )->name('history');
 
         // Career Adviser
         Route::get(
