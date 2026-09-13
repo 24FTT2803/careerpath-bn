@@ -550,6 +550,24 @@
                         Plans & Features
                     </span>
                 </a>
+
+                <a
+                    href="{{ route(
+                        'admin.business.advertisements.index'
+                    ) }}"
+                    class="sidebar-link {{
+                        request()->routeIs(
+                            'admin.business.advertisements.*'
+                        )
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-bullhorn"></i>
+                    <span>
+                        Advertisements
+                    </span>
+                </a>
             @endif
             @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">

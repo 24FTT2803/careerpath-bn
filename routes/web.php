@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
@@ -349,6 +350,16 @@ Route::middleware(['auth'])
                 )->name(
                     'features.global'
                 );
+
+                /*
+                 * What appears in the ad placements. Whether the
+                 * placements render at all is decided by the
+                 * plan features above.
+                 */
+                Route::resource(
+                    'advertisements',
+                    AdvertisementController::class
+                )->except(['show']);
             });
 
         // ============================================
