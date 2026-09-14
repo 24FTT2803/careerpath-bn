@@ -51,22 +51,31 @@ test(
 );
 
 test(
-    'two advertisements switch the layout to side columns',
+    'both advertisements render as banners',
     function () {
         seedPlansForRendering();
 
         makeRenderableAd(Advertisement::POSITION_ONE);
         makeRenderableAd(Advertisement::POSITION_TWO);
 
-        $this->actingAs(optedInStudent())
+        $response = $this->actingAs(optedInStudent())
             ->get(route('student.settings'))
-            ->assertOk()
-            ->assertSee('class="page-shell has-rails"', false);
+            ->assertOk();
+
+        /*
+         * Above and below the page at every size. Side columns
+         * were removed: the page is capped at 1200px, so a rail
+         * either narrowed the content or left a tall slot no
+         * banner image suits.
+         */
+        expect(
+            substr_count($response->getContent(), 'class="ad-slot"')
+        )->toBe(2);
     }
 );
 
 test(
-    'a single advertisement stays inline rather than one sided',
+    'one advertisement renders on its own',
     function () {
         seedPlansForRendering();
 
@@ -78,14 +87,9 @@ test(
 
         $response->assertSee('Sponsor banner one');
 
-        /*
-         * One filled side column with the other empty reads as
-         * a rendering fault rather than a layout.
-         *
-         * Matched on the rendered attribute rather than the
-         * class name, which also appears in the stylesheet.
-         */
-        $response->assertDontSee('class="page-shell has-rails"', false);
+        expect(
+            substr_count($response->getContent(), 'class="ad-slot"')
+        )->toBe(1);
     }
 );
 
@@ -112,7 +116,6 @@ test(
          * stylesheet on every page.
          */
         $response->assertDontSee('aria-label="Advertisement"', false);
-        $response->assertDontSee('class="page-shell has-rails"', false);
     }
 );
 

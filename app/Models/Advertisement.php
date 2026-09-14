@@ -94,6 +94,31 @@ class Advertisement extends Model
         return $this->external_url;
     }
 
+    /**
+     * What is actually true of this advertisement right now.
+     *
+     * Derived rather than stored. An advertisement switched on
+     * but dated for next month is not running, and saying
+     * "active" in that case is how an administrator concludes
+     * the system is broken.
+     */
+    public function status(): string
+    {
+        if (! $this->is_active) {
+            return 'paused';
+        }
+
+        if ($this->starts_at && $this->starts_at->isFuture()) {
+            return 'scheduled';
+        }
+
+        if ($this->ends_at && $this->ends_at->isPast()) {
+            return 'ended';
+        }
+
+        return 'live';
+    }
+
     public function isVideo(): bool
     {
         return $this->type === self::TYPE_VIDEO;

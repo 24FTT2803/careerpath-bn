@@ -38,6 +38,28 @@
     </div>
 
     <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex flex-wrap gap-2 mb-4">
+            @foreach([
+                '' => 'All',
+                'live' => 'Live',
+                'scheduled' => 'Scheduled',
+                'ended' => 'Ended',
+                'paused' => 'Paused',
+            ] as $value => $label)
+                @php
+                    $key = $value === '' ? 'all' : $value;
+                    $current = $filter === $value;
+                @endphp
+
+                <a
+                    href="{{ route('admin.business.advertisements.index', $value === '' ? [] : ['status' => $value]) }}"
+                    class="px-3 py-1 rounded-lg text-sm {{ $current ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                >
+                    {{ $label }} ({{ $counts[$key] }})
+                </a>
+            @endforeach
+        </div>
+
         @if($advertisements->isEmpty())
             <p class="text-gray-500 text-center py-6">
                 No advertisements yet.
@@ -50,6 +72,7 @@
                         <th class="py-2">Type</th>
                         <th class="py-2">Position</th>
                         <th class="py-2">Audience</th>
+                        <th class="py-2">Reach</th>
                         <th class="py-2">Status</th>
                         <th class="py-2 text-right">Actions</th>
                     </tr>
@@ -73,21 +96,34 @@
                             </td>
 
                             <td class="py-3">
-                                {{ $advertisement->organisationGroup?->name ?? 'Everyone' }}
+                                {{ $advertisement->organisationGroup?->name ?? 'All students' }}
+                            </td>
+
+                            <td class="py-3 text-gray-600">
+                                {{ $reach[$advertisement->id] ?? 0 }}
+                                {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
                             </td>
 
                             <td class="py-3">
-                                @if($advertisement->is_active)
-                                    <span class="text-green-600">Active</span>
+                                @php $status = $advertisement->status(); @endphp
+
+                                @if($status === 'live')
+                                    <span class="text-green-600">Live</span>
+                                @elseif($status === 'scheduled')
+                                    <span class="text-blue-600">Scheduled</span>
+                                @elseif($status === 'ended')
+                                    <span class="text-gray-500">Ended</span>
                                 @else
-                                    <span class="text-gray-500">Inactive</span>
+                                    <span class="text-yellow-600">Paused</span>
                                 @endif
 
-                                @if($advertisement->ends_at)
-                                    <span class="text-xs text-gray-500 block">
+                                <span class="text-xs text-gray-500 block">
+                                    @if($status === 'scheduled')
+                                        from {{ $advertisement->starts_at->format('j M Y') }}
+                                    @elseif($advertisement->ends_at)
                                         until {{ $advertisement->ends_at->format('j M Y') }}
-                                    </span>
-                                @endif
+                                    @endif
+                                </span>
                             </td>
 
                             <td class="py-3 text-right">

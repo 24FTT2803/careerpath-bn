@@ -230,3 +230,109 @@ test(
             ->assertForbidden();
     }
 );
+
+test(
+    'status reflects the dates rather than the switch',
+    function () {
+        $scheduled = Advertisement::create([
+            'title' => 'Next month',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/a.png',
+            'position' => Advertisement::POSITION_ONE,
+            'is_active' => true,
+            'starts_at' => now()->addWeek(),
+        ]);
+
+        $ended = Advertisement::create([
+            'title' => 'Last term',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/b.png',
+            'position' => Advertisement::POSITION_TWO,
+            'is_active' => true,
+            'ends_at' => now()->subDay(),
+        ]);
+
+        $paused = Advertisement::create([
+            'title' => 'Switched off',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/c.png',
+            'position' => Advertisement::POSITION_ONE,
+            'is_active' => false,
+        ]);
+
+        /*
+         * Calling a future-dated advertisement "active" is how
+         * an administrator concludes the system is broken.
+         */
+        expect($scheduled->status())
+            ->toBe('scheduled')
+            ->and($ended->status())
+            ->toBe('ended')
+            ->and($paused->status())
+            ->toBe('paused');
+    }
+);
+
+test(
+    'the list can be filtered by status',
+    function () {
+        Advertisement::create([
+            'title' => 'Running now',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/a.png',
+            'position' => Advertisement::POSITION_ONE,
+            'is_active' => true,
+        ]);
+
+        Advertisement::create([
+            'title' => 'Next month',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/b.png',
+            'position' => Advertisement::POSITION_TWO,
+            'is_active' => true,
+            'starts_at' => now()->addWeek(),
+        ]);
+
+        $this->actingAs(adminUser())
+            ->get(
+                route(
+                    'admin.business.advertisements.index',
+                    ['status' => 'scheduled']
+                )
+            )
+            ->assertOk()
+            ->assertSee('Next month')
+            ->assertDontSee('Running now');
+    }
+);
+
+test(
+    'an image cropped in the browser is stored',
+    function () {
+        Storage::fake('public');
+
+        $pixel = 'data:image/png;base64,'
+            .'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
+
+        $this->actingAs(adminUser())
+            ->post(
+                route('admin.business.advertisements.store'),
+                [
+                    'title' => 'Cropped banner',
+                    'type' => Advertisement::TYPE_IMAGE,
+                    'position' => Advertisement::POSITION_ONE,
+                    'cropped_asset' => $pixel,
+                    'is_active' => '1',
+                ]
+            )
+            ->assertRedirect();
+
+        $advertisement = Advertisement::firstOrFail();
+
+        expect($advertisement->asset_path)->not->toBeNull();
+
+        Storage::disk('public')->assertExists(
+            $advertisement->asset_path
+        );
+    }
+);

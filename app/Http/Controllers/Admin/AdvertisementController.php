@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
 use App\Models\OrganisationGroup;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class AdvertisementController extends Controller
@@ -20,18 +24,119 @@ class AdvertisementController extends Controller
 
     private const MAX_VIDEO_KILOBYTES = 10240;
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $advertisements = Advertisement::query()
+        $all = Advertisement::query()
             ->with('organisationGroup')
             ->orderBy('position')
             ->orderByDesc('id')
             ->get();
 
+        $filter = $request->string('status')->toString();
+
+        $counts = [
+            'all' => $all->count(),
+            'live' => 0,
+            'scheduled' => 0,
+            'ended' => 0,
+            'paused' => 0,
+        ];
+
+        foreach ($all as $advertisement) {
+            $counts[$advertisement->status()]++;
+        }
+
+        $advertisements = in_array(
+            $filter,
+            ['live', 'scheduled', 'ended', 'paused'],
+            true
+        )
+            ? $all->filter(
+                fn (Advertisement $advertisement) => $advertisement->status() === $filter
+            )
+            : $all;
+
         return view(
             'admin.advertisements.index',
-            compact('advertisements')
+            [
+                'advertisements' => $advertisements,
+                'counts' => $counts,
+                'filter' => $filter,
+                'reach' => $this->reachFor($all),
+            ]
         );
+    }
+
+    /**
+     * How many students each advertisement can reach.
+     *
+     * Targeting resolves through the structure, so aiming at a
+     * school covers its classes. That is not obvious from a
+     * group name alone.
+     *
+     * @param  Collection<int, Advertisement>  $advertisements
+     * @return array<int, int>
+     */
+    private function reachFor($advertisements): array
+    {
+        $studentCount = User::where('role', 'student')->count();
+
+        $reach = [];
+
+        foreach ($advertisements as $advertisement) {
+            if ($advertisement->organisation_group_id === null) {
+                $reach[$advertisement->id] = $studentCount;
+
+                continue;
+            }
+
+            $groupIds = $this->groupWithDescendants(
+                $advertisement->organisation_group_id
+            );
+
+            $reach[$advertisement->id] = User::query()
+                ->where('role', 'student')
+                ->whereHas(
+                    'groupMemberships',
+                    fn ($query) => $query->whereIn(
+                        'organisation_group_id',
+                        $groupIds
+                    )
+                )
+                ->count();
+        }
+
+        return $reach;
+    }
+
+    /**
+     * A group and everything beneath it, through any branch.
+     *
+     * @return array<int, int>
+     */
+    private function groupWithDescendants(int $groupId): array
+    {
+        $found = [$groupId => true];
+        $pending = [$groupId];
+
+        while ($pending !== []) {
+            $currentId = array_shift($pending);
+
+            $childIds = DB::table('organisation_group_parents')
+                ->where('parent_id', $currentId)
+                ->pluck('group_id');
+
+            foreach ($childIds as $childId) {
+                if (isset($found[$childId])) {
+                    continue;
+                }
+
+                $found[$childId] = true;
+                $pending[] = $childId;
+            }
+        }
+
+        return array_keys($found);
     }
 
     public function create(): View
@@ -151,6 +256,16 @@ class AdvertisementController extends Controller
                     'max:'.self::MAX_VIDEO_KILOBYTES,
                 ],
 
+                /*
+                 * An image already cropped to the banner frame
+                 * in the browser, sent as a data URL.
+                 */
+                'cropped_asset' => [
+                    'nullable',
+                    'string',
+                    'starts_with:data:image/',
+                ],
+
                 'external_url' => [
                     'nullable',
                     'url',
@@ -250,6 +365,12 @@ class AdvertisementController extends Controller
      */
     private function storeAsset(Request $request): ?string
     {
+        $cropped = $this->storeCroppedImage($request);
+
+        if ($cropped !== null) {
+            return $cropped;
+        }
+
         if (! $request->hasFile('asset')) {
             return null;
         }
@@ -277,6 +398,65 @@ class AdvertisementController extends Controller
         );
     }
 
+    /**
+     * Store an image cropped in the browser.
+     *
+     * Cropping happens client side, so the server only decodes
+     * and writes bytes. No image library is needed, and the
+     * administrator sees the exact frame students will see.
+     */
+    private function storeCroppedImage(Request $request): ?string
+    {
+        $payload = $request->input('cropped_asset');
+
+        if (! is_string($payload) || $payload === '') {
+            return null;
+        }
+
+        [$header, $encoded] = array_pad(
+            explode(',', $payload, 2),
+            2,
+            null
+        );
+
+        $allowed = [
+            'data:image/jpeg;base64' => 'jpg',
+            'data:image/png;base64' => 'png',
+            'data:image/webp;base64' => 'webp',
+        ];
+
+        $extension = $allowed[$header] ?? null;
+
+        abort_if(
+            $extension === null || $encoded === null,
+            422,
+            'That image could not be read.'
+        );
+
+        $binary = base64_decode($encoded, true);
+
+        abort_if(
+            $binary === false,
+            422,
+            'That image could not be read.'
+        );
+
+        abort_if(
+            strlen($binary) > self::MAX_IMAGE_KILOBYTES * 1024,
+            422,
+            'The cropped image is too large.'
+        );
+
+        $path = 'advertisements/'
+            .Str::uuid()
+            .'.'
+            .$extension;
+
+        Storage::disk('public')->put($path, $binary);
+
+        return $path;
+    }
+
     private function deleteAsset(
         Advertisement $advertisement
     ): void {
@@ -292,10 +472,54 @@ class AdvertisementController extends Controller
     /**
      * Groups available for targeting, newest structure first.
      */
+    /**
+     * Groups labelled with their full path.
+     *
+     * "January" means nothing once every intake has one.
+     */
     private function groups()
     {
-        return OrganisationGroup::query()
+        $all = OrganisationGroup::query()
+            ->with('parents')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->keyBy('id');
+
+        return $all
+            ->map(fn (OrganisationGroup $group) => (object) [
+                'id' => $group->id,
+                'path' => $this->pathFor($group, $all),
+            ])
+            ->sortBy('path')
+            ->values();
+    }
+
+    /**
+     * @param  Collection<int, OrganisationGroup>  $all
+     */
+    private function pathFor(
+        OrganisationGroup $group,
+        $all
+    ): string {
+        $names = [$group->name];
+        $seen = [$group->id => true];
+        $current = $group;
+
+        while (true) {
+            $parent = $current->parents
+                ->firstWhere('pivot.is_primary', true)
+                ?? $current->parents->first();
+
+            if ($parent === null || isset($seen[$parent->id])) {
+                break;
+            }
+
+            $seen[$parent->id] = true;
+            array_unshift($names, $parent->name);
+
+            $current = $all->get($parent->id) ?? $parent;
+        }
+
+        return implode(' › ', $names);
     }
 }

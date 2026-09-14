@@ -126,31 +126,54 @@
 
         <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1">
-                Upload
+                Image
             </label>
+
+            @if($advertisement->asset_path)
+                <div class="mb-3">
+                    <p class="text-xs text-gray-500 mb-1">Currently showing</p>
+
+                    <img
+                        src="{{ $advertisement->mediaUrl() }}"
+                        alt=""
+                        style="width:100%;max-width:728px;aspect-ratio:6/1;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb"
+                    >
+                </div>
+            @endif
 
             <input
                 type="file"
+                id="assetInput"
                 name="asset"
+                accept="image/*,video/*"
                 class="w-full border border-gray-300 rounded-lg px-3 py-2"
             >
 
             <p class="text-xs text-gray-500 mt-1">
-                Images up to 2 MB, video up to 10 MB. Leave empty
-                to use an external address instead, or to keep
-                the current file.
+                Banners are shown at 6:1, so 1456&times;243 is a
+                good size. Images up to 2 MB, video up to 10 MB.
+                Leave empty to keep the current file.
             </p>
 
-            @if($advertisement->asset_path)
-                <p class="text-xs text-gray-600 mt-2">
-                    Current file:
-                    <a
-                        href="{{ $advertisement->mediaUrl() }}"
-                        target="_blank"
-                        class="underline"
-                    >{{ basename($advertisement->asset_path) }}</a>
+            <input type="hidden" name="cropped_asset" id="croppedAsset">
+
+            <div id="cropperPanel" style="display:none;margin-top:12px">
+                <p class="text-xs text-gray-500 mb-2">
+                    Drag to choose the part students will see.
                 </p>
-            @endif
+
+                <div style="max-width:728px">
+                    <img id="cropperImage" alt="" style="max-width:100%">
+                </div>
+
+                <button
+                    type="button"
+                    id="cropperClear"
+                    class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-lg text-xs transition"
+                >
+                    Use the whole image instead
+                </button>
+            </div>
         </div>
 
         <div class="mb-4">
@@ -247,13 +270,13 @@
                     name="organisation_group_id"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
-                    <option value="">Everyone</option>
+                    <option value="">All students</option>
 
                     @foreach($groups as $group)
                         <option
                             value="{{ $group->id }}"
                             @selected((int) old('organisation_group_id', $advertisement->organisation_group_id) === $group->id)
-                        >{{ $group->name }}</option>
+                        >{{ $group->path }}</option>
                     @endforeach
                 </select>
             </div>
@@ -281,3 +304,77 @@
     </form>
 </div>
 @endsection
+
+<link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css"
+>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var input = document.getElementById('assetInput');
+        var panel = document.getElementById('cropperPanel');
+        var image = document.getElementById('cropperImage');
+        var hidden = document.getElementById('croppedAsset');
+        var clear = document.getElementById('cropperClear');
+        var form = input ? input.closest('form') : null;
+        var cropper = null;
+
+        if (!input || !form || typeof Cropper === 'undefined') {
+            return;
+        }
+
+        function stop() {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            panel.style.display = 'none';
+            hidden.value = '';
+        }
+
+        input.addEventListener('change', function () {
+            stop();
+
+            var file = input.files && input.files[0];
+
+            if (!file || file.type.indexOf('image/') !== 0) {
+                return;
+            }
+
+            var reader = new FileReader();
+
+            reader.onload = function (event) {
+                image.src = event.target.result;
+                panel.style.display = '';
+
+                cropper = new Cropper(image, {
+                    aspectRatio: 6,
+                    viewMode: 1,
+                    autoCropArea: 1
+                });
+            };
+
+            reader.readAsDataURL(file);
+        });
+
+        clear.addEventListener('click', stop);
+
+        form.addEventListener('submit', function () {
+            if (!cropper) {
+                return;
+            }
+
+            var canvas = cropper.getCroppedCanvas({
+                width: 1456,
+                height: 243
+            });
+
+            if (canvas) {
+                hidden.value = canvas.toDataURL('image/jpeg', 0.9);
+            }
+        });
+    });
+</script>
