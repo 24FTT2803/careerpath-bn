@@ -252,6 +252,94 @@
         margin-top: 4px;
     }
 
+    /*
+     * Toggle switch.
+     *
+     * Selectors carry the label element so they outrank the
+     * panel's own `.field label` rule, which is block level and
+     * uppercases its text.
+     */
+    .field label.toggle {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        cursor: pointer;
+        user-select: none;
+        margin-bottom: 0;
+        font-size: 14px;
+        font-weight: 400;
+        letter-spacing: normal;
+        text-transform: none;
+        color: var(--text);
+    }
+
+    /*
+     * The control is hidden rather than removed, so it still
+     * takes keyboard focus and still submits its value.
+     */
+    .field label.toggle input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: 0;
+        border: 0;
+        opacity: 0;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+    }
+
+    .field label.toggle .track {
+        position: relative;
+        display: block;
+        flex: 0 0 auto;
+        width: 46px;
+        height: 26px;
+        border-radius: 999px;
+        background: var(--danger);
+        transition: background 0.2s ease;
+    }
+
+    .field label.toggle .thumb {
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+    }
+
+    .field label.toggle input:checked + .track {
+        background: var(--success);
+    }
+
+    .field label.toggle input:checked + .track .thumb {
+        transform: translateX(20px);
+    }
+
+    .field label.toggle input:focus-visible + .track {
+        box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.18);
+    }
+
+    .field label.toggle .toggle-state {
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 11px;
+        margin-left: 6px;
+    }
+
+    .field label.toggle .toggle-state.on {
+        color: var(--success);
+    }
+
+    .field label.toggle .toggle-state.off {
+        color: var(--danger);
+    }
+
     .btn {
         display: inline-flex;
         align-items: center;
@@ -489,20 +577,28 @@
                         <input type="hidden" name="show_ads" value="0">
 
                         <div class="field" style="margin-bottom:20px;">
-                            <label
-                                for="show_ads"
-                                style="display:flex;align-items:center;gap:10px;cursor:pointer;"
-                            >
+                            <label class="toggle" for="show_ads">
                                 <input
                                     id="show_ads"
                                     type="checkbox"
                                     name="show_ads"
                                     value="1"
                                     @checked(Auth::user()->show_ads)
-                                    style="width:18px;height:18px;margin:0;flex-shrink:0;accent-color:var(--primary);cursor:pointer;"
                                 >
 
-                                <span>Show me advertisements</span>
+                                <span class="track">
+                                    <span class="thumb"></span>
+                                </span>
+
+                                <span class="toggle-text">
+                                    Show me advertisements
+
+                                    <span
+                                        class="toggle-state {{ Auth::user()->show_ads ? 'on' : 'off' }}"
+                                    >
+                                        {{ Auth::user()->show_ads ? 'On' : 'Off' }}
+                                    </span>
+                                </span>
                             </label>
                         </div>
 
