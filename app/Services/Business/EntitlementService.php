@@ -523,6 +523,21 @@ class EntitlementService
      *     1: array<int>
      * }
      */
+    /**
+     * Every group a student is reachable through: the groups
+     * they belong to, plus everything those sit inside.
+     *
+     * Exposed because advertising targets the same structure.
+     * Aiming at a school should reach its students, who are
+     * members of a class rather than of the school itself.
+     *
+     * @return array<int, int>
+     */
+    public function scopeGroupIdsFor(User $user): array
+    {
+        return $this->scopeIdsFor($user)[1];
+    }
+
     private function scopeIdsFor(
         User $user
     ): array {

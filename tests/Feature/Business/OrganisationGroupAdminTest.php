@@ -275,17 +275,8 @@ test(
             'organisation_group_id' => $class->id,
         ]);
 
-        $scope = (new ReflectionMethod(
-            EntitlementService::class,
-            'scopeIdsFor'
-        ));
-
-        $scope->setAccessible(true);
-
-        [, $groupIds] = $scope->invoke(
-            app(EntitlementService::class),
-            $student->fresh()
-        );
+        $groupIds = app(EntitlementService::class)
+            ->scopeGroupIdsFor($student->fresh());
 
         /*
          * Sponsoring the intake must now reach this student,

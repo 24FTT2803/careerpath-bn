@@ -2,6 +2,7 @@
 
 use App\Models\Advertisement;
 use App\Models\OrganisationGroup;
+use App\Models\OrganisationGroupType;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\Business\AdvertisementService;
@@ -237,5 +238,102 @@ test(
         expect(
             adService()->forStudent($student)
         )->toBeEmpty();
+    }
+);
+
+test(
+    'an advertisement aimed at a school reaches its classes',
+    function () {
+        seedPlansForAds();
+        test()->seed(OrganisationGroupSeeder::class);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+            'show_ads' => true,
+        ]);
+
+        $class = OrganisationGroup::query()
+            ->whereHas(
+                'type',
+                fn ($q) => $q->where('name', 'Class / Group')
+            )
+            ->firstOrFail();
+
+        $school = OrganisationGroup::query()
+            ->whereHas(
+                'type',
+                fn ($q) => $q->where('name', 'School')
+            )
+            ->firstOrFail();
+
+        $student->groupMemberships()->create([
+            'organisation_group_id' => $class->id,
+        ]);
+
+        makeAd([
+            'title' => 'School wide',
+            'organisation_group_id' => $school->id,
+        ]);
+
+        /*
+         * Students belong to a class, never to the school
+         * directly, so this only works if targeting reaches
+         * through the structure.
+         */
+        expect(
+            adService()->forStudent($student->fresh())
+        )->toHaveCount(1);
+    }
+);
+
+test(
+    'an advertisement aimed at an intake reaches the same class',
+    function () {
+        seedPlansForAds();
+        test()->seed(OrganisationGroupSeeder::class);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+            'show_ads' => true,
+        ]);
+
+        $class = OrganisationGroup::query()
+            ->whereHas(
+                'type',
+                fn ($q) => $q->where('name', 'Class / Group')
+            )
+            ->firstOrFail();
+
+        $intake = OrganisationGroup::create([
+            'organisation_id' => $class->organisation_id,
+            'group_type_id' => OrganisationGroupType::where(
+                'name',
+                'Intake'
+            )->value('id'),
+            'name' => 'Intake 14',
+            'is_active' => true,
+        ]);
+
+        $class->parents()->attach(
+            $intake->id,
+            ['is_primary' => false]
+        );
+
+        $student->groupMemberships()->create([
+            'organisation_group_id' => $class->id,
+        ]);
+
+        makeAd([
+            'title' => 'January starters',
+            'organisation_group_id' => $intake->id,
+        ]);
+
+        /*
+         * The second branch. Reaching this student through the
+         * intake is what multiple parents bought us.
+         */
+        expect(
+            adService()->forStudent($student->fresh())
+        )->toHaveCount(1);
     }
 );

@@ -38,9 +38,15 @@ class AdvertisementService
             return collect();
         }
 
-        $groupIds = $student
-            ->groupMemberships()
-            ->pluck('organisation_group_id');
+        /*
+         * The student's own groups plus everything above them,
+         * so an advertisement aimed at a school or an intake
+         * reaches the classes inside it. Students are members
+         * of a class, never of the school directly.
+         */
+        $groupIds = collect(
+            $this->entitlements->scopeGroupIdsFor($student)
+        );
 
         $resolved = collect();
 
