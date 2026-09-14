@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\GroupMembershipController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\SponsorshipController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
@@ -436,6 +437,26 @@ Route::middleware(['auth'])
                     '/groups/{group}',
                     [OrganisationGroupController::class, 'destroy']
                 )->name('groups.destroy');
+
+                /*
+                 * Who belongs to a group. Class membership is
+                 * assigned here; programme membership follows
+                 * the student's profile.
+                 */
+                Route::get(
+                    '/groups/{group}/members',
+                    [GroupMembershipController::class, 'index']
+                )->name('groups.members.index');
+
+                Route::post(
+                    '/groups/{group}/members',
+                    [GroupMembershipController::class, 'store']
+                )->name('groups.members.store');
+
+                Route::delete(
+                    '/groups/{group}/members/{user}',
+                    [GroupMembershipController::class, 'destroy']
+                )->name('groups.members.destroy');
 
                 /*
                  * The levels an institution uses are its own to

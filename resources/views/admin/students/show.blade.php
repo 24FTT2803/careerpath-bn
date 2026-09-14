@@ -99,6 +99,40 @@
                 </div>
             </div>
 
+            <!-- Groups -->
+            <div class="bg-white rounded-lg shadow p-6 mt-6">
+                <h3 class="font-semibold text-gray-800 mb-3">🏫 Academic Groups</h3>
+
+                @if($student->groupMemberships->isEmpty())
+                    <p class="text-gray-500 text-sm">
+                        Not in any group.
+                    </p>
+                @else
+                    @foreach($student->groupMemberships as $membership)
+                        @php $group = $membership->organisationGroup; @endphp
+
+                        @if($group)
+                            <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                                <div>
+                                    <span class="font-medium">{{ $group->name }}</span>
+
+                                    <span class="text-xs text-gray-500 block">
+                                        {{ $group->type?->name }}
+                                    </span>
+                                </div>
+
+                                <a
+                                    href="{{ route('admin.business.groups.members.index', $group) }}"
+                                    class="text-sm text-blue-600 hover:underline"
+                                >
+                                    Manage
+                                </a>
+                            </div>
+                        @endif
+                    @endforeach
+                @endif
+            </div>
+
             <!-- Skills -->
             <div class="bg-white rounded-lg shadow p-6 mt-6">
                 <h3 class="font-semibold text-gray-800 mb-3">🛠️ Skills & Competencies</h3>

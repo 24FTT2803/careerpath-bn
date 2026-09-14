@@ -33,6 +33,7 @@ class OrganisationGroupController extends Controller
                 ),
 
                 'blockers' => $this->blockersFor($groups),
+                'reach' => $this->reachFor($groups),
                 'types' => $this->types(),
                 'typeUsage' => $this->typeUsage(),
             ]
@@ -364,6 +365,35 @@ class OrganisationGroupController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Students reachable through each group, counting everyone
+     * inside it.
+     *
+     * The tree used to show direct members only, which
+     * disagreed with what advertising said the same group
+     * reached.
+     *
+     * @param  Collection<int, OrganisationGroup>  $groups
+     * @return array<int, int>
+     */
+    private function reachFor(Collection $groups): array
+    {
+        $reach = [];
+
+        foreach ($groups as $group) {
+            $ids = $this->descendantIds($group)
+                ->push($group->id)
+                ->all();
+
+            $reach[$group->id] = DB::table('group_memberships')
+                ->whereIn('organisation_group_id', $ids)
+                ->distinct()
+                ->count('user_id');
+        }
+
+        return $reach;
     }
 
     /**

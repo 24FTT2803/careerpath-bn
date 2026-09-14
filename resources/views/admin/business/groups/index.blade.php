@@ -68,6 +68,15 @@
         color: #9ca3af;
     }
 
+    a.group-members {
+        text-decoration: none;
+    }
+
+    a.group-members:hover {
+        color: #2563eb;
+        text-decoration: underline;
+    }
+
     .group-actions {
         display: none;
         align-items: center;

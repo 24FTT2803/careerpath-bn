@@ -148,6 +148,8 @@ class StudentController extends Controller
          */
         $adviserActivity = $student->careerAdviserConversation;
 
+        $student->load('groupMemberships.organisationGroup.type');
+
         return view('admin.students.show', compact(
             'student',
             'generations',

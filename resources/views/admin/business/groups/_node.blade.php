@@ -24,10 +24,17 @@
 
         <span class="group-chip">{{ $group->type?->name ?? 'No type' }}</span>
 
-        <span class="group-meta">
-            {{ $group->memberships_count }}
-            {{ Str::plural('member', $group->memberships_count) }}
-        </span>
+        <a
+            href="{{ route('admin.business.groups.members.index', $group) }}"
+            class="group-meta group-members"
+            title="Manage who belongs to this group"
+        >
+            {{ $group->memberships_count }} direct
+
+            @if(($reach[$group->id] ?? 0) !== $group->memberships_count)
+                &middot; {{ $reach[$group->id] ?? 0 }} total
+            @endif
+        </a>
 
         @unless($group->is_active)
             <span class="group-chip archived">Archived</span>
