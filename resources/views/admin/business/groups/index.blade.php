@@ -3,12 +3,151 @@
 @section('title', 'Academic Groups')
 
 @section('content')
+<style>
+    .group-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-top: 9px;
+        padding-bottom: 9px;
+        padding-right: 8px;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 14px;
+    }
+
+    .group-row:hover {
+        background: #fafafa;
+    }
+
+    .group-main {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .group-toggle,
+    .group-toggle-space {
+        width: 14px;
+        font-size: 12px;
+        color: #9ca3af;
+        cursor: pointer;
+    }
+
+    .group-toggle.collapsed {
+        transform: rotate(-90deg);
+    }
+
+    .group-name {
+        font-weight: 500;
+        color: #111827;
+    }
+
+    .group-code {
+        font-size: 11px;
+        color: #6b7280;
+        font-family: ui-monospace, monospace;
+    }
+
+    .group-chip {
+        background: #f3f4f6;
+        color: #4b5563;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 6px;
+    }
+
+    .group-chip.archived {
+        background: #fff7ed;
+        color: #9a6700;
+    }
+
+    .group-meta {
+        font-size: 12px;
+        color: #9ca3af;
+    }
+
+    .group-actions {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+
+    .group-row:hover .group-actions {
+        display: flex;
+    }
+
+    .group-actions a,
+    .group-actions button {
+        color: #2563eb;
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: 12px;
+        cursor: pointer;
+        text-decoration: none;
+        font-family: inherit;
+    }
+
+    .group-actions button.danger {
+        color: #dc2626;
+    }
+
+    .group-actions form {
+        display: inline;
+    }
+
+    .group-blocked {
+        color: #d1d5db;
+        cursor: not-allowed;
+    }
+
+    .group-also {
+        font-size: 12px;
+        color: #9ca3af;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .type-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #eff6ff;
+        color: #1d4ed8;
+        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 6px;
+    }
+
+    .type-chip form {
+        display: inline;
+    }
+
+    .type-chip button {
+        background: none;
+        border: 0;
+        color: #1d4ed8;
+        cursor: pointer;
+        padding: 0;
+        font-size: 12px;
+    }
+
+    .type-chip.in-use button {
+        color: #93c5fd;
+        cursor: not-allowed;
+    }
+</style>
+
 <div>
     <div class="flex justify-between items-center mb-6">
         <div>
             <h1 class="text-2xl font-bold text-gray-800">🏫 Academic Groups</h1>
             <p class="text-gray-600">
-                Schools, programmes, intakes, sessions and classes
+                Your institution's structure, however you choose to arrange it
             </p>
         </div>
 
@@ -16,7 +155,7 @@
             href="{{ route('admin.business.groups.create') }}"
             class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
         >
-            <i class="fas fa-plus"></i> New Group
+            <i class="fas fa-plus"></i> New top-level group
         </a>
     </div>
 
@@ -27,111 +166,176 @@
         </div>
     @endif
 
-    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-6 rounded text-sm">
-        <i class="fas fa-info-circle"></i>
-        Sponsorship and advertising can be aimed at any of these,
-        so a group covers everyone inside it.
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle"></i>
+            <div>
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
+        </div>
+    @endif
+
+    <!-- Types -->
+    <div class="bg-white rounded-lg shadow p-6 mb-6">
+        <h3 class="font-semibold text-gray-800 mb-1">Group types</h3>
+
+        <p class="text-gray-500 text-sm mb-3">
+            Name the levels your institution actually uses. A type
+            can only be removed while no group uses it.
+        </p>
+
+        <div class="flex flex-wrap gap-2 items-center mb-4">
+            @foreach($types as $type)
+                @php $usage = $typeUsage[$type->id] ?? 0; @endphp
+
+                <span class="type-chip {{ $usage > 0 ? 'in-use' : '' }}">
+                    {{ $type->name }}
+
+                    @if($usage > 0)
+                        <button
+                            type="button"
+                            title="Used by {{ $usage }} {{ Str::plural('group', $usage) }}"
+                        >&times;</button>
+                    @else
+                        <form
+                            method="POST"
+                            action="{{ route('admin.business.groups.types.destroy', $type) }}"
+                            onsubmit="return confirm('Remove the {{ $type->name }} type?');"
+                        >
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit">&times;</button>
+                        </form>
+                    @endif
+                </span>
+            @endforeach
+        </div>
+
+        <form
+            method="POST"
+            action="{{ route('admin.business.groups.types.store') }}"
+            class="flex gap-2"
+        >
+            @csrf
+
+            <input
+                type="text"
+                name="name"
+                maxlength="60"
+                required
+                placeholder="Intake Session"
+                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+
+            <button
+                type="submit"
+                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm transition"
+            >
+                Add type
+            </button>
+        </form>
     </div>
 
+    <!-- Tree -->
     <div class="bg-white rounded-lg shadow p-6">
-        @if($groups->isEmpty())
+        <input
+            type="text"
+            id="groupSearch"
+            placeholder="Search groups"
+            class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 text-sm"
+        >
+
+        @if($roots->isEmpty())
             <p class="text-gray-500 text-center py-6">
-                No groups yet.
+                No groups yet. Start with a top-level group such as
+                your institution.
             </p>
         @else
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2">Name</th>
-                        <th class="py-2">Type</th>
-                        <th class="py-2">Sits inside</th>
-                        <th class="py-2">Members</th>
-                        <th class="py-2">Status</th>
-                        <th class="py-2 text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($groups as $group)
-                        <tr class="border-b border-gray-100 last:border-0">
-                            <td class="py-3">
-                                <span class="font-medium">{{ $group->name }}</span>
-
-                                @if($group->code)
-                                    <span class="text-xs text-gray-500 block">
-                                        {{ $group->code }}
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td class="py-3">
-                                {{ $group->type?->name ?? '—' }}
-                            </td>
-
-                            <td class="py-3 text-gray-600">
-                                {{ $group->primaryParent()?->name ?? 'Top level' }}
-                            </td>
-
-                            <td class="py-3">
-                                {{ $group->memberships_count }}
-                            </td>
-
-                            <td class="py-3">
-                                @if($group->is_active)
-                                    <span class="text-green-600">Active</span>
-                                @else
-                                    <span class="text-gray-500">Archived</span>
-                                @endif
-                            </td>
-
-                            <td class="py-3 text-right">
-                                <a
-                                    href="{{ route('admin.business.groups.edit', $group) }}"
-                                    class="text-blue-600 hover:underline mr-3"
-                                >
-                                    Edit
-                                </a>
-
-                                @if($group->is_active)
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.groups.archive', $group) }}"
-                                        class="inline"
-                                        onsubmit="return confirm('Archive this group?');"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button
-                                            type="submit"
-                                            class="text-yellow-600 hover:underline bg-transparent border-0 cursor-pointer"
-                                        >
-                                            Archive
-                                        </button>
-                                    </form>
-                                @else
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.groups.restore', $group) }}"
-                                        class="inline"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button
-                                            type="submit"
-                                            class="text-green-600 hover:underline bg-transparent border-0 cursor-pointer"
-                                        >
-                                            Restore
-                                        </button>
-                                    </form>
-                                @endif
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+            <div id="groupTree">
+                @foreach($roots as $root)
+                    @include('admin.business.groups._node', [
+                        'group' => $root,
+                        'parentId' => null,
+                        'depth' => 0,
+                    ])
+                @endforeach
+            </div>
         @endif
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.group-toggle').forEach(function (toggle) {
+            toggle.addEventListener('click', function () {
+                var row = toggle.closest('.group-row');
+                var branch = row.nextElementSibling;
+
+                while (branch && !branch.classList.contains('group-branch')) {
+                    branch = branch.nextElementSibling;
+                }
+
+                if (!branch) {
+                    return;
+                }
+
+                var hidden = branch.style.display === 'none';
+                branch.style.display = hidden ? '' : 'none';
+                toggle.classList.toggle('collapsed', !hidden);
+            });
+        });
+
+        var search = document.getElementById('groupSearch');
+
+        if (search) {
+            search.addEventListener('input', function () {
+                var term = search.value.trim().toLowerCase();
+                var rows = document.querySelectorAll('.group-row');
+
+                document.querySelectorAll('.group-branch').forEach(function (branch) {
+                    branch.style.display = '';
+                });
+
+                if (term === '') {
+                    rows.forEach(function (row) {
+                        row.style.display = '';
+                    });
+
+                    return;
+                }
+
+                rows.forEach(function (row) {
+                    row.style.display = 'none';
+                });
+
+                rows.forEach(function (row) {
+                    if ((row.dataset.name || '').indexOf(term) === -1) {
+                        return;
+                    }
+
+                    row.style.display = '';
+
+                    var branch = row.closest('.group-branch');
+
+                    while (branch) {
+                        var ancestor = branch.previousElementSibling;
+
+                        while (ancestor && !ancestor.classList.contains('group-row')) {
+                            ancestor = ancestor.previousElementSibling;
+                        }
+
+                        if (!ancestor) {
+                            break;
+                        }
+
+                        ancestor.style.display = '';
+                        branch = ancestor.closest('.group-branch');
+                    }
+                });
+            });
+        }
+    });
+</script>
 @endsection

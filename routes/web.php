@@ -397,6 +397,26 @@ Route::middleware(['auth'])
                     [OrganisationGroupController::class, 'restore']
                 )->name('groups.restore');
 
+                Route::delete(
+                    '/groups/{group}',
+                    [OrganisationGroupController::class, 'destroy']
+                )->name('groups.destroy');
+
+                /*
+                 * The levels an institution uses are its own to
+                 * name, so types are managed here rather than
+                 * fixed in code.
+                 */
+                Route::post(
+                    '/group-types',
+                    [OrganisationGroupController::class, 'storeType']
+                )->name('groups.types.store');
+
+                Route::delete(
+                    '/group-types/{type}',
+                    [OrganisationGroupController::class, 'destroyType']
+                )->name('groups.types.destroy');
+
                 /*
                  * Access granted to individual accounts, for
                  * special and test users.

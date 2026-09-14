@@ -5,9 +5,15 @@
 @section('content')
 @php
     $isEdit = $group->exists;
-    $currentParentId = $group->exists
-        ? $group->primaryParent()?->id
-        : null;
+
+    $selectedPrimary = old('primary_parent_id', $primaryParentId);
+
+    $selectedOthers = collect(
+        old('parent_ids', $currentParentIds)
+    )
+        ->map(fn ($id) => (int) $id)
+        ->reject(fn ($id) => $id === (int) $selectedPrimary)
+        ->all();
 @endphp
 
 <div>
@@ -116,7 +122,7 @@
                 </label>
 
                 <select
-                    name="parent_id"
+                    name="primary_parent_id"
                     class="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
                     <option value="">Top level</option>
@@ -124,17 +130,65 @@
                     @foreach($parents as $parent)
                         <option
                             value="{{ $parent->id }}"
-                            @selected((int) old('parent_id', $currentParentId) === $parent->id)
-                        >
-                            {{ $parent->name }} ({{ $parent->type?->name }})
-                        </option>
+                            @selected((int) $selectedPrimary === $parent->id)
+                        >{{ $parent->path }}</option>
                     @endforeach
                 </select>
 
                 <p class="text-xs text-gray-500 mt-1">
-                    A class sits inside a programme, a programme
-                    inside a school, and so on.
+                    The main place this group lives. Used for
+                    breadcrumbs and reports.
                 </p>
+            </div>
+        </div>
+
+        <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                Also sits inside
+            </label>
+
+            <p class="text-xs text-gray-500 mb-2">
+                A class can belong to its programme and to its
+                intake session at the same time. Tick any number,
+                or none. Tick again to remove.
+            </p>
+
+            <input
+                type="text"
+                id="parentFilter"
+                placeholder="Filter by name or path"
+                class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2 text-sm"
+            >
+
+            <div
+                class="border border-gray-300 rounded-lg p-3"
+                style="max-height:220px;overflow-y:auto"
+            >
+                @forelse($parents as $parent)
+                    <label
+                        class="parent-option flex items-center gap-2 py-1 cursor-pointer"
+                        data-label="{{ strtolower($parent->path) }}"
+                    >
+                        <input
+                            type="checkbox"
+                            name="parent_ids[]"
+                            value="{{ $parent->id }}"
+                            @checked(in_array($parent->id, $selectedOthers, true))
+                        >
+
+                        <span class="text-sm text-gray-700">
+                            {{ $parent->path }}
+
+                            <span class="text-xs text-gray-400">
+                                {{ $parent->type }}
+                            </span>
+                        </span>
+                    </label>
+                @empty
+                    <p class="text-sm text-gray-500">
+                        No other groups available.
+                    </p>
+                @endforelse
             </div>
         </div>
 
@@ -161,4 +215,25 @@
         </button>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var filter = document.getElementById('parentFilter');
+
+        if (!filter) {
+            return;
+        }
+
+        filter.addEventListener('input', function () {
+            var term = filter.value.trim().toLowerCase();
+
+            document.querySelectorAll('.parent-option').forEach(function (option) {
+                var match = term === ''
+                    || (option.dataset.label || '').indexOf(term) !== -1;
+
+                option.style.display = match ? '' : 'none';
+            });
+        });
+    });
+</script>
 @endsection

@@ -45,7 +45,7 @@ test(
                     'name' => 'DADT05',
                     'code' => 'DADT05',
                     'group_type_id' => $classType->id,
-                    'parent_id' => $programme->id,
+                    'primary_parent_id' => $programme->id,
                 ]
             )
             ->assertRedirect(
@@ -146,10 +146,10 @@ test(
                 [
                     'name' => $group->name,
                     'group_type_id' => $group->group_type_id,
-                    'parent_id' => $group->id,
+                    'primary_parent_id' => $group->id,
                 ]
             )
-            ->assertSessionHasErrors('parent_id');
+            ->assertSessionHasErrors('primary_parent_id');
     }
 );
 
@@ -287,5 +287,127 @@ test(
         expect($groupIds)->toContain(
             $class->primaryParent()->id
         );
+    }
+);
+
+test(
+    'a group with children cannot be deleted',
+    function () {
+        seedGroups();
+
+        $school = OrganisationGroup::query()
+            ->whereHas(
+                'type',
+                fn ($q) => $q->where('name', 'School')
+            )
+            ->firstOrFail();
+
+        $this->actingAs(groupAdmin())
+            ->delete(
+                route('admin.business.groups.destroy', $school)
+            )
+            ->assertSessionHasErrors('group');
+
+        expect($school->fresh())->not->toBeNull();
+    }
+);
+
+test(
+    'an unused group can be deleted',
+    function () {
+        seedGroups();
+
+        $spare = OrganisationGroup::create([
+            'organisation_id' => OrganisationGroup::value(
+                'organisation_id'
+            ),
+            'group_type_id' => OrganisationGroupType::value('id'),
+            'name' => 'Temporary group',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs(groupAdmin())
+            ->delete(
+                route('admin.business.groups.destroy', $spare)
+            )
+            ->assertRedirect();
+
+        expect($spare->fresh())->toBeNull();
+    }
+);
+
+test(
+    'a type in use cannot be removed',
+    function () {
+        seedGroups();
+
+        $type = OrganisationGroupType::where(
+            'name',
+            'School'
+        )->firstOrFail();
+
+        $this->actingAs(groupAdmin())
+            ->delete(
+                route('admin.business.groups.types.destroy', $type)
+            )
+            ->assertSessionHasErrors('type');
+
+        expect($type->fresh())->not->toBeNull();
+    }
+);
+
+test(
+    'an admin can name a new type',
+    function () {
+        seedGroups();
+
+        $this->actingAs(groupAdmin())
+            ->post(
+                route('admin.business.groups.types.store'),
+                ['name' => 'Faculty']
+            )
+            ->assertRedirect();
+
+        /*
+         * Nothing about the structure is fixed in code. An
+         * institution names its own levels.
+         */
+        expect(
+            OrganisationGroupType::where('name', 'Faculty')->exists()
+        )->toBeTrue();
+    }
+);
+
+test(
+    'the tree shows a group in every branch it belongs to',
+    function () {
+        seedGroups();
+
+        $class = OrganisationGroup::query()
+            ->whereHas(
+                'type',
+                fn ($q) => $q->where('name', 'Class / Group')
+            )
+            ->firstOrFail();
+
+        $intake = OrganisationGroup::create([
+            'organisation_id' => $class->organisation_id,
+            'group_type_id' => OrganisationGroupType::where(
+                'name',
+                'Intake'
+            )->value('id'),
+            'name' => 'Intake 14',
+            'is_active' => true,
+        ]);
+
+        $class->parents()->attach(
+            $intake->id,
+            ['is_primary' => false]
+        );
+
+        $this->actingAs(groupAdmin())
+            ->get(route('admin.business.groups.index'))
+            ->assertOk()
+            ->assertSee('also under');
     }
 );
