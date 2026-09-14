@@ -568,6 +568,24 @@
                         Advertisements
                     </span>
                 </a>
+
+                <a
+                    href="{{ route(
+                        'admin.business.grants.index'
+                    ) }}"
+                    class="sidebar-link {{
+                        request()->routeIs(
+                            'admin.business.grants.*'
+                        )
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-ticket"></i>
+                    <span>
+                        Access Grants
+                    </span>
+                </a>
             @endif
             @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">

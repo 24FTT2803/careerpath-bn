@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\UserPlanGrantController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
 use App\Http\Controllers\Student\BiicfExplorerController;
 use App\Http\Controllers\Student\CareerAdviserController;
@@ -355,6 +356,34 @@ Route::middleware(['auth'])
                 )->name(
                     'features.global'
                 );
+
+                /*
+                 * Access granted to individual accounts, for
+                 * special and test users.
+                 */
+                Route::get(
+                    '/grants',
+                    [
+                        UserPlanGrantController::class,
+                        'index',
+                    ]
+                )->name('grants.index');
+
+                Route::post(
+                    '/grants',
+                    [
+                        UserPlanGrantController::class,
+                        'store',
+                    ]
+                )->name('grants.store');
+
+                Route::put(
+                    '/grants/{grant}/revoke',
+                    [
+                        UserPlanGrantController::class,
+                        'revoke',
+                    ]
+                )->name('grants.revoke');
 
                 /*
                  * What appears in the ad placements. Whether the
