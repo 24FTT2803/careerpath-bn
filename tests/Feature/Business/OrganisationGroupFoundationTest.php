@@ -33,12 +33,16 @@ test('organisation groups support configurable hierarchical structures', functio
     $team = OrganisationGroup::create([
         'organisation_id' => $organisation->id,
         'group_type_id' => $teamType->id,
-        'parent_id' => $division->id,
         'name' => 'Software Team',
         'code' => 'SOFTWARE',
     ]);
 
-    expect($team->parent->is($division))
+    $team->parents()->attach(
+        $division->id,
+        ['is_primary' => true]
+    );
+
+    expect($team->primaryParent()->is($division))
         ->toBeTrue()
         ->and($division->children->contains($team))
         ->toBeTrue()
@@ -90,8 +94,7 @@ test('PB group seeder creates DADT04 hierarchy and assigns existing demo student
         'name' => 'Sip Spill',
         'email' => '1508user@example.com',
         'role' => 'student',
-        'programme' =>
-            'Diploma in ICT (Application Development)',
+        'programme' => 'Diploma in ICT (Application Development)',
     ]);
 
     $this->seed(
@@ -118,11 +121,11 @@ test('PB group seeder creates DADT04 hierarchy and assigns existing demo student
         ->toBe('DADT04')
         ->and($dadt04->type->name)
         ->toBe('Class / Group')
-        ->and($dadt04->parent->name)
+        ->and($dadt04->primaryParent()->name)
         ->toBe(
             'Diploma in ICT (Application Development)'
         )
-        ->and($dadt04->parent->parent->code)
+        ->and($dadt04->primaryParent()->primaryParent()->code)
         ->toBe('SICT');
 
     expect(

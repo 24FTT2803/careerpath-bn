@@ -25,78 +25,73 @@ function createSponsoredAccessTestStructure(): array
     ]);
 
     $schoolType = OrganisationGroupType::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
         'name' => 'School',
     ]);
 
     $programmeType = OrganisationGroupType::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
         'name' => 'Programme',
     ]);
 
     $classType = OrganisationGroupType::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
         'name' => 'Class',
     ]);
 
     $school = OrganisationGroup::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
-        'group_type_id' =>
-            $schoolType->id,
+        'group_type_id' => $schoolType->id,
 
         'name' => 'Technology School',
         'code' => 'TECH-SCHOOL',
     ]);
 
     $programme = OrganisationGroup::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
-        'group_type_id' =>
-            $programmeType->id,
-
-        'parent_id' =>
-            $school->id,
+        'group_type_id' => $programmeType->id,
 
         'name' => 'Application Development',
         'code' => 'APP-DEV-TEST',
     ]);
 
+    $programme->parents()->attach(
+        $school->id,
+        ['is_primary' => true]
+    );
+
     $firstClass = OrganisationGroup::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
-        'group_type_id' =>
-            $classType->id,
-
-        'parent_id' =>
-            $programme->id,
+        'group_type_id' => $classType->id,
 
         'name' => 'DADT04',
         'code' => 'DADT04-TEST',
     ]);
 
+    $firstClass->parents()->attach(
+        $programme->id,
+        ['is_primary' => true]
+    );
+
     $secondClass = OrganisationGroup::create([
-        'organisation_id' =>
-            $organisation->id,
+        'organisation_id' => $organisation->id,
 
-        'group_type_id' =>
-            $classType->id,
-
-        'parent_id' =>
-            $programme->id,
+        'group_type_id' => $classType->id,
 
         'name' => 'DADT05',
         'code' => 'DADT05-TEST',
     ]);
+
+    $secondClass->parents()->attach(
+        $programme->id,
+        ['is_primary' => true]
+    );
 
     $sponsor = BusinessSponsor::create([
         'name' => 'Example Sponsor',
@@ -133,13 +128,11 @@ test('organisation wide sponsorship applies to organisation members', function (
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
         'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
     ]);
 
     $service = app(
@@ -171,17 +164,13 @@ test('parent group sponsorship applies to members of descendant groups', functio
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
-        'organisation_group_id' =>
-            $structure['school']->id,
+        'organisation_group_id' => $structure['school']->id,
     ]);
 
     $service = app(
@@ -218,26 +207,25 @@ test('sponsorship for an unrelated group does not apply', function () {
      */
     $otherProgrammeType =
         OrganisationGroupType::create([
-            'organisation_id' =>
-                $structure['organisation']->id,
+            'organisation_id' => $structure['organisation']->id,
 
             'name' => 'Other Programme Type',
         ]);
 
     $otherProgramme =
         OrganisationGroup::create([
-            'organisation_id' =>
-                $structure['organisation']->id,
+            'organisation_id' => $structure['organisation']->id,
 
-            'group_type_id' =>
-                $otherProgrammeType->id,
-
-            'parent_id' =>
-                $structure['school']->id,
+            'group_type_id' => $otherProgrammeType->id,
 
             'name' => 'Data Analytics',
             'code' => 'DATA-TEST',
         ]);
+
+    $otherProgramme->parents()->attach(
+        $structure['school']->id,
+        ['is_primary' => true]
+    );
 
     $student
         ->organisationGroups()
@@ -251,17 +239,13 @@ test('sponsorship for an unrelated group does not apply', function () {
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
-        'organisation_group_id' =>
-            $otherProgramme->id,
+        'organisation_group_id' => $otherProgramme->id,
     ]);
 
     $service = app(
@@ -297,14 +281,11 @@ test('inactive sponsors do not provide sponsored access', function () {
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
     ]);
 
     $service = app(
@@ -336,17 +317,13 @@ test('expired sponsored grants do not provide access', function () {
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
-        'ends_at' =>
-            now()->subDay(),
+        'ends_at' => now()->subDay(),
     ]);
 
     $service = app(
@@ -383,25 +360,19 @@ test('direct user grants override sponsored access', function () {
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
     ]);
 
     UserPlanGrant::create([
-        'user_id' =>
-            $student->id,
+        'user_id' => $student->id,
 
-        'plan_id' =>
-            $free->id,
+        'plan_id' => $free->id,
 
-        'source' =>
-            'admin',
+        'source' => 'admin',
     ]);
 
     $service = app(
@@ -438,30 +409,23 @@ test('group specific sponsorship wins over organisation wide sponsorship at equa
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $free->id,
+        'plan_id' => $free->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
         'priority' => 0,
     ]);
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
-        'organisation_group_id' =>
-            $structure['programme']->id,
+        'organisation_group_id' => $structure['programme']->id,
 
         'priority' => 0,
     ]);
@@ -500,30 +464,23 @@ test('higher priority sponsorship overrides lower priority sponsorship', functio
     )->firstOrFail();
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $premium->id,
+        'plan_id' => $premium->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
-        'organisation_group_id' =>
-            $structure['programme']->id,
+        'organisation_group_id' => $structure['programme']->id,
 
         'priority' => 0,
     ]);
 
     SponsoredAccessGrant::create([
-        'business_sponsor_id' =>
-            $structure['sponsor']->id,
+        'business_sponsor_id' => $structure['sponsor']->id,
 
-        'plan_id' =>
-            $free->id,
+        'plan_id' => $free->id,
 
-        'organisation_id' =>
-            $structure['organisation']->id,
+        'organisation_id' => $structure['organisation']->id,
 
         'priority' => 10,
     ]);

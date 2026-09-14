@@ -586,6 +586,24 @@
                         Access Grants
                     </span>
                 </a>
+
+                <a
+                    href="{{ route(
+                        'admin.business.groups.index'
+                    ) }}"
+                    class="sidebar-link {{
+                        request()->routeIs(
+                            'admin.business.groups.*'
+                        )
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-school"></i>
+                    <span>
+                        Academic Groups
+                    </span>
+                </a>
             @endif
             @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">

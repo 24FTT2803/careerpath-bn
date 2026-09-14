@@ -33,6 +33,16 @@ class OrganisationGroupSeeder extends Seeder
             'name' => 'Programme',
         ]);
 
+        OrganisationGroupType::firstOrCreate([
+            'organisation_id' => $organisation->id,
+            'name' => 'Intake',
+        ]);
+
+        OrganisationGroupType::firstOrCreate([
+            'organisation_id' => $organisation->id,
+            'name' => 'Intake Session',
+        ]);
+
         $classType = OrganisationGroupType::firstOrCreate([
             'organisation_id' => $organisation->id,
             'name' => 'Class / Group',
@@ -45,7 +55,6 @@ class OrganisationGroupSeeder extends Seeder
             ],
             [
                 'group_type_id' => $schoolType->id,
-                'parent_id' => null,
                 'name' => 'School of Information and Communication Technology',
                 'is_active' => true,
             ]
@@ -58,7 +67,6 @@ class OrganisationGroupSeeder extends Seeder
             ],
             [
                 'group_type_id' => $programmeType->id,
-                'parent_id' => $sict->id,
                 'name' => 'Diploma in ICT (Application Development)',
                 'is_active' => true,
             ]
@@ -71,7 +79,6 @@ class OrganisationGroupSeeder extends Seeder
             ],
             [
                 'group_type_id' => $classType->id,
-                'parent_id' => $applicationDevelopment->id,
                 'name' => 'DADT04',
                 'is_active' => true,
             ]
@@ -90,5 +97,13 @@ class OrganisationGroupSeeder extends Seeder
                 'organisation_group_id' => $dadt04->id,
             ]);
         }
+
+        $applicationDevelopment->parents()->syncWithoutDetaching([
+            $sict->id => ['is_primary' => true],
+        ]);
+
+        $dadt04->parents()->syncWithoutDetaching([
+            $applicationDevelopment->id => ['is_primary' => true],
+        ]);
     }
 }

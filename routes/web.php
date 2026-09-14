@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserPlanGrantController;
@@ -356,6 +357,45 @@ Route::middleware(['auth'])
                 )->name(
                     'features.global'
                 );
+
+                /*
+                 * Institutions, schools, programmes, intakes,
+                 * sessions and classes.
+                 */
+                Route::get(
+                    '/groups',
+                    [OrganisationGroupController::class, 'index']
+                )->name('groups.index');
+
+                Route::get(
+                    '/groups/create',
+                    [OrganisationGroupController::class, 'create']
+                )->name('groups.create');
+
+                Route::post(
+                    '/groups',
+                    [OrganisationGroupController::class, 'store']
+                )->name('groups.store');
+
+                Route::get(
+                    '/groups/{group}/edit',
+                    [OrganisationGroupController::class, 'edit']
+                )->name('groups.edit');
+
+                Route::put(
+                    '/groups/{group}',
+                    [OrganisationGroupController::class, 'update']
+                )->name('groups.update');
+
+                Route::put(
+                    '/groups/{group}/archive',
+                    [OrganisationGroupController::class, 'archive']
+                )->name('groups.archive');
+
+                Route::put(
+                    '/groups/{group}/restore',
+                    [OrganisationGroupController::class, 'restore']
+                )->name('groups.restore');
 
                 /*
                  * Access granted to individual accounts, for

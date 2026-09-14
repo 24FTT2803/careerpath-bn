@@ -3,11 +3,11 @@
 namespace App\Services\Business;
 
 use App\Models\FeatureDefinition;
-use App\Models\OrganisationGroup;
 use App\Models\Plan;
 use App\Models\SponsoredAccessGrant;
 use App\Models\User;
 use App\Models\UserPlanGrant;
+use Illuminate\Support\Facades\DB;
 
 class EntitlementService
 {
@@ -37,11 +37,10 @@ class EntitlementService
             )
             ->whereHas(
                 'plan',
-                fn ($query) =>
-                    $query->where(
-                        'is_active',
-                        true
-                    )
+                fn ($query) => $query->where(
+                    'is_active',
+                    true
+                )
             )
             ->with('plan.features')
             ->orderByDesc('id')
@@ -49,14 +48,11 @@ class EntitlementService
 
         if ($directGrant) {
             return [
-                'plan' =>
-                    $directGrant->plan,
+                'plan' => $directGrant->plan,
 
-                'source' =>
-                    'direct',
+                'source' => 'direct',
 
-                'grant' =>
-                    $directGrant,
+                'grant' => $directGrant,
             ];
         }
 
@@ -67,14 +63,11 @@ class EntitlementService
 
         if ($sponsoredGrant) {
             return [
-                'plan' =>
-                    $sponsoredGrant->plan,
+                'plan' => $sponsoredGrant->plan,
 
-                'source' =>
-                    'sponsored',
+                'source' => 'sponsored',
 
-                'grant' =>
-                    $sponsoredGrant,
+                'grant' => $sponsoredGrant,
             ];
         }
 
@@ -85,16 +78,13 @@ class EntitlementService
             ->first();
 
         return [
-            'plan' =>
-                $defaultPlan,
+            'plan' => $defaultPlan,
 
-            'source' =>
-                $defaultPlan
+            'source' => $defaultPlan
                     ? 'default'
                     : 'none',
 
-            'grant' =>
-                null,
+            'grant' => null,
         ];
     }
 
@@ -135,27 +125,24 @@ class EntitlementService
             )
             ->whereHas(
                 'sponsor',
-                fn ($query) =>
-                    $query->where(
-                        'is_active',
-                        true
-                    )
+                fn ($query) => $query->where(
+                    'is_active',
+                    true
+                )
             )
             ->whereHas(
                 'plan',
-                fn ($query) =>
-                    $query->where(
-                        'is_active',
-                        true
-                    )
+                fn ($query) => $query->where(
+                    'is_active',
+                    true
+                )
             )
             ->whereHas(
                 'organisation',
-                fn ($query) =>
-                    $query->where(
-                        'is_active',
-                        true
-                    )
+                fn ($query) => $query->where(
+                    'is_active',
+                    true
+                )
             )
             ->where(function ($query) use (
                 $groupIds
@@ -178,11 +165,10 @@ class EntitlementService
                     )
                     ->orWhereHas(
                         'organisationGroup',
-                        fn ($groupQuery) =>
-                            $groupQuery->where(
-                                'is_active',
-                                true
-                            )
+                        fn ($groupQuery) => $groupQuery->where(
+                            'is_active',
+                            true
+                        )
                     );
             })
             ->with([
@@ -291,13 +277,11 @@ class EntitlementService
             return [
                 'allowed' => false,
                 'reason' => 'parent_restriction',
-                'message' =>
-                    'This feature is unavailable because its access hierarchy could not be resolved safely.',
+                'message' => 'This feature is unavailable because its access hierarchy could not be resolved safely.',
                 'feature_key' => $key,
                 'feature_name' => $key,
                 'source' => $access['source'],
-                'plan_code' =>
-                    $access['plan']?->code,
+                'plan_code' => $access['plan']?->code,
             ];
         }
 
@@ -323,13 +307,11 @@ class EntitlementService
             return [
                 'allowed' => false,
                 'reason' => 'maintenance',
-                'message' =>
-                    'Temporarily unavailable due to maintenance.',
+                'message' => 'Temporarily unavailable due to maintenance.',
                 'feature_key' => $key,
                 'feature_name' => $featureName,
                 'source' => $access['source'],
-                'plan_code' =>
-                    $access['plan']?->code,
+                'plan_code' => $access['plan']?->code,
             ];
         }
 
@@ -357,25 +339,22 @@ class EntitlementService
                 return [
                     'allowed' => false,
 
-                    'reason' =>
-                        $maintenance
+                    'reason' => $maintenance
                             ? 'maintenance'
                             : 'parent_restriction',
 
-                    'message' =>
-                        $maintenance
+                    'message' => $maintenance
                             ? 'Temporarily unavailable because '
-                                . $parentAccess['feature_name']
-                                . ' is under maintenance.'
+                                .$parentAccess['feature_name']
+                                .' is under maintenance.'
                             : 'Unavailable because '
-                                . $parentAccess['feature_name']
-                                . ' is not available with your current access.',
+                                .$parentAccess['feature_name']
+                                .' is not available with your current access.',
 
                     'feature_key' => $key,
                     'feature_name' => $featureName,
                     'source' => $access['source'],
-                    'plan_code' =>
-                        $access['plan']?->code,
+                    'plan_code' => $access['plan']?->code,
                 ];
             }
         }
@@ -395,8 +374,7 @@ class EntitlementService
                 'feature_key' => $key,
                 'feature_name' => $featureName,
                 'source' => $access['source'],
-                'plan_code' =>
-                    $access['plan']?->code,
+                'plan_code' => $access['plan']?->code,
             ];
         }
 
@@ -406,33 +384,27 @@ class EntitlementService
         ) {
             return [
                 'allowed' => false,
-                'reason' =>
-                    'sponsored_restriction',
+                'reason' => 'sponsored_restriction',
 
-                'message' =>
-                    'Not included in your current sponsored access.',
+                'message' => 'Not included in your current sponsored access.',
 
                 'feature_key' => $key,
                 'feature_name' => $featureName,
                 'source' => $access['source'],
-                'plan_code' =>
-                    $access['plan']?->code,
+                'plan_code' => $access['plan']?->code,
             ];
         }
 
         return [
             'allowed' => false,
-            'reason' =>
-                'plan_restriction',
+            'reason' => 'plan_restriction',
 
-            'message' =>
-                'Not included in your current plan.',
+            'message' => 'Not included in your current plan.',
 
             'feature_key' => $key,
             'feature_name' => $featureName,
             'source' => $access['source'],
-            'plan_code' =>
-                $access['plan']?->code,
+            'plan_code' => $access['plan']?->code,
         ];
     }
 
@@ -460,10 +432,9 @@ class EntitlementService
             $override = $access['grant']
                 ->featureOverrides
                 ->first(
-                    fn ($override) =>
-                        $override
-                            ->featureDefinition
-                            ?->key
+                    fn ($override) => $override
+                        ->featureDefinition
+                        ?->key
                         === $key
                 );
 
@@ -564,7 +535,6 @@ class EntitlementService
             ->get([
                 'organisation_groups.id',
                 'organisation_groups.organisation_id',
-                'organisation_groups.parent_id',
             ]);
 
         if ($membershipGroups->isEmpty()) {
@@ -580,50 +550,61 @@ class EntitlementService
             ->values()
             ->all();
 
-        $groups = OrganisationGroup::query()
+        /*
+         * Every parent edge in the institution, read once. A
+         * group can sit in more than one branch, so walking up
+         * means following all of its edges rather than a single
+         * column.
+         */
+        $edges = DB::table('organisation_group_parents')
+            ->join(
+                'organisation_groups',
+                'organisation_groups.id',
+                '=',
+                'organisation_group_parents.group_id'
+            )
             ->whereIn(
-                'organisation_id',
+                'organisation_groups.organisation_id',
                 $organisationIds
             )
             ->get([
-                'id',
-                'organisation_id',
-                'parent_id',
-            ])
-            ->keyBy('id');
+                'organisation_group_parents.group_id',
+                'organisation_group_parents.parent_id',
+            ]);
+
+        $parentsByGroup = [];
+
+        foreach ($edges as $edge) {
+            $parentsByGroup[$edge->group_id][] =
+                $edge->parent_id;
+        }
 
         $scopeGroupIds = [];
 
-        foreach ($membershipGroups as $membership) {
-            $currentId =
-                $membership->id;
+        $pending = $membershipGroups
+            ->pluck('id')
+            ->all();
 
-            $visited = [];
+        /*
+         * Breadth first rather than a single climb, because
+         * several paths can reach the same ancestor and a
+         * cycle would otherwise loop forever.
+         */
+        while ($pending !== []) {
+            $currentId = array_shift($pending);
 
-            while ($currentId) {
-                if (isset(
-                    $visited[$currentId]
-                )) {
-                    break;
+            if (isset($scopeGroupIds[$currentId])) {
+                continue;
+            }
+
+            $scopeGroupIds[$currentId] = true;
+
+            foreach (
+                $parentsByGroup[$currentId] ?? [] as $parentId
+            ) {
+                if (! isset($scopeGroupIds[$parentId])) {
+                    $pending[] = $parentId;
                 }
-
-                $visited[$currentId] =
-                    true;
-
-                $group = $groups->get(
-                    $currentId
-                );
-
-                if (! $group) {
-                    break;
-                }
-
-                $scopeGroupIds[
-                    $group->id
-                ] = true;
-
-                $currentId =
-                    $group->parent_id;
             }
         }
 
