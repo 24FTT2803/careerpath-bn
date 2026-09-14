@@ -1363,39 +1363,7 @@
                     <div class="cpbn-field">
                         <label>Programme</label>
 
-                        <select name="programme">
-                            <option value="">
-                                Select your programme
-                            </option>
-
-                            <option
-                                value="Diploma in ICT (Application Development)"
-                                {{ old('programme', $user->programme) === 'Diploma in ICT (Application Development)' ? 'selected' : '' }}
-                            >
-                                DADT - Application Development
-                            </option>
-
-                            <option
-                                value="Diploma in ICT (Data Analytics)"
-                                {{ old('programme', $user->programme) === 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}
-                            >
-                                DDAT - Data Analytics
-                            </option>
-
-                            <option
-                                value="Diploma in ICT (Cloud Networking)"
-                                {{ old('programme', $user->programme) === 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}
-                            >
-                                DCNG - Cloud Networking
-                            </option>
-
-                            <option
-                                value="Diploma in Business Information Systems"
-                                {{ old('programme', $user->programme) === 'Diploma in Business Information Systems' ? 'selected' : '' }}
-                            >
-                                DBIS - Business Information Systems
-                            </option>
-                        </select>
+                        <x-programme-select :selected="$user->programme" />
 
                         @error('programme')
                             <div class="error">{{ $message }}</div>

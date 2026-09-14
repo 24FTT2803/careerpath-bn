@@ -403,21 +403,7 @@
                     <div class="field">
                         <label>Programme <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <select name="programme" required class="{{ $errors->has('programme') ? 'error-input' : '' }}">
-                                <option value="">Select your programme</option>
-                                <option value="Diploma in ICT (Application Development)" {{ old('programme') == 'Diploma in ICT (Application Development)' ? 'selected' : '' }}>
-                                    DADT - Application Development
-                                </option>
-                                <option value="Diploma in ICT (Data Analytics)" {{ old('programme') == 'Diploma in ICT (Data Analytics)' ? 'selected' : '' }}>
-                                    DDAT - Data Analytics
-                                </option>
-                                <option value="Diploma in ICT (Cloud Networking)" {{ old('programme') == 'Diploma in ICT (Cloud Networking)' ? 'selected' : '' }}>
-                                    DCNG - Cloud Networking
-                                </option>
-                                <option value="Diploma in Business Information Systems" {{ old('programme') == 'Diploma in Business Information Systems' ? 'selected' : '' }}>
-                                    DBIS - Business Information Systems
-                                </option>
-                            </select>
+                            <x-programme-select :selected="null" />
                         </div>
                         @error('programme')
                             <div class="error">{{ $message }}</div>

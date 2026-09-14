@@ -63,7 +63,7 @@ class OrganisationGroupSeeder extends Seeder
         $applicationDevelopment = OrganisationGroup::updateOrCreate(
             [
                 'organisation_id' => $organisation->id,
-                'code' => 'APP-DEV',
+                'code' => 'DADT',
             ],
             [
                 'group_type_id' => $programmeType->id,
@@ -71,6 +71,32 @@ class OrganisationGroupSeeder extends Seeder
                 'is_active' => true,
             ]
         );
+
+        /*
+         * The other SICT programmes. Students choose from these
+         * rather than from a list written into the code.
+         */
+        foreach ([
+            'DDAT' => 'Diploma in ICT (Data Analytics)',
+            'DCNG' => 'Diploma in ICT (Cloud Networking)',
+            'DBIS' => 'Diploma in Business Information Systems',
+        ] as $code => $name) {
+            $programme = OrganisationGroup::updateOrCreate(
+                [
+                    'organisation_id' => $organisation->id,
+                    'code' => $code,
+                ],
+                [
+                    'group_type_id' => $programmeType->id,
+                    'name' => $name,
+                    'is_active' => true,
+                ]
+            );
+
+            $programme->parents()->syncWithoutDetaching([
+                $sict->id => ['is_primary' => true],
+            ]);
+        }
 
         $dadt04 = OrganisationGroup::updateOrCreate(
             [

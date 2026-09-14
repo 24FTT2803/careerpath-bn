@@ -15,6 +15,7 @@ use App\Models\StudentProject;
 use App\Models\User;
 use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
+use App\Services\Business\ProgrammeEnrolmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -247,12 +248,7 @@ class ProfileController extends Controller
             'programme' => [
                 'nullable',
                 'string',
-                Rule::in([
-                    'Diploma in ICT (Application Development)',
-                    'Diploma in ICT (Data Analytics)',
-                    'Diploma in ICT (Cloud Networking)',
-                    'Diploma in Business Information Systems',
-                ]),
+                Rule::exists('organisation_groups', 'name'),
             ],
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:4'],
 
@@ -655,6 +651,16 @@ class ProfileController extends Controller
          * of when to generate again.
          */
         $recommendationStatus->refreshFor($user->fresh());
+
+        /*
+         * Keep the student's place in the structure matching the
+         * programme they chose, so sponsorship and advertising
+         * aimed at their school or programme can find them.
+         */
+        app(ProgrammeEnrolmentService::class)->syncFor(
+            $user->fresh(),
+            $user->programme
+        );
 
         $response = redirect()
             ->route('student.profile')

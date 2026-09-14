@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentProfile;
 use App\Models\User;
 use App\Services\AI\RecommendationStatusService;
+use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -67,7 +68,7 @@ class UserController extends Controller
         if ($request->role === 'student') {
             $rules['student_id'] = 'required|unique:users';
             $rules['programme'] =
-                'required|string|in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems';
+                'required|string|exists:organisation_groups,name';
         } else {
             $rules['student_id'] = 'nullable|unique:users';
             $rules['programme'] = 'nullable|string';
@@ -86,6 +87,11 @@ class UserController extends Controller
                 ? $request->programme
                 : null,
         ]);
+
+        app(ProgrammeEnrolmentService::class)->syncFor(
+            $user->fresh(),
+            $user->programme
+        );
 
         // Create student profile with phone number if provided
         StudentProfile::create([
@@ -132,7 +138,7 @@ class UserController extends Controller
         if ($request->role === 'student') {
             $rules['student_id'] = 'required|unique:users,student_id,'.$id;
             $rules['programme'] =
-                'required|string|in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems';
+                'required|string|exists:organisation_groups,name';
         } else {
             $rules['student_id'] = 'nullable|unique:users,student_id,'.$id;
             $rules['programme'] = 'nullable|string';
@@ -155,6 +161,11 @@ class UserController extends Controller
         }
 
         $user->update($data);
+
+        app(ProgrammeEnrolmentService::class)->syncFor(
+            $user->fresh(),
+            $user->programme
+        );
 
         /*
          * An administrator can change a student's programme,

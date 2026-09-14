@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\StudentProfile;
-use App\Models\StudentAspiration;
 use App\Helpers\NotificationHelper;
+use App\Http\Controllers\Controller;
+use App\Models\StudentAspiration;
+use App\Models\StudentProfile;
+use App\Models\User;
+use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -39,7 +40,7 @@ class RegisteredUserController extends Controller
             'programme' => [
                 'required',
                 'string',
-                'in:Diploma in ICT (Application Development),Diploma in ICT (Data Analytics),Diploma in ICT (Cloud Networking),Diploma in Business Information Systems',
+                'exists:organisation_groups,name',
             ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'terms' => ['required', 'accepted'],
@@ -54,7 +55,7 @@ class RegisteredUserController extends Controller
         ]);
 
         // Combine first and last name
-        $fullName = $request->first_name . ' ' . $request->last_name;
+        $fullName = $request->first_name.' '.$request->last_name;
 
         $user = User::create([
             'first_name' => $request->first_name,
@@ -65,6 +66,11 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'student',
         ]);
+
+        app(ProgrammeEnrolmentService::class)->syncFor(
+            $user->fresh(),
+            $user->programme
+        );
 
         // Create default student profile
         StudentProfile::create([
