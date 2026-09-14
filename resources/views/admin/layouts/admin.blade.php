@@ -604,6 +604,24 @@
                         Academic Groups
                     </span>
                 </a>
+
+                <a
+                    href="{{ route(
+                        'admin.business.sponsorship.index'
+                    ) }}"
+                    class="sidebar-link {{
+                        request()->routeIs(
+                            'admin.business.sponsorship.*'
+                        )
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-handshake"></i>
+                    <span>
+                        Sponsorship
+                    </span>
+                </a>
             @endif
             @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">

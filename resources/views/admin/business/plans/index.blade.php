@@ -719,12 +719,7 @@
                 Plan Feature Values
             </h2>
 
-            <p>
-                Configure what each plan receives.
-                Sponsored access can inherit these values
-                or override them separately in the
-                sponsorship management section later.
-            </p>
+            <p>Sponsorship is managed on its own screen.</p>
         </div>
 
         <div class="plans-grid">

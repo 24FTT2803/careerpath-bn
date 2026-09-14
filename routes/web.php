@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
+use App\Http\Controllers\Admin\SponsorshipController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserPlanGrantController;
@@ -357,6 +358,40 @@ Route::middleware(['auth'])
                 )->name(
                     'features.global'
                 );
+
+                /*
+                 * Organisations funding access for groups of
+                 * students.
+                 */
+                Route::get(
+                    '/sponsorship',
+                    [SponsorshipController::class, 'index']
+                )->name('sponsorship.index');
+
+                Route::post(
+                    '/sponsorship/sponsors',
+                    [SponsorshipController::class, 'storeSponsor']
+                )->name('sponsorship.sponsors.store');
+
+                Route::put(
+                    '/sponsorship/sponsors/{sponsor}/toggle',
+                    [SponsorshipController::class, 'toggleSponsor']
+                )->name('sponsorship.sponsors.toggle');
+
+                Route::delete(
+                    '/sponsorship/sponsors/{sponsor}',
+                    [SponsorshipController::class, 'destroySponsor']
+                )->name('sponsorship.sponsors.destroy');
+
+                Route::post(
+                    '/sponsorship/grants',
+                    [SponsorshipController::class, 'storeGrant']
+                )->name('sponsorship.grants.store');
+
+                Route::put(
+                    '/sponsorship/grants/{grant}/revoke',
+                    [SponsorshipController::class, 'revokeGrant']
+                )->name('sponsorship.grants.revoke');
 
                 /*
                  * Institutions, schools, programmes, intakes,
