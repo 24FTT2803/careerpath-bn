@@ -1270,10 +1270,25 @@
                 </div>
                 <div class="footer-col">
                     <h4>Contact</h4>
-                    <a href="#"><i class="fas fa-university"></i> Politeknik Brunei</a>
-                    <a href="#"><i class="fas fa-map-marker-alt"></i> Jalan Ong Sum Ping, BSB</a>
-                    <a href="#"><i class="fas fa-envelope"></i> sict@pb.edu.bn</a>
-                    <a href="#"><i class="fas fa-phone"></i> +673 123 4567</a>
+                    <a href="https://www.google.com/maps/search/?api=1&query=Politeknik+Brunei+Ong+Sum+Ping" target="_blank">
+    <i class="fas fa-map-marker-alt"></i>
+    Politeknik Brunei, Jalan Ong Sum Ping
+</a>
+
+<a href="tel:+6732234630">
+    <i class="fas fa-phone"></i>
+    +673 2234630
+</a>
+
+<a href="mailto:contact@pb.edu.bn">
+    <i class="fas fa-envelope"></i>
+    contact@pb.edu.bn
+</a>
+
+<a href="https://www.pb.edu.bn" target="_blank">
+    <i class="fas fa-globe"></i>
+    www.pb.edu.bn
+</a>
                 </div>
             </div>
             <div class="footer-bottom">
