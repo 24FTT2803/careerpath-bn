@@ -40,6 +40,41 @@
         font-size: 15px;
         margin-top: 2px;
     }
+
+    .career-detail-page .header-actions {
+        display: flex;
+        gap: 10px;
+    }
+    .career-detail-page .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        font-family: inherit;
+    }
+    .career-detail-page .btn-outline {
+        background: transparent;
+        color: #1a1a2e;
+        border: 2px solid #e5e7eb;
+    }
+    .career-detail-page .btn-outline:hover {
+        border-color: #c9a84c;
+        color: #c9a84c;
+        transform: translateY(-2px);
+    }
+    .career-detail-page .header .subtitle {
+        color: #6b7280;
+        font-size: 14px;
+        margin-top: 2px;
+    }
+
     .career-detail-page .header .demand-badge {
         display: inline-flex;
         align-items: center;
@@ -170,16 +205,18 @@
 </style>
 
 <div class="career-detail-page">
-    <a href="{{ route('admin.careers.index') }}" class="back-link">
-        <i class="fas fa-arrow-left"></i> Back to Careers
-    </a>
+    <div class="header-actions" style="margin-bottom: 16px;">
+        <a href="{{ route('admin.careers.index') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Careers
+        </a>
+    </div>
 
     <div class="header">
         <div>
             <h1>{{ $career->job_title }}</h1>
-            <div class="subsector">
+            <p class="subtitle">
                 <i class="fas fa-layer-group"></i> {{ $career->subsector ?? 'Uncategorized' }}
-            </div>
+            </p>
         </div>
         @php
             $demandColor = match(strtolower($career->demand_level ?? 'medium')) {

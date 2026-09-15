@@ -143,10 +143,14 @@
                         </div>
                     </div>
 
-                    <div class="student-tags">
-                        @foreach($student->competencies->take(3) as $skill)
+                        <div class="student-tags">
+                        @forelse($student->competencies->take(3) as $skill)
                             <span class="tag tag-blue">{{ $skill->skill_name }}</span>
-                        @endforeach
+                        @empty
+                            <span class="tag-empty">
+                                <i class="fas fa-circle-info"></i> No skills or competencies added yet
+                            </span>
+                        @endforelse
                         @if($student->competencies->count() > 3)
                             <span class="tag tag-muted">+{{ $student->competencies->count() - 3 }} more</span>
                         @endif
@@ -157,9 +161,6 @@
                     <a href="{{ route('admin.students.show', $student) }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-eye"></i> View Profile
                     </a>
-                    <button class="btn btn-outline btn-sm">
-                        <i class="fas fa-envelope"></i> Message
-                    </button>
                 </div>
             </div>
         @empty
@@ -522,6 +523,16 @@
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
+    }
+
+        .tag-empty {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 11px;
+        color: #9ca3af;
+        font-style: italic;
+        padding: 4px 0;
     }
 
     .tag {
