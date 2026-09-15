@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use App\Rules\NoProfanity;
 
 class MilestoneController extends Controller
 {
@@ -27,7 +28,7 @@ class MilestoneController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|string|max:255',
+            'title' => ['required', 'string', 'max:255', new NoProfanity],
             'category' => 'required|string|in:academic,career,personal,skill',
             'description' => 'nullable|string',
             'target_date' => 'nullable|date',

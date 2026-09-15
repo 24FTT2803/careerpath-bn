@@ -27,6 +27,7 @@ use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\ValidationException;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use Propaganistas\LaravelPhone\Rules\Phone;
+use App\Rules\NoProfanity;
 
 class ProfileController extends Controller
 {
@@ -207,8 +208,8 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
+            'first_name' => ['required', 'string', 'max:100', new NoProfanity],
+            'last_name' => ['required', 'string', 'max:100', new NoProfanity],
             'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,'.$user->id],
             'phone' => [
                 'nullable',
@@ -289,6 +290,7 @@ class ProfileController extends Controller
                 'nullable',
                 'string',
                 'max:40',
+                new NoProfanity,
             ],
 
             'custom_skill_levels' => [
@@ -313,6 +315,7 @@ class ProfileController extends Controller
                 'nullable',
                 'string',
                 'max:40',
+                new NoProfanity,
             ],
 
             'projects' => ['nullable', 'array'],
@@ -327,6 +330,7 @@ class ProfileController extends Controller
                 'required',
                 'string',
                 'max:150',
+                new NoProfanity,
             ],
 
             'projects.*.role' => [
@@ -381,12 +385,14 @@ class ProfileController extends Controller
                 'required',
                 'string',
                 'max:150',
+                new NoProfanity,
             ],
 
             'certifications.*.issuing_organization' => [
                 'nullable',
                 'string',
                 'max:150',
+                new NoProfanity,
             ],
 
             'certifications.*.issue_date' => [

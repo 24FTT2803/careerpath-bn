@@ -9,6 +9,7 @@ use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Rules\NoProfanity;
 
 class UserController extends Controller
 {
@@ -52,7 +53,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $rules = [
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', new NoProfanity],
             'role' => 'required|in:student,lecturer,admin',
             'password' => 'required|min:8|confirmed',
         ];
@@ -123,7 +124,7 @@ class UserController extends Controller
         $user = User::with('profile')->findOrFail($id);
 
         $rules = [
-            'name' => 'required|string|max:255',
+            'name' => ['required', 'string', 'max:255', new NoProfanity],
             'role' => 'required|in:student,lecturer,admin',
         ];
 

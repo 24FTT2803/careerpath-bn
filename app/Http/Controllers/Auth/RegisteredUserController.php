@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use App\Rules\NoProfanity;
 
 class RegisteredUserController extends Controller
 {
@@ -26,8 +27,8 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'first_name' => ['required', 'string', 'max:255'],
-            'last_name' => ['required', 'string', 'max:255'],
+            'first_name' => ['required', 'string', 'max:255', new NoProfanity],
+            'last_name' => ['required', 'string', 'max:255', new NoProfanity],
             'email' => [
                 'required',
                 'string',
