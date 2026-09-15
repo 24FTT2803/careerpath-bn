@@ -220,7 +220,12 @@
            ============================================ */
         .hero {
             padding: 140px 0 80px;
-            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+            background:
+                linear-gradient(135deg, rgba(13, 31, 51, 0.93) 0%, rgba(26, 58, 92, 0.90) 50%, rgba(42, 90, 140, 0.87) 100%),
+                url('{{ asset("images/hero-bg.jpg") }}');
+            background-size: cover;
+            background-position: center 30%;
+            background-repeat: no-repeat;
             position: relative;
             overflow: hidden;
         }
