@@ -34,38 +34,6 @@
         line-height: 1.6;
     }
 
-    .business-summary {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-    }
-
-    .business-summary-item {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 10px;
-        padding: 10px 16px;
-        min-width: 105px;
-        text-align: center;
-    }
-
-    .business-summary-number {
-        display: block;
-        color: #1a3a5c;
-        font-size: 20px;
-        font-weight: 700;
-    }
-
-    .business-summary-label {
-        display: block;
-        margin-top: 2px;
-        color: #6b7280;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: .06em;
-    }
-
     .business-info {
         background: #fbf1de;
         border: 1px solid #e8d4a0;
@@ -130,13 +98,10 @@
     }
 
     .global-feature-row {
-        display: grid;
-        grid-template-columns:
-            minmax(260px, 1fr)
-            110px
-            150px;
-        gap: 16px;
+        display: flex;
         align-items: center;
+        justify-content: space-between;
+        gap: 16px;
         padding: 13px 18px;
         border-bottom: 1px solid #f0f1f3;
     }
@@ -178,18 +143,57 @@
         border-radius: 10px;
     }
 
-    .value-type {
-        justify-self: start;
-        display: inline-flex;
-        align-items: center;
-        border-radius: 100px;
-        padding: 4px 9px;
-        font-size: 10px;
-        font-weight: 600;
-        background: #eef2f7;
-        color: #526171;
-        text-transform: uppercase;
-        letter-spacing: .04em;
+    /*
+     * The same switch students see in their own settings, so the
+     * control means the same thing in both places.
+     */
+    .feature-switch {
+        display: block;
+        position: relative;
+        flex-shrink: 0;
+        width: 46px;
+        height: 26px;
+        border-radius: 999px;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        background: #c0392b;
+        transition: background 0.2s ease;
+    }
+
+    .feature-switch.on {
+        background: #2d8f5c;
+    }
+
+    .feature-switch::after {
+        content: '';
+        position: absolute;
+        top: 3px;
+        left: 3px;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        transition: transform 0.2s ease;
+    }
+
+    .feature-switch.on::after {
+        transform: translateX(20px);
+    }
+
+    .feature-switch:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.18);
+    }
+
+    .feature-switch.saving {
+        opacity: 0.55;
+        cursor: progress;
+    }
+
+    .global-feature-row > div:first-child {
+        min-width: 0;
     }
 
     .global-toggle-form {
@@ -478,10 +482,6 @@
             flex-direction: column;
         }
 
-        .business-summary {
-            justify-content: flex-start;
-        }
-
         .plans-grid {
             grid-template-columns: 1fr;
         }
@@ -489,11 +489,14 @@
 
     @media (max-width: 700px) {
         .global-feature-row {
-            grid-template-columns: 1fr;
-            gap: 8px;
+            gap: 12px;
         }
 
-        .global-toggle-form {
+        .global-feature-row > div:first-child {
+        min-width: 0;
+    }
+
+    .global-toggle-form {
             justify-self: start;
         }
 
@@ -506,10 +509,6 @@
     @media (max-width: 480px) {
         .quota-row {
             grid-template-columns: 1fr;
-        }
-
-        .business-summary-item {
-            min-width: 90px;
         }
     }
 </style>
@@ -532,41 +531,6 @@
             </p>
         </div>
 
-        <div class="business-summary">
-            <div class="business-summary-item">
-                <span class="business-summary-number">
-                    {{ $plans->count() }}
-                </span>
-                <span class="business-summary-label">
-                    Plans
-                </span>
-            </div>
-
-            <div class="business-summary-item">
-                <span class="business-summary-number">
-                    {{ $features->count() }}
-                </span>
-                <span class="business-summary-label">
-                    Features
-                </span>
-            </div>
-
-            <div class="business-summary-item">
-                <span class="business-summary-number">
-                    {{
-                        $features
-                            ->where(
-                                'global_enabled',
-                                true
-                            )
-                            ->count()
-                    }}
-                </span>
-                <span class="business-summary-label">
-                    Globally On
-                </span>
-            </div>
-        </div>
     </div>
 
     @if($errors->any())
@@ -649,10 +613,6 @@
                             </span>
                         </div>
 
-                        <span class="value-type">
-                            {{ $feature->value_type }}
-                        </span>
-
                         <form
                             method="POST"
                             action="{{
@@ -661,12 +621,7 @@
                                     $feature
                                 )
                             }}"
-                            class="global-toggle-form"
-                            data-confirm-update
-                            data-item-name="{{
-                                $feature->name .
-                                ' global availability'
-                            }}"
+                            class="global-toggle-form js-instant"
                         >
                             @csrf
                             @method('PUT')
@@ -683,25 +638,22 @@
 
                             <button
                                 type="submit"
-                                class="status-button {{
+                                class="feature-switch {{
                                     $feature->global_enabled
-                                        ? 'enabled'
-                                        : 'disabled'
+                                        ? 'on'
+                                        : ''
+                                }}"
+                                title="{{
+                                    $feature->global_enabled
+                                        ? 'Available to plans. Click to withdraw.'
+                                        : 'Withdrawn from all plans. Click to restore.'
+                                }}"
+                                aria-label="{{
+                                    $feature->global_enabled
+                                        ? 'Available'
+                                        : 'Withdrawn'
                                 }}"
                             >
-                                <i
-                                    class="fas {{
-                                        $feature->global_enabled
-                                            ? 'fa-toggle-on'
-                                            : 'fa-toggle-off'
-                                    }}"
-                                ></i>
-
-                                {{
-                                    $feature->global_enabled
-                                        ? 'Enabled'
-                                        : 'Disabled'
-                                }}
                             </button>
                         </form>
                     </div>
@@ -1299,3 +1251,58 @@ document.addEventListener(
 );
 </script>
 @endsection
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        /*
+         * Toggling a feature posts in the background rather than
+         * reloading. Configuring a plan means changing many
+         * settings in a row, and a full reload between each one
+         * loses your place on the page.
+         */
+        document.querySelectorAll('form.js-instant').forEach(function (form) {
+            form.addEventListener('submit', function (event) {
+                event.preventDefault();
+
+                var button = form.querySelector('button');
+                var hidden = form.querySelector('input[name="global_enabled"]');
+
+                if (!button || button.classList.contains('saving')) {
+                    return;
+                }
+
+                button.classList.add('saving');
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin'
+                })
+                    .then(function (response) {
+                        if (!response.ok) {
+                            throw new Error('Save failed');
+                        }
+
+                        var turningOn = hidden.value === '1';
+
+                        button.classList.toggle('on', turningOn);
+
+                        // Flip the value so the next click reverses it.
+                        hidden.value = turningOn ? '0' : '1';
+                    })
+                    .catch(function () {
+                        /*
+                         * A failed save must not leave the dot
+                         * showing a state the database does not
+                         * hold, so fall back to a reload.
+                         */
+                        window.location.reload();
+                    })
+                    .finally(function () {
+                        button.classList.remove('saving');
+                    });
+            });
+        });
+    });
+</script>

@@ -8,19 +8,19 @@
 @endphp
 
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">
+            <h1>
                 {{ $isEdit ? '✏️ Edit Advertisement' : '📣 New Advertisement' }}
             </h1>
-            <p class="text-gray-600">
+            <p class="subtitle">
                 What appears in the placement, and who sees it
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.advertisements.index') }}"
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition"
+            class="btn btn-outline"
         >
             <i class="fas fa-arrow-left"></i> Back
         </a>
@@ -45,7 +45,7 @@
                 : route('admin.business.advertisements.store')
         }}"
         enctype="multipart/form-data"
-        class="bg-white rounded-lg shadow p-6"
+        class="card"
     >
         @csrf
 
@@ -54,7 +54,7 @@
         @endif
 
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="field-label">
                 Title
             </label>
 
@@ -64,23 +64,23 @@
                 value="{{ old('title', $advertisement->title) }}"
                 maxlength="120"
                 required
-                class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                class="field-input"
             >
 
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="field-hint">
                 For your own reference. Students do not see this.
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="field-grid field-grid-2">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Type
                 </label>
 
                 <select
                     name="type"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
                     @foreach([
                         'image' => 'Image',
@@ -97,13 +97,13 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Position
                 </label>
 
                 <select
                     name="position"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
                     <option
                         value="one"
@@ -116,7 +116,7 @@
                     >Position two</option>
                 </select>
 
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="field-hint">
                     Each position moves to suit the screen size.
                     On a wide screen it sits in a side column;
                     on a narrow one it moves into the page.
@@ -125,7 +125,7 @@
         </div>
 
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="field-label">
                 Image
             </label>
 
@@ -146,10 +146,10 @@
                 id="assetInput"
                 name="asset"
                 accept="image/*,video/*"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                class="field-input"
             >
 
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="field-hint">
                 Banners are shown at 6:1, so 1456&times;243 is a
                 good size. Images up to 2 MB, video up to 10 MB.
                 Leave empty to keep the current file.
@@ -177,7 +177,7 @@
         </div>
 
         <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="field-label">
                 External address
             </label>
 
@@ -185,19 +185,19 @@
                 type="url"
                 name="external_url"
                 value="{{ old('external_url', $advertisement->external_url) }}"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                class="field-input"
                 placeholder="https://"
             >
 
-            <p class="text-xs text-gray-500 mt-1">
+            <p class="field-hint">
                 Used when the media is hosted elsewhere, or for
                 an ad network embed.
             </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="field-grid field-grid-2">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Click destination
                 </label>
 
@@ -205,17 +205,17 @@
                     type="url"
                     name="click_url"
                     value="{{ old('click_url', $advertisement->click_url) }}"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                     placeholder="https://"
                 >
 
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="field-hint">
                     Where a student goes if they click. Optional.
                 </p>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Alternative text
                 </label>
 
@@ -224,19 +224,19 @@
                     name="alt_text"
                     value="{{ old('alt_text', $advertisement->alt_text) }}"
                     maxlength="160"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
 
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="field-hint">
                     Read aloud by screen readers and shown if the
                     image cannot load.
                 </p>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="field-grid field-grid-3">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Starts
                 </label>
 
@@ -244,12 +244,12 @@
                     type="date"
                     name="starts_at"
                     value="{{ old('starts_at', $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('Y-m-d')) }}"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Ends
                 </label>
 
@@ -257,18 +257,18 @@
                     type="date"
                     name="ends_at"
                     value="{{ old('ends_at', $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('Y-m-d')) }}"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Audience
                 </label>
 
                 <select
                     name="organisation_group_id"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
                     <option value="">All students</option>
 
@@ -291,13 +291,13 @@
                     @checked(old('is_active', $advertisement->is_active))
                 >
 
-                <span class="text-sm text-gray-700">Active</span>
+                <span >Active</span>
             </label>
         </div>
 
         <button
             type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
+            class="btn btn-primary"
         >
             {{ $isEdit ? 'Save changes' : 'Create advertisement' }}
         </button>

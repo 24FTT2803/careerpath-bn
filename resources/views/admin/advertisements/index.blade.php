@@ -4,17 +4,17 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">📣 Advertisements</h1>
-            <p class="text-gray-600">
+            <h1>📣 Advertisements</h1>
+            <p class="subtitle">
                 Manage what appears in the student ad placements
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.advertisements.create') }}"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+            class="btn btn-primary"
         >
             <i class="fas fa-plus"></i> New Advertisement
         </a>
@@ -27,7 +27,7 @@
         </div>
     @endif
 
-    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-6 rounded text-sm">
+    <div class="info-banner info-banner-blue">
         <i class="fas fa-info-circle"></i>
         Whether these appear at all is controlled on
         <a
@@ -37,7 +37,7 @@
         and students can switch advertising off in their own settings.
     </div>
 
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="card">
         <div class="flex flex-wrap gap-2 mb-4">
             @foreach([
                 '' => 'All',
@@ -61,63 +61,63 @@
         </div>
 
         @if($advertisements->isEmpty())
-            <p class="text-gray-500 text-center py-6">
+            <p class="empty-text">
                 No advertisements yet.
             </p>
         @else
-            <table class="w-full text-sm">
+            <table class="admin-table">
                 <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2">Title</th>
-                        <th class="py-2">Type</th>
-                        <th class="py-2">Position</th>
-                        <th class="py-2">Audience</th>
-                        <th class="py-2">Reach</th>
-                        <th class="py-2">Status</th>
-                        <th class="py-2 text-right">Actions</th>
+                    <tr>
+                        <th>Title</th>
+                        <th>Type</th>
+                        <th>Position</th>
+                        <th>Audience</th>
+                        <th>Reach</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach($advertisements as $advertisement)
-                        <tr class="border-b border-gray-100 last:border-0">
-                            <td class="py-3">
-                                <span class="font-medium">
+                        <tr>
+                            <td>
+                                <span class="cell-title">
                                     {{ $advertisement->title }}
                                 </span>
                             </td>
 
-                            <td class="py-3 capitalize">
+                            <td class="capitalize">
                                 {{ $advertisement->type }}
                             </td>
 
-                            <td class="py-3 capitalize">
+                            <td class="capitalize">
                                 {{ $advertisement->position }}
                             </td>
 
-                            <td class="py-3">
+                            <td>
                                 {{ $advertisement->organisationGroup?->name ?? 'All students' }}
                             </td>
 
-                            <td class="py-3 text-gray-600">
+                            <td class="cell-sub">
                                 {{ $reach[$advertisement->id] ?? 0 }}
                                 {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
                             </td>
 
-                            <td class="py-3">
+                            <td>
                                 @php $status = $advertisement->status(); @endphp
 
                                 @if($status === 'live')
-                                    <span class="text-green-600">Live</span>
+                                    <span class="status-pill status-pill-green">Live</span>
                                 @elseif($status === 'scheduled')
-                                    <span class="text-blue-600">Scheduled</span>
+                                    <span class="status-pill status-pill-blue">Scheduled</span>
                                 @elseif($status === 'ended')
-                                    <span class="text-gray-500">Ended</span>
+                                    <span class="status-pill status-pill-muted">Ended</span>
                                 @else
-                                    <span class="text-yellow-600">Paused</span>
+                                    <span class="status-pill status-pill-gold">Paused</span>
                                 @endif
 
-                                <span class="text-xs text-gray-500 block">
+                                <span class="cell-sub">
                                     @if($status === 'scheduled')
                                         from {{ $advertisement->starts_at->format('j M Y') }}
                                     @elseif($advertisement->ends_at)
@@ -126,10 +126,10 @@
                                 </span>
                             </td>
 
-                            <td class="py-3 text-right">
+                            <td><div class="row-actions">
                                 <a
                                     href="{{ route('admin.business.advertisements.edit', $advertisement) }}"
-                                    class="text-blue-600 hover:underline mr-3"
+                                    class="link"
                                 >
                                     Edit
                                 </a>
@@ -145,12 +145,12 @@
 
                                     <button
                                         type="submit"
-                                        class="text-red-600 hover:underline bg-transparent border-0 cursor-pointer"
+                                        class="link link-danger"
                                     >
                                         Delete
                                     </button>
                                 </form>
-                            </td>
+                            </div></td>
                         </tr>
                     @endforeach
                 </tbody>

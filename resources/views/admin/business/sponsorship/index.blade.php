@@ -4,17 +4,17 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">🤝 Sponsorship</h1>
-            <p class="text-gray-600">
+            <h1>🤝 Sponsorship</h1>
+            <p class="subtitle">
                 Organisations funding access for groups of students
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.groups.index') }}"
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition"
+            class="btn btn-outline"
         >
             <i class="fas fa-school"></i> Academic Groups
         </a>
@@ -38,53 +38,53 @@
         </div>
     @endif
 
-    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-6 rounded text-sm">
+    <div class="info-banner info-banner-blue">
         <i class="fas fa-info-circle"></i>
         Sponsoring a group covers every student inside it, however
         deep. Sponsor a school and all of its classes are included.
     </div>
 
     <!-- Sponsors -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Sponsors</h3>
+    <div class="card">
+        <h3 class="card-heading">Sponsors</h3>
 
         @if($sponsors->isEmpty())
-            <p class="text-gray-500 py-2">No sponsors yet.</p>
+            <p class="empty-text">No sponsors yet.</p>
         @else
-            <table class="w-full text-sm mb-4">
+            <table class="admin-table">
                 <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2">Name</th>
-                        <th class="py-2">Code</th>
-                        <th class="py-2">Funding</th>
-                        <th class="py-2">Status</th>
-                        <th class="py-2 text-right">Actions</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Code</th>
+                        <th>Funding</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach($sponsors as $sponsor)
-                        <tr class="border-b border-gray-100 last:border-0">
-                            <td class="py-3 font-medium">{{ $sponsor->name }}</td>
+                        <tr>
+                            <td class="cell-title">{{ $sponsor->name }}</td>
 
-                            <td class="py-3 text-gray-500">
+                            <td class="cell-sub">
                                 {{ $sponsor->code ?? '—' }}
                             </td>
 
-                            <td class="py-3">
+                            <td>
                                 {{ $sponsor->sponsored_access_grants_count }}
                                 {{ Str::plural('grant', $sponsor->sponsored_access_grants_count) }}
                             </td>
 
-                            <td class="py-3">
+                            <td>
                                 @if($sponsor->is_active)
-                                    <span class="text-green-600">Active</span>
+                                    <span class="status-pill status-pill-green">Active</span>
                                 @else
-                                    <span class="text-gray-500">Suspended</span>
+                                    <span class="status-pill status-pill-muted">Suspended</span>
                                 @endif
                             </td>
 
-                            <td class="py-3 text-right">
+                            <td><div class="row-actions">
                                 <form
                                     method="POST"
                                     action="{{ route('admin.business.sponsorship.sponsors.toggle', $sponsor) }}"
@@ -95,7 +95,7 @@
 
                                     <button
                                         type="submit"
-                                        class="text-blue-600 hover:underline bg-transparent border-0 cursor-pointer mr-3"
+                                        class="link"
                                     >
                                         {{ $sponsor->is_active ? 'Suspend' : 'Reactivate' }}
                                     </button>
@@ -113,18 +113,18 @@
 
                                         <button
                                             type="submit"
-                                            class="text-red-600 hover:underline bg-transparent border-0 cursor-pointer"
+                                            class="link link-danger"
                                         >
                                             Delete
                                         </button>
                                     </form>
                                 @else
                                     <span
-                                        class="text-gray-300"
+                                        class="link link-disabled"
                                         title="They still fund access"
                                     >Delete</span>
                                 @endif
-                            </td>
+                            </div></td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -144,7 +144,7 @@
                 maxlength="120"
                 required
                 placeholder="Sponsor name"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                class="field-input"
             >
 
             <input
@@ -152,12 +152,12 @@
                 name="code"
                 maxlength="40"
                 placeholder="Code (optional)"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                class="field-input"
             >
 
             <button
                 type="submit"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm transition"
+                class="btn btn-subtle"
             >
                 Add sponsor
             </button>
@@ -165,11 +165,11 @@
     </div>
 
     <!-- New sponsored access -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Fund access</h3>
+    <div class="card">
+        <h3 class="card-heading">Fund access</h3>
 
         @if($activeSponsors->isEmpty())
-            <p class="text-gray-500 py-2">
+            <p class="empty-text">
                 Add an active sponsor first.
             </p>
         @else
@@ -179,16 +179,16 @@
             >
                 @csrf
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="field-grid field-grid-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Sponsor
                         </label>
 
                         <select
                             name="business_sponsor_id"
                             required
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
                             @foreach($activeSponsors as $sponsor)
                                 <option
@@ -200,14 +200,14 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Plan
                         </label>
 
                         <select
                             name="plan_id"
                             required
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
                             @foreach($plans as $plan)
                                 <option
@@ -219,13 +219,13 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Covers
                         </label>
 
                         <select
                             name="organisation_group_id"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
                             <option value="">The whole institution</option>
 
@@ -239,9 +239,9 @@
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="field-grid field-grid-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Starts
                         </label>
 
@@ -249,12 +249,12 @@
                             type="date"
                             name="starts_at"
                             value="{{ old('starts_at') }}"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Ends
                         </label>
 
@@ -262,12 +262,12 @@
                             type="date"
                             name="ends_at"
                             value="{{ old('ends_at') }}"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Priority
                         </label>
 
@@ -277,10 +277,10 @@
                             min="0"
                             max="100"
                             value="{{ old('priority', 0) }}"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
 
-                        <p class="text-xs text-gray-500 mt-1">
+                        <p class="field-hint">
                             Higher wins when two sponsorships cover
                             the same student.
                         </p>
@@ -289,7 +289,7 @@
 
                 <button
                     type="submit"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
+                    class="btn btn-primary"
                 >
                     <i class="fas fa-plus"></i> Fund access
                 </button>
@@ -298,57 +298,57 @@
     </div>
 
     <!-- Existing grants -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Sponsored access</h3>
+    <div class="card">
+        <h3 class="card-heading">Sponsored access</h3>
 
         @if($grants->isEmpty())
-            <p class="text-gray-500 text-center py-6">
+            <p class="empty-text">
                 Nothing is sponsored yet.
             </p>
         @else
-            <table class="w-full text-sm">
+            <table class="admin-table">
                 <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2">Sponsor</th>
-                        <th class="py-2">Plan</th>
-                        <th class="py-2">Covers</th>
-                        <th class="py-2">Runs</th>
-                        <th class="py-2">Priority</th>
-                        <th class="py-2">Status</th>
-                        <th class="py-2 text-right">Actions</th>
+                    <tr>
+                        <th>Sponsor</th>
+                        <th>Plan</th>
+                        <th>Covers</th>
+                        <th>Runs</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach($grants as $grant)
-                        <tr class="border-b border-gray-100 last:border-0">
-                            <td class="py-3 font-medium">
+                        <tr>
+                            <td class="cell-title">
                                 {{ $grant->sponsor?->name ?? '—' }}
                             </td>
 
-                            <td class="py-3">{{ $grant->plan?->name ?? '—' }}</td>
+                            <td>{{ $grant->plan?->name ?? '—' }}</td>
 
-                            <td class="py-3">
+                            <td>
                                 {{ $grant->organisationGroup?->name ?? 'Whole institution' }}
                             </td>
 
-                            <td class="py-3 text-xs text-gray-600">
+                            <td class="cell-sub">
                                 {{ $grant->starts_at?->format('j M Y') ?? 'Immediately' }}
                                 &rarr;
                                 {{ $grant->ends_at?->format('j M Y') ?? 'No end' }}
                             </td>
 
-                            <td class="py-3">{{ $grant->priority }}</td>
+                            <td>{{ $grant->priority }}</td>
 
-                            <td class="py-3">
+                            <td>
                                 @if($grant->is_active)
-                                    <span class="text-green-600">Active</span>
+                                    <span class="status-pill status-pill-green">Active</span>
                                 @else
-                                    <span class="text-gray-500">Withdrawn</span>
+                                    <span class="status-pill status-pill-muted">Withdrawn</span>
                                 @endif
                             </td>
 
-                            <td class="py-3 text-right">
+                            <td><div class="row-actions">
                                 @if($grant->is_active)
                                     <form
                                         method="POST"
@@ -361,15 +361,15 @@
 
                                         <button
                                             type="submit"
-                                            class="text-red-600 hover:underline bg-transparent border-0 cursor-pointer"
+                                            class="link link-danger"
                                         >
                                             Withdraw
                                         </button>
                                     </form>
                                 @else
-                                    <span class="text-gray-400">—</span>
+                                    <span class="cell-sub">—</span>
                                 @endif
-                            </td>
+                            </div></td>
                         </tr>
                     @endforeach
                 </tbody>

@@ -32,8 +32,33 @@ class BusinessPlanController extends Controller
             ->orderBy('name')
             ->get();
 
+        /*
+         * Ordered deliberately rather than alphabetically, so
+         * Career Recommendations and Career Adviser sit next to
+         * each other and the detailed analysis switches stay
+         * beneath the feature they belong to.
+         */
+        $categoryOrder = [
+            'Career Recommendations',
+            'Detailed Career Analysis',
+            'Career Adviser',
+            'History',
+            'Planning',
+            'Analytics',
+            'Advertising',
+        ];
+
         $featuresByCategory = $features
-            ->groupBy('category');
+            ->groupBy('category')
+            ->sortBy(
+                fn ($group, $category) => array_search(
+                    $category,
+                    $categoryOrder,
+                    true
+                ) === false
+                    ? count($categoryOrder)
+                    : array_search($category, $categoryOrder, true)
+            );
 
         return view(
             'admin.business.plans.index',
@@ -87,16 +112,14 @@ class BusinessPlanController extends Controller
             !== count($featureIds)
         ) {
             throw ValidationException::withMessages([
-                'features' =>
-                    'One or more feature settings are invalid.',
+                'features' => 'One or more feature settings are invalid.',
             ]);
         }
 
         $rules = [];
 
         foreach (
-            $submittedFeatures
-            as $featureId => $input
+            $submittedFeatures as $featureId => $input
         ) {
             $definition =
                 $definitions->get(
@@ -108,7 +131,7 @@ class BusinessPlanController extends Controller
             }
 
             $base =
-                'features.' .
+                'features.'.
                 $featureId;
 
             if (
@@ -116,7 +139,7 @@ class BusinessPlanController extends Controller
                 === 'boolean'
             ) {
                 $rules[
-                    $base . '.value'
+                    $base.'.value'
                 ] = [
                     'required',
                     'boolean',
@@ -130,7 +153,7 @@ class BusinessPlanController extends Controller
                 === 'number'
             ) {
                 $rules[
-                    $base . '.value'
+                    $base.'.value'
                 ] = [
                     'required',
                     'integer',
@@ -145,7 +168,7 @@ class BusinessPlanController extends Controller
                 === 'quota'
             ) {
                 $rules[
-                    $base . '.mode'
+                    $base.'.mode'
                 ] = [
                     'required',
                     Rule::in([
@@ -170,7 +193,7 @@ class BusinessPlanController extends Controller
                     )
                 ) {
                     $rules[
-                        $base . '.amount'
+                        $base.'.amount'
                     ] = [
                         'required',
                         'integer',
@@ -182,7 +205,7 @@ class BusinessPlanController extends Controller
                     $mode === 'recurring'
                 ) {
                     $rules[
-                        $base .
+                        $base.
                         '.period_value'
                     ] = [
                         'required',
@@ -191,7 +214,7 @@ class BusinessPlanController extends Controller
                     ];
 
                     $rules[
-                        $base .
+                        $base.
                         '.period_unit'
                     ] = [
                         'required',
@@ -210,8 +233,7 @@ class BusinessPlanController extends Controller
             }
 
             throw ValidationException::withMessages([
-                'features.' . $featureId =>
-                    'Unsupported feature value type.',
+                'features.'.$featureId => 'Unsupported feature value type.',
             ]);
         }
 
@@ -227,8 +249,7 @@ class BusinessPlanController extends Controller
                 $validated
             ) {
                 foreach (
-                    $validated['features']
-                    as $featureId => $input
+                    $validated['features'] as $featureId => $input
                 ) {
                     $definition =
                         $definitions->get(
@@ -247,15 +268,12 @@ class BusinessPlanController extends Controller
 
                     PlanFeature::updateOrCreate(
                         [
-                            'plan_id' =>
-                                $plan->id,
+                            'plan_id' => $plan->id,
 
-                            'key' =>
-                                $definition->key,
+                            'key' => $definition->key,
                         ],
                         [
-                            'value' =>
-                                $value,
+                            'value' => $value,
                         ]
                     );
                 }
@@ -268,7 +286,7 @@ class BusinessPlanController extends Controller
             )
             ->with(
                 'success',
-                $plan->name .
+                $plan->name.
                 ' plan features updated successfully.'
             );
     }
@@ -292,8 +310,7 @@ class BusinessPlanController extends Controller
             ]);
 
         $feature->update([
-            'global_enabled' =>
-                (bool)
+            'global_enabled' => (bool)
                 $validated[
                     'global_enabled'
                 ],
@@ -305,7 +322,7 @@ class BusinessPlanController extends Controller
             )
             ->with(
                 'success',
-                $feature->name .
+                $feature->name.
                 ' global availability updated successfully.'
             );
     }
@@ -341,8 +358,7 @@ class BusinessPlanController extends Controller
             !== 'quota'
         ) {
             throw ValidationException::withMessages([
-                'features' =>
-                    'Unsupported feature value type.',
+                'features' => 'Unsupported feature value type.',
             ]);
         }
 
@@ -351,38 +367,31 @@ class BusinessPlanController extends Controller
 
         if ($mode === 'unlimited') {
             return [
-                'mode' =>
-                    'unlimited',
+                'mode' => 'unlimited',
             ];
         }
 
         if ($mode === 'total') {
             return [
-                'mode' =>
-                    'total',
+                'mode' => 'total',
 
-                'amount' =>
-                    (int)
+                'amount' => (int)
                     $input['amount'],
             ];
         }
 
         return [
-            'mode' =>
-                'recurring',
+            'mode' => 'recurring',
 
-            'amount' =>
-                (int)
+            'amount' => (int)
                 $input['amount'],
 
-            'period_value' =>
-                (int)
+            'period_value' => (int)
                 $input[
                     'period_value'
                 ],
 
-            'period_unit' =>
-                $input[
+            'period_unit' => $input[
                     'period_unit'
                 ],
         ];

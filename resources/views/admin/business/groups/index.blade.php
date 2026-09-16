@@ -152,17 +152,17 @@
 </style>
 
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">🏫 Academic Groups</h1>
-            <p class="text-gray-600">
+            <h1>🏫 Academic Groups</h1>
+            <p class="subtitle">
                 Your institution's structure, however you choose to arrange it
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.groups.create') }}"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+            class="btn btn-primary"
         >
             <i class="fas fa-plus"></i> New top-level group
         </a>
@@ -187,8 +187,8 @@
     @endif
 
     <!-- Types -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-1">Group types</h3>
+    <div class="card">
+        <h3 class="card-heading">Group types</h3>
 
         <p class="text-gray-500 text-sm mb-3">
             Name the levels your institution actually uses. A type
@@ -235,12 +235,12 @@
                 maxlength="60"
                 required
                 placeholder="Intake Session"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                class="field-input"
             >
 
             <button
                 type="submit"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm transition"
+                class="btn btn-subtle"
             >
                 Add type
             </button>
@@ -248,7 +248,7 @@
     </div>
 
     <!-- Tree -->
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="card">
         <input
             type="text"
             id="groupSearch"
@@ -257,7 +257,7 @@
         >
 
         @if($roots->isEmpty())
-            <p class="text-gray-500 text-center py-6">
+            <p class="empty-text">
                 No groups yet. Start with a top-level group such as
                 your institution.
             </p>

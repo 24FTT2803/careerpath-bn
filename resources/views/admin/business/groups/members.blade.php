@@ -4,19 +4,19 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">
+            <h1>
                 👥 {{ $group->name }}
             </h1>
-            <p class="text-gray-600">
+            <p class="subtitle">
                 {{ $group->pathLabel() }}
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.groups.index') }}"
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition"
+            class="btn btn-outline"
         >
             <i class="fas fa-arrow-left"></i> Back to groups
         </a>
@@ -41,7 +41,7 @@
     @endif
 
     @if($isProgramme)
-        <div class="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-800 p-3 mb-6 rounded text-sm">
+        <div class="info-banner info-banner-gold">
             <i class="fas fa-triangle-exclamation"></i>
             Membership of a programme follows the student's own
             profile. Removing someone here lasts only until they
@@ -49,7 +49,7 @@
             instead.
         </div>
     @else
-        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-6 rounded text-sm">
+        <div class="info-banner info-banner-blue">
             <i class="fas fa-info-circle"></i>
             Members of this group are also covered by anything
             aimed at the groups above it.
@@ -57,42 +57,42 @@
     @endif
 
     <!-- Current members -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-4">
+    <div class="card">
+        <h3 class="card-heading">
             Members ({{ $members->count() }})
         </h3>
 
         @if($members->isEmpty())
-            <p class="text-gray-500 text-center py-6">
+            <p class="empty-text">
                 Nobody belongs to this group yet.
             </p>
         @else
-            <table class="w-full text-sm">
+            <table class="admin-table">
                 <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2">Name</th>
-                        <th class="py-2">Student ID</th>
-                        <th class="py-2">Programme</th>
-                        <th class="py-2 text-right">Actions</th>
+                    <tr>
+                        <th>Name</th>
+                        <th>Student ID</th>
+                        <th>Programme</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
                     @foreach($members as $member)
-                        <tr class="border-b border-gray-100 last:border-0">
-                            <td class="py-3">
-                                <span class="font-medium">{{ $member->name }}</span>
+                        <tr>
+                            <td>
+                                <span class="cell-title">{{ $member->name }}</span>
 
-                                <span class="text-xs text-gray-500 block">
+                                <span class="cell-sub">
                                     {{ $member->email }}
                                 </span>
                             </td>
 
-                            <td class="py-3 text-gray-600">
+                            <td class="cell-sub">
                                 {{ $member->student_id ?? '—' }}
                             </td>
 
-                            <td class="py-3">
+                            <td>
                                 {{ $member->programme ?? 'Not set' }}
 
                                 @if(in_array($member->id, $mismatched, true))
@@ -106,10 +106,10 @@
                                 @endif
                             </td>
 
-                            <td class="py-3 text-right">
+                            <td><div class="row-actions">
                                 <a
                                     href="{{ route('admin.students.show', $member->id) }}"
-                                    class="text-blue-600 hover:underline mr-3"
+                                    class="link"
                                 >
                                     View
                                 </a>
@@ -125,12 +125,12 @@
 
                                     <button
                                         type="submit"
-                                        class="text-red-600 hover:underline bg-transparent border-0 cursor-pointer"
+                                        class="link link-danger"
                                     >
                                         Remove
                                     </button>
                                 </form>
-                            </td>
+                            </div></td>
                         </tr>
                     @endforeach
                 </tbody>
@@ -139,8 +139,8 @@
     </div>
 
     <!-- Add members -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Add students</h3>
+    <div class="card">
+        <h3 class="card-heading">Add students</h3>
 
         <form
             method="GET"
@@ -152,23 +152,23 @@
                 name="q"
                 value="{{ $search }}"
                 placeholder="Search by name, email or student ID"
-                class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                class="field-input"
             >
 
             <button
                 type="submit"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm transition"
+                class="btn btn-subtle"
             >
                 Search
             </button>
         </form>
 
         @if($search === '')
-            <p class="text-gray-500 text-sm">
+            <p class="cell-sub">
                 Search for a student to add them.
             </p>
         @elseif($candidates->isEmpty())
-            <p class="text-gray-500 text-sm">
+            <p class="cell-sub">
                 No students found for "{{ $search }}".
             </p>
         @else
@@ -187,7 +187,7 @@
                                 value="{{ $candidate->id }}"
                             >
 
-                            <span class="text-sm text-gray-700">
+                            <span >
                                 {{ $candidate->name }}
 
                                 <span class="text-xs text-gray-400">
@@ -202,7 +202,7 @@
 
                 <button
                     type="submit"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
+                    class="btn btn-primary"
                 >
                     <i class="fas fa-plus"></i> Add selected
                 </button>
