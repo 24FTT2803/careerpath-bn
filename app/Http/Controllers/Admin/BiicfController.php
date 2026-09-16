@@ -327,59 +327,6 @@ class BiicfController extends Controller
             ->with('success', 'Competency deleted successfully.');
     }
 
-    // ============================================
-    // PROFICIENCY LEVELS
-    // ============================================
-    public function proficiencyLevels()
-    {
-        $levels = BiicfProficiencyLevel::orderBy('level_number')->paginate(10);
-        return view('admin.biicf.proficiency-levels.index', compact('levels'));
-    }
-
-    public function proficiencyLevelCreate()
-    {
-        return view('admin.biicf.proficiency-levels.create');
-    }
-
-    public function proficiencyLevelStore(Request $request)
-    {
-        $request->validate([
-            'level_number' => 'required|integer|min:1|max:5|unique:biicf_proficiency_levels',
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        BiicfProficiencyLevel::create($request->all());
-
-        return redirect()->route('admin.biicf.proficiency-levels')
-            ->with('success', 'Proficiency level created successfully.');
-    }
-
-    public function proficiencyLevelEdit(BiicfProficiencyLevel $level)
-    {
-        return view('admin.biicf.proficiency-levels.edit', compact('level'));
-    }
-
-    public function proficiencyLevelUpdate(Request $request, BiicfProficiencyLevel $level)
-    {
-        $request->validate([
-            'level_number' => ['required', 'integer', 'min:1', 'max:5', Rule::unique('biicf_proficiency_levels')->ignore($level->id)],
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-        ]);
-
-        $level->update($request->all());
-
-        return redirect()->route('admin.biicf.proficiency-levels')
-            ->with('success', 'Proficiency level updated successfully.');
-    }
-
-    public function proficiencyLevelDestroy(BiicfProficiencyLevel $level)
-    {
-        $level->delete();
-        return redirect()->route('admin.biicf.proficiency-levels')
-            ->with('success', 'Proficiency level deleted successfully.');
-    }
 
     // ============================================
     // TRAININGS

@@ -857,10 +857,6 @@
                     <i class="fas fa-tools"></i>
                     <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
                 </a>
-                <a href="{{ route('admin.biicf.proficiency-levels') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.proficiency-levels*') ? 'active' : '' }}">
-                    <i class="fas fa-level-up-alt"></i>
-                    <span>Proficiency Levels</span>
-                </a>
                 <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
                     <i class="fas fa-graduation-cap"></i>
                     <span>Trainings</span>
