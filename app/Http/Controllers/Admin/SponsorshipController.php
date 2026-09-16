@@ -22,14 +22,36 @@ class SponsorshipController extends Controller
             'admin.business.sponsorship.index',
             [
                 'sponsors' => BusinessSponsor::query()
-                    ->withCount('sponsoredAccessGrants')
+                    ->withCount([
+                        'sponsoredAccessGrants',
+
+                        /*
+                         * What a sponsor is funding now matters
+                         * more than what they have ever funded.
+                         */
+                        'sponsoredAccessGrants as active_grants_count' => fn ($query) => $query->where(
+                            'is_active',
+                            true
+                        ),
+                    ])
                     ->orderBy('name')
                     ->get(),
 
-                'grants' => SponsoredAccessGrant::query()
+                /*
+                 * Split rather than sorted. Withdrawn funding is
+                 * a record, not something to scan past while
+                 * looking for what is in force.
+                 */
+                'activeGrants' => SponsoredAccessGrant::query()
                     ->with(['sponsor', 'plan', 'organisationGroup'])
-                    ->orderByDesc('is_active')
+                    ->where('is_active', true)
                     ->orderByDesc('priority')
+                    ->orderByDesc('id')
+                    ->get(),
+
+                'withdrawnGrants' => SponsoredAccessGrant::query()
+                    ->with(['sponsor', 'plan', 'organisationGroup'])
+                    ->where('is_active', false)
                     ->orderByDesc('id')
                     ->get(),
 
@@ -68,6 +90,29 @@ class SponsorshipController extends Controller
         return redirect()
             ->route('admin.business.sponsorship.index')
             ->with('success', 'Sponsor added.');
+    }
+
+    public function updateSponsor(
+        Request $request,
+        BusinessSponsor $sponsor
+    ) {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:120'],
+
+            'code' => [
+                'nullable',
+                'string',
+                'max:40',
+                Rule::unique('business_sponsors', 'code')
+                    ->ignore($sponsor->id),
+            ],
+        ]);
+
+        $sponsor->update($validated);
+
+        return redirect()
+            ->route('admin.business.sponsorship.index')
+            ->with('success', 'Sponsor updated.');
     }
 
     /**

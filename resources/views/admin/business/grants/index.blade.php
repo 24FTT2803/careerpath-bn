@@ -4,17 +4,17 @@
 
 @section('content')
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">🎟️ Access Grants</h1>
-            <p class="text-gray-600">
+            <h1>🎟️ Access Grants</h1>
+            <p class="subtitle">
                 Give an individual account the benefits of a plan
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.plans.index') }}"
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition"
+            class="btn btn-outline"
         >
             <i class="fas fa-sliders-h"></i> Plans &amp; Features
         </a>
@@ -38,7 +38,7 @@
         </div>
     @endif
 
-    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 mb-6 rounded text-sm">
+    <div class="info-banner info-banner-blue">
         <i class="fas fa-info-circle"></i>
         Use this for special and test accounts. A grant overrides
         whatever plan the account would otherwise fall under, for
@@ -46,12 +46,12 @@
     </div>
 
     <!-- New grant -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Grant access</h3>
+    <div class="card">
+        <h3 class="card-heading">Grant access</h3>
 
         @if($users->isEmpty())
-            <p class="text-gray-500 py-2">
-                Every account already has a live grant.
+            <p class="empty-text">
+                Every student already has a live grant.
             </p>
         @else
             <form
@@ -60,59 +60,41 @@
             >
                 @csrf
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div class="field-grid">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Account
+                        <label class="field-label">
+                            Student
                         </label>
 
                         <select
                             name="user_id"
                             required
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
-                            <option value="">Choose an account</option>
+                            <option value="">Choose a student</option>
 
                             @foreach($users as $user)
                                 <option
                                     value="{{ $user->id }}"
                                     @selected((int) old('user_id') === $user->id)
                                 >
-                                    {{ $user->name }} — {{ $user->email }} ({{ $user->role }})
+                                    {{ $user->name }} — {{ $user->student_id ?? $user->email }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            Plan
-                        </label>
-
-                        <select
-                            name="plan_id"
-                            required
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
-                        >
-                            @foreach($plans as $plan)
-                                <option
-                                    value="{{ $plan->id }}"
-                                    @selected((int) old('plan_id') === $plan->id)
-                                >{{ $plan->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div class="field-grid field-grid-3">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Reason
                         </label>
 
                         <select
                             name="source"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
                             @foreach([
                                 'admin' => 'Administrator decision',
@@ -128,7 +110,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Starts
                         </label>
 
@@ -136,16 +118,16 @@
                             type="date"
                             name="starts_at"
                             value="{{ old('starts_at') }}"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
 
-                        <p class="text-xs text-gray-500 mt-1">
+                        <p class="field-hint">
                             Leave empty to start immediately.
                         </p>
                     </div>
 
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                        <label class="field-label">
                             Ends
                         </label>
 
@@ -153,10 +135,10 @@
                             type="date"
                             name="ends_at"
                             value="{{ old('ends_at') }}"
-                            class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                            class="field-input"
                         >
 
-                        <p class="text-xs text-gray-500 mt-1">
+                        <p class="field-hint">
                             Leave empty for no end date.
                         </p>
                     </div>
@@ -164,7 +146,7 @@
 
                 <button
                     type="submit"
-                    class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
+                    class="btn btn-primary"
                 >
                     <i class="fas fa-plus"></i> Grant access
                 </button>
@@ -172,89 +154,105 @@
         @endif
     </div>
 
-    <!-- Existing grants -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <h3 class="font-semibold text-gray-800 mb-4">Existing grants</h3>
+    <!-- Active grants -->
+    <div class="card">
+        <h3 class="card-heading">In force ({{ $activeGrants->count() }})</h3>
 
-        @if($grants->isEmpty())
-            <p class="text-gray-500 text-center py-6">
-                No access has been granted yet.
-            </p>
+        @if($activeGrants->isEmpty())
+            <p class="empty-text">Nobody has been granted access.</p>
         @else
-            <table class="w-full text-sm">
+            <table class="admin-table">
                 <thead>
-                    <tr class="text-left text-gray-500 border-b border-gray-200">
-                        <th class="py-2">Account</th>
-                        <th class="py-2">Plan</th>
-                        <th class="py-2">Reason</th>
-                        <th class="py-2">Runs</th>
-                        <th class="py-2">Status</th>
-                        <th class="py-2 text-right">Actions</th>
+                    <tr>
+                        <th>Student</th>
+                        <th>Reason</th>
+                        <th>Runs</th>
+                        <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @foreach($grants as $grant)
-                        <tr class="border-b border-gray-100 last:border-0">
-                            <td class="py-3">
-                                <span class="font-medium">
+                    @foreach($activeGrants as $grant)
+                        <tr>
+                            <td>
+                                <span class="cell-title">
                                     {{ $grant->user?->name ?? 'Deleted account' }}
                                 </span>
-
-                                <span class="text-xs text-gray-500 block">
-                                    {{ $grant->user?->email }}
+                                <span class="cell-sub">
+                                    {{ $grant->user?->student_id ?? $grant->user?->email }}
                                 </span>
                             </td>
 
-                            <td class="py-3">
-                                {{ $grant->plan?->name ?? '—' }}
-                            </td>
+                            <td class="capitalize">{{ $grant->source }}</td>
 
-                            <td class="py-3 capitalize">
-                                {{ $grant->source }}
-                            </td>
-
-                            <td class="py-3 text-xs text-gray-600">
+                            <td class="cell-sub">
                                 {{ $grant->starts_at?->format('j M Y') ?? 'Immediately' }}
                                 &rarr;
                                 {{ $grant->ends_at?->format('j M Y') ?? 'No end' }}
                             </td>
 
-                            <td class="py-3">
-                                @if($grant->is_active)
-                                    <span class="text-green-600">Active</span>
-                                @else
-                                    <span class="text-gray-500">Revoked</span>
-                                @endif
-                            </td>
+                            <td><div class="row-actions">
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.business.grants.revoke', $grant) }}"
+                                    onsubmit="return confirm('Revoke this access?');"
+                                >
+                                    @csrf
+                                    @method('PUT')
 
-                            <td class="py-3 text-right">
-                                @if($grant->is_active)
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.grants.revoke', $grant) }}"
-                                        class="inline"
-                                        onsubmit="return confirm('Revoke this access?');"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-
-                                        <button
-                                            type="submit"
-                                            class="text-red-600 hover:underline bg-transparent border-0 cursor-pointer"
-                                        >
-                                            Revoke
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="text-gray-400">—</span>
-                                @endif
-                            </td>
+                                    <button type="submit" class="link link-danger">
+                                        Revoke
+                                    </button>
+                                </form>
+                            </div></td>
                         </tr>
                     @endforeach
                 </tbody>
             </table>
         @endif
     </div>
+
+    <!-- Revoked grants -->
+    @if($revokedGrants->isNotEmpty())
+        <div class="card">
+            <h3 class="card-heading">Previously granted ({{ $revokedGrants->count() }})</h3>
+
+            <p class="field-hint" style="margin-bottom:12px;">
+                Kept as a record of who was given access and when
+                it was withdrawn.
+            </p>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Reason</th>
+                        <th>Ended</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach($revokedGrants as $grant)
+                        <tr>
+                            <td>
+                                <span class="cell-title">
+                                    {{ $grant->user?->name ?? 'Deleted account' }}
+                                </span>
+                                <span class="cell-sub">
+                                    {{ $grant->user?->student_id ?? $grant->user?->email }}
+                                </span>
+                            </td>
+
+                            <td class="capitalize">{{ $grant->source }}</td>
+
+                            <td class="cell-sub">
+                                {{ $grant->ends_at?->format('j M Y') ?? '—' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 </div>
 @endsection

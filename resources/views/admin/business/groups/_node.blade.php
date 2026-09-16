@@ -6,6 +6,7 @@
 
 <div
     class="group-row"
+    data-group-id="{{ $group->id }}"
     data-name="{{ strtolower($group->name.' '.$group->code) }}"
     style="padding-left: {{ 12 + $depth * 22 }}px"
 >

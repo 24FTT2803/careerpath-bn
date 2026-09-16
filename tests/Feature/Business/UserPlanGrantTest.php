@@ -32,14 +32,11 @@ test(
             'role' => 'student',
         ]);
 
-        $premium = Plan::where('code', 'premium')->firstOrFail();
-
         $this->actingAs(grantAdmin())
             ->post(
                 route('admin.business.grants.store'),
                 [
                     'user_id' => $student->id,
-                    'plan_id' => $premium->id,
                     'source' => 'admin',
                 ]
             )
@@ -117,7 +114,6 @@ test(
                 route('admin.business.grants.store'),
                 [
                     'user_id' => $student->id,
-                    'plan_id' => Plan::where('code', 'premium')->value('id'),
                     'source' => 'admin',
                     'starts_at' => now()->addWeek()->toDateString(),
                     'ends_at' => now()->toDateString(),
@@ -175,5 +171,57 @@ test(
         $this->actingAs($lecturer)
             ->get(route('admin.business.grants.index'))
             ->assertForbidden();
+    }
+);
+
+test(
+    'staff accounts are never offered a grant',
+    function () {
+        seedPlansForGrants();
+
+        User::factory()->create([
+            'role' => 'lecturer',
+            'name' => 'Lecturer Person',
+        ]);
+
+        User::factory()->create([
+            'role' => 'student',
+            'name' => 'Student Person',
+        ]);
+
+        /*
+         * Staff have no plan and no quota, so granting one to a
+         * lecturer would mean nothing.
+         */
+        $this->actingAs(grantAdmin())
+            ->get(route('admin.business.grants.index'))
+            ->assertOk()
+            ->assertSee('Student Person')
+            ->assertDontSee('Lecturer Person');
+    }
+);
+
+test(
+    'a grant always confers premium',
+    function () {
+        seedPlansForGrants();
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $this->actingAs(grantAdmin())
+            ->post(
+                route('admin.business.grants.store'),
+                [
+                    'user_id' => $student->id,
+                    'source' => 'admin',
+                ]
+            )
+            ->assertRedirect();
+
+        expect(
+            UserPlanGrant::firstOrFail()->plan->code
+        )->toBe('premium');
     }
 );

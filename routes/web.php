@@ -189,6 +189,11 @@ Route::middleware([
             [ProfileController::class, 'settings']
         )->name('settings');
 
+        Route::post(
+            '/settings/upgrade',
+            [ProfileController::class, 'upgrade']
+        )->name('settings.upgrade');
+
         Route::put(
             '/settings/preferences',
             [ProfileController::class, 'updatePreferences']
@@ -373,6 +378,11 @@ Route::middleware(['auth'])
                     '/sponsorship/sponsors',
                     [SponsorshipController::class, 'storeSponsor']
                 )->name('sponsorship.sponsors.store');
+
+                Route::put(
+                    '/sponsorship/sponsors/{sponsor}',
+                    [SponsorshipController::class, 'updateSponsor']
+                )->name('sponsorship.sponsors.update');
 
                 Route::put(
                     '/sponsorship/sponsors/{sponsor}/toggle',

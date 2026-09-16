@@ -1,7 +1,9 @@
 <?php
 
 use App\Models\Advertisement;
+use App\Models\Plan;
 use App\Models\User;
+use App\Services\Business\EntitlementService;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,9 +18,12 @@ function seedPlansForRendering(): void
 
 function optedInStudent(): User
 {
+    /*
+     * The free plan carries advertising, so no preference is
+     * needed for advertisements to appear.
+     */
     return User::factory()->create([
         'role' => 'student',
-        'show_ads' => true,
     ]);
 }
 
@@ -94,7 +99,7 @@ test(
 );
 
 test(
-    'a student who has not opted in sees no advertising markup',
+    'a premium student who has not opted in sees no advertising markup',
     function () {
         seedPlansForRendering();
 
@@ -104,6 +109,15 @@ test(
         $student = User::factory()->create([
             'role' => 'student',
         ]);
+
+        $student->planGrants()->create([
+            'plan_id' => Plan::where('code', 'premium')
+                ->value('id'),
+            'source' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $student = $student->fresh();
 
         $response = $this->actingAs($student)
             ->get(route('student.settings'))
@@ -120,13 +134,21 @@ test(
 );
 
 test(
-    'a student can turn advertising on and off again',
+    'a premium student can turn advertising on and off again',
     function () {
         seedPlansForRendering();
 
         $student = User::factory()->create([
             'role' => 'student',
         ]);
+
+        $student->planGrants()->create([
+            'plan_id' => Plan::where('code', 'premium')->value('id'),
+            'source' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $student = $student->fresh();
 
         $this->actingAs($student)
             ->put(
@@ -165,5 +187,54 @@ test(
             ->get(route('lecturer.dashboard'))
             ->assertOk()
             ->assertDontSee('aria-label="Advertisement"', false);
+    }
+);
+
+test(
+    'a free student cannot switch advertising off',
+    function () {
+        seedPlansForRendering();
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        /*
+         * Advertising funds free access, so the request is
+         * refused rather than silently ignored.
+         */
+        $this->actingAs($student)
+            ->put(
+                route('student.settings.preferences'),
+                []
+            )
+            ->assertSessionHasErrors('show_ads');
+    }
+);
+
+test(
+    'a student can upgrade to premium without payment',
+    function () {
+        seedPlansForRendering();
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        $this->actingAs($student)
+            ->post(route('student.settings.upgrade'))
+            ->assertRedirect(route('student.settings'));
+
+        expect(
+            app(EntitlementService::class)
+                ->planFor($student->fresh())
+                ->code
+        )->toBe('premium');
+
+        /*
+         * Premium starts ad free even for a student who had
+         * advertising while on the free plan.
+         */
+        expect($student->fresh()->show_ads)->toBeFalse();
     }
 );

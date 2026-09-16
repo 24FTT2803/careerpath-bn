@@ -112,6 +112,11 @@ class PlanSeeder extends Seeder
 
                 'analytics.advanced.enabled' => false,
 
+                /*
+                 * Advertising is part of the free plan. It is
+                 * what pays for free access, so the student is
+                 * shown the setting locked on.
+                 */
                 'ads.available' => true,
 
                 'ads.position.one.enabled' => true,
@@ -167,7 +172,11 @@ class PlanSeeder extends Seeder
 
                 'analytics.advanced.enabled' => true,
 
-                'ads.available' => true,
+                /*
+                 * Premium is ad free. A premium student may
+                 * still opt in from their own settings.
+                 */
+                'ads.available' => false,
 
                 'ads.position.one.enabled' => true,
 

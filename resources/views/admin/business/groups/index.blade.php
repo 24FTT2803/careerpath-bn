@@ -152,17 +152,17 @@
 </style>
 
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">🏫 Academic Groups</h1>
-            <p class="text-gray-600">
+            <h1>🏫 Academic Groups</h1>
+            <p class="subtitle">
                 Your institution's structure, however you choose to arrange it
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.groups.create') }}"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition"
+            class="btn btn-primary"
         >
             <i class="fas fa-plus"></i> New top-level group
         </a>
@@ -187,8 +187,8 @@
     @endif
 
     <!-- Types -->
-    <div class="bg-white rounded-lg shadow p-6 mb-6">
-        <h3 class="font-semibold text-gray-800 mb-1">Group types</h3>
+    <div class="card">
+        <h3 class="card-heading">Group types</h3>
 
         <p class="text-gray-500 text-sm mb-3">
             Name the levels your institution actually uses. A type
@@ -235,12 +235,12 @@
                 maxlength="60"
                 required
                 placeholder="Intake Session"
-                class="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                class="field-input"
             >
 
             <button
                 type="submit"
-                class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm transition"
+                class="btn btn-subtle"
             >
                 Add type
             </button>
@@ -248,7 +248,7 @@
     </div>
 
     <!-- Tree -->
-    <div class="bg-white rounded-lg shadow p-6">
+    <div class="card">
         <input
             type="text"
             id="groupSearch"
@@ -257,7 +257,7 @@
         >
 
         @if($roots->isEmpty())
-            <p class="text-gray-500 text-center py-6">
+            <p class="empty-text">
                 No groups yet. Start with a top-level group such as
                 your institution.
             </p>
@@ -277,22 +277,87 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.group-toggle').forEach(function (toggle) {
-            toggle.addEventListener('click', function () {
-                var row = toggle.closest('.group-row');
-                var branch = row.nextElementSibling;
+        /*
+         * Collapsed branches are remembered between visits.
+         * Reopening every branch on each load loses the place
+         * an administrator was working in.
+         */
+        var STORE_KEY = 'careerpath.groups.collapsed';
 
-                while (branch && !branch.classList.contains('group-branch')) {
-                    branch = branch.nextElementSibling;
-                }
+        function readCollapsed() {
+            try {
+                return JSON.parse(
+                    window.localStorage.getItem(STORE_KEY) || '[]'
+                );
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeCollapsed(ids) {
+            try {
+                window.localStorage.setItem(
+                    STORE_KEY,
+                    JSON.stringify(ids)
+                );
+            } catch (error) {
+                // Storage unavailable; the tree simply will not
+                // remember, which is not worth failing over.
+            }
+        }
+
+        function branchFor(row) {
+            var branch = row.nextElementSibling;
+
+            while (branch && !branch.classList.contains('group-branch')) {
+                branch = branch.nextElementSibling;
+            }
+
+            return branch;
+        }
+
+        function setCollapsed(toggle, row, collapsed) {
+            var branch = branchFor(row);
+
+            if (!branch) {
+                return;
+            }
+
+            branch.style.display = collapsed ? 'none' : '';
+            toggle.classList.toggle('collapsed', collapsed);
+        }
+
+        var collapsed = readCollapsed();
+
+        document.querySelectorAll('.group-toggle').forEach(function (toggle) {
+            var row = toggle.closest('.group-row');
+            var id = row.dataset.groupId;
+
+            if (id && collapsed.indexOf(id) !== -1) {
+                setCollapsed(toggle, row, true);
+            }
+
+            toggle.addEventListener('click', function () {
+                var branch = branchFor(row);
 
                 if (!branch) {
                     return;
                 }
 
-                var hidden = branch.style.display === 'none';
-                branch.style.display = hidden ? '' : 'none';
-                toggle.classList.toggle('collapsed', !hidden);
+                var nowCollapsed = branch.style.display !== 'none';
+
+                setCollapsed(toggle, row, nowCollapsed);
+
+                var stored = readCollapsed();
+                var position = stored.indexOf(id);
+
+                if (nowCollapsed && position === -1) {
+                    stored.push(id);
+                } else if (!nowCollapsed && position !== -1) {
+                    stored.splice(position, 1);
+                }
+
+                writeCollapsed(stored);
             });
         });
 

@@ -17,19 +17,19 @@
 @endphp
 
 <div>
-    <div class="flex justify-between items-center mb-6">
+    <div class="page-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-800">
+            <h1>
                 {{ $isEdit ? '✏️ Edit Group' : '🏫 New Group' }}
             </h1>
-            <p class="text-gray-600">
+            <p class="subtitle">
                 Where this group sits in the structure
             </p>
         </div>
 
         <a
             href="{{ route('admin.business.groups.index') }}"
-            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg transition"
+            class="btn btn-outline"
         >
             <i class="fas fa-arrow-left"></i> Back
         </a>
@@ -53,7 +53,7 @@
                 ? route('admin.business.groups.update', $group)
                 : route('admin.business.groups.store')
         }}"
-        class="bg-white rounded-lg shadow p-6"
+        class="card"
     >
         @csrf
 
@@ -61,9 +61,9 @@
             @method('PUT')
         @endif
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div class="field-grid field-grid-2">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Name
                 </label>
 
@@ -73,12 +73,12 @@
                     value="{{ old('name', $group->name) }}"
                     maxlength="120"
                     required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Code
                 </label>
 
@@ -87,25 +87,25 @@
                     name="code"
                     value="{{ old('code', $group->code) }}"
                     maxlength="40"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
 
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="field-hint">
                     Optional short reference, such as DADT04.
                 </p>
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div class="field-grid field-grid-2">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Type
                 </label>
 
                 <select
                     name="group_type_id"
                     required
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
                     @foreach($types as $type)
                         <option
@@ -117,13 +117,13 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="field-label">
                     Sits inside
                 </label>
 
                 <select
                     name="primary_parent_id"
-                    class="w-full border border-gray-300 rounded-lg px-3 py-2"
+                    class="field-input"
                 >
                     <option value="">Top level</option>
 
@@ -135,7 +135,7 @@
                     @endforeach
                 </select>
 
-                <p class="text-xs text-gray-500 mt-1">
+                <p class="field-hint">
                     The main place this group lives. Used for
                     breadcrumbs and reports.
                 </p>
@@ -143,7 +143,7 @@
         </div>
 
         <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-700 mb-1">
+            <label class="field-label">
                 Also sits inside
             </label>
 
@@ -157,7 +157,7 @@
                 type="text"
                 id="parentFilter"
                 placeholder="Filter by name or path"
-                class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-2 text-sm"
+                class="field-input"
             >
 
             <div
@@ -176,7 +176,7 @@
                             @checked(in_array($parent->id, $selectedOthers, true))
                         >
 
-                        <span class="text-sm text-gray-700">
+                        <span >
                             {{ $parent->path }}
 
                             <span class="text-xs text-gray-400">
@@ -202,14 +202,14 @@
                         @checked(old('is_active', $group->is_active))
                     >
 
-                    <span class="text-sm text-gray-700">Active</span>
+                    <span >Active</span>
                 </label>
             </div>
         @endif
 
         <button
             type="submit"
-            class="bg-blue-500 hover:bg-blue-600 text-white px-5 py-2 rounded-lg transition"
+            class="btn btn-primary"
         >
             {{ $isEdit ? 'Save changes' : 'Create group' }}
         </button>
