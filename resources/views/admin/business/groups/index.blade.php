@@ -277,22 +277,87 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.group-toggle').forEach(function (toggle) {
-            toggle.addEventListener('click', function () {
-                var row = toggle.closest('.group-row');
-                var branch = row.nextElementSibling;
+        /*
+         * Collapsed branches are remembered between visits.
+         * Reopening every branch on each load loses the place
+         * an administrator was working in.
+         */
+        var STORE_KEY = 'careerpath.groups.collapsed';
 
-                while (branch && !branch.classList.contains('group-branch')) {
-                    branch = branch.nextElementSibling;
-                }
+        function readCollapsed() {
+            try {
+                return JSON.parse(
+                    window.localStorage.getItem(STORE_KEY) || '[]'
+                );
+            } catch (error) {
+                return [];
+            }
+        }
+
+        function writeCollapsed(ids) {
+            try {
+                window.localStorage.setItem(
+                    STORE_KEY,
+                    JSON.stringify(ids)
+                );
+            } catch (error) {
+                // Storage unavailable; the tree simply will not
+                // remember, which is not worth failing over.
+            }
+        }
+
+        function branchFor(row) {
+            var branch = row.nextElementSibling;
+
+            while (branch && !branch.classList.contains('group-branch')) {
+                branch = branch.nextElementSibling;
+            }
+
+            return branch;
+        }
+
+        function setCollapsed(toggle, row, collapsed) {
+            var branch = branchFor(row);
+
+            if (!branch) {
+                return;
+            }
+
+            branch.style.display = collapsed ? 'none' : '';
+            toggle.classList.toggle('collapsed', collapsed);
+        }
+
+        var collapsed = readCollapsed();
+
+        document.querySelectorAll('.group-toggle').forEach(function (toggle) {
+            var row = toggle.closest('.group-row');
+            var id = row.dataset.groupId;
+
+            if (id && collapsed.indexOf(id) !== -1) {
+                setCollapsed(toggle, row, true);
+            }
+
+            toggle.addEventListener('click', function () {
+                var branch = branchFor(row);
 
                 if (!branch) {
                     return;
                 }
 
-                var hidden = branch.style.display === 'none';
-                branch.style.display = hidden ? '' : 'none';
-                toggle.classList.toggle('collapsed', !hidden);
+                var nowCollapsed = branch.style.display !== 'none';
+
+                setCollapsed(toggle, row, nowCollapsed);
+
+                var stored = readCollapsed();
+                var position = stored.indexOf(id);
+
+                if (nowCollapsed && position === -1) {
+                    stored.push(id);
+                } else if (!nowCollapsed && position !== -1) {
+                    stored.splice(position, 1);
+                }
+
+                writeCollapsed(stored);
             });
         });
 

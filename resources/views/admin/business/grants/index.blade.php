@@ -51,7 +51,7 @@
 
         @if($users->isEmpty())
             <p class="empty-text">
-                Every account already has a live grant.
+                Every student already has a live grant.
             </p>
         @else
             <form
@@ -60,10 +60,10 @@
             >
                 @csrf
 
-                <div class="field-grid field-grid-2">
+                <div class="field-grid">
                     <div>
                         <label class="field-label">
-                            Account
+                            Student
                         </label>
 
                         <select
@@ -71,37 +71,19 @@
                             required
                             class="field-input"
                         >
-                            <option value="">Choose an account</option>
+                            <option value="">Choose a student</option>
 
                             @foreach($users as $user)
                                 <option
                                     value="{{ $user->id }}"
                                     @selected((int) old('user_id') === $user->id)
                                 >
-                                    {{ $user->name }} — {{ $user->email }} ({{ $user->role }})
+                                    {{ $user->name }} — {{ $user->student_id ?? $user->email }}
                                 </option>
                             @endforeach
                         </select>
                     </div>
 
-                    <div>
-                        <label class="field-label">
-                            Plan
-                        </label>
-
-                        <select
-                            name="plan_id"
-                            required
-                            class="field-input"
-                        >
-                            @foreach($plans as $plan)
-                                <option
-                                    value="{{ $plan->id }}"
-                                    @selected((int) old('plan_id') === $plan->id)
-                                >{{ $plan->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
                 </div>
 
                 <div class="field-grid field-grid-3">
@@ -172,47 +154,36 @@
         @endif
     </div>
 
-    <!-- Existing grants -->
+    <!-- Active grants -->
     <div class="card">
-        <h3 class="card-heading">Existing grants</h3>
+        <h3 class="card-heading">In force ({{ $activeGrants->count() }})</h3>
 
-        @if($grants->isEmpty())
-            <p class="empty-text">
-                No access has been granted yet.
-            </p>
+        @if($activeGrants->isEmpty())
+            <p class="empty-text">Nobody has been granted access.</p>
         @else
             <table class="admin-table">
                 <thead>
                     <tr>
-                        <th>Account</th>
-                        <th>Plan</th>
+                        <th>Student</th>
                         <th>Reason</th>
                         <th>Runs</th>
-                        <th>Status</th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @foreach($grants as $grant)
+                    @foreach($activeGrants as $grant)
                         <tr>
                             <td>
                                 <span class="cell-title">
                                     {{ $grant->user?->name ?? 'Deleted account' }}
                                 </span>
-
                                 <span class="cell-sub">
-                                    {{ $grant->user?->email }}
+                                    {{ $grant->user?->student_id ?? $grant->user?->email }}
                                 </span>
                             </td>
 
-                            <td>
-                                {{ $grant->plan?->name ?? '—' }}
-                            </td>
-
-                            <td class="capitalize">
-                                {{ $grant->source }}
-                            </td>
+                            <td class="capitalize">{{ $grant->source }}</td>
 
                             <td class="cell-sub">
                                 {{ $grant->starts_at?->format('j M Y') ?? 'Immediately' }}
@@ -220,35 +191,19 @@
                                 {{ $grant->ends_at?->format('j M Y') ?? 'No end' }}
                             </td>
 
-                            <td>
-                                @if($grant->is_active)
-                                    <span class="status-pill status-pill-green">Active</span>
-                                @else
-                                    <span class="status-pill status-pill-muted">Revoked</span>
-                                @endif
-                            </td>
-
                             <td><div class="row-actions">
-                                @if($grant->is_active)
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.grants.revoke', $grant) }}"
-                                        class="inline"
-                                        onsubmit="return confirm('Revoke this access?');"
-                                    >
-                                        @csrf
-                                        @method('PUT')
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.business.grants.revoke', $grant) }}"
+                                    onsubmit="return confirm('Revoke this access?');"
+                                >
+                                    @csrf
+                                    @method('PUT')
 
-                                        <button
-                                            type="submit"
-                                            class="link link-danger"
-                                        >
-                                            Revoke
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="cell-sub">—</span>
-                                @endif
+                                    <button type="submit" class="link link-danger">
+                                        Revoke
+                                    </button>
+                                </form>
                             </div></td>
                         </tr>
                     @endforeach
@@ -256,5 +211,48 @@
             </table>
         @endif
     </div>
+
+    <!-- Revoked grants -->
+    @if($revokedGrants->isNotEmpty())
+        <div class="card">
+            <h3 class="card-heading">Previously granted ({{ $revokedGrants->count() }})</h3>
+
+            <p class="field-hint" style="margin-bottom:12px;">
+                Kept as a record of who was given access and when
+                it was withdrawn.
+            </p>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Reason</th>
+                        <th>Ended</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach($revokedGrants as $grant)
+                        <tr>
+                            <td>
+                                <span class="cell-title">
+                                    {{ $grant->user?->name ?? 'Deleted account' }}
+                                </span>
+                                <span class="cell-sub">
+                                    {{ $grant->user?->student_id ?? $grant->user?->email }}
+                                </span>
+                            </td>
+
+                            <td class="capitalize">{{ $grant->source }}</td>
+
+                            <td class="cell-sub">
+                                {{ $grant->ends_at?->format('j M Y') ?? '—' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 </div>
 @endsection

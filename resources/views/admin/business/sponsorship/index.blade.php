@@ -65,15 +65,49 @@
                 <tbody>
                     @foreach($sponsors as $sponsor)
                         <tr>
-                            <td class="cell-title">{{ $sponsor->name }}</td>
+                            <td colspan="2">
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.business.sponsorship.sponsors.update', $sponsor) }}"
+                                    style="display:flex;gap:8px;align-items:center;"
+                                >
+                                    @csrf
+                                    @method('PUT')
 
-                            <td class="cell-sub">
-                                {{ $sponsor->code ?? '—' }}
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value="{{ $sponsor->name }}"
+                                        maxlength="120"
+                                        required
+                                        class="field-input"
+                                        style="max-width:220px;"
+                                    >
+
+                                    <input
+                                        type="text"
+                                        name="code"
+                                        value="{{ $sponsor->code }}"
+                                        maxlength="40"
+                                        placeholder="Code"
+                                        class="field-input"
+                                        style="max-width:110px;"
+                                    >
+
+                                    <button type="submit" class="link">Save</button>
+                                </form>
                             </td>
 
                             <td>
-                                {{ $sponsor->sponsored_access_grants_count }}
-                                {{ Str::plural('grant', $sponsor->sponsored_access_grants_count) }}
+                                <span class="cell-title">
+                                    {{ $sponsor->active_grants_count }} active
+                                </span>
+
+                                @if($sponsor->sponsored_access_grants_count > $sponsor->active_grants_count)
+                                    <span class="cell-sub">
+                                        {{ $sponsor->sponsored_access_grants_count }} in total
+                                    </span>
+                                @endif
                             </td>
 
                             <td>
@@ -297,14 +331,12 @@
         @endif
     </div>
 
-    <!-- Existing grants -->
+    <!-- Active sponsorship -->
     <div class="card">
-        <h3 class="card-heading">Sponsored access</h3>
+        <h3 class="card-heading">In force ({{ $activeGrants->count() }})</h3>
 
-        @if($grants->isEmpty())
-            <p class="empty-text">
-                Nothing is sponsored yet.
-            </p>
+        @if($activeGrants->isEmpty())
+            <p class="empty-text">Nothing is sponsored at the moment.</p>
         @else
             <table class="admin-table">
                 <thead>
@@ -314,23 +346,16 @@
                         <th>Covers</th>
                         <th>Runs</th>
                         <th>Priority</th>
-                        <th>Status</th>
                         <th class="text-right">Actions</th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    @foreach($grants as $grant)
+                    @foreach($activeGrants as $grant)
                         <tr>
-                            <td class="cell-title">
-                                {{ $grant->sponsor?->name ?? '—' }}
-                            </td>
-
+                            <td class="cell-title">{{ $grant->sponsor?->name ?? '—' }}</td>
                             <td>{{ $grant->plan?->name ?? '—' }}</td>
-
-                            <td>
-                                {{ $grant->organisationGroup?->name ?? 'Whole institution' }}
-                            </td>
+                            <td>{{ $grant->organisationGroup?->name ?? 'Whole institution' }}</td>
 
                             <td class="cell-sub">
                                 {{ $grant->starts_at?->format('j M Y') ?? 'Immediately' }}
@@ -340,35 +365,19 @@
 
                             <td>{{ $grant->priority }}</td>
 
-                            <td>
-                                @if($grant->is_active)
-                                    <span class="status-pill status-pill-green">Active</span>
-                                @else
-                                    <span class="status-pill status-pill-muted">Withdrawn</span>
-                                @endif
-                            </td>
-
                             <td><div class="row-actions">
-                                @if($grant->is_active)
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.sponsorship.grants.revoke', $grant) }}"
-                                        class="inline"
-                                        onsubmit="return confirm('Withdraw this sponsorship?');"
-                                    >
-                                        @csrf
-                                        @method('PUT')
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.business.sponsorship.grants.revoke', $grant) }}"
+                                    onsubmit="return confirm('Withdraw this sponsorship?');"
+                                >
+                                    @csrf
+                                    @method('PUT')
 
-                                        <button
-                                            type="submit"
-                                            class="link link-danger"
-                                        >
-                                            Withdraw
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="cell-sub">—</span>
-                                @endif
+                                    <button type="submit" class="link link-danger">
+                                        Withdraw
+                                    </button>
+                                </form>
                             </div></td>
                         </tr>
                     @endforeach
@@ -376,5 +385,41 @@
             </table>
         @endif
     </div>
+
+    <!-- Withdrawn sponsorship -->
+    @if($withdrawnGrants->isNotEmpty())
+        <div class="card">
+            <h3 class="card-heading">Previously sponsored ({{ $withdrawnGrants->count() }})</h3>
+
+            <p class="field-hint" style="margin-bottom:12px;">
+                Kept as a record of who funded what, and until when.
+            </p>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Sponsor</th>
+                        <th>Plan</th>
+                        <th>Covered</th>
+                        <th>Ended</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach($withdrawnGrants as $grant)
+                        <tr>
+                            <td class="cell-title">{{ $grant->sponsor?->name ?? '—' }}</td>
+                            <td>{{ $grant->plan?->name ?? '—' }}</td>
+                            <td>{{ $grant->organisationGroup?->name ?? 'Whole institution' }}</td>
+
+                            <td class="cell-sub">
+                                {{ $grant->ends_at?->format('j M Y') ?? '—' }}
+                            </td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 </div>
 @endsection

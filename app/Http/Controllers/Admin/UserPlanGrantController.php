@@ -8,15 +8,22 @@ use App\Models\User;
 use App\Models\UserPlanGrant;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class UserPlanGrantController extends Controller
 {
     public function index(Request $request): View
     {
-        $grants = UserPlanGrant::query()
+        $activeGrants = UserPlanGrant::query()
             ->with(['user', 'plan'])
-            ->orderByDesc('is_active')
+            ->where('is_active', true)
+            ->orderByDesc('id')
+            ->get();
+
+        $revokedGrants = UserPlanGrant::query()
+            ->with(['user', 'plan'])
+            ->where('is_active', false)
             ->orderByDesc('id')
             ->get();
 
@@ -29,19 +36,19 @@ class UserPlanGrantController extends Controller
             ->currentlyActive()
             ->pluck('user_id');
 
+        /*
+         * Students only. Staff have no plan and no quota, so
+         * granting one to a lecturer would mean nothing.
+         */
         $users = User::query()
+            ->where('role', 'student')
             ->whereNotIn('id', $grantedUserIds)
             ->orderBy('name')
-            ->get(['id', 'name', 'email', 'role']);
-
-        $plans = Plan::query()
-            ->where('is_active', true)
-            ->orderBy('name')
-            ->get();
+            ->get(['id', 'name', 'email', 'student_id']);
 
         return view(
             'admin.business.grants.index',
-            compact('grants', 'users', 'plans')
+            compact('activeGrants', 'revokedGrants', 'users')
         );
     }
 
@@ -51,12 +58,8 @@ class UserPlanGrantController extends Controller
             [
                 'user_id' => [
                     'required',
-                    'exists:users,id',
-                ],
-
-                'plan_id' => [
-                    'required',
-                    'exists:plans,id',
+                    Rule::exists('users', 'id')
+                        ->where('role', 'student'),
                 ],
 
                 'source' => [
@@ -77,8 +80,15 @@ class UserPlanGrantController extends Controller
             ]
         );
 
+        /*
+         * A grant always confers Premium. There is nothing to
+         * grant below it, so offering a choice only invited a
+         * mistake.
+         */
         UserPlanGrant::create(
             $this->withWindow($validated) + [
+                'plan_id' => Plan::where('code', 'premium')
+                    ->value('id'),
                 'is_active' => true,
             ]
         );
