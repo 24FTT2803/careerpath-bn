@@ -893,15 +893,19 @@
     <header class="site-header" id="site-header">
         <div class="container">
             <div class="header-inner">
-                <a href="{{ url('/') }}" class="logo">
-                    <div class="logo-icon">
-                        <i class="fas fa-compass"></i>
-                    </div>
-                    <div>
-                        <span class="logo-text">CareerPath <span>BN</span></span>
-                        <span class="logo-sub">Politeknik Brunei</span>
-                    </div>
-                </a>
+                <a href="{{ url('/') }}" class="logo" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
+    <img
+        src="{{ asset('images/careerpath-badge.png') }}"
+        alt="CareerPath BN"
+        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
+    >
+    <img
+        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        alt=""
+        aria-hidden="true"
+        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
+    >
+</a>
 
                 <nav class="nav-links">
                     <a href="#features">Features</a>
@@ -1227,10 +1231,9 @@
     <footer class="site-footer">
         <div class="container">
             <div class="footer-grid">
-                <div class="footer-brand">
-                    <div class="logo-text">CareerPath <span>BN</span></div>
-                    <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
-                    <div class="footer-logos">
+    <div class="footer-brand">
+        <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
+        <div class="footer-logos">
                         <a href="https://www.pb.edu.bn" target="_blank" class="logo-link">
                             @if(file_exists(public_path('images/politeknik-logo.png')))
                                 <img src="{{ asset('images/politeknik-logo.png') }}" alt="Politeknik Brunei" class="footer-logo">

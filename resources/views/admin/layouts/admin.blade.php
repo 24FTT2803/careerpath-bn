@@ -475,13 +475,13 @@
 
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon"><i class="fas fa-crown"></i></div>
-            <div>
-                <span class="brand-text">CareerPath <span>BN</span></span>
-                <span class="brand-sub">Administration</span>
-            </div>
-        </div>
+        <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
+    <img
+        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        alt="CareerPath BN"
+        style="height: 48px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+    >
+</div>
 
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>

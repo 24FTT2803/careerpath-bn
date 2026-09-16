@@ -332,9 +332,12 @@
     <header class="auth-header">
         <div class="container">
             <a href="{{ url('/') }}" class="logo">
-                <div class="logo-icon"><i class="fas fa-compass"></i></div>
-                <span class="logo-text">CareerPath <span>BN</span></span>
-            </a>
+    <img
+        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        alt="CareerPath BN"
+        style="height: 44px; width: auto; display: block;"
+    >
+</a>
         </div>
     </header>
 

@@ -512,14 +512,19 @@
     <nav class="site-nav">
         <div class="container">
             <div class="nav-inner">
-                <a href="{{ route('student.dashboard') }}" class="nav-brand">
-                    <div class="icon"><i class="fas fa-compass"></i></div>
-                    <div>
-                        <span class="text">CareerPath <span>BN</span></span>
-                        <span class="sub">Politeknik Brunei</span>
-                    </div>
-                </a>
-
+                <a href="{{ route('student.dashboard') }}" class="nav-brand" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
+    <img
+        src="{{ asset('images/careerpath-badge.png') }}"
+        alt="CareerPath BN"
+        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
+    >
+    <img
+        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        alt=""
+        aria-hidden="true"
+        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
+    >
+</a>
                 <div class="nav-right">
                     <a href="{{ route('student.dashboard') }}" class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
                         <i class="fas fa-th-large"></i> Dashboard

@@ -1,10 +1,9 @@
 <footer class="site-footer">
     <div class="container">
-        <div class="footer-grid">
+                <div class="footer-grid">
             <div class="footer-brand">
-                <div class="logo-text">CareerPath <span>BN</span></div>
-                <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
-                <div class="footer-logos">
+    <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
+    <div class="footer-logos">
                     <a href="https://www.pb.edu.bn" target="_blank" class="logo-link">
                         @if(file_exists(public_path('images/politeknik-logo.png')))
                             <img src="{{ asset('images/politeknik-logo.png') }}" alt="Politeknik Brunei" class="footer-logo">
