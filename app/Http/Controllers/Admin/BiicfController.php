@@ -156,13 +156,20 @@ class BiicfController extends Controller
         ]);
 
         if ($request->has('competencies')) {
-            foreach ($request->competencies as $comp) {
-                $jobRole->competencies()->attach($comp['id'], [
-                    'proficiency_level_id' => $comp['proficiency_level_id'],
-                    'is_core' => $comp['is_core'] ?? true,
-                ]);
-            }
+    foreach ($request->competencies as $comp) {
+        // The proficiency <select> always submits, even when the
+        // competency checkbox is unticked, so an entry can arrive
+        // without its 'id'. Skip those.
+        if (! is_array($comp) || ! isset($comp['id'])) {
+            continue;
         }
+
+        $jobRole->competencies()->attach($comp['id'], [
+            'proficiency_level_id' => $comp['proficiency_level_id'],
+            'is_core' => $comp['is_core'] ?? true,
+        ]);
+    }
+}
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -222,14 +229,19 @@ class BiicfController extends Controller
         ]);
 
         $jobRole->competencies()->detach();
-        if ($request->has('competencies')) {
-            foreach ($request->competencies as $comp) {
-                $jobRole->competencies()->attach($comp['id'], [
-                    'proficiency_level_id' => $comp['proficiency_level_id'],
-                    'is_core' => $comp['is_core'] ?? true,
-                ]);
-            }
+
+if ($request->has('competencies')) {
+    foreach ($request->competencies as $comp) {
+        if (! is_array($comp) || ! isset($comp['id'])) {
+            continue;
         }
+
+        $jobRole->competencies()->attach($comp['id'], [
+            'proficiency_level_id' => $comp['proficiency_level_id'],
+            'is_core' => $comp['is_core'] ?? true,
+        ]);
+    }
+}
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
