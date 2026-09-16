@@ -75,7 +75,7 @@ test(
 );
 
 test(
-    'a student sees no advertisements by default',
+    'a premium student sees no advertisements by default',
     function () {
         seedPlansForAds();
 
@@ -88,8 +88,9 @@ test(
         makeAd();
 
         /*
-         * show_ads defaults to false, so a student who has
-         * never visited their settings is ad free.
+         * Premium is ad free, and show_ads defaults to false, so
+         * a premium student who has never visited their settings
+         * sees nothing.
          */
         expect(
             adService()->forStudent($student->fresh())
@@ -334,6 +335,27 @@ test(
          */
         expect(
             adService()->forStudent($student->fresh())
+        )->toHaveCount(1);
+    }
+);
+
+test(
+    'a free student sees advertisements without opting in',
+    function () {
+        seedPlansForAds();
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        makeAd();
+
+        /*
+         * The free plan carries advertising, so nothing has to
+         * be switched on for it to appear.
+         */
+        expect(
+            adService()->forStudent($student)
         )->toHaveCount(1);
     }
 );

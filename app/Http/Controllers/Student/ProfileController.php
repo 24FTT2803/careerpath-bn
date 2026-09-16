@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\Notification;
+use App\Models\Plan;
 use App\Models\RecommendationGeneration;
 use App\Models\StudentCompetency;
 use App\Models\StudentInterest;
@@ -15,6 +16,7 @@ use App\Models\StudentProject;
 use App\Models\User;
 use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
+use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -27,7 +29,6 @@ use Illuminate\Validation\Rules\File;
 use Illuminate\Validation\ValidationException;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use Propaganistas\LaravelPhone\Rules\Phone;
-use App\Rules\NoProfanity;
 
 class ProfileController extends Controller
 {
@@ -208,8 +209,8 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $request->validate([
-            'first_name' => ['required', 'string', 'max:100', new NoProfanity],
-            'last_name' => ['required', 'string', 'max:100', new NoProfanity],
+            'first_name' => ['required', 'string', 'max:100'],
+            'last_name' => ['required', 'string', 'max:100'],
             'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,'.$user->id],
             'phone' => [
                 'nullable',
@@ -290,7 +291,6 @@ class ProfileController extends Controller
                 'nullable',
                 'string',
                 'max:40',
-                new NoProfanity,
             ],
 
             'custom_skill_levels' => [
@@ -315,7 +315,6 @@ class ProfileController extends Controller
                 'nullable',
                 'string',
                 'max:40',
-                new NoProfanity,
             ],
 
             'projects' => ['nullable', 'array'],
@@ -330,7 +329,6 @@ class ProfileController extends Controller
                 'required',
                 'string',
                 'max:150',
-                new NoProfanity,
             ],
 
             'projects.*.role' => [
@@ -385,14 +383,12 @@ class ProfileController extends Controller
                 'required',
                 'string',
                 'max:150',
-                new NoProfanity,
             ],
 
             'certifications.*.issuing_organization' => [
                 'nullable',
                 'string',
                 'max:150',
-                new NoProfanity,
             ],
 
             'certifications.*.issue_date' => [
@@ -829,24 +825,31 @@ class ProfileController extends Controller
     /**
      * Show settings page.
      */
-    public function settings()
+    public function settings(EntitlementService $entitlements)
     {
         /** @var User $user */
         $user = Auth::user();
 
         return view(
             'student.settings.index',
-            compact('user')
+            [
+                'user' => $user,
+                'plan' => $entitlements->planFor($user),
+                'canChooseAds' => $entitlements->canChooseAds($user),
+                'showsAds' => $entitlements->shouldShowAds($user),
+            ]
         );
     }
 
     /**
-     * Update the student's advertising preference.
+     * Move a student onto Premium.
      *
-     * Off by default. Advertising only ever appears because a
-     * student chose it, and they can withdraw that at any time.
+     * No payment is taken. This stands in for a payment step
+     * that is outside the project's scope, and the student is
+     * told so plainly rather than being led to believe they
+     * have bought something.
      */
-    public function updatePreferences(Request $request)
+    public function upgrade(EntitlementService $entitlements)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -855,6 +858,83 @@ class ProfileController extends Controller
             $user && $user->isStudent(),
             403
         );
+
+        $premium = Plan::where('code', 'premium')
+            ->where('is_active', true)
+            ->first();
+
+        if ($premium === null) {
+            return redirect()
+                ->route('student.settings')
+                ->withErrors([
+                    'upgrade' => 'Premium is not available at the moment.',
+                ]);
+        }
+
+        if ($entitlements->planFor($user)?->code === 'premium') {
+            return redirect()
+                ->route('student.settings')
+                ->with('success', 'You are already on Premium.');
+        }
+
+        /*
+         * Any earlier grant is closed rather than left running,
+         * so one account never holds two live grants.
+         */
+        $user->planGrants()
+            ->where('is_active', true)
+            ->update([
+                'is_active' => false,
+                'ends_at' => now(),
+            ]);
+
+        $user->planGrants()->create([
+            'plan_id' => $premium->id,
+            'source' => 'self',
+            'is_active' => true,
+        ]);
+
+        /*
+         * Premium makes advertising optional, and the default
+         * for a paid plan is off.
+         */
+        $user->update(['show_ads' => false]);
+
+        return redirect()
+            ->route('student.settings')
+            ->with(
+                'success',
+                'You are now on Premium. No payment was taken — '
+                .'this is a demonstration of the upgrade, not a purchase.'
+            );
+    }
+
+    /**
+     * Update the student's advertising preference.
+     *
+     * Only meaningful on a plan that does not carry advertising.
+     * On the free plan advertising is what pays for free access,
+     * so it is not the student's to switch off.
+     */
+    public function updatePreferences(
+        Request $request,
+        EntitlementService $entitlements
+    ) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user && $user->isStudent(),
+            403
+        );
+
+        if (! $entitlements->canChooseAds($user)) {
+            return redirect()
+                ->route('student.settings')
+                ->withErrors([
+                    'show_ads' => 'Advertising is part of your current plan.',
+                ]);
+        }
 
         $user->update([
             'show_ads' => $request->boolean('show_ads'),

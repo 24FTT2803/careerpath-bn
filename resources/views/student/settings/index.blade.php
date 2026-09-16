@@ -320,6 +320,14 @@
         transform: translateX(20px);
     }
 
+    .field label.toggle input:disabled + .track {
+        opacity: 0.55;
+    }
+
+    .field label.toggle:has(input:disabled) {
+        cursor: not-allowed;
+    }
+
     .field label.toggle input:focus-visible + .track {
         box-shadow: 0 0 0 4px rgba(26, 58, 92, 0.18);
     }
@@ -549,18 +557,71 @@
                     </a>
                 </div>
 
+                <!-- Plan -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-star"></i> Your Plan
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Current plan</span>
+                        <span class="value">{{ $plan?->name ?? 'Free' }}</span>
+                    </div>
+
+                    <div class="info-row">
+                        <span class="label">Advertising</span>
+                        <span class="value">{{ $showsAds ? 'Shown' : 'Not shown' }}</span>
+                    </div>
+
+                    @if(($plan?->code ?? 'free') !== 'premium')
+                        <p class="hint" style="margin:16px 0;">
+                            Premium removes advertising and lifts the
+                            limit on generating recommendations.
+                            <strong>No payment is taken.</strong>
+                            This stands in for a subscription so the
+                            platform can be demonstrated.
+                        </p>
+
+                        <form
+                            method="POST"
+                            action="{{ route('student.settings.upgrade') }}"
+                            onsubmit="return confirm('Upgrade to Premium? No payment will be taken.');"
+                        >
+                            @csrf
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-arrow-up"></i> Upgrade to Premium
+                            </button>
+                        </form>
+                    @else
+                        <p class="hint" style="margin-top:16px;">
+                            You are on Premium. No payment was taken —
+                            this is a demonstration of the upgrade.
+                        </p>
+                    @endif
+                </div>
+
                 <!-- Advertising -->
                 <div class="panel">
                     <div class="panel-title">
                         <i class="fas fa-bullhorn"></i> Advertising
                     </div>
 
-                    <p class="hint" style="margin-bottom:16px;">
-                        CareerPath BN is free to use. You can
-                        choose to see advertisements to support
-                        it. This is off unless you turn it on,
-                        and you can change it whenever you like.
-                    </p>
+                    @if($canChooseAds)
+                        <p class="hint" style="margin-bottom:16px;">
+                            Your plan is ad free. You may still choose
+                            to see advertisements if you would like to
+                            support the platform, and you can change
+                            this whenever you like.
+                        </p>
+                    @else
+                        <p class="hint" style="margin-bottom:16px;">
+                            Advertising is part of the free plan and is
+                            what pays for free access, so it cannot be
+                            switched off. Upgrading to Premium removes
+                            it.
+                        </p>
+                    @endif
 
                     <form
                         method="POST"
@@ -583,7 +644,8 @@
                                     type="checkbox"
                                     name="show_ads"
                                     value="1"
-                                    @checked(Auth::user()->show_ads)
+                                    @checked($showsAds)
+                                    @disabled(! $canChooseAds)
                                 >
 
                                 <span class="track">
@@ -594,17 +656,19 @@
                                     Show me advertisements
 
                                     <span
-                                        class="toggle-state {{ Auth::user()->show_ads ? 'on' : 'off' }}"
+                                        class="toggle-state {{ $showsAds ? 'on' : 'off' }}"
                                     >
-                                        {{ Auth::user()->show_ads ? 'On' : 'Off' }}
+                                        {{ $showsAds ? 'On' : 'Off' }}
                                     </span>
                                 </span>
                             </label>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save"></i> Save Preference
-                        </button>
+                        @if($canChooseAds)
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Preference
+                            </button>
+                        @endif
                     </form>
                 </div>
 

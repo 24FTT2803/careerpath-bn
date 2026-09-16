@@ -163,7 +163,7 @@ test('future grants do not apply before their start date', function () {
     )->toBe('free');
 });
 
-test('student advertisements are opt in and disabled by default', function () {
+test('free students always see advertisements', function () {
     $student = User::factory()->create([
         'role' => 'student',
     ]);
@@ -174,6 +174,11 @@ test('student advertisements are opt in and disabled by default', function () {
 
     $student->refresh();
 
+    /*
+     * Advertising is part of the free plan rather than a
+     * preference. It is what pays for free access, so it is not
+     * the student's to switch off.
+     */
     expect($student->show_ads)
         ->toBeFalse()
         ->and(
@@ -181,25 +186,18 @@ test('student advertisements are opt in and disabled by default', function () {
                 $student
             )
         )
-        ->toBeFalse();
-
-    $student->update([
-        'show_ads' => true,
-    ]);
-
-    $student->refresh();
-
-    expect(
-        $service->shouldShowAds(
-            $student
+        ->toBeTrue()
+        ->and(
+            $service->canChooseAds(
+                $student
+            )
         )
-    )->toBeTrue();
+        ->toBeFalse();
 });
 
-test('premium students can also choose whether advertisements are shown', function () {
+test('premium students are ad free unless they opt in', function () {
     $student = User::factory()->create([
         'role' => 'student',
-        'show_ads' => true,
     ]);
 
     $premium = Plan::where(
@@ -217,14 +215,23 @@ test('premium students can also choose whether advertisements are shown', functi
         EntitlementService::class
     );
 
+    $student->refresh();
+
     expect(
         $service->shouldShowAds(
             $student
         )
-    )->toBeTrue();
+    )
+        ->toBeFalse()
+        ->and(
+            $service->canChooseAds(
+                $student
+            )
+        )
+        ->toBeTrue();
 
     $student->update([
-        'show_ads' => false,
+        'show_ads' => true,
     ]);
 
     $student->refresh();
@@ -233,7 +240,7 @@ test('premium students can also choose whether advertisements are shown', functi
         $service->shouldShowAds(
             $student
         )
-    )->toBeFalse();
+    )->toBeTrue();
 });
 
 test('staff accounts do not show advertisements even when the preference is enabled', function (
