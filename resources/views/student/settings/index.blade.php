@@ -568,15 +568,18 @@
                         <span class="value">{{ $plan?->name ?? 'Free' }}</span>
                     </div>
 
-                    <div class="info-row">
-                        <span class="label">Advertising</span>
-                        <span class="value">{{ $showsAds ? 'Shown' : 'Not shown' }}</span>
-                    </div>
+                    @if($adsAvailable)
+                        <div class="info-row">
+                            <span class="label">Advertising</span>
+                            <span class="value">{{ $showsAds ? 'Shown' : 'Not shown' }}</span>
+                        </div>
+                    @endif
 
                     @if(($plan?->code ?? 'free') !== 'premium')
                         <p class="hint" style="margin:16px 0;">
-                            Premium removes advertising and lifts the
-                            limit on generating recommendations.
+                            Premium lets you switch advertising off
+                            and lifts the limit on generating
+                            recommendations.
                             <strong>No payment is taken.</strong>
                             This stands in for a subscription so the
                             platform can be demonstrated.
@@ -602,6 +605,7 @@
                 </div>
 
                 <!-- Advertising -->
+                @if($adsAvailable)
                 <div class="panel">
                     <div class="panel-title">
                         <i class="fas fa-bullhorn"></i> Advertising
@@ -671,6 +675,7 @@
                         @endif
                     </form>
                 </div>
+                @endif
 
                 <!-- Change Password -->
                 <div class="panel">

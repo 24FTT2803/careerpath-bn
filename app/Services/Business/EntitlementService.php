@@ -643,31 +643,45 @@ class EntitlementService
         }
 
         /*
-         * Advertising is part of the free plan rather than a
-         * preference. Free accounts see advertisements because
-         * that is what pays for free access, and the setting is
-         * shown to them locked on.
+         * A plan without advertising never shows any, whatever
+         * the student's preference says.
          */
-        if ($this->allows($user, 'ads.available')) {
-            return true;
+        if (! $this->adsAvailable($user)) {
+            return false;
         }
 
         /*
-         * A plan without advertising is ad free unless the
-         * student chooses otherwise, which is off by default.
+         * Where the student has no choice, advertising is what
+         * pays for their access and is always shown.
          */
+        if (! $this->canChooseAds($user)) {
+            return true;
+        }
+
         return (bool) $user->show_ads;
     }
 
     /**
-     * Whether a student may change their advertising setting.
+     * Whether advertising exists at all on this user's plan.
      *
-     * False on a plan that carries advertising, since switching
-     * it off there would be switching off what funds the plan.
+     * False hides the setting entirely rather than showing a
+     * control that cannot do anything.
+     */
+    public function adsAvailable(User $user): bool
+    {
+        return $user->isStudent()
+            && $this->allows($user, 'ads.available');
+    }
+
+    /**
+     * Whether a student may switch advertising off.
+     *
+     * False on a plan where advertising funds the access, so
+     * the setting is shown locked on rather than hidden.
      */
     public function canChooseAds(User $user): bool
     {
-        return $user->isStudent()
-            && ! $this->allows($user, 'ads.available');
+        return $this->adsAvailable($user)
+            && $this->allows($user, 'ads.optional.enabled');
     }
 }

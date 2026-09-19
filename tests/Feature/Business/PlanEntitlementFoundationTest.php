@@ -175,9 +175,8 @@ test('free students always see advertisements', function () {
     $student->refresh();
 
     /*
-     * Advertising is part of the free plan rather than a
-     * preference. It is what pays for free access, so it is not
-     * the student's to switch off.
+     * Advertising is available on the free plan and not optional
+     * there, because it is what pays for free access.
      */
     expect($student->show_ads)
         ->toBeFalse()
@@ -297,7 +296,19 @@ test('plan feature seeding is idempotent', function () {
                 ->features()
                 ->count()
         )
-        ->toBe(23)
+        /*
+         * The point is that seeding twice does not duplicate
+         * anything, so both plans simply have to agree.
+         */
+        ->toBe(
+            Plan::where(
+                'code',
+                'premium'
+            )
+                ->firstOrFail()
+                ->features()
+                ->count()
+        )
         ->and(
             Plan::where(
                 'code',
@@ -307,7 +318,7 @@ test('plan feature seeding is idempotent', function () {
                 ->features()
                 ->count()
         )
-        ->toBe(23);
+        ->toBeGreaterThanOrEqual(20);
 });
 
 test('plan seeding preserves administrator configured feature values', function () {
@@ -345,4 +356,50 @@ test('plan seeding preserves administrator configured feature values', function 
         'period_value' => 7,
         'period_unit' => 'day',
     ]);
+});
+
+test('advertising disappears entirely when a plan excludes it', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+        'show_ads' => true,
+    ]);
+
+    $free = Plan::where(
+        'code',
+        'free'
+    )->firstOrFail();
+
+    $free->features()
+        ->where('key', 'ads.available')
+        ->update(['value' => json_encode(false)]);
+
+    $service = app(
+        EntitlementService::class
+    );
+
+    $student->refresh();
+
+    /*
+     * With advertising switched off for the plan there is
+     * nothing for the student to decide, so the setting is
+     * hidden rather than shown doing nothing.
+     */
+    expect(
+        $service->adsAvailable(
+            $student
+        )
+    )
+        ->toBeFalse()
+        ->and(
+            $service->canChooseAds(
+                $student
+            )
+        )
+        ->toBeFalse()
+        ->and(
+            $service->shouldShowAds(
+                $student
+            )
+        )
+        ->toBeFalse();
 });

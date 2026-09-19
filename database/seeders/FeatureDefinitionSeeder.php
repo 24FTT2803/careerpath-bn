@@ -184,6 +184,34 @@ class FeatureDefinitionSeeder extends Seeder
              * ads master switch, so a placement can be retired
              * without withdrawing advertising altogether.
              */
+            /*
+             * Whether a student on this plan may switch
+             * advertising off. Free access is supported by
+             * advertising, so the choice belongs to paid plans.
+             */
+            [
+                'key' => 'ads.optional.enabled',
+                'name' => 'Advertising Optional',
+                'category' => 'Advertising',
+                'value_type' => 'boolean',
+                'parent_key' => 'ads.available',
+                'sort_order' => 605,
+            ],
+
+            [
+                /*
+                 * Whether a student may switch advertising off.
+                 * Off means advertising is part of the plan and
+                 * pays for it, so the setting is shown locked.
+                 */
+                'key' => 'ads.optional.enabled',
+                'name' => 'Students May Turn Ads Off',
+                'category' => 'Advertising',
+                'value_type' => 'boolean',
+                'parent_key' => 'ads.available',
+                'sort_order' => 607,
+            ],
+
             [
                 'key' => 'ads.position.one.enabled',
                 'name' => 'Ad Position One',

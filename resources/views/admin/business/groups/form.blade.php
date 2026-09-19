@@ -176,7 +176,7 @@
                             @checked(in_array($parent->id, $selectedOthers, true))
                         >
 
-                        <span >
+                        <span>
                             {{ $parent->path }}
 
                             <span class="text-xs text-gray-400">
@@ -202,7 +202,7 @@
                         @checked(old('is_active', $group->is_active))
                     >
 
-                    <span >Active</span>
+                    <span>Active</span>
                 </label>
             </div>
         @endif

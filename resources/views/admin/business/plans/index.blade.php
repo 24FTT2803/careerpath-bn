@@ -1250,8 +1250,6 @@ document.addEventListener(
     }
 );
 </script>
-@endsection
-
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         /*
@@ -1306,3 +1304,4 @@ document.addEventListener(
         });
     });
 </script>
+@endsection

@@ -187,7 +187,7 @@
                                 value="{{ $candidate->id }}"
                             >
 
-                            <span >
+                            <span>
                                 {{ $candidate->name }}
 
                                 <span class="text-xs text-gray-400">

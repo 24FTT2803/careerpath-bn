@@ -238,3 +238,25 @@ test(
         expect($student->fresh()->show_ads)->toBeFalse();
     }
 );
+
+test(
+    'the advertising setting is hidden when a plan excludes it',
+    function () {
+        seedPlansForRendering();
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        Plan::where('code', 'free')
+            ->firstOrFail()
+            ->features()
+            ->where('key', 'ads.available')
+            ->update(['value' => json_encode(false)]);
+
+        $this->actingAs($student)
+            ->get(route('student.settings'))
+            ->assertOk()
+            ->assertDontSee('Show me advertisements');
+    }
+);

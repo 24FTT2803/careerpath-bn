@@ -835,6 +835,7 @@ class ProfileController extends Controller
             [
                 'user' => $user,
                 'plan' => $entitlements->planFor($user),
+                'adsAvailable' => $entitlements->adsAvailable($user),
                 'canChooseAds' => $entitlements->canChooseAds($user),
                 'showsAds' => $entitlements->shouldShowAds($user),
             ]

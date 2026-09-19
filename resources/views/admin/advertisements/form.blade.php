@@ -117,9 +117,8 @@
                 </select>
 
                 <p class="field-hint">
-                    Each position moves to suit the screen size.
-                    On a wide screen it sits in a side column;
-                    on a narrow one it moves into the page.
+                    Position one sits above the page content and
+                    position two below it, at every screen size.
                 </p>
             </div>
         </div>
@@ -291,7 +290,7 @@
                     @checked(old('is_active', $advertisement->is_active))
                 >
 
-                <span >Active</span>
+                <span>Active</span>
             </label>
         </div>
 
