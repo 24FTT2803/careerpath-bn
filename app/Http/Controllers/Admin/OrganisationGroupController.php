@@ -95,11 +95,32 @@ class OrganisationGroupController extends Controller
 
                 'allOrganisations' => $this->filteredOrganisations(''),
 
+                'moveOptions' => $this->moveOptions($groups),
+
                 'filter' => $filter,
                 'counts' => $counts,
                 'visibleIds' => $visibleIds,
             ]
         );
+    }
+
+    /**
+     * Every group in this organisation, labelled by path.
+     *
+     * @param  Collection<int, OrganisationGroup>  $groups
+     * @return Collection<int, object>
+     */
+    private function moveOptions(Collection $groups): Collection
+    {
+        $keyed = $groups->keyBy('id');
+
+        return $groups
+            ->map(fn (OrganisationGroup $group) => (object) [
+                'id' => $group->id,
+                'path' => $this->pathFor($group, $keyed),
+            ])
+            ->sortBy('path')
+            ->values();
     }
 
     /**
@@ -243,6 +264,113 @@ class OrganisationGroupController extends Controller
                 'organisation' => $group->organisation_id,
             ])
             ->with('success', 'Group updated.');
+    }
+
+    /**
+     * Move a group to a different parent.
+     *
+     * Only the branch it was moved from changes. A group that
+     * sits in two places, such as a class belonging to both a
+     * programme and an intake, keeps the other edge.
+     */
+    public function move(Request $request, OrganisationGroup $group)
+    {
+        $validated = $request->validate([
+            'from_parent_id' => [
+                'nullable',
+                'exists:organisation_groups,id',
+            ],
+
+            'to_parent_id' => [
+                'nullable',
+                'exists:organisation_groups,id',
+            ],
+        ]);
+
+        $target = $validated['to_parent_id'] ?? null;
+
+        $refusal = $this->moveRefusal($group, $target);
+
+        if ($refusal !== null) {
+            return $this->backToTree($group, $refusal);
+        }
+
+        $from = $validated['from_parent_id'] ?? null;
+
+        $wasPrimary = $from === null
+            || $group->parents()
+                ->wherePivot('is_primary', true)
+                ->whereKey($from)
+                ->exists();
+
+        if ($from !== null) {
+            $group->parents()->detach($from);
+        }
+
+        if ($target !== null) {
+            $group->parents()->syncWithoutDetaching([
+                $target => ['is_primary' => $wasPrimary],
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.business.groups.index', [
+                'organisation' => $group->organisation_id,
+            ])
+            ->with('success', $group->name.' moved.');
+    }
+
+    /**
+     * Why a move cannot happen, or null when it can.
+     */
+    private function moveRefusal(
+        OrganisationGroup $group,
+        ?int $target
+    ): ?string {
+        $isRoot = Organisation::where(
+            'root_group_id',
+            $group->id
+        )->exists();
+
+        if ($isRoot) {
+            return $group->name
+                .' is the organisation\'s own group and cannot be moved.';
+        }
+
+        if ($target === null) {
+            return null;
+        }
+
+        if ($target === $group->id) {
+            return 'A group cannot sit inside itself.';
+        }
+
+        $parent = OrganisationGroup::find($target);
+
+        if ($parent === null) {
+            return 'That group no longer exists.';
+        }
+
+        if ($parent->organisation_id !== $group->organisation_id) {
+            return 'A group cannot move to another organisation.';
+        }
+
+        if ($this->descendantIds($group)->contains($target)) {
+            return 'A group cannot sit inside one of its own groups.';
+        }
+
+        return null;
+    }
+
+    private function backToTree(
+        OrganisationGroup $group,
+        string $message
+    ) {
+        return redirect()
+            ->route('admin.business.groups.index', [
+                'organisation' => $group->organisation_id,
+            ])
+            ->withErrors(['group' => $message]);
     }
 
     /**

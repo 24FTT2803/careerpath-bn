@@ -60,6 +60,12 @@
 
         <a href="{{ route('admin.business.groups.edit', $group) }}">edit</a>
 
+        <button
+            type="button"
+            class="group-move-toggle"
+            data-move-target="move-{{ $group->id }}-{{ $parentId ?? 'root' }}"
+        >move</button>
+
         @if($group->is_active)
             <form
                 method="POST"
@@ -95,6 +101,50 @@
             </form>
         @endif
     </span>
+</div>
+
+<div
+    class="group-move"
+    id="move-{{ $group->id }}-{{ $parentId ?? 'root' }}"
+    style="display:none;padding-left: {{ 34 + $depth * 22 }}px"
+>
+    <form
+        method="POST"
+        action="{{ route('admin.business.groups.move', $group) }}"
+    >
+        @csrf
+        @method('PUT')
+
+        <input
+            type="hidden"
+            name="from_parent_id"
+            value="{{ $parentId }}"
+        >
+
+        <span class="cell-sub">Move into</span>
+
+        <select name="to_parent_id" class="field-input">
+            <option value="">Top level</option>
+
+            @foreach($moveOptions as $option)
+                @continue($option->id === $group->id)
+
+                <option
+                    value="{{ $option->id }}"
+                    @selected($option->id === $parentId)
+                >{{ $option->path }}</option>
+            @endforeach
+        </select>
+
+        <button type="submit" class="link">Move</button>
+
+        @if(count($children) > 0)
+            <span class="cell-sub">
+                {{ count($children) }}
+                {{ Str::plural('group', count($children)) }} move with it
+            </span>
+        @endif
+    </form>
 </div>
 
 @if($otherParents->isNotEmpty())

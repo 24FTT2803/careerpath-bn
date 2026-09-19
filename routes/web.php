@@ -464,6 +464,11 @@ Route::middleware(['auth'])
                 )->name('groups.update');
 
                 Route::put(
+                    '/groups/{group}/move',
+                    [OrganisationGroupController::class, 'move']
+                )->name('groups.move');
+
+                Route::put(
                     '/groups/{group}/archive',
                     [OrganisationGroupController::class, 'archive']
                 )->name('groups.archive');

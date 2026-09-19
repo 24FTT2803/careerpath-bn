@@ -114,6 +114,33 @@
         cursor: not-allowed;
     }
 
+    .group-move {
+        padding-top: 8px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #f1f1f1;
+    }
+
+    .group-move form {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .group-move select {
+        max-width: 320px;
+    }
+
+    .group-actions .group-move-toggle {
+        color: #2563eb;
+        background: none;
+        border: 0;
+        padding: 0;
+        font-size: 12px;
+        cursor: pointer;
+        font-family: inherit;
+    }
+
     .group-also {
         font-size: 12px;
         color: #9ca3af;
@@ -575,6 +602,30 @@
                 }
 
                 writeCollapsed(stored);
+            });
+        });
+
+        /*
+         * The move form stays hidden until asked for, so a tree
+         * of any size is still readable.
+         */
+        document.querySelectorAll('.group-move-toggle').forEach(function (button) {
+            button.addEventListener('click', function () {
+                var panel = document.getElementById(
+                    button.dataset.moveTarget
+                );
+
+                if (!panel) {
+                    return;
+                }
+
+                var hidden = panel.style.display === 'none';
+
+                document.querySelectorAll('.group-move').forEach(function (other) {
+                    other.style.display = 'none';
+                });
+
+                panel.style.display = hidden ? '' : 'none';
             });
         });
 
