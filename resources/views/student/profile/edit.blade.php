@@ -1363,7 +1363,10 @@
                     <div class="cpbn-field">
                         <label>Programme</label>
 
-                        <x-programme-select :selected="$user->programme" />
+                        <x-programme-select
+                            :selected="$user->programme"
+                            :selected-group-id="$user->programme_group_id"
+                        />
 
                         @error('programme')
                             <div class="error">{{ $message }}</div>

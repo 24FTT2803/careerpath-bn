@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -36,6 +37,7 @@ class User extends Authenticatable
 
     protected $fillable = [
         'first_name', 'last_name', 'name', 'email', 'phone', 'password', 'student_id', 'programme',
+        'programme_group_id',
         'cgpa', 'role', 'avatar', 'show_ads', 'last_login_at',
     ];
 
@@ -288,6 +290,21 @@ class User extends Authenticatable
     /**
      * Get the user's organisation group memberships.
      */
+    /**
+     * The programme group this student is enrolled in.
+     *
+     * users.programme holds the name for display and for the
+     * record; this is what the enrolment actually rests on, so
+     * renaming a programme does not detach anybody.
+     */
+    public function programmeGroup(): BelongsTo
+    {
+        return $this->belongsTo(
+            OrganisationGroup::class,
+            'programme_group_id'
+        );
+    }
+
     public function groupMemberships()
     {
         return $this->hasMany(GroupMembership::class);

@@ -87,7 +87,10 @@
 
                 <div class="cpbn-field" style="margin-bottom:0">
                     <label>Programme <span class="req">*</span></label>
-                    <x-programme-select :selected="$user->programme" />
+                    <x-programme-select
+                        :selected="$user->programme"
+                        :selected-group-id="$user->programme_group_id"
+                    />
                 </div>
             </div>
 

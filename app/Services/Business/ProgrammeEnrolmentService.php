@@ -53,10 +53,29 @@ class ProgrammeEnrolmentService
     ): void {
         $programmeIds = $this->options()->pluck('id');
 
-        $target = $programmeName === null
-            ? null
-            : $this->options()
-                ->firstWhere('name', $programmeName);
+        $target = $this->resolve($student, $programmeName);
+
+        /*
+         * Record the key alongside the name. From here the key
+         * is what the enrolment rests on, so renaming a
+         * programme no longer detaches anybody.
+         */
+        if ($student->programme_group_id !== $target?->id) {
+            $student->forceFill([
+                'programme_group_id' => $target?->id,
+            ])->save();
+        }
+
+        /*
+         * Keep the stored label in step with the group it now
+         * points at, so a renamed programme reads correctly on
+         * the profile the next time it is saved.
+         */
+        if ($target !== null && $student->programme !== $target->name) {
+            $student->forceFill([
+                'programme' => $target->name,
+            ])->save();
+        }
 
         /*
          * Drop any programme-level membership that no longer
@@ -93,6 +112,50 @@ class ProgrammeEnrolmentService
         $student->groupMemberships()->firstOrCreate([
             'organisation_group_id' => $target->id,
         ]);
+    }
+
+    /**
+     * Find the programme a student belongs to.
+     *
+     * The key is preferred where it is already recorded, so a
+     * renamed programme still resolves. The name is only used
+     * to interpret what was just submitted, or to match a
+     * student who predates the key.
+     */
+    private function resolve(
+        User $student,
+        ?string $programmeName
+    ): ?OrganisationGroup {
+        $options = $this->options();
+
+        /*
+         * No programme means the student cleared it, which is a
+         * deliberate choice and must not be undone by falling
+         * back to what they had before.
+         */
+        if ($programmeName === null || $programmeName === '') {
+            return null;
+        }
+
+        $byName = $options->firstWhere('name', $programmeName);
+
+        if ($byName !== null) {
+            return $byName;
+        }
+
+        /*
+         * A name that matches nothing means the programme was
+         * renamed since it was recorded, so the key is the only
+         * thing left that still identifies it.
+         */
+        if ($student->programme_group_id !== null) {
+            return $options->firstWhere(
+                'id',
+                $student->programme_group_id
+            );
+        }
+
+        return null;
     }
 
     /**
