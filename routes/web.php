@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GroupMembershipController;
+use App\Http\Controllers\Admin\OrganisationController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\SponsorshipController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
@@ -366,6 +367,35 @@ Route::middleware(['auth'])
                 );
 
                 /*
+                 * The institutions whose structures this
+                 * platform holds.
+                 */
+                Route::post(
+                    '/organisations',
+                    [OrganisationController::class, 'store']
+                )->name('organisations.store');
+
+                Route::put(
+                    '/organisations/{organisation}',
+                    [OrganisationController::class, 'update']
+                )->name('organisations.update');
+
+                Route::put(
+                    '/organisations/{organisation}/archive',
+                    [OrganisationController::class, 'archive']
+                )->name('organisations.archive');
+
+                Route::put(
+                    '/organisations/{organisation}/restore',
+                    [OrganisationController::class, 'restore']
+                )->name('organisations.restore');
+
+                Route::delete(
+                    '/organisations/{organisation}',
+                    [OrganisationController::class, 'destroy']
+                )->name('organisations.destroy');
+
+                /*
                  * Organisations funding access for groups of
                  * students.
                  */
@@ -556,6 +586,13 @@ Route::middleware(['auth'])
             Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
             Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');
 
+            // Proficiency Levels - Use 'biicf.' NOT 'admin.biicf.'
+            Route::get('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevels'])->name('biicf.proficiency-levels');
+            Route::get('/biicf/proficiency-levels/create', [BiicfController::class, 'proficiencyLevelCreate'])->name('biicf.proficiency-levels.create');
+            Route::post('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevelStore'])->name('biicf.proficiency-levels.store');
+            Route::get('/biicf/proficiency-levels/{level}/edit', [BiicfController::class, 'proficiencyLevelEdit'])->name('biicf.proficiency-levels.edit');
+            Route::put('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelUpdate'])->name('biicf.proficiency-levels.update');
+            Route::delete('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelDestroy'])->name('biicf.proficiency-levels.destroy');
 
             // Trainings - Use 'biicf.' NOT 'admin.biicf.'
             Route::get('/biicf/trainings', [BiicfController::class, 'trainings'])->name('biicf.trainings');

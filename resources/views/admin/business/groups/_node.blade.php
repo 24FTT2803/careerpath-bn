@@ -1,5 +1,13 @@
 @php
     $children = $childrenByParent[$group->id] ?? [];
+
+    /*
+     * A filtered-out group still renders its branch, so a kept
+     * child is never orphaned from the path it sits in.
+     */
+    $hidden = isset($visibleIds)
+        && $visibleIds !== null
+        && ! in_array($group->id, $visibleIds, true);
     $blocker = $blockers[$group->id] ?? null;
     $otherParents = $group->parents->where('id', '!=', $parentId);
 @endphp
@@ -8,7 +16,7 @@
     class="group-row"
     data-group-id="{{ $group->id }}"
     data-name="{{ strtolower($group->name.' '.$group->code) }}"
-    style="padding-left: {{ 12 + $depth * 22 }}px"
+    style="padding-left: {{ 12 + $depth * 22 }}px{{ $hidden ? ';display:none' : '' }}"
 >
     <span class="group-main">
         @if(count($children) > 0)
@@ -43,7 +51,10 @@
     </span>
 
     <span class="group-actions">
-        <a href="{{ route('admin.business.groups.create', ['parent' => $group->id]) }}">
+        <a href="{{ route('admin.business.groups.create', [
+            'parent' => $group->id,
+            'organisation' => $group->organisation_id,
+        ]) }}">
             <i class="fas fa-plus"></i> add inside
         </a>
 

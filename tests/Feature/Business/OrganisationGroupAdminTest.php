@@ -49,7 +49,9 @@ test(
                 ]
             )
             ->assertRedirect(
-                route('admin.business.groups.index')
+                route('admin.business.groups.index', [
+                    'organisation' => $programme->organisation_id,
+                ])
             );
 
         $created = OrganisationGroup::where(
@@ -188,7 +190,7 @@ test(
         ]);
 
         $this->actingAs($lecturer)
-            ->get(route('admin.business.groups.index'))
+            ->get(route('admin.business.groups.index', ['organisation' => OrganisationGroup::value('organisation_id')]))
             ->assertForbidden();
     }
 );
@@ -364,7 +366,12 @@ test(
         $this->actingAs(groupAdmin())
             ->post(
                 route('admin.business.groups.types.store'),
-                ['name' => 'Faculty']
+                [
+                    'organisation_id' => OrganisationGroup::value(
+                        'organisation_id'
+                    ),
+                    'name' => 'Faculty',
+                ]
             )
             ->assertRedirect();
 
@@ -406,7 +413,7 @@ test(
         );
 
         $this->actingAs(groupAdmin())
-            ->get(route('admin.business.groups.index'))
+            ->get(route('admin.business.groups.index', ['organisation' => OrganisationGroup::value('organisation_id')]))
             ->assertOk()
             ->assertSee('also under');
     }

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Organisation extends Model
@@ -11,6 +12,7 @@ class Organisation extends Model
         'name',
         'code',
         'is_active',
+        'root_group_id',
     ];
 
     protected function casts(): array
@@ -18,6 +20,17 @@ class Organisation extends Model
         return [
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * The group this organisation's structure hangs from.
+     */
+    public function rootGroup(): BelongsTo
+    {
+        return $this->belongsTo(
+            OrganisationGroup::class,
+            'root_group_id'
+        );
     }
 
     public function groupTypes(): HasMany

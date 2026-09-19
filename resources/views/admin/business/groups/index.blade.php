@@ -155,17 +155,33 @@
     <div class="page-header">
         <div>
             <h1>🏫 Academic Groups</h1>
+
             <p class="subtitle">
-                Your institution's structure, however you choose to arrange it
+                @if($organisation)
+                    {{ $organisation->name }}
+                @else
+                    Choose an institution to work in
+                @endif
             </p>
         </div>
 
-        <a
-            href="{{ route('admin.business.groups.create') }}"
-            class="btn btn-primary"
-        >
-            <i class="fas fa-plus"></i> New top-level group
-        </a>
+        @if($organisation)
+            <div class="header-actions">
+                <a
+                    href="{{ route('admin.business.groups.index') }}"
+                    class="btn btn-outline"
+                >
+                    <i class="fas fa-arrow-left"></i> All organisations
+                </a>
+
+                <a
+                    href="{{ route('admin.business.groups.create', ['organisation' => $organisation->id]) }}"
+                    class="btn btn-primary"
+                >
+                    <i class="fas fa-plus"></i> New top-level group
+                </a>
+            </div>
+        @endif
     </div>
 
     @if(session('success'))
@@ -186,69 +202,269 @@
         </div>
     @endif
 
-    <!-- Types -->
-    <div class="card">
-        <h3 class="card-heading">Group types</h3>
+@if($organisation === null)
 
-        <p class="text-gray-500 text-sm mb-3">
-            Name the levels your institution actually uses. A type
-            can only be removed while no group uses it.
+    <!-- Choose an organisation -->
+    <div class="card">
+        <h3 class="card-heading">
+            Organisations ({{ $organisationCounts['all'] }})
+        </h3>
+
+        <p class="field-hint" style="margin-bottom:12px;">
+            Each owns its own group types and its own structure.
+            A new one starts with a single group named after it.
         </p>
 
-        <div class="flex flex-wrap gap-2 items-center mb-4">
-            @foreach($types as $type)
-                @php $usage = $typeUsage[$type->id] ?? 0; @endphp
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+            @foreach([
+                '' => 'All',
+                'active' => 'Active',
+                'archived' => 'Archived',
+            ] as $value => $label)
+                @php
+                    $key = $value === '' ? 'all' : $value;
+                    $current = $organisationFilter === $value;
+                @endphp
 
-                <span class="type-chip {{ $usage > 0 ? 'in-use' : '' }}">
-                    {{ $type->name }}
-
-                    @if($usage > 0)
-                        <button
-                            type="button"
-                            title="Used by {{ $usage }} {{ Str::plural('group', $usage) }}"
-                        >&times;</button>
-                    @else
-                        <form
-                            method="POST"
-                            action="{{ route('admin.business.groups.types.destroy', $type) }}"
-                            onsubmit="return confirm('Remove the {{ $type->name }} type?');"
-                        >
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit">&times;</button>
-                        </form>
-                    @endif
-                </span>
+                <a
+                    href="{{ route('admin.business.groups.index', $value === '' ? [] : ['org_status' => $value]) }}"
+                    class="btn btn-sm {{ $current ? 'btn-primary' : 'btn-subtle' }}"
+                >
+                    {{ $label }} ({{ $organisationCounts[$key] }})
+                </a>
             @endforeach
         </div>
 
+        @if($allOrganisations->isEmpty())
+            <p class="empty-text">No organisations yet.</p>
+        @else
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Organisation</th>
+                        <th>Structure</th>
+                        <th>Status</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach($allOrganisations as $item)
+                        <tr>
+                            <td>
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.business.organisations.update', $item) }}"
+                                    style="display:flex;gap:8px;align-items:center;"
+                                >
+                                    @csrf
+                                    @method('PUT')
+
+                                    <input
+                                        type="text"
+                                        name="name"
+                                        value="{{ $item->name }}"
+                                        maxlength="150"
+                                        required
+                                        class="field-input"
+                                        style="max-width:240px;"
+                                    >
+
+                                    <input
+                                        type="text"
+                                        name="code"
+                                        value="{{ $item->code }}"
+                                        maxlength="40"
+                                        placeholder="Code"
+                                        class="field-input"
+                                        style="max-width:100px;"
+                                    >
+
+                                    <button type="submit" class="link">Save</button>
+                                </form>
+                            </td>
+
+                            <td class="cell-sub">
+                                {{ $item->groups_count }}
+                                {{ Str::plural('group', $item->groups_count) }}
+                                &middot;
+                                {{ $item->group_types_count }}
+                                {{ Str::plural('type', $item->group_types_count) }}
+                            </td>
+
+                            <td>
+                                @if($item->is_active)
+                                    <span class="status-pill status-pill-green">Active</span>
+                                @else
+                                    <span class="status-pill status-pill-muted">Archived</span>
+                                @endif
+                            </td>
+
+                            <td><div class="row-actions">
+                                <a
+                                    href="{{ route('admin.business.groups.index', ['organisation' => $item->id]) }}"
+                                    class="link"
+                                >
+                                    Open
+                                </a>
+
+                                @if($item->is_active)
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.organisations.archive', $item) }}"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="link">Archive</button>
+                                    </form>
+                                @else
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.organisations.restore', $item) }}"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+                                        <button type="submit" class="link">Restore</button>
+                                    </form>
+                                @endif
+
+                                <form
+                                    method="POST"
+                                    action="{{ route('admin.business.organisations.destroy', $item) }}"
+                                    onsubmit="return confirm('Delete {{ $item->name }} and everything in it?');"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="link link-danger">Delete</button>
+                                </form>
+                            </div></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
         <form
             method="POST"
-            action="{{ route('admin.business.groups.types.store') }}"
-            class="flex gap-2"
+            action="{{ route('admin.business.organisations.store') }}"
+            style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;"
         >
             @csrf
 
             <input
                 type="text"
                 name="name"
-                maxlength="60"
+                maxlength="150"
                 required
-                placeholder="Intake Session"
+                placeholder="Institution name"
                 class="field-input"
+                style="max-width:240px;"
             >
 
-            <button
-                type="submit"
-                class="btn btn-subtle"
+            <input
+                type="text"
+                name="code"
+                maxlength="40"
+                placeholder="Code"
+                class="field-input"
+                style="max-width:100px;"
             >
-                Add type
-            </button>
+
+            <button type="submit" class="btn btn-subtle">Add</button>
+        </form>
+    </div>
+
+@else
+
+    <!-- Types -->
+    <div class="card">
+        <h3 class="card-heading">Group types</h3>
+
+        <p class="field-hint" style="margin-bottom:12px;">
+            The levels {{ $organisation->name }} uses. Only these
+            are offered when creating a group here.
+        </p>
+
+        @if($types->isEmpty())
+            <p class="field-hint">No types yet.</p>
+        @else
+            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                @foreach($types as $type)
+                    @php $usage = $typeUsage[$type->id] ?? 0; @endphp
+
+                    <span class="type-chip {{ $usage > 0 ? 'in-use' : '' }}">
+                        {{ $type->name }}
+
+                        @if($usage > 0)
+                            <button
+                                type="button"
+                                title="Used by {{ $usage }} {{ Str::plural('group', $usage) }}"
+                            >&times;</button>
+                        @else
+                            <form
+                                method="POST"
+                                action="{{ route('admin.business.groups.types.destroy', $type) }}"
+                                onsubmit="return confirm('Remove the {{ $type->name }} type?');"
+                            >
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit">&times;</button>
+                            </form>
+                        @endif
+                    </span>
+                @endforeach
+            </div>
+        @endif
+
+        <form
+            method="POST"
+            action="{{ route('admin.business.groups.types.store') }}"
+            style="display:flex;gap:8px;margin-top:12px;"
+        >
+            @csrf
+
+            <input
+                type="hidden"
+                name="organisation_id"
+                value="{{ $organisation->id }}"
+            >
+
+            <input
+                type="text"
+                name="name"
+                maxlength="60"
+                required
+                placeholder="New type for {{ $organisation->name }}"
+                class="field-input"
+                style="max-width:280px;"
+            >
+
+            <button type="submit" class="btn btn-subtle">Add type</button>
         </form>
     </div>
 
     <!-- Tree -->
     <div class="card">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+            @foreach([
+                '' => 'All',
+                'active' => 'Active',
+                'archived' => 'Archived',
+            ] as $value => $label)
+                @php
+                    $key = $value === '' ? 'all' : $value;
+                    $current = $filter === $value;
+                @endphp
+
+                <a
+                    href="{{ route('admin.business.groups.index', array_filter(['organisation' => $organisation->id, 'status' => $value])) }}"
+                    class="btn btn-sm {{ $current ? 'btn-primary' : 'btn-subtle' }}"
+                >
+                    {{ $label }} ({{ $counts[$key] }})
+                </a>
+            @endforeach
+        </div>
+
         <input
             type="text"
             id="groupSearch"
@@ -273,6 +489,7 @@
             </div>
         @endif
     </div>
+@endif
 </div>
 
 <script>

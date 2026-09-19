@@ -15,13 +15,68 @@ use Illuminate\View\View;
 
 class OrganisationGroupController extends Controller
 {
-    public function index(): View
+    public function index(Request $request): View
     {
-        $groups = $this->allGroups();
+        $organisation = $this->chosenOrganisation(
+            $request->integer('organisation')
+        );
+
+        /*
+         * Without an organisation this is a list of institutions
+         * to choose from. A single structure spanning all of
+         * them would be a list nobody can read, and archived
+         * groups would mix across institutions that have
+         * nothing to do with each other.
+         */
+        if ($organisation === null) {
+            return view(
+                'admin.business.groups.index',
+                [
+                    'organisation' => null,
+
+                    'allOrganisations' => $this->filteredOrganisations(
+                        $request->string('org_status')->toString()
+                    ),
+
+                    'organisationCounts' => $this->organisationCounts(),
+
+                    'organisationFilter' => $request
+                        ->string('org_status')
+                        ->toString(),
+                ]
+            );
+        }
+
+        $groups = $this->allGroups($organisation->id);
+
+        $filter = $request->string('status')->toString();
+
+        $counts = [
+            'all' => $groups->count(),
+            'active' => $groups->where('is_active', true)->count(),
+            'archived' => $groups->where('is_active', false)->count(),
+        ];
+
+        /*
+         * Filtering hides rows rather than branches, so a kept
+         * child still shows the path it sits in.
+         */
+        $visibleIds = match ($filter) {
+            'active' => $groups->where('is_active', true)
+                ->pluck('id')
+                ->all(),
+
+            'archived' => $groups->where('is_active', false)
+                ->pluck('id')
+                ->all(),
+
+            default => null,
+        };
 
         return view(
             'admin.business.groups.index',
             [
+                'organisation' => $organisation,
                 'groups' => $groups,
 
                 'roots' => $groups->filter(
@@ -34,15 +89,55 @@ class OrganisationGroupController extends Controller
 
                 'blockers' => $this->blockersFor($groups),
                 'reach' => $this->reachFor($groups),
-                'types' => $this->types(),
+
+                'types' => $this->types($organisation->id),
                 'typeUsage' => $this->typeUsage(),
+
+                'allOrganisations' => $this->filteredOrganisations(''),
+
+                'filter' => $filter,
+                'counts' => $counts,
+                'visibleIds' => $visibleIds,
             ]
         );
+    }
+
+    /**
+     * The organisation being worked in, if one was chosen.
+     */
+    private function chosenOrganisation(?int $chosen): ?Organisation
+    {
+        return $chosen
+            ? Organisation::find($chosen)
+            : null;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function organisationCounts(): array
+    {
+        return [
+            'all' => Organisation::count(),
+
+            'active' => Organisation::where('is_active', true)
+                ->count(),
+
+            'archived' => Organisation::where('is_active', false)
+                ->count(),
+        ];
     }
 
     public function create(Request $request): View
     {
         $parent = $request->integer('parent') ?: null;
+
+        /*
+         * Either the parent settles which institution this
+         * belongs to, or the page it was opened from does.
+         */
+        $organisationId = $this->organisationForParent($parent)
+            ?? ($request->integer('organisation') ?: null);
 
         return view(
             'admin.business.groups.form',
@@ -50,10 +145,17 @@ class OrganisationGroupController extends Controller
                 'group' => new OrganisationGroup([
                     'is_active' => true,
                 ]),
-                'types' => $this->types(),
-                'parents' => $this->possibleParents(),
+                'types' => $this->types($organisationId),
+
+                'parents' => $this->possibleParents(
+                    null,
+                    $organisationId
+                ),
                 'currentParentIds' => [],
                 'primaryParentId' => $parent,
+                'organisations' => $this->organisations(),
+
+                'lockedOrganisationId' => $organisationId,
             ]
         );
     }
@@ -64,10 +166,18 @@ class OrganisationGroupController extends Controller
 
         $parentIds = $this->parentIdsFrom($validated);
 
+        /*
+         * A group belongs to whatever its parent belongs to. A
+         * group with no parent is a root, so the organisation
+         * has to be chosen rather than assumed.
+         */
+        $organisationId = $parentIds === []
+            ? (int) $validated['organisation_id']
+            : OrganisationGroup::findOrFail($parentIds[0])
+                ->organisation_id;
+
         $group = OrganisationGroup::create([
-            'organisation_id' => $this
-                ->defaultOrganisation()
-                ->id,
+            'organisation_id' => $organisationId,
 
             'group_type_id' => $validated['group_type_id'],
             'name' => $validated['name'],
@@ -78,7 +188,9 @@ class OrganisationGroupController extends Controller
         $this->syncParents($group, $parentIds);
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $organisationId,
+            ])
             ->with('success', 'Group created.');
     }
 
@@ -90,8 +202,11 @@ class OrganisationGroupController extends Controller
             'admin.business.groups.form',
             [
                 'group' => $group,
-                'types' => $this->types(),
-                'parents' => $this->possibleParents($group),
+                'types' => $this->types($group->organisation_id),
+                'parents' => $this->possibleParents(
+                    $group,
+                    $group->organisation_id
+                ),
 
                 'currentParentIds' => $group->parents
                     ->pluck('id')
@@ -100,6 +215,8 @@ class OrganisationGroupController extends Controller
                 'primaryParentId' => $group
                     ->primaryParent()
                     ?->id,
+                'organisations' => $this->organisations(),
+                'lockedOrganisationId' => $group->organisation_id,
             ]
         );
     }
@@ -122,7 +239,9 @@ class OrganisationGroupController extends Controller
         $this->syncParents($group, $parentIds);
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $group->organisation_id,
+            ])
             ->with('success', 'Group updated.');
     }
 
@@ -137,7 +256,9 @@ class OrganisationGroupController extends Controller
         $group->update(['is_active' => false]);
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $group->organisation_id,
+            ])
             ->with('success', 'Group archived.');
     }
 
@@ -146,7 +267,9 @@ class OrganisationGroupController extends Controller
         $group->update(['is_active' => true]);
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $group->organisation_id,
+            ])
             ->with('success', 'Group restored.');
     }
 
@@ -172,19 +295,30 @@ class OrganisationGroupController extends Controller
                 ]);
         }
 
+        $organisationId = $group->organisation_id;
+
         $group->parents()->detach();
         $group->delete();
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $organisationId,
+            ])
             ->with('success', 'Group deleted.');
     }
 
     public function storeType(Request $request)
     {
-        $organisation = $this->defaultOrganisation();
+        $organisation = Organisation::findOrFail(
+            $request->integer('organisation_id')
+        );
 
         $validated = $request->validate([
+            'organisation_id' => [
+                'required',
+                'exists:organisations,id',
+            ],
+
             'name' => [
                 'required',
                 'string',
@@ -205,7 +339,9 @@ class OrganisationGroupController extends Controller
         ]);
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $organisation->id,
+            ])
             ->with('success', 'Type added.');
     }
 
@@ -220,10 +356,14 @@ class OrganisationGroupController extends Controller
                 ]);
         }
 
+        $organisationId = $type->organisation_id;
+
         $type->delete();
 
         return redirect()
-            ->route('admin.business.groups.index')
+            ->route('admin.business.groups.index', [
+                'organisation' => $organisationId,
+            ])
             ->with('success', 'Type removed.');
     }
 
@@ -235,7 +375,8 @@ class OrganisationGroupController extends Controller
         ?OrganisationGroup $group = null
     ): array {
         $organisationId = $group?->organisation_id
-            ?? $this->defaultOrganisation()->id;
+            ?? $request->integer('organisation_id')
+            ?: null;
 
         $forbidden = $group === null
             ? []
@@ -246,6 +387,17 @@ class OrganisationGroupController extends Controller
         return $request->validate(
             [
                 'name' => ['required', 'string', 'max:120'],
+
+                /*
+                 * Only a group with no parent needs one. Any
+                 * other group takes its parent's organisation,
+                 * so asking would invite a contradiction.
+                 */
+                'organisation_id' => [
+                    'required_without:primary_parent_id',
+                    'nullable',
+                    'exists:organisations,id',
+                ],
 
                 'group_type_id' => [
                     'required',
@@ -339,6 +491,20 @@ class OrganisationGroupController extends Controller
      */
     private function blockerFor(OrganisationGroup $group): ?string
     {
+        /*
+         * An organisation's root is not the tree's to remove.
+         * Deleting it here would leave the institution with no
+         * structure and nothing saying so.
+         */
+        $isRoot = Organisation::where(
+            'root_group_id',
+            $group->id
+        )->exists();
+
+        if ($isRoot) {
+            return 'it is the organisation\'s own group';
+        }
+
         $hasChildren = DB::table('organisation_group_parents')
             ->where('parent_id', $group->id)
             ->exists();
@@ -414,9 +580,10 @@ class OrganisationGroupController extends Controller
     /**
      * @return Collection<int, OrganisationGroup>
      */
-    private function allGroups(): Collection
+    private function allGroups(int $organisationId): Collection
     {
         return OrganisationGroup::query()
+            ->where('organisation_id', $organisationId)
             ->with(['type', 'parents'])
             ->withCount('memberships')
             ->orderBy('name')
@@ -443,13 +610,6 @@ class OrganisationGroupController extends Controller
         return $map;
     }
 
-    private function defaultOrganisation(): Organisation
-    {
-        return Organisation::query()
-            ->orderBy('id')
-            ->firstOrFail();
-    }
-
     /**
      * Groups that may be chosen as a parent, each labelled with
      * its full path.
@@ -461,10 +621,23 @@ class OrganisationGroupController extends Controller
      * @return Collection<int, object>
      */
     private function possibleParents(
-        ?OrganisationGroup $group = null
+        ?OrganisationGroup $group = null,
+        ?int $organisationId = null
     ): Collection {
+        /*
+         * A group never crosses institutions, so offering
+         * another organisation's groups as a parent would only
+         * produce a structure that cannot be saved.
+         */
         $all = OrganisationGroup::query()
             ->with(['type', 'parents'])
+            ->when(
+                $organisationId !== null,
+                fn ($query) => $query->where(
+                    'organisation_id',
+                    $organisationId
+                )
+            )
             ->orderBy('name')
             ->get()
             ->keyBy('id');
@@ -557,13 +730,72 @@ class OrganisationGroupController extends Controller
     }
 
     /**
-     * @return Collection<int, OrganisationGroupType>
+     * Organisations for the panel, narrowed by its own tabs.
+     *
+     * @return Collection<int, Organisation>
      */
-    private function types(): Collection
+    private function filteredOrganisations(string $filter): Collection
     {
-        return OrganisationGroupType::query()
+        return Organisation::query()
+            ->withCount(['groups', 'groupTypes'])
+            ->when(
+                $filter === 'active',
+                fn ($query) => $query->where('is_active', true)
+            )
+            ->when(
+                $filter === 'archived',
+                fn ($query) => $query->where('is_active', false)
+            )
+            ->orderByDesc('is_active')
             ->orderBy('name')
             ->get();
+    }
+
+    /**
+     * Organisations an administrator may put a group in.
+     *
+     * @return Collection<int, Organisation>
+     */
+    private function organisations(): Collection
+    {
+        return Organisation::query()
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return Collection<int, OrganisationGroupType>
+     */
+    private function types(?int $organisationId = null): Collection
+    {
+        return OrganisationGroupType::query()
+            ->when(
+                $organisationId !== null,
+                fn ($query) => $query->where(
+                    'organisation_id',
+                    $organisationId
+                )
+            )
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * The organisation a new group will belong to.
+     *
+     * Taken from the parent when there is one, so the type list
+     * can be narrowed to that organisation's own vocabulary
+     * rather than offering another institution's.
+     */
+    private function organisationForParent(?int $parentId): ?int
+    {
+        if ($parentId === null) {
+            return null;
+        }
+
+        return OrganisationGroup::whereKey($parentId)
+            ->value('organisation_id');
     }
 
     /**
