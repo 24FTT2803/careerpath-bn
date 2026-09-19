@@ -33,15 +33,16 @@ class BusinessPlanController extends Controller
             ->get();
 
         /*
-         * Ordered deliberately rather than alphabetically, so
-         * Career Recommendations and Career Adviser sit next to
-         * each other and the detailed analysis switches stay
-         * beneath the feature they belong to.
+         * Ordered deliberately rather than alphabetically. The
+         * two things a student actually uses, recommendations
+         * and the adviser, sit together at the top; the detailed
+         * analysis switches are settings of the first and follow
+         * both rather than separating them.
          */
         $categoryOrder = [
             'Career Recommendations',
-            'Detailed Career Analysis',
             'Career Adviser',
+            'Detailed Career Analysis',
             'History',
             'Planning',
             'Analytics',
