@@ -12,6 +12,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\File;
 use Illuminate\View\View;
 
 class AdvertisementController extends Controller
@@ -20,9 +21,54 @@ class AdvertisementController extends Controller
      * Uploaded clips are capped well below anything a student
      * would wait for on a phone connection.
      */
-    private const MAX_IMAGE_KILOBYTES = 2048;
+    /**
+     * Generous enough that an animated GIF is usable.
+     */
+    private const MAX_IMAGE_KILOBYTES = 5120;
 
-    private const MAX_VIDEO_KILOBYTES = 10240;
+    /**
+     * Thirty seconds of video does not fit in ten megabytes at
+     * any reasonable quality, so this is sized for the limit
+     * rather than against it.
+     */
+    private const MAX_VIDEO_KILOBYTES = 25600;
+
+    /**
+     * How long a video advertisement may run.
+     *
+     * Checked in the browser before upload, since reading a
+     * video's duration on the server would mean installing
+     * ffmpeg for one rule.
+     */
+    public const MAX_VIDEO_SECONDS = 30;
+
+    /**
+     * Croppable still images.
+     *
+     * GIF is deliberately absent. It is an image and renders as
+     * one, but cropping flattens it to a single frame, so it is
+     * accepted and left alone.
+     */
+    private const CROPPABLE_IMAGE_TYPES = [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+    ];
+
+    private const IMAGE_TYPES = [
+        'jpg',
+        'jpeg',
+        'png',
+        'webp',
+        'gif',
+    ];
+
+    private const VIDEO_TYPES = [
+        'mp4',
+        'webm',
+        'ogg',
+    ];
 
     public function index(Request $request): View
     {
@@ -250,11 +296,15 @@ class AdvertisementController extends Controller
                  * existing one may supply neither, because it
                  * already has an asset on file.
                  */
-                'asset' => [
-                    'nullable',
-                    'file',
-                    'max:'.self::MAX_VIDEO_KILOBYTES,
-                ],
+                /*
+                 * The file has to match the kind of
+                 * advertisement it was uploaded for. Without
+                 * this a video could be stored as an image and
+                 * the page would render a broken picture.
+                 */
+                'asset' => $this->assetRules(
+                    $request->input('type')
+                ),
 
                 /*
                  * An image already cropped to the banner frame
@@ -300,6 +350,10 @@ class AdvertisementController extends Controller
                 ],
             ],
             [
+                'asset.uploaded' => 'That file is larger than this server accepts. The limit is '
+                    .round(self::uploadLimitKilobytes() / 1024, 1)
+                    .' MB.',
+
                 'ends_at.after_or_equal' => 'The end date must not be before the start date.',
 
                 'asset.max' => 'The uploaded file is too large.',
@@ -396,6 +450,84 @@ class AdvertisementController extends Controller
             'advertisements',
             'public'
         );
+    }
+
+    /**
+     * Rules for the uploaded file, by advertisement type.
+     *
+     * @return array<int, mixed>
+     */
+    private function assetRules(?string $type): array
+    {
+        if ($type === Advertisement::TYPE_VIDEO) {
+            return [
+                'nullable',
+                File::types(self::VIDEO_TYPES)
+                    ->max($this->uploadLimitKilobytes(
+                        self::MAX_VIDEO_KILOBYTES
+                    )),
+            ];
+        }
+
+        if ($type === Advertisement::TYPE_IMAGE) {
+            return [
+                'nullable',
+                File::types(self::IMAGE_TYPES)
+                    ->max($this->uploadLimitKilobytes(
+                        self::MAX_IMAGE_KILOBYTES
+                    )),
+            ];
+        }
+
+        /*
+         * Link and network advertisements carry an address
+         * rather than a file, so nothing should be uploaded.
+         */
+        return ['nullable', 'prohibited'];
+    }
+
+    /**
+     * The largest upload this server will actually accept.
+     *
+     * PHP discards anything over upload_max_filesize before
+     * Laravel sees it, so a validation limit above that is a
+     * promise the application cannot keep: the upload simply
+     * fails with no useful explanation.
+     */
+    public static function uploadLimitKilobytes(
+        int $preferred = PHP_INT_MAX
+    ): int {
+        $limits = [
+            $preferred,
+            self::iniKilobytes('upload_max_filesize'),
+
+            /*
+             * The whole request has to fit too, so leave a
+             * little room for the other fields.
+             */
+            max(self::iniKilobytes('post_max_size') - 256, 1),
+        ];
+
+        return (int) min(array_filter($limits));
+    }
+
+    private static function iniKilobytes(string $key): int
+    {
+        $value = trim((string) ini_get($key));
+
+        if ($value === '') {
+            return PHP_INT_MAX;
+        }
+
+        $unit = strtolower(substr($value, -1));
+        $number = (int) $value;
+
+        return match ($unit) {
+            'g' => $number * 1024 * 1024,
+            'm' => $number * 1024,
+            'k' => $number,
+            default => (int) ($number / 1024),
+        };
     }
 
     /**

@@ -336,3 +336,83 @@ test(
         );
     }
 );
+
+test(
+    'an upload has to match the advertisement type',
+    function () {
+        Storage::fake('public');
+
+        /*
+         * Nothing checked this before, so a video could be
+         * stored as an image and the page would render a broken
+         * picture.
+         */
+        $this->actingAs(adminUser())
+            ->post(
+                route('admin.business.advertisements.store'),
+                [
+                    'title' => 'Wrong kind of file',
+                    'type' => Advertisement::TYPE_IMAGE,
+                    'position' => Advertisement::POSITION_ONE,
+                    'asset' => UploadedFile::fake()->create(
+                        'clip.mp4',
+                        100,
+                        'video/mp4'
+                    ),
+                    'is_active' => '1',
+                ]
+            )
+            ->assertSessionHasErrors('asset');
+
+        expect(Advertisement::count())->toBe(0);
+    }
+);
+
+test(
+    'an animated gif is accepted as an image',
+    function () {
+        Storage::fake('public');
+
+        $this->actingAs(adminUser())
+            ->post(
+                route('admin.business.advertisements.store'),
+                [
+                    'title' => 'Animated banner',
+                    'type' => Advertisement::TYPE_IMAGE,
+                    'position' => Advertisement::POSITION_ONE,
+                    'asset' => UploadedFile::fake()->create(
+                        'banner.gif',
+                        200,
+                        'image/gif'
+                    ),
+                    'is_active' => '1',
+                ]
+            )
+            ->assertRedirect();
+
+        expect(
+            Advertisement::where('title', 'Animated banner')->exists()
+        )->toBeTrue();
+    }
+);
+
+test(
+    'a link advertisement rejects an upload',
+    function () {
+        Storage::fake('public');
+
+        $this->actingAs(adminUser())
+            ->post(
+                route('admin.business.advertisements.store'),
+                [
+                    'title' => 'Text only',
+                    'type' => Advertisement::TYPE_LINK,
+                    'position' => Advertisement::POSITION_ONE,
+                    'click_url' => 'https://example.com',
+                    'asset' => UploadedFile::fake()->image('banner.png'),
+                    'is_active' => '1',
+                ]
+            )
+            ->assertSessionHasErrors('asset');
+    }
+);

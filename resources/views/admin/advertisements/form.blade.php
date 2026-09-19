@@ -148,31 +148,77 @@
                 class="field-input"
             >
 
+            @php
+                $uploadLimitMb = round(
+                    App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() / 1024,
+                    1
+                );
+            @endphp
+
             <p class="field-hint">
                 Banners are shown at 6:1, so 1456&times;243 is a
-                good size. Images up to 2 MB, video up to 10 MB.
-                Leave empty to keep the current file.
+                good size. This server accepts files up to
+                {{ $uploadLimitMb }} MB, and video up to
+                {{ App\Http\Controllers\Admin\AdvertisementController::MAX_VIDEO_SECONDS }}
+                seconds. An animated GIF is kept as it is, since
+                cropping would flatten it. Leave empty to keep
+                the current file.
             </p>
+
+            <p id="assetError" class="field-hint" style="display:none;color:#c0392b;"></p>
 
             <input type="hidden" name="cropped_asset" id="croppedAsset">
 
             <div id="cropperPanel" style="display:none;margin-top:12px">
-                <p class="text-xs text-gray-500 mb-2">
-                    Drag to choose the part students will see.
+                <p class="field-hint" style="margin-bottom:8px;">
+                    Drag to choose the part students will see,
+                    then confirm it.
                 </p>
 
                 <div style="max-width:728px">
                     <img id="cropperImage" alt="" style="max-width:100%">
                 </div>
 
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button
+                        type="button"
+                        id="cropperConfirm"
+                        class="btn btn-subtle btn-sm"
+                    >
+                        Use this crop
+                    </button>
+
+                    <button
+                        type="button"
+                        id="cropperClear"
+                        class="btn btn-subtle btn-sm"
+                    >
+                        Use the whole image
+                    </button>
+                </div>
+            </div>
+
+            <div id="cropPreview" style="display:none;margin-top:12px">
+                <p class="field-hint" style="margin-bottom:6px;">
+                    This is what will be saved.
+                </p>
+
+                <img
+                    id="cropPreviewImage"
+                    alt=""
+                    style="width:100%;max-width:728px;aspect-ratio:6/1;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb"
+                >
+
                 <button
                     type="button"
-                    id="cropperClear"
-                    class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded-lg text-xs transition"
+                    id="cropReopen"
+                    class="btn btn-subtle btn-sm"
+                    style="margin-top:8px;"
                 >
-                    Use the whole image instead
+                    Change the crop
                 </button>
             </div>
+
         </div>
 
         <div class="mb-4">
@@ -316,64 +362,191 @@
         var panel = document.getElementById('cropperPanel');
         var image = document.getElementById('cropperImage');
         var hidden = document.getElementById('croppedAsset');
-        var clear = document.getElementById('cropperClear');
-        var form = input ? input.closest('form') : null;
+        var preview = document.getElementById('cropPreview');
+        var previewImage = document.getElementById('cropPreviewImage');
+        var confirmButton = document.getElementById('cropperConfirm');
+        var clearButton = document.getElementById('cropperClear');
+        var reopenButton = document.getElementById('cropReopen');
+        var error = document.getElementById('assetError');
         var cropper = null;
 
-        if (!input || !form || typeof Cropper === 'undefined') {
+        var MAX_VIDEO_SECONDS = {{ App\Http\Controllers\Admin\AdvertisementController::MAX_VIDEO_SECONDS }};
+
+        var MAX_UPLOAD_BYTES = {{ App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() * 1024 }};
+
+        if (!input) {
             return;
         }
 
-        function stop() {
+        function complain(message) {
+            error.textContent = message;
+            error.style.display = message ? '' : 'none';
+        }
+
+        function closeCropper() {
             if (cropper) {
                 cropper.destroy();
                 cropper = null;
             }
 
             panel.style.display = 'none';
+        }
+
+        function reset() {
+            closeCropper();
             hidden.value = '';
+            preview.style.display = 'none';
+            complain('');
+        }
+
+        function openCropper(source) {
+            image.src = source;
+            panel.style.display = '';
+            preview.style.display = 'none';
+
+            if (cropper) {
+                cropper.destroy();
+            }
+
+            cropper = new Cropper(image, {
+                aspectRatio: 6,
+                viewMode: 1,
+                autoCropArea: 1
+            });
+        }
+
+        /*
+         * A video's length can only be read once the browser has
+         * loaded its metadata, so this is checked here rather
+         * than on the server, which would need ffmpeg for one
+         * rule.
+         */
+        function checkVideo(file) {
+            var probe = document.createElement('video');
+
+            probe.preload = 'metadata';
+
+            probe.onloadedmetadata = function () {
+                window.URL.revokeObjectURL(probe.src);
+
+                if (probe.duration > MAX_VIDEO_SECONDS) {
+                    complain(
+                        'That video is '
+                        + Math.round(probe.duration)
+                        + ' seconds. The limit is '
+                        + MAX_VIDEO_SECONDS
+                        + '.'
+                    );
+
+                    input.value = '';
+                }
+            };
+
+            probe.src = window.URL.createObjectURL(file);
         }
 
         input.addEventListener('change', function () {
-            stop();
+            reset();
 
             var file = input.files && input.files[0];
 
-            if (!file || file.type.indexOf('image/') !== 0) {
+            if (!file) {
+                return;
+            }
+
+            if (file.size > MAX_UPLOAD_BYTES) {
+                complain(
+                    'That file is '
+                    + (file.size / 1048576).toFixed(1)
+                    + ' MB. This server accepts up to '
+                    + (MAX_UPLOAD_BYTES / 1048576).toFixed(1)
+                    + ' MB.'
+                );
+
+                input.value = '';
+
+                return;
+            }
+
+            if (file.type.indexOf('video/') === 0) {
+                checkVideo(file);
+
+                return;
+            }
+
+            /*
+             * An animated GIF is an image and renders as one,
+             * but cropping flattens it to a single frame, so it
+             * is left exactly as uploaded.
+             */
+            if (file.type === 'image/gif') {
+                complain('');
+
+                return;
+            }
+
+            if (file.type.indexOf('image/') !== 0) {
+                return;
+            }
+
+            if (typeof Cropper === 'undefined') {
                 return;
             }
 
             var reader = new FileReader();
 
             reader.onload = function (event) {
-                image.src = event.target.result;
-                panel.style.display = '';
-
-                cropper = new Cropper(image, {
-                    aspectRatio: 6,
-                    viewMode: 1,
-                    autoCropArea: 1
-                });
+                openCropper(event.target.result);
             };
 
             reader.readAsDataURL(file);
         });
 
-        clear.addEventListener('click', stop);
+        if (confirmButton) {
+            confirmButton.addEventListener('click', function () {
+                if (!cropper) {
+                    return;
+                }
 
-        form.addEventListener('submit', function () {
-            if (!cropper) {
-                return;
-            }
+                var canvas = cropper.getCroppedCanvas({
+                    width: 1456,
+                    height: 243
+                });
 
-            var canvas = cropper.getCroppedCanvas({
-                width: 1456,
-                height: 243
+                if (!canvas) {
+                    return;
+                }
+
+                var data = canvas.toDataURL('image/jpeg', 0.9);
+
+                hidden.value = data;
+                previewImage.src = data;
+
+                closeCropper();
+                preview.style.display = '';
             });
+        }
 
-            if (canvas) {
-                hidden.value = canvas.toDataURL('image/jpeg', 0.9);
-            }
-        });
+        if (clearButton) {
+            clearButton.addEventListener('click', reset);
+        }
+
+        if (reopenButton) {
+            reopenButton.addEventListener('click', function () {
+                var file = input.files && input.files[0];
+
+                if (!file) {
+                    return;
+                }
+
+                var reader = new FileReader();
+
+                reader.onload = function (event) {
+                    openCropper(event.target.result);
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
     });
 </script>
