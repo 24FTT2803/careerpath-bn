@@ -3,6 +3,23 @@
 @section('title', 'Advertisements')
 
 @section('content')
+<style>
+    /*
+     * Shown at the shape a student sees, so a badly cropped
+     * banner is obvious from the list rather than only once it
+     * is live.
+     */
+    .ad-thumb {
+        display: block;
+        width: 160px;
+        aspect-ratio: 6 / 1;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #e5e7eb;
+        background: #f4f6f9;
+    }
+</style>
+
 <div>
     <div class="page-header">
         <div>
@@ -136,6 +153,7 @@
                     <thead>
                         <tr>
                             <th>Order</th>
+                            <th>Preview</th>
                             <th>Title</th>
                             <th>Type</th>
                             <th>Audience</th>
@@ -181,7 +199,40 @@
                                 </div></td>
 
                                 <td>
+                                    @php
+                                        $mediaUrl = $advertisement->mediaUrl();
+                                    @endphp
+
+                                    @if($advertisement->isNetworkEmbed())
+                                        <span class="cell-sub">Network embed</span>
+                                    @elseif($advertisement->isVideo() && $mediaUrl)
+                                        <video
+                                            src="{{ $mediaUrl }}"
+                                            class="ad-thumb"
+                                            muted
+                                            playsinline
+                                            preload="metadata"
+                                        ></video>
+                                    @elseif($mediaUrl)
+                                        <img
+                                            src="{{ $mediaUrl }}"
+                                            alt=""
+                                            class="ad-thumb"
+                                            loading="lazy"
+                                        >
+                                    @else
+                                        <span class="cell-sub">Text only</span>
+                                    @endif
+                                </td>
+
+                                <td>
                                     <span class="cell-title">{{ $advertisement->title }}</span>
+
+                                    @if($advertisement->click_url)
+                                        <span class="cell-sub">
+                                            links to {{ parse_url($advertisement->click_url, PHP_URL_HOST) }}
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td class="capitalize">{{ $advertisement->type }}</td>
