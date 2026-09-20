@@ -94,3 +94,58 @@ test(
         });
     }
 );
+
+test(
+    'the adviser is told to answer rather than refuse',
+    function () {
+        fakeGroqReply();
+
+        app(GroqCareerAdviserClient::class)->ask(
+            ['profile' => []],
+            'What films should I watch?'
+        );
+
+        Http::assertSent(function ($request) {
+            $prompt = $request['messages'][0]['content'];
+
+            /*
+             * A question phrased unexpectedly is still usually a
+             * question about building a skill, and refusing it
+             * helps nobody.
+             */
+            return str_contains(
+                $prompt,
+                'Do not refuse a question because it is phrased unexpectedly'
+            );
+        });
+    }
+);
+
+test(
+    'the adviser is told to say what the data does not cover',
+    function () {
+        fakeGroqReply();
+
+        app(GroqCareerAdviserClient::class)->ask(
+            ['profile' => []],
+            'Which certification should I take?'
+        );
+
+        Http::assertSent(function ($request) {
+            $prompt = $request['messages'][0]['content'];
+
+            /*
+             * Naming a certification nobody supplied is the
+             * failure this exists to prevent.
+             */
+            return str_contains(
+                $prompt,
+                'unless that exact name appears in the supplied context'
+            )
+                && str_contains(
+                    $prompt,
+                    'does not yet hold training recommendations'
+                );
+        });
+    }
+);
