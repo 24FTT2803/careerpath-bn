@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Advertisement;
+use App\Models\AdvertisementSlot;
 use App\Models\OrganisationGroup;
 use App\Models\User;
 use Carbon\Carbon;
@@ -75,7 +76,8 @@ class AdvertisementController extends Controller
         $all = Advertisement::query()
             ->with('organisationGroup')
             ->orderBy('position')
-            ->orderByDesc('id')
+            ->orderBy('sort_order')
+            ->orderBy('id')
             ->get();
 
         $filter = $request->string('status')->toString();
@@ -109,6 +111,16 @@ class AdvertisementController extends Controller
                 'counts' => $counts,
                 'filter' => $filter,
                 'reach' => $this->reachFor($all),
+
+                'slots' => AdvertisementSlot::orderBy('position')
+                    ->get(),
+
+                /*
+                 * Grouped by placement, because a placement is
+                 * the thing an administrator thinks about: what
+                 * appears above the page, and what below.
+                 */
+                'byPosition' => $advertisements->groupBy('position'),
             ]
         );
     }
@@ -185,19 +197,98 @@ class AdvertisementController extends Controller
         return array_keys($found);
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         return view(
             'admin.advertisements.form',
             [
                 'advertisement' => new Advertisement([
                     'type' => Advertisement::TYPE_IMAGE,
-                    'position' => Advertisement::POSITION_ONE,
+
+                    'position' => $request->string('position')
+                        ->toString()
+                        ?: Advertisement::POSITION_ONE,
+
                     'is_active' => true,
                 ]),
+
+                'lockedPosition' => $request->string('position')
+                    ->toString() ?: null,
+
                 'groups' => $this->groups(),
             ]
         );
+    }
+
+    /**
+     * Change how a placement behaves.
+     */
+    public function updateSlot(
+        Request $request,
+        AdvertisementSlot $slot
+    ) {
+        $validated = $request->validate([
+            'rotation_enabled' => ['required', 'boolean'],
+
+            'rotation_size' => [
+                'required',
+                'integer',
+                'min:1',
+                'max:'.AdvertisementSlot::MAX_ROTATION_SIZE,
+            ],
+
+            'dwell_seconds' => [
+                'required',
+                'integer',
+                'min:2',
+                'max:120',
+            ],
+
+            'is_active' => ['required', 'boolean'],
+        ]);
+
+        $slot->update($validated);
+
+        return redirect()
+            ->route('admin.business.advertisements.index')
+            ->with('success', $slot->name.' updated.');
+    }
+
+    /**
+     * Move an advertisement within its placement.
+     */
+    public function reorder(
+        Request $request,
+        Advertisement $advertisement
+    ) {
+        $direction = $request->string('direction')->toString();
+
+        $neighbour = Advertisement::query()
+            ->where('position', $advertisement->position)
+            ->when(
+                $direction === 'up',
+                fn ($query) => $query
+                    ->where('sort_order', '<', $advertisement->sort_order)
+                    ->orderByDesc('sort_order'),
+                fn ($query) => $query
+                    ->where('sort_order', '>', $advertisement->sort_order)
+                    ->orderBy('sort_order')
+            )
+            ->first();
+
+        if ($neighbour !== null) {
+            $theirs = $neighbour->sort_order;
+
+            $neighbour->update([
+                'sort_order' => $advertisement->sort_order,
+            ]);
+
+            $advertisement->update(['sort_order' => $theirs]);
+        }
+
+        return redirect()
+            ->route('admin.business.advertisements.index')
+            ->with('success', 'Order updated.');
     }
 
     public function store(Request $request)
@@ -226,6 +317,7 @@ class AdvertisementController extends Controller
             'admin.advertisements.form',
             [
                 'advertisement' => $advertisement,
+                'lockedPosition' => $advertisement->position,
                 'groups' => $this->groups(),
             ]
         );

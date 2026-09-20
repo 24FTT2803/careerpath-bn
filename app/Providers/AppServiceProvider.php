@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Contracts\CareerAdviserClient;
 use App\Contracts\CareerAiClient;
+use App\Models\AdvertisementSlot;
 use App\Services\AI\GroqCareerAdviserClient;
 use App\Services\AI\GroqCareerAiClient;
 use App\Services\AI\HttpCareerAiClient;
@@ -81,6 +82,18 @@ class AppServiceProvider extends ServiceProvider
                     $user
                         ? app(AdvertisementService::class)
                             ->forStudent($user)
+                        : collect()
+                );
+
+                /*
+                 * How each placement behaves is configuration
+                 * rather than markup, so the layout reads it
+                 * alongside what it is showing.
+                 */
+                $view->with(
+                    'pageAdvertisementSlots',
+                    $user
+                        ? AdvertisementSlot::all()->keyBy('position')
                         : collect()
                 );
             }

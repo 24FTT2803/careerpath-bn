@@ -1,12 +1,13 @@
 <?php
 
 use App\Models\Advertisement;
+use App\Models\AdvertisementSlot;
 use App\Models\OrganisationGroup;
-use App\Models\OrganisationGroupType;
 use App\Models\Plan;
 use App\Models\User;
 use App\Services\Business\AdvertisementService;
 use Database\Seeders\FeatureDefinitionSeeder;
+use App\Models\OrganisationGroupType;
 use Database\Seeders\OrganisationGroupSeeder;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -187,7 +188,7 @@ test(
 );
 
 test(
-    'a targeted advertisement is preferred for its group',
+    'targeting decides eligibility, not priority',
     function () {
         seedPlansForAds();
         test()->seed(OrganisationGroupSeeder::class);
@@ -205,17 +206,27 @@ test(
 
         makeAd([
             'title' => 'Everyone',
+            'sort_order' => 2,
         ]);
 
         makeAd([
             'title' => 'Just this cohort',
             'organisation_group_id' => $group->id,
+            'sort_order' => 1,
         ]);
 
         $resolved = adService()->forStudent($student->fresh());
 
+        /*
+         * Being targeted no longer jumps the queue. An
+         * administrator who wants a cohort's advertisement seen
+         * first places it first, which is visible on the page
+         * rather than hidden in a rule.
+         */
         expect(
-            $resolved->get(Advertisement::POSITION_ONE)->title
+            $resolved->get(Advertisement::POSITION_ONE)
+                ->first()
+                ->title
         )->toBe('Just this cohort');
     }
 );
@@ -357,5 +368,111 @@ test(
         expect(
             adService()->forStudent($student)
         )->toHaveCount(1);
+    }
+);
+
+test(
+    'a rotating slot resolves several advertisements',
+    function () {
+        seedPlansForAds();
+
+        AdvertisementSlot::where(
+            'position',
+            Advertisement::POSITION_ONE
+        )->update([
+            'rotation_enabled' => true,
+            'rotation_size' => 3,
+        ]);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        makeAd(['title' => 'First']);
+        makeAd(['title' => 'Second']);
+        makeAd(['title' => 'Third']);
+        makeAd(['title' => 'Fourth']);
+
+        $resolved = adService()->forStudent($student);
+
+        /*
+         * Three of the four, because that is what the slot asks
+         * for. Which three is deliberately random.
+         */
+        expect(
+            $resolved->get(Advertisement::POSITION_ONE)
+        )->toHaveCount(3);
+    }
+);
+
+test(
+    'a slot that is not rotating shows one advertisement',
+    function () {
+        seedPlansForAds();
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        makeAd(['title' => 'First']);
+        makeAd(['title' => 'Second']);
+
+        expect(
+            adService()->forStudent($student)
+                ->get(Advertisement::POSITION_ONE)
+        )->toHaveCount(1);
+    }
+);
+
+test(
+    'a placement that is switched off shows nothing',
+    function () {
+        seedPlansForAds();
+
+        AdvertisementSlot::query()->update(['is_active' => false]);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        makeAd();
+
+        expect(
+            adService()->forStudent($student)
+        )->toBeEmpty();
+    }
+);
+
+test(
+    'a rotation follows the order the placement was arranged in',
+    function () {
+        seedPlansForAds();
+
+        AdvertisementSlot::where(
+            'position',
+            Advertisement::POSITION_ONE
+        )->update([
+            'rotation_enabled' => true,
+            'rotation_size' => 2,
+        ]);
+
+        $student = User::factory()->create([
+            'role' => 'student',
+        ]);
+
+        makeAd(['title' => 'Third', 'sort_order' => 3]);
+        makeAd(['title' => 'First', 'sort_order' => 1]);
+        makeAd(['title' => 'Second', 'sort_order' => 2]);
+
+        $titles = adService()->forStudent($student)
+            ->get(Advertisement::POSITION_ONE)
+            ->pluck('title')
+            ->all();
+
+        /*
+         * The arrangement decides, not the order the rows were
+         * created in.
+         */
+        expect($titles)->toBe(['First', 'Second']);
     }
 );

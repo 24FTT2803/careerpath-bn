@@ -3,7 +3,6 @@
 use App\Models\Advertisement;
 use App\Models\Plan;
 use App\Models\User;
-use App\Services\Business\EntitlementService;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -111,7 +110,7 @@ test(
         ]);
 
         $student->planGrants()->create([
-            'plan_id' => Plan::where('code', 'premium')
+            'plan_id' => App\Models\Plan::where('code', 'premium')
                 ->value('id'),
             'source' => 'admin',
             'is_active' => true,
@@ -226,7 +225,7 @@ test(
             ->assertRedirect(route('student.settings'));
 
         expect(
-            app(EntitlementService::class)
+            app(App\Services\Business\EntitlementService::class)
                 ->planFor($student->fresh())
                 ->code
         )->toBe('premium');
@@ -258,5 +257,45 @@ test(
             ->get(route('student.settings'))
             ->assertOk()
             ->assertDontSee('Show me advertisements');
+    }
+);
+
+test(
+    'a rotating placement renders every advertisement in it',
+    function () {
+        seedPlansForRendering();
+
+        App\Models\AdvertisementSlot::where(
+            'position',
+            Advertisement::POSITION_ONE
+        )->update([
+            'rotation_enabled' => true,
+            'rotation_size' => 2,
+        ]);
+
+        makeRenderableAd(Advertisement::POSITION_ONE);
+
+        Advertisement::create([
+            'title' => 'Sponsor banner three',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/three.png',
+            'position' => Advertisement::POSITION_ONE,
+            'sort_order' => 2,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs(optedInStudent())
+            ->get(route('student.settings'))
+            ->assertOk();
+
+        /*
+         * Everything in the rotation is rendered and cycled in
+         * the browser, so both have to be present.
+         */
+        expect(
+            substr_count($response->getContent(), 'ad-slot-item')
+        )->toBeGreaterThanOrEqual(2);
+
+        $response->assertSee('data-ad-rotate', false);
     }
 );

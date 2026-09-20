@@ -37,6 +37,7 @@ class Advertisement extends Model
         'click_url',
         'alt_text',
         'position',
+        'sort_order',
         'is_active',
         'starts_at',
         'ends_at',

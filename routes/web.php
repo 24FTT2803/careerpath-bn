@@ -551,6 +551,16 @@ Route::middleware(['auth'])
                  * placements render at all is decided by the
                  * plan features above.
                  */
+                Route::put(
+                    '/advertisements/{advertisement}/reorder',
+                    [AdvertisementController::class, 'reorder']
+                )->name('advertisements.reorder');
+
+                Route::put(
+                    '/advertisement-slots/{slot}',
+                    [AdvertisementController::class, 'updateSlot']
+                )->name('advertisements.slots.update');
+
                 Route::resource(
                     'advertisements',
                     AdvertisementController::class

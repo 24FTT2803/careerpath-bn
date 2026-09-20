@@ -98,28 +98,41 @@
 
             <div>
                 <label class="field-label">
-                    Position
+                    Placement
                 </label>
 
-                <select
-                    name="position"
-                    class="field-input"
-                >
-                    <option
-                        value="one"
-                        @selected(old('position', $advertisement->position) === 'one')
-                    >Position one</option>
+                @if($lockedPosition !== null)
+                    <input
+                        type="hidden"
+                        name="position"
+                        value="{{ $lockedPosition }}"
+                    >
 
-                    <option
-                        value="two"
-                        @selected(old('position', $advertisement->position) === 'two')
-                    >Position two</option>
-                </select>
+                    <p class="field-input" style="background:#f9fafb;">
+                        {{ $lockedPosition === 'one'
+                            ? 'Above the page'
+                            : 'Below the page' }}
+                    </p>
 
-                <p class="field-hint">
-                    Position one sits above the page content and
-                    position two below it, at every screen size.
-                </p>
+                    <p class="field-hint">
+                        Set by the placement this was opened from.
+                    </p>
+                @else
+                    <select
+                        name="position"
+                        class="field-input"
+                    >
+                        <option
+                            value="one"
+                            @selected(old('position', $advertisement->position) === 'one')
+                        >Above the page</option>
+
+                        <option
+                            value="two"
+                            @selected(old('position', $advertisement->position) === 'two')
+                        >Below the page</option>
+                    </select>
+                @endif
             </div>
         </div>
 

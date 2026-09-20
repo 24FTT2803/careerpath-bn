@@ -1,75 +1,52 @@
-@props(['advertisement' => null])
+{{--
+    Not named "slot": Blade reserves that for a component's own
+    content, so binding it here is silently overridden and the
+    settings arrive as a ComponentSlot instead.
+--}}
+@props([
+    'advertisements' => null,
+    'placement' => null,
+])
 
-@if($advertisement)
+@php
+    $items = collect($advertisements ?? []);
+@endphp
+
+@if($items->isNotEmpty())
     @php
-        $mediaUrl = $advertisement->mediaUrl();
-        $label = $advertisement->alt_text ?: $advertisement->title;
+        $rotates = $items->count() > 1
+            && $placement?->rotation_enabled;
+
+        $dwell = max(2, (int) ($placement?->dwell_seconds ?? 8));
     @endphp
 
     <aside
         class="ad-slot"
         aria-label="Advertisement"
-    >
-        <span class="ad-slot-label">Advertisement</span>
-
-        @if($advertisement->isNetworkEmbed())
-            {{--
-                Supplied by an advertising network. Framed rather
-                than inlined so a third party cannot reach into
-                the page around it.
-            --}}
-            <iframe
-                src="{{ $mediaUrl }}"
-                title="{{ $label }}"
-                loading="lazy"
-                referrerpolicy="no-referrer"
-                sandbox="allow-scripts allow-popups allow-popups-to-escape-sandbox"
-                class="ad-slot-frame"
-            ></iframe>
-
-        @elseif($advertisement->isVideo())
-            <video
-                src="{{ $mediaUrl }}"
-                class="ad-slot-media"
-                muted
-                loop
-                autoplay
-                playsinline
-                aria-label="{{ $label }}"
-            ></video>
-
-        @elseif($mediaUrl)
-            @if($advertisement->click_url)
-                <a
-                    href="{{ $advertisement->click_url }}"
-                    target="_blank"
-                    rel="noopener sponsored"
-                >
-                    <img
-                        src="{{ $mediaUrl }}"
-                        alt="{{ $label }}"
-                        class="ad-slot-media"
-                        loading="lazy"
-                    >
-                </a>
-            @else
-                <img
-                    src="{{ $mediaUrl }}"
-                    alt="{{ $label }}"
-                    class="ad-slot-media"
-                    loading="lazy"
-                >
-            @endif
-
-        @elseif($advertisement->click_url)
-            <a
-                href="{{ $advertisement->click_url }}"
-                target="_blank"
-                rel="noopener sponsored"
-                class="ad-slot-text"
-            >
-                {{ $advertisement->title }}
-            </a>
+        @if($rotates)
+            data-ad-rotate
+            data-ad-dwell="{{ $dwell }}"
         @endif
+    >
+        <span class="ad-slot-label">
+            Advertisement
+
+            @if($rotates)
+                <button
+                    type="button"
+                    class="ad-slot-pause"
+                    aria-label="Pause advertisements"
+                >Pause</button>
+            @endif
+        </span>
+
+        @foreach($items as $index => $advertisement)
+            <div
+                class="ad-slot-item"
+                @if($rotates && $index > 0) hidden @endif
+            >
+                <x-advertisement-item :advertisement="$advertisement" />
+            </div>
+        @endforeach
     </aside>
 @endif

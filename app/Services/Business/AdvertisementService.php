@@ -3,6 +3,7 @@
 namespace App\Services\Business;
 
 use App\Models\Advertisement;
+use App\Models\AdvertisementSlot;
 use App\Models\User;
 use Illuminate\Support\Collection;
 
@@ -30,7 +31,7 @@ class AdvertisementService
      * advertising columns entirely rather than reserving space
      * nobody fills.
      *
-     * @return Collection<string, Advertisement>
+     * @return Collection<string, Collection<int, Advertisement>>
      */
     public function forStudent(User $student): Collection
     {
@@ -55,13 +56,20 @@ class AdvertisementService
                 continue;
             }
 
-            $advertisement = $this->pickFor(
+            $slot = $this->slotFor($position);
+
+            if ($slot === null || ! $slot->is_active) {
+                continue;
+            }
+
+            $advertisements = $this->pickFor(
                 $position,
-                $groupIds
+                $groupIds,
+                $slot->resolveCount()
             );
 
-            if ($advertisement !== null) {
-                $resolved->put($position, $advertisement);
+            if ($advertisements->isNotEmpty()) {
+                $resolved->put($position, $advertisements);
             }
         }
 
@@ -75,19 +83,35 @@ class AdvertisementService
     }
 
     /**
-     * Choose one advertisement for a position.
+     * The slots, read once per request.
      *
-     * Advertisements aimed at a group the student belongs to
-     * are preferred over untargeted ones. Beyond that the pick
-     * is random, so every booked advertisement gets exposure
-     * instead of the oldest row winning every time.
+     * @var Collection<string, AdvertisementSlot>|null
+     */
+    private ?Collection $slots = null;
+
+    public function slotFor(string $position): ?AdvertisementSlot
+    {
+        $this->slots ??= AdvertisementSlot::all()
+            ->keyBy('position');
+
+        return $this->slots->get($position);
+    }
+
+    /**
+     * Choose the advertisements for a position.
+     *
+     * Anything aimed at a group the student is not in is left
+     * out; the rest appear in the order the placement was
+     * arranged in.
      *
      * @param  Collection<int, int>  $groupIds
+     * @return Collection<int, Advertisement>
      */
     private function pickFor(
         string $position,
-        Collection $groupIds
-    ): ?Advertisement {
+        Collection $groupIds,
+        int $wanted
+    ): Collection {
         $query = Advertisement::query()
             ->currentlyRunning()
             ->where('position', $position)
@@ -100,13 +124,17 @@ class AdvertisementService
                     );
             });
 
-        $targeted = (clone $query)
-            ->whereNotNull('organisation_group_id')
-            ->inRandomOrder()
-            ->first();
-
-        return $targeted
-            ?? $query->inRandomOrder()->first();
+        /*
+         * The administrator decides the order, so a student
+         * sees the placement as it was arranged rather than in
+         * whatever order the query happened to produce.
+         * Targeting still decides what is eligible.
+         */
+        return $query
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->limit($wanted)
+            ->get();
     }
 
     /**

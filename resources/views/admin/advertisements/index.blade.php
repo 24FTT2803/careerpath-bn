@@ -37,125 +37,203 @@
         and students can switch advertising off in their own settings.
     </div>
 
-    <div class="card">
-        <div class="flex flex-wrap gap-2 mb-4">
-            @foreach([
-                '' => 'All',
-                'live' => 'Live',
-                'scheduled' => 'Scheduled',
-                'ended' => 'Ended',
-                'paused' => 'Paused',
-            ] as $value => $label)
-                @php
-                    $key = $value === '' ? 'all' : $value;
-                    $current = $filter === $value;
-                @endphp
+    @foreach($slots as $slot)
+        @php
+            $items = ($byPosition[$slot->position] ?? collect());
+        @endphp
+
+        <div class="card">
+            <h3 class="card-heading">
+                {{ $slot->name }}
+            </h3>
+
+            <!-- How this placement behaves -->
+            <form
+                method="POST"
+                action="{{ route('admin.business.advertisements.slots.update', $slot) }}"
+                style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #f3f4f6;"
+            >
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label class="field-label">Showing</label>
+
+                    <select name="is_active" class="field-input" style="max-width:120px;">
+                        <option value="1" @selected($slot->is_active)>On</option>
+                        <option value="0" @selected(! $slot->is_active)>Off</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="field-label">Rotation</label>
+
+                    <select name="rotation_enabled" class="field-input" style="max-width:120px;">
+                        <option value="1" @selected($slot->rotation_enabled)>On</option>
+                        <option value="0" @selected(! $slot->rotation_enabled)>Off</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="field-label">How many</label>
+
+                    <input
+                        type="number"
+                        name="rotation_size"
+                        value="{{ $slot->rotation_size }}"
+                        min="1"
+                        max="{{ App\Models\AdvertisementSlot::MAX_ROTATION_SIZE }}"
+                        class="field-input"
+                        style="max-width:90px;"
+                    >
+                </div>
+
+                <div>
+                    <label class="field-label">Seconds each</label>
+
+                    <input
+                        type="number"
+                        name="dwell_seconds"
+                        value="{{ $slot->dwell_seconds }}"
+                        min="2"
+                        max="120"
+                        class="field-input"
+                        style="max-width:90px;"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-subtle">Save</button>
+
+                <p class="field-hint" style="flex-basis:100%;">
+                    The first
+                    {{ $slot->rotation_enabled ? $slot->rotation_size : 1 }}
+                    {{ Str::plural('advertisement', $slot->resolveCount()) }}
+                    below that a student is eligible for will be
+                    shown, in this order. A video plays to its end
+                    before the next one appears.
+                </p>
+            </form>
+
+            <!-- What appears here -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px;">
+                <span class="cell-title">
+                    {{ $items->count() }}
+                    {{ Str::plural('advertisement', $items->count()) }}
+                </span>
 
                 <a
-                    href="{{ route('admin.business.advertisements.index', $value === '' ? [] : ['status' => $value]) }}"
-                    class="px-3 py-1 rounded-lg text-sm {{ $current ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}"
+                    href="{{ route('admin.business.advertisements.create', ['position' => $slot->position]) }}"
+                    class="btn btn-primary btn-sm"
                 >
-                    {{ $label }} ({{ $counts[$key] }})
+                    <i class="fas fa-plus"></i> Add to this placement
                 </a>
-            @endforeach
-        </div>
+            </div>
 
-        @if($advertisements->isEmpty())
-            <p class="empty-text">
-                No advertisements yet.
-            </p>
-        @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Title</th>
-                        <th>Type</th>
-                        <th>Position</th>
-                        <th>Audience</th>
-                        <th>Reach</th>
-                        <th>Status</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($advertisements as $advertisement)
+            @if($items->isEmpty())
+                <p class="empty-text">Nothing here yet.</p>
+            @else
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <span class="cell-title">
-                                    {{ $advertisement->title }}
-                                </span>
-                            </td>
-
-                            <td class="capitalize">
-                                {{ $advertisement->type }}
-                            </td>
-
-                            <td class="capitalize">
-                                {{ $advertisement->position }}
-                            </td>
-
-                            <td>
-                                {{ $advertisement->organisationGroup?->name ?? 'All students' }}
-                            </td>
-
-                            <td class="cell-sub">
-                                {{ $reach[$advertisement->id] ?? 0 }}
-                                {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
-                            </td>
-
-                            <td>
-                                @php $status = $advertisement->status(); @endphp
-
-                                @if($status === 'live')
-                                    <span class="status-pill status-pill-green">Live</span>
-                                @elseif($status === 'scheduled')
-                                    <span class="status-pill status-pill-blue">Scheduled</span>
-                                @elseif($status === 'ended')
-                                    <span class="status-pill status-pill-muted">Ended</span>
-                                @else
-                                    <span class="status-pill status-pill-gold">Paused</span>
-                                @endif
-
-                                <span class="cell-sub">
-                                    @if($status === 'scheduled')
-                                        from {{ $advertisement->starts_at->format('j M Y') }}
-                                    @elseif($advertisement->ends_at)
-                                        until {{ $advertisement->ends_at->format('j M Y') }}
-                                    @endif
-                                </span>
-                            </td>
-
-                            <td><div class="row-actions">
-                                <a
-                                    href="{{ route('admin.business.advertisements.edit', $advertisement) }}"
-                                    class="link"
-                                >
-                                    Edit
-                                </a>
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.advertisements.destroy', $advertisement) }}"
-                                    class="inline"
-                                    onsubmit="return confirm('Delete this advertisement?');"
-                                >
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="link link-danger"
-                                    >
-                                        Delete
-                                    </button>
-                                </form>
-                            </div></td>
+                            <th>Order</th>
+                            <th>Title</th>
+                            <th>Type</th>
+                            <th>Audience</th>
+                            <th>Reach</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        @endif
-    </div>
+                    </thead>
+
+                    <tbody>
+                        @foreach($items as $index => $advertisement)
+                            <tr>
+                                <td><div class="row-actions" style="justify-content:flex-start;">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.advertisements.reorder', $advertisement) }}"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="direction" value="up">
+
+                                        <button
+                                            type="submit"
+                                            class="link {{ $index === 0 ? 'link-disabled' : '' }}"
+                                            @disabled($index === 0)
+                                        >↑</button>
+                                    </form>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.advertisements.reorder', $advertisement) }}"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+                                        <input type="hidden" name="direction" value="down">
+
+                                        <button
+                                            type="submit"
+                                            class="link {{ $index === $items->count() - 1 ? 'link-disabled' : '' }}"
+                                            @disabled($index === $items->count() - 1)
+                                        >↓</button>
+                                    </form>
+                                </div></td>
+
+                                <td>
+                                    <span class="cell-title">{{ $advertisement->title }}</span>
+                                </td>
+
+                                <td class="capitalize">{{ $advertisement->type }}</td>
+
+                                <td>
+                                    {{ $advertisement->organisationGroup?->name ?? 'All students' }}
+                                </td>
+
+                                <td class="cell-sub">
+                                    {{ $reach[$advertisement->id] ?? 0 }}
+                                    {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
+                                </td>
+
+                                <td>
+                                    @php $status = $advertisement->status(); @endphp
+
+                                    @if($status === 'live')
+                                        <span class="status-pill status-pill-green">Live</span>
+                                    @elseif($status === 'scheduled')
+                                        <span class="status-pill status-pill-blue">Scheduled</span>
+                                    @elseif($status === 'ended')
+                                        <span class="status-pill status-pill-muted">Ended</span>
+                                    @else
+                                        <span class="status-pill status-pill-gold">Paused</span>
+                                    @endif
+                                </td>
+
+                                <td><div class="row-actions">
+                                    <a
+                                        href="{{ route('admin.business.advertisements.edit', $advertisement) }}"
+                                        class="link"
+                                    >Edit</a>
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.advertisements.destroy', $advertisement) }}"
+                                        onsubmit="return confirm('Delete {{ $advertisement->title }}?');"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit" class="link link-danger">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            @endif
+        </div>
+    @endforeach
 </div>
 @endsection

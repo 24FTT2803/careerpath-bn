@@ -398,6 +398,23 @@
             margin: 20px auto 0;
         }
 
+        .ad-slot-pause {
+            float: right;
+            background: none;
+            border: 0;
+            padding: 0;
+            font: inherit;
+            font-size: 9px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .ad-slot-pause:hover {
+            color: var(--primary);
+        }
+
         .ad-slot-label {
             display: block;
             font-size: 9px;
@@ -512,19 +529,14 @@
     <nav class="site-nav">
         <div class="container">
             <div class="nav-inner">
-                <a href="{{ route('student.dashboard') }}" class="nav-brand" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
-    <img
-        src="{{ asset('images/careerpath-badge.png') }}"
-        alt="CareerPath BN"
-        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
-    >
-    <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
-        alt=""
-        aria-hidden="true"
-        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
-    >
-</a>
+                <a href="{{ route('student.dashboard') }}" class="nav-brand">
+                    <div class="icon"><i class="fas fa-compass"></i></div>
+                    <div>
+                        <span class="text">CareerPath <span>BN</span></span>
+                        <span class="sub">Politeknik Brunei</span>
+                    </div>
+                </a>
+
                 <div class="nav-right">
                     <a href="{{ route('student.dashboard') }}" class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
                         <i class="fas fa-th-large"></i> Dashboard
@@ -665,13 +677,15 @@
             @endphp
 
             <x-advertisement
-                :advertisement="$advertisements->get('one')"
+                :advertisements="$advertisements->get('one')"
+                :placement="($pageAdvertisementSlots ?? collect())->get('one')"
             />
 
             @yield('content')
 
             <x-advertisement
-                :advertisement="$advertisements->get('two')"
+                :advertisements="$advertisements->get('two')"
+                :placement="($pageAdvertisementSlots ?? collect())->get('two')"
             />
         </div>
     </main>
@@ -757,5 +771,113 @@
 
     </script>
     
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var reduced = window.matchMedia
+                && window.matchMedia(
+                    '(prefers-reduced-motion: reduce)'
+                ).matches;
+
+            document.querySelectorAll('[data-ad-rotate]').forEach(function (slot) {
+                var items = slot.querySelectorAll('.ad-slot-item');
+                var pause = slot.querySelector('.ad-slot-pause');
+
+                if (items.length < 2) {
+                    return;
+                }
+
+                var current = 0;
+                var timer = null;
+
+                /*
+                 * Someone who has asked for less motion gets the
+                 * first advertisement and nothing moving, rather
+                 * than a slot that cycles regardless.
+                 */
+                var running = !reduced;
+
+                function show(index) {
+                    items.forEach(function (item, position) {
+                        item.hidden = position !== index;
+
+                        var video = item.querySelector('video');
+
+                        if (!video) {
+                            return;
+                        }
+
+                        if (position === index) {
+                            video.currentTime = 0;
+                            video.play().catch(function () {});
+                        } else {
+                            video.pause();
+                        }
+                    });
+                }
+
+                function advance() {
+                    current = (current + 1) % items.length;
+                    show(current);
+                    schedule();
+                }
+
+                function schedule() {
+                    window.clearTimeout(timer);
+
+                    if (!running) {
+                        return;
+                    }
+
+                    var video = items[current].querySelector('video');
+
+                    /*
+                     * A video is allowed to finish rather than
+                     * being cut off partway, so the dwell time
+                     * is a floor and not a deadline.
+                     */
+                    if (video) {
+                        video.onended = advance;
+
+                        return;
+                    }
+
+                    timer = window.setTimeout(
+                        advance,
+                        parseInt(slot.dataset.adDwell, 10) * 1000
+                    );
+                }
+
+                if (pause) {
+                    pause.addEventListener('click', function () {
+                        running = !running;
+
+                        pause.textContent = running
+                            ? 'Pause'
+                            : 'Resume';
+
+                        pause.setAttribute(
+                            'aria-label',
+                            running
+                                ? 'Pause advertisements'
+                                : 'Resume advertisements'
+                        );
+
+                        if (running) {
+                            schedule();
+                        } else {
+                            window.clearTimeout(timer);
+                        }
+                    });
+
+                    if (reduced) {
+                        pause.textContent = 'Resume';
+                    }
+                }
+
+                show(0);
+                schedule();
+            });
+        });
+    </script>
 </body>
 </html>

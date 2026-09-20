@@ -416,3 +416,38 @@ test(
             ->assertSessionHasErrors('asset');
     }
 );
+
+test(
+    'an advertisement can be moved within its placement',
+    function () {
+        $first = Advertisement::create([
+            'title' => 'First',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/a.png',
+            'position' => Advertisement::POSITION_ONE,
+            'sort_order' => 1,
+            'is_active' => true,
+        ]);
+
+        $second = Advertisement::create([
+            'title' => 'Second',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/b.png',
+            'position' => Advertisement::POSITION_ONE,
+            'sort_order' => 2,
+            'is_active' => true,
+        ]);
+
+        $this->actingAs(adminUser())
+            ->put(
+                route('admin.business.advertisements.reorder', $second),
+                ['direction' => 'up']
+            )
+            ->assertRedirect();
+
+        expect($second->fresh()->sort_order)
+            ->toBe(1)
+            ->and($first->fresh()->sort_order)
+            ->toBe(2);
+    }
+);
