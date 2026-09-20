@@ -11,9 +11,16 @@ class GroqClient
     /**
      * Send a chat completion request to Groq.
      */
+    /**
+     * @param  float|null  $temperature  How freely the model may
+     *                                   phrase its answer. Lower
+     *                                   keeps it closer to the
+     *                                   supplied wording.
+     */
     public function chat(
         array $messages,
-        ?array $responseFormat = null
+        ?array $responseFormat = null,
+        ?float $temperature = null
     ): array {
         $baseUrl = rtrim(
             (string) config(
@@ -92,8 +99,8 @@ class GroqClient
         }
 
         $url = $baseUrl
-            . '/'
-            . ltrim(
+            .'/'
+            .ltrim(
                 $endpoint,
                 '/'
             );
@@ -102,6 +109,17 @@ class GroqClient
             'model' => $model,
             'messages' => $messages,
         ];
+
+        /*
+         * Left out entirely when nothing is configured, so the
+         * provider's own default still applies rather than this
+         * silently choosing one.
+         */
+        $temperature ??= config('career-ai.groq.temperature');
+
+        if ($temperature !== null) {
+            $payload['temperature'] = (float) $temperature;
+        }
 
         if ($reasoningEffort !== '') {
             $payload['reasoning_effort'] =

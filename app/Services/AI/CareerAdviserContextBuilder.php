@@ -65,11 +65,15 @@ class CareerAdviserContextBuilder
                         $recommendation->skill_gaps ?? []
                     ),
 
-                    'skill_gaps' => array_slice(
-                        $recommendation->skill_gaps ?? [],
-                        0,
-                        5
-                    ),
+                    /*
+                     * Every gap, not a sample. Discussing them
+                     * is the adviser's main job, and showing it
+                     * five while telling it there are nine
+                     * meant it either named five as the whole
+                     * set or knew it was missing some and could
+                     * not say which.
+                     */
+                    'skill_gaps' => $recommendation->skill_gaps ?? [],
 
                     'development_plan' => $recommendation->development_plan ?? [],
 

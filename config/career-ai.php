@@ -84,6 +84,22 @@ return [
             'openai/gpt-oss-20b'
         ),
 
+        /*
+         * How freely the model may phrase an answer. Low values
+         * keep it close to the supplied competency names and
+         * levels, which are defined terms in BIICF and should
+         * not be paraphrased.
+         */
+        'temperature' => env(
+            'GROQ_TEMPERATURE',
+            null
+        ),
+
+        'adviser_temperature' => env(
+            'GROQ_ADVISER_TEMPERATURE',
+            0.5
+        ),
+
         'reasoning_effort' => env(
             'GROQ_REASONING_EFFORT',
             'medium'

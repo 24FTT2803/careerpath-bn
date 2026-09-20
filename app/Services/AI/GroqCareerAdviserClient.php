@@ -10,8 +10,7 @@ class GroqCareerAdviserClient implements CareerAdviserClient
 {
     public function __construct(
         private GroqClient $groq
-    ) {
-    }
+    ) {}
 
     /**
      * Send CareerPath context and the student's question
@@ -50,31 +49,26 @@ class GroqCareerAdviserClient implements CareerAdviserClient
                     '- Do not invent career progression routes. Only describe progression when the supplied BIICF information explicitly supports it.',
                     '- Avoid mentioning internal BIICF database IDs unless the student specifically asks for them.',
                     '- If the supplied data is insufficient to answer something, clearly say what information is unavailable.',
-                    '- If the question is outside of scope, clearly say it is not your role.',
-                    '- Never stray from BIICF perspective and database.',
-                    '- Your scope is ICT Industry dictionary and career guidance.',
                     '- When relevant, explain how the student\'s competencies, interests, academic background, projects, certifications, aspirations and current recommendations relate to the question.',
                     '- Give practical and achievable next steps when appropriate.',
                     '- Do not claim that a recommendation guarantees employment or career success.',
                     '- Keep the response focused and easy for a student to understand.',
                     '- Use UK English.',
-                    '- CareerPathBN is Brunei based',
-                    '- Clearly state your role and objectives when prompt asked to generate outside of your scope'
                 ]),
             ],
             [
                 'role' => 'user',
-                'content' =>
-                    "CareerPath context:\n"
-                    . $contextJson
-                    . "\n\nStudent question:\n"
-                    . trim($message),
+                'content' => "CareerPath context:\n"
+                    .$contextJson
+                    ."\n\nStudent question:\n"
+                    .trim($message),
             ],
         ];
 
         $result = $this->groq->chat(
             $messages,
-            $this->responseFormat()
+            $this->responseFormat(),
+            $this->temperature()
         );
 
         try {
@@ -98,6 +92,21 @@ class GroqCareerAdviserClient implements CareerAdviserClient
         }
 
         return $decoded;
+    }
+
+    /**
+     * How freely the adviser may phrase its answer.
+     *
+     * Until now nothing was sent, so it ran at whatever the
+     * provider defaults to. Competency names and proficiency
+     * levels are defined terms that must be reproduced exactly,
+     * and a loosely phrased answer paraphrases them.
+     */
+    private function temperature(): ?float
+    {
+        $value = config('career-ai.groq.adviser_temperature');
+
+        return $value === null ? null : (float) $value;
     }
 
     /**
