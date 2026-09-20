@@ -158,6 +158,7 @@
                             <th>Type</th>
                             <th>Audience</th>
                             <th>Reach</th>
+                            <th>Runs</th>
                             <th>Status</th>
                             <th class="text-right">Actions</th>
                         </tr>
@@ -244,6 +245,12 @@
                                 <td class="cell-sub">
                                     {{ $reach[$advertisement->id] ?? 0 }}
                                     {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
+                                </td>
+
+                                <td class="cell-sub">
+                                    {{ $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
+                                    &rarr;
+                                    {{ $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
                                 </td>
 
                                 <td>

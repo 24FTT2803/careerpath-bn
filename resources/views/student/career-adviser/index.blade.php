@@ -1042,7 +1042,7 @@
                                 {{
                                     $careerAdviserQuota[
                                         'next_available_at'
-                                    ]->format('d M, g:i A')
+                                    ]->timezone(config('app.business_timezone'))->format('d M, g:i A')
                                 }}.
                             @endif
                         </span>

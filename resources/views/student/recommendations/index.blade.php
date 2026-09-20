@@ -477,7 +477,7 @@
                         {{
                             $currentGeneration
                                 ->generated_at
-                                ->format('j M Y')
+                                ->timezone(config('app.business_timezone'))->format('j M Y')
                         }}.
                         Generate again to reflect your
                         current profile.
@@ -490,7 +490,7 @@
                         {{
                             $currentGeneration
                                 ->generated_at
-                                ->format('j M Y')
+                                ->timezone(config('app.business_timezone'))->format('j M Y')
                         }}
                         and up to date with your profile.
                     </div>

@@ -580,7 +580,7 @@
                     <i class="fas fa-graduation-cap"></i> Student
                 </span>
                 <span class="badge-chip accent">
-                    <i class="fas fa-calendar-alt"></i> {{ now()->format('d M Y') }}
+                    <i class="fas fa-calendar-alt"></i> {{ now()->timezone(config('app.business_timezone'))->format('d M Y') }}
                 </span>
             </div>
         </div>

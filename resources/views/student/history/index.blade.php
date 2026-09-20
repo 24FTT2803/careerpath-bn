@@ -191,7 +191,7 @@
                         </div>
 
                         <div class="history-card-meta">
-                            {{ $generation->generated_at->format('j M Y') }}
+                            {{ $generation->generated_at->timezone(config('app.business_timezone'))->format('j M Y') }}
 
                             &middot;
 

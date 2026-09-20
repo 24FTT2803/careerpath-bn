@@ -642,7 +642,7 @@
                         </span>
 
                         <span class="value">
-                            {{ $user->profile->date_of_birth->format('d M Y') }}
+                            {{ $user->profile->date_of_birth->timezone(config('app.business_timezone'))->format('d M Y') }}
                         </span>
                     </div>
                 @endif
@@ -859,7 +859,7 @@
                                     @if($cert->issue_date)
                                         <div class="cert-date">
                                             Issued:
-                                            {{ $cert->issue_date->format('d M Y') }}
+                                            {{ $cert->issue_date->timezone(config('app.business_timezone'))->format('d M Y') }}
                                         </div>
                                     @endif
 

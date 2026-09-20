@@ -550,7 +550,7 @@
                     </div>
                     <div class="info-row">
                         <span class="label">Account Created</span>
-                        <span class="value">{{ Auth::user()->created_at->format('d M Y, h:i A') }}</span>
+                        <span class="value">{{ Auth::user()->created_at->timezone(config('app.business_timezone'))->format('d M Y, h:i A') }}</span>
                     </div>
                     <a href="{{ route('student.profile.edit') }}" class="edit-link">
                         <i class="fas fa-edit"></i> Edit Profile

@@ -720,7 +720,7 @@
                     @if($milestone->target_date)
                         <span class="date">
                             <i class="fas fa-calendar-alt"></i>
-                            Target: {{ $milestone->target_date->format('d M Y') }}
+                            Target: {{ $milestone->target_date->timezone(config('app.business_timezone'))->format('d M Y') }}
                         </span>
                         @if($isOverdue)
                             <span class="status-badge overdue">
@@ -735,7 +735,7 @@
                     @if($milestone->is_completed && $milestone->completed_date)
                         <span class="status-badge completed">
                             <i class="fas fa-check-circle"></i>
-                            Completed: {{ $milestone->completed_date->format('d M Y') }}
+                            Completed: {{ $milestone->completed_date->timezone(config('app.business_timezone'))->format('d M Y') }}
                         </span>
                     @endif
                 </div>

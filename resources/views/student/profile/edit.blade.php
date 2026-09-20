@@ -2394,8 +2394,8 @@
                                     'technologies_used' => $project->technologies_used ?? [],
                                     'role' => $project->role,
                                     'project_url' => $project->project_url,
-                                    'start_date' => $project->start_date?->format('Y-m-d'),
-                                    'end_date' => $project->end_date?->format('Y-m-d'),
+                                    'start_date' => $project->start_date?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('Y-m-d'),
+                                    'end_date' => $project->end_date?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('Y-m-d'),
                                     'achievements' => $project->achievements,
                                 ];
                             })
@@ -2584,7 +2584,7 @@
                                     'id' => $certification->id,
                                     'certification_name' => $certification->certification_name,
                                     'issuing_organization' => $certification->issuing_organization,
-                                    'issue_date' => $certification->issue_date?->format('Y-m-d'),
+                                    'issue_date' => $certification->issue_date?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('Y-m-d'),
                                 ];
                             })
                             ->values()
@@ -2683,7 +2683,7 @@
                                         type="date"
                                         name="certifications[{{ $index }}][issue_date]"
                                         value="{{ $certification['issue_date'] ?? '' }}"
-                                        max="{{ now()->format('Y-m-d') }}"
+                                        max="{{ now()->timezone(config('app.business_timezone'))->format('Y-m-d') }}"
                                     >
                                 </div>
 

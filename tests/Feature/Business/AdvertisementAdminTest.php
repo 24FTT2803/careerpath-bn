@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Advertisement;
+use Carbon\Carbon;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -449,5 +450,29 @@ test(
             ->toBe(1)
             ->and($first->fresh()->sort_order)
             ->toBe(2);
+    }
+);
+
+test(
+    'dates are shown in Brunei time, not the storage timezone',
+    function () {
+        /*
+         * Stored as UTC, which is the evening of the first but
+         * already the second in Brunei. An administrator should
+         * read the local date.
+         */
+        Advertisement::create([
+            'title' => 'New year banner',
+            'type' => Advertisement::TYPE_IMAGE,
+            'external_url' => 'https://example.com/a.png',
+            'position' => Advertisement::POSITION_ONE,
+            'is_active' => true,
+            'starts_at' => Carbon::parse('2026-01-01 20:00:00', 'UTC'),
+        ]);
+
+        $this->actingAs(adminUser())
+            ->get(route('admin.business.advertisements.index'))
+            ->assertOk()
+            ->assertSee('2 Jan 2026');
     }
 );

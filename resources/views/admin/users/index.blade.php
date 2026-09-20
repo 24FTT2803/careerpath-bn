@@ -176,7 +176,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
-                                <span class="metric-value">{{ $user->created_at->format('d M Y') }}</span>
+                                <span class="metric-value">{{ $user->created_at->timezone(config('app.business_timezone'))->format('d M Y') }}</span>
                             </div>
                         </div>
 
@@ -210,7 +210,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
-                                <span class="metric-value">{{ $user->created_at->format('d M Y') }}</span>
+                                <span class="metric-value">{{ $user->created_at->timezone(config('app.business_timezone'))->format('d M Y') }}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Account</span>
@@ -237,7 +237,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
-                                <span class="metric-value">{{ $user->created_at->format('d M Y') }}</span>
+                                <span class="metric-value">{{ $user->created_at->timezone(config('app.business_timezone'))->format('d M Y') }}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Access</span>

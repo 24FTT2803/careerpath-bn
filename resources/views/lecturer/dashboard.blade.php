@@ -13,7 +13,7 @@
                     <span class="wave">👋</span>
                     <h1>Welcome back, {{ auth()->user()->name }}</h1>
                 </div>
-                <p class="subtitle">{{ now()->format('l, F j, Y') }} · Cohort overview across all students</p>
+                <p class="subtitle">{{ now()->timezone(config('app.business_timezone'))->format('l, F j, Y') }} · Cohort overview across all students</p>
                 <div class="quick-stats">
                     <span class="stat-chip">
                         <i class="fas fa-users"></i> {{ $totalStudents }} Students

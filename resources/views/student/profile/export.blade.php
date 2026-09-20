@@ -392,7 +392,7 @@
 <div class="footer">
     CareerPath BN — Politeknik Brunei |
     Student Career Profile Report |
-    Generated {{ ($reportDate ?? now())->format('d M Y') }} |
+    Generated {{ ($reportDate ?? now())->timezone(config('app.business_timezone'))->format('d M Y') }} |
     Page <span class="page-number"></span>
 </div>
 
@@ -412,8 +412,8 @@
 
             <td class="generated">
                 <strong>{{ $user->name }}</strong><br>
-                Generated {{ ($reportDate ?? now())->format('d M Y') }}<br>
-                {{ ($reportDate ?? now())->format('h:i A') }}
+                Generated {{ ($reportDate ?? now())->timezone(config('app.business_timezone'))->format('d M Y') }}<br>
+                {{ ($reportDate ?? now())->timezone(config('app.business_timezone'))->format('h:i A') }}
             </td>
         </tr>
     </table>
@@ -425,7 +425,7 @@
 
         <p>
             These recommendations were generated on
-            {{ ($reportDate ?? now())->format('d M Y') }}.
+            {{ ($reportDate ?? now())->timezone(config('app.business_timezone'))->format('d M Y') }}.
             The profile held at that time was not recorded, so
             the profile shown below is the student's current
             profile rather than a historical one.
@@ -741,7 +741,7 @@
                 @if($certification->issue_date)
                     <div class="item-meta">
                         Issued:
-                        {{ $certification->issue_date->format('d M Y') }}
+                        {{ $certification->issue_date->timezone(config('app.business_timezone'))->format('d M Y') }}
                     </div>
                 @endif
             </div>
@@ -1008,7 +1008,7 @@
                     @if($milestone->target_date)
                         |
                         Target:
-                        {{ $milestone->target_date->format('d M Y') }}
+                        {{ $milestone->target_date->timezone(config('app.business_timezone'))->format('d M Y') }}
                     @endif
                 </div>
 
@@ -1026,7 +1026,7 @@
 
                         @if($milestone->completed_date)
                             —
-                            {{ $milestone->completed_date->format('d M Y') }}
+                            {{ $milestone->completed_date->timezone(config('app.business_timezone'))->format('d M Y') }}
                         @endif
                     @else
                         <span class="milestone-status status-progress">

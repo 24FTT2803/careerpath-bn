@@ -186,9 +186,9 @@
                             <td class="capitalize">{{ $grant->source }}</td>
 
                             <td class="cell-sub">
-                                {{ $grant->starts_at?->format('j M Y') ?? 'Immediately' }}
+                                {{ $grant->starts_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
                                 &rarr;
-                                {{ $grant->ends_at?->format('j M Y') ?? 'No end' }}
+                                {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
                             </td>
 
                             <td><div class="row-actions">
@@ -246,7 +246,7 @@
                             <td class="capitalize">{{ $grant->source }}</td>
 
                             <td class="cell-sub">
-                                {{ $grant->ends_at?->format('j M Y') ?? '—' }}
+                                {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? '—' }}
                             </td>
                         </tr>
                     @endforeach
