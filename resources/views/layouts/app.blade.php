@@ -781,21 +781,6 @@
     >
 </a>
                 <div class="nav-right">
-                    <a href="{{ route('student.dashboard') }}" class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
-                        <i class="fas fa-th-large"></i> Dashboard
-                    </a>
-                    <a href="{{ route('student.profile') }}" class="nav-link {{ request()->routeIs('student.profile*') ? 'active' : '' }}">
-                        <i class="fas fa-user"></i> Profile
-                    </a>
-                    <a href="{{ route('student.milestones') }}" class="nav-link {{ request()->routeIs('student.milestones*') ? 'active' : '' }}">
-                        <i class="fas fa-flag-checkered"></i> Milestones
-                    </a>
-                    <a href="{{ route('student.biicf-explorer.index') }}" class="nav-link {{ request()->routeIs('student.biicf-explorer*') ? 'active' : '' }}">
-                        <i class="fas fa-compass"></i> BIICF
-                    </a>
-                    <a href="{{ route('student.history') }}" class="nav-link {{ request()->routeIs('student.history') ? 'active' : '' }}">
-                        <i class="fas fa-clock-rotate-left"></i> History
-                    </a>
 
                     @auth
     @php
@@ -902,9 +887,13 @@
                                 <div class="dropdown-divider"></div>
 
                                 @if(Auth::user()->role === 'student')
-                                    <a href="{{ route('student.career-adviser') }}" class="dropdown-item">
-                                        <i class="fas fa-comments"></i> Career Adviser
-                                    </a>
+                                <a href="{{ route('student.recommendations.index') }}" class="dropdown-item">
+                                <i class="fas fa-bullseye"></i> Career Recommendations
+                                </a>
+
+                                <a href="{{ route('student.career-adviser') }}" class="dropdown-item">
+                                <i class="fas fa-comments"></i> Career Adviser
+                                </a>
                                 @endif
 
                                 <a href="{{ route('student.milestones') }}" class="dropdown-item">
