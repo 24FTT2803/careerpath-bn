@@ -193,6 +193,244 @@
         }
 
         /* ============================================
+   NOTIFICATION POPUP
+   ============================================ */
+
+.nav-notif-wrapper {
+    position: relative;
+    display: inline-block;
+    z-index: 1000;
+}
+
+.nav-notif-wrapper .nav-notif {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    position: relative;
+    color: var(--text-muted);
+    font-size: 18px;
+    padding: 4px;
+    transition: var(--transition);
+}
+
+.nav-notif-wrapper .nav-notif:hover {
+    color: var(--primary);
+}
+
+.notif-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 340px;
+    max-width: calc(100vw - 32px);
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 12px 40px rgba(26, 58, 92, 0.16);
+    z-index: 1000;
+    overflow: hidden;
+}
+
+.notif-popup[hidden] {
+    display: none;
+}
+
+.notif-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.notif-popup-heading {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.notif-popup-heading i {
+    color: var(--accent);
+    font-size: 12px;
+}
+
+.notif-popup-mark-all {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    color: var(--accent-dark);
+    font-size: 11px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+}
+
+.notif-popup-mark-all:hover {
+    background: rgba(201, 168, 76, 0.12);
+    color: var(--accent);
+}
+
+.notif-popup-body {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.notif-popup-loading,
+.notif-popup-empty {
+    padding: 28px 16px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12.5px;
+}
+
+.notif-popup-loading i,
+.notif-popup-empty i {
+    display: block;
+    font-size: 24px;
+    color: var(--border);
+    margin-bottom: 8px;
+}
+
+.notif-popup-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    text-decoration: none;
+    color: inherit;
+    transition: var(--transition);
+}
+
+.notif-popup-item:last-child {
+    border-bottom: none;
+}
+
+.notif-popup-item:hover {
+    background: var(--bg);
+}
+
+.notif-popup-item.unread {
+    background: rgba(201, 168, 76, 0.05);
+}
+
+.notif-popup-item.unread:hover {
+    background: rgba(201, 168, 76, 0.10);
+}
+
+.notif-popup-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    background: var(--bg);
+    color: var(--text-muted);
+}
+
+.notif-popup-icon.recommendation {
+    background: rgba(45, 143, 92, 0.12);
+    color: var(--success);
+}
+
+.notif-popup-icon.milestone {
+    background: rgba(201, 168, 76, 0.15);
+    color: var(--accent-dark);
+}
+
+.notif-popup-icon.reminder {
+    background: rgba(230, 126, 34, 0.12);
+    color: var(--warning);
+}
+
+.notif-popup-icon.user,
+.notif-popup-icon.profile {
+    background: rgba(26, 58, 92, 0.08);
+    color: var(--primary);
+}
+
+.notif-popup-icon.career {
+    background: rgba(201, 168, 76, 0.12);
+    color: var(--accent-dark);
+}
+
+.notif-popup-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.notif-popup-title {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--primary);
+    line-height: 1.3;
+    margin-bottom: 2px;
+}
+
+.notif-popup-message {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+.notif-popup-time {
+    font-size: 10px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+
+.notif-popup-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex-shrink: 0;
+    margin-top: 6px;
+}
+
+.notif-popup-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    text-align: center;
+}
+
+.notif-popup-footer a {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.notif-popup-footer a:hover {
+    color: var(--accent);
+}
+
+@media (max-width: 480px) {
+    .notif-popup {
+        width: 300px;
+        right: -52px;
+    }
+}
+
+        /* ============================================
            USER DROPDOWN - CLICK TOGGLE ONLY (NO HOVER)
            ============================================ */
 
@@ -554,14 +792,61 @@
                         <i class="fas fa-clock-rotate-left"></i> History
                     </a>
 
-                    <a href="{{ route('student.notifications') }}" class="nav-notif">
-                        <i class="fas fa-bell"></i>
-                        @auth
-                            @if(Auth::user()->unreadNotifications()->count() > 0)
-                                <span class="badge">{{ Auth::user()->unreadNotifications()->count() }}</span>
-                            @endif
-                        @endauth
-                    </a>
+                    @auth
+    @php
+        $unreadNotificationCount = Auth::user()->unreadNotifications()->count();
+    @endphp
+@endauth
+
+<div class="nav-notif-wrapper" id="navNotifWrapper">
+    <a href="{{ route('student.notifications') }}"
+       class="nav-notif"
+       id="navNotifToggle"
+       data-recent-url="{{ route('student.notifications.recent') }}">
+        <i class="fas fa-bell"></i>
+        @auth
+            <span class="badge"
+                  id="notifBadge"
+                  @if($unreadNotificationCount === 0) style="display:none" @endif>
+                {{ $unreadNotificationCount }}
+            </span>
+        @endauth
+    </a>
+
+    <div class="notif-popup" id="notifPopup" hidden>
+        <div class="notif-popup-header">
+            <span class="notif-popup-heading">
+                <i class="fas fa-bell"></i> Notifications
+            </span>
+
+            @auth
+                <form method="POST"
+                      action="{{ route('student.notifications.read-all') }}"
+                      id="notifMarkAllForm"
+                      style="display:inline">
+                    @csrf
+                    <button type="submit" class="notif-popup-mark-all">
+                        Mark all read
+                    </button>
+                </form>
+            @endauth
+        </div>
+
+        <div class="notif-popup-body" id="notifPopupBody">
+            <div class="notif-popup-loading">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>Loading…</span>
+            </div>
+        </div>
+
+        <div class="notif-popup-footer">
+            <a href="{{ route('student.notifications') }}">
+                View all notifications
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
 
                     <!-- User Dropdown - Click Toggle (NO HOVER) -->
                     <div class="nav-user-wrapper" id="navUserWrapper">
@@ -879,5 +1164,164 @@
             });
         });
     </script>
+<script>
+(function () {
+    const toggle = document.getElementById('navNotifToggle');
+    const popup = document.getElementById('notifPopup');
+    const body = document.getElementById('notifPopupBody');
+    const badge = document.getElementById('notifBadge');
+    const markAllForm = document.getElementById('notifMarkAllForm');
+
+    if (!toggle || !popup || !body) {
+        return;
+    }
+
+    let loaded = false;
+    let open = false;
+
+    const iconFor = (type) => ({
+        recommendation: 'fa-star',
+        milestone: 'fa-flag-checkered',
+        reminder: 'fa-clock',
+        user: 'fa-user-plus',
+        profile: 'fa-user-edit',
+        career: 'fa-briefcase',
+        system: 'fa-bell',
+    }[type] || 'fa-bell');
+
+    const escapeHtml = (value) => {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+    };
+
+    const updateBadge = (count) => {
+        if (!badge) return;
+        if (count > 0) {
+            badge.textContent = count;
+            badge.style.display = '';
+        } else {
+            badge.style.display = 'none';
+        }
+    };
+
+    const render = (data) => {
+        updateBadge(data.unread_count);
+
+        if (!data.notifications.length) {
+            body.innerHTML =
+                '<div class="notif-popup-empty">' +
+                '<i class="fas fa-bell-slash"></i>' +
+                '<span>No notifications yet</span>' +
+                '</div>';
+            return;
+        }
+
+        body.innerHTML = data.notifications.map((n) => {
+            const item = n.link
+                ? `<a class="notif-popup-item ${n.is_read ? '' : 'unread'}" href="${escapeHtml(n.link)}">`
+                : `<div class="notif-popup-item ${n.is_read ? '' : 'unread'}">`;
+            const closer = n.link ? '</a>' : '</div>';
+
+            return item
+                + `<div class="notif-popup-icon ${escapeHtml(n.type)}">`
+                + `<i class="fas ${iconFor(n.type)}"></i>`
+                + `</div>`
+                + `<div class="notif-popup-text">`
+                + `<div class="notif-popup-title">${escapeHtml(n.title)}</div>`
+                + `<div class="notif-popup-message">${escapeHtml(n.message)}</div>`
+                + `<div class="notif-popup-time">${escapeHtml(n.created_at_human)}</div>`
+                + `</div>`
+                + (n.is_read ? '' : '<span class="notif-popup-dot"></span>')
+                + closer;
+        }).join('');
+    };
+
+    const load = async () => {
+        body.innerHTML =
+            '<div class="notif-popup-loading">' +
+            '<i class="fas fa-spinner fa-spin"></i>' +
+            '<span>Loading…</span>' +
+            '</div>';
+
+        try {
+            const response = await fetch(toggle.dataset.recentUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (!response.ok) throw new Error('Failed');
+            render(await response.json());
+            loaded = true;
+        } catch (error) {
+            body.innerHTML =
+                '<div class="notif-popup-empty">' +
+                '<i class="fas fa-exclamation-circle"></i>' +
+                '<span>Could not load notifications</span>' +
+                '</div>';
+        }
+    };
+
+    const close = () => {
+        popup.hidden = true;
+        open = false;
+    };
+
+    const show = () => {
+        popup.hidden = false;
+        open = true;
+    };
+
+    toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        document
+            .getElementById('navUserWrapper')
+            ?.classList.remove('active');
+
+        if (open) {
+            close();
+            return;
+        }
+
+        show();
+        if (!loaded) load();
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!open) return;
+        if (popup.contains(event.target)) return;
+        if (toggle.contains(event.target)) return;
+        close();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && open) close();
+    });
+
+    markAllForm?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        try {
+            const response = await fetch(markAllForm.action, {
+                method: 'POST',
+                body: new FormData(markAllForm),
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+            if (!response.ok) throw new Error('Failed');
+            await load();
+        } catch (error) {
+            markAllForm.submit();
+        }
+    });
+})();
+</script>    
 </body>
 </html>

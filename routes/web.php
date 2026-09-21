@@ -221,6 +221,11 @@ Route::middleware([
             [ProfileController::class, 'markAllAsRead']
         )->name('notifications.read-all');
 
+        Route::get(
+        '/notifications/recent',
+        [ProfileController::class, 'recentNotifications']
+        )->name('notifications.recent');
+
         // BIICF Explorer
         Route::prefix('biicf-explorer')
             ->name('biicf-explorer.')

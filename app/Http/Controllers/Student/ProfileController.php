@@ -1009,13 +1009,49 @@ class ProfileController extends Controller
             ->unreadNotifications()
             ->count();
 
-        return view(
+                return view(
             'student.notifications.index',
             compact(
                 'notifications',
                 'unreadCount'
             )
         );
+    }
+
+    /**
+     * Return recent notifications for the popup.
+     *
+     * Capped deliberately. The popup is a preview, and the
+     * full list lives on the notifications page.
+     */
+    public function recentNotifications()
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        $notifications = $user
+            ->notifications()
+            ->orderBy('created_at', 'desc')
+            ->limit(8)
+            ->get()
+            ->map(function (Notification $notification) {
+                return [
+                    'id' => $notification->id,
+                    'type' => $notification->type,
+                    'title' => $notification->title,
+                    'message' => $notification->message,
+                    'link' => $notification->link,
+                    'is_read' => (bool) $notification->is_read,
+                    'created_at_human' => $notification
+                        ->created_at
+                        ->diffForHumans(),
+                ];
+            });
+
+        return response()->json([
+            'notifications' => $notifications,
+            'unread_count' => $user->unreadNotifications()->count(),
+        ]);
     }
 
     /**
@@ -1041,7 +1077,7 @@ class ProfileController extends Controller
             );
     }
 
-    /**
+        /**
      * Mark all notifications as read.
      */
     public function markAllAsRead()
@@ -1058,6 +1094,17 @@ class ProfileController extends Controller
                 'is_read' => true,
                 'read_at' => now(),
             ]);
+
+        /*
+         * The popup submits this in the background, so it
+         * expects JSON. The notifications page still submits
+         * normally and gets the redirect and flash message.
+         */
+        if (request()->expectsJson()) {
+            return response()->json([
+                'success' => true,
+            ]);
+        }
 
         return redirect()
             ->back()
