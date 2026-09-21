@@ -221,6 +221,24 @@
         background: #f4f7fb;
     }
 
+    /*
+     * A question is usually one line. Stored ones stretched to
+     * the full width of the conversation, so an old question
+     * looked heavier than the answer under it.
+     */
+    .student-message .message-body {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        max-width: 520px;
+        margin-left: auto;
+    }
+
+    .student-message .message-bubble {
+        display: inline-block;
+        width: auto;
+    }
+
     .student-message .message-name {
         text-align: right;
     }
@@ -446,13 +464,20 @@
         scroll-behavior: smooth;
     }
 
+
     /*
      * Both columns end level. The conversation grows inside its
      * own scroll instead of pushing the page down past the
      * panel beside it.
      */
+    /*
+     * A grid item in a stretched row, so it already fills the
+     * height of the conversation beside it. The scroll keeps a
+     * long list of gaps inside that height rather than making
+     * the row taller.
+     */
     .career-context {
-        max-height: 78vh;
+        min-height: 0;
         overflow-y: auto;
     }
 
@@ -840,216 +865,7 @@
             grid-template-columns: minmax(0, 1fr) 270px;
         }
 
-        /*
-     * The conversation scrolls inside itself. It used to extend
-     * the page, so a long history meant scrolling the whole
-     * document to reach the box you type in.
-     */
-    .conversation-body {
-        max-height: 62vh;
-        overflow-y: auto;
-        scroll-behavior: smooth;
-    }
-
-    /*
-     * Both columns end level. The conversation grows inside its
-     * own scroll instead of pushing the page down past the
-     * panel beside it.
-     */
-    .career-context {
-        max-height: 78vh;
-        overflow-y: auto;
-    }
-
-    .conversation-tools {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 18px;
-        border-bottom: 1px solid var(--line, #e7e2d4);
-    }
-
-    .conversation-tool-spacer {
-        flex: 1;
-    }
-
-    .conversation-tool {
-        background: none;
-        border: 1px solid var(--line, #e7e2d4);
-        border-radius: 100px;
-        padding: 4px 12px;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .conversation-tool:hover {
-        border-color: var(--gold, #cf9a3d);
-        color: var(--ink, #0d1a2b);
-    }
-
-    .message-text p {
-        margin: 0 0 8px;
-    }
-
-    .message-text p:last-child {
-        margin-bottom: 0;
-    }
-
-    .adviser-heading {
-        margin: 12px 0 6px;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--ink, #0d1a2b);
-    }
-
-    .adviser-list {
-        margin: 0 0 10px;
-        padding-left: 26px;
-    }
-
-    .adviser-list li::marker {
-        color: var(--gold, #cf9a3d);
-    }
-
-    .adviser-list li {
-        margin-bottom: 4px;
-    }
-
-    .match-pager {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 12px 0 4px;
-    }
-
-    .match-pager-dot {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 1px solid var(--line, #e7e2d4);
-        background: none;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-    }
-
-    .match-pager-dot.active {
-        background: var(--gold, #cf9a3d);
-        border-color: var(--gold, #cf9a3d);
-        color: white;
-        font-weight: 700;
-    }
-
-    .match-pager-label {
-        margin-left: auto;
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink-dim, #5b6675);
-    }
-
-    .context-toggle {
-        margin-left: auto;
-        align-self: flex-start;
-        background: none;
-        border: 1px solid var(--line, #e7e2d4);
-        border-radius: 100px;
-        padding: 4px 12px;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-    }
-
-    .context-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 18px;
-        align-items: flex-end;
-        padding: 14px 0;
-    }
-
-    .summary-figure,
-    .summary-role {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .summary-number {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--ink, #0d1a2b);
-        line-height: 1.1;
-    }
-
-    .summary-label {
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink-dim, #5b6675);
-    }
-
-    .summary-role-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--ink, #0d1a2b);
-    }
-
-    .readiness-bar {
-        display: block;
-        height: 8px;
-        border-radius: 100px;
-        background: #eceade;
-        overflow: hidden;
-        margin: 6px 0;
-    }
-
-    .readiness-bar span {
-        display: block;
-        height: 100%;
-        border-radius: 100px;
-        background: var(--gold, #cf9a3d);
-    }
-
-    .gap-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-    }
-
-    .gap-chip {
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 100px;
-        background: var(--rose-wash, #fbeceb);
-        color: var(--rose, #c65b4e);
-    }
-
-    .gap-size {
-        display: inline-block;
-        min-width: 16px;
-        margin-left: 4px;
-        padding: 0 4px;
-        border-radius: 100px;
-        background: var(--rose, #c65b4e);
-        color: white;
-        font-size: 10px;
-        text-align: center;
-    }
-
-    .gap-chip.matched {
-        background: var(--green-wash, #e9f3ee);
-        color: var(--green, #4c8a68);
-    }
-
-    .career-context {
-            padding: 17px;
-        }
+    
     }
 
     @media (max-width: 850px) {
@@ -1057,218 +873,7 @@
             grid-template-columns: 1fr;
         }
 
-        /*
-     * The conversation scrolls inside itself. It used to extend
-     * the page, so a long history meant scrolling the whole
-     * document to reach the box you type in.
-     */
-    .conversation-body {
-        max-height: 62vh;
-        overflow-y: auto;
-        scroll-behavior: smooth;
-    }
-
-    /*
-     * Both columns end level. The conversation grows inside its
-     * own scroll instead of pushing the page down past the
-     * panel beside it.
-     */
-    .career-context {
-        max-height: 78vh;
-        overflow-y: auto;
-    }
-
-    .conversation-tools {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 18px;
-        border-bottom: 1px solid var(--line, #e7e2d4);
-    }
-
-    .conversation-tool-spacer {
-        flex: 1;
-    }
-
-    .conversation-tool {
-        background: none;
-        border: 1px solid var(--line, #e7e2d4);
-        border-radius: 100px;
-        padding: 4px 12px;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .conversation-tool:hover {
-        border-color: var(--gold, #cf9a3d);
-        color: var(--ink, #0d1a2b);
-    }
-
-    .message-text p {
-        margin: 0 0 8px;
-    }
-
-    .message-text p:last-child {
-        margin-bottom: 0;
-    }
-
-    .adviser-heading {
-        margin: 12px 0 6px;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--ink, #0d1a2b);
-    }
-
-    .adviser-list {
-        margin: 0 0 10px;
-        padding-left: 26px;
-    }
-
-    .adviser-list li::marker {
-        color: var(--gold, #cf9a3d);
-    }
-
-    .adviser-list li {
-        margin-bottom: 4px;
-    }
-
-    .match-pager {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 12px 0 4px;
-    }
-
-    .match-pager-dot {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 1px solid var(--line, #e7e2d4);
-        background: none;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-    }
-
-    .match-pager-dot.active {
-        background: var(--gold, #cf9a3d);
-        border-color: var(--gold, #cf9a3d);
-        color: white;
-        font-weight: 700;
-    }
-
-    .match-pager-label {
-        margin-left: auto;
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink-dim, #5b6675);
-    }
-
-    .context-toggle {
-        margin-left: auto;
-        align-self: flex-start;
-        background: none;
-        border: 1px solid var(--line, #e7e2d4);
-        border-radius: 100px;
-        padding: 4px 12px;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-    }
-
-    .context-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 18px;
-        align-items: flex-end;
-        padding: 14px 0;
-    }
-
-    .summary-figure,
-    .summary-role {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .summary-number {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--ink, #0d1a2b);
-        line-height: 1.1;
-    }
-
-    .summary-label {
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink-dim, #5b6675);
-    }
-
-    .summary-role-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--ink, #0d1a2b);
-    }
-
-    .readiness-bar {
-        display: block;
-        height: 8px;
-        border-radius: 100px;
-        background: #eceade;
-        overflow: hidden;
-        margin: 6px 0;
-    }
-
-    .readiness-bar span {
-        display: block;
-        height: 100%;
-        border-radius: 100px;
-        background: var(--gold, #cf9a3d);
-    }
-
-    .gap-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-    }
-
-    .gap-chip {
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 100px;
-        background: var(--rose-wash, #fbeceb);
-        color: var(--rose, #c65b4e);
-    }
-
-    .gap-size {
-        display: inline-block;
-        min-width: 16px;
-        margin-left: 4px;
-        padding: 0 4px;
-        border-radius: 100px;
-        background: var(--rose, #c65b4e);
-        color: white;
-        font-size: 10px;
-        text-align: center;
-    }
-
-    .gap-chip.matched {
-        background: var(--green-wash, #e9f3ee);
-        color: var(--green, #4c8a68);
-    }
-
-    .career-context {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 0 22px;
-        }
+    
 
         .context-heading {
             grid-column: 1 / -1;
@@ -1324,216 +929,7 @@
     }
 
     @media (max-width: 600px) {
-        /*
-     * The conversation scrolls inside itself. It used to extend
-     * the page, so a long history meant scrolling the whole
-     * document to reach the box you type in.
-     */
-    .conversation-body {
-        max-height: 62vh;
-        overflow-y: auto;
-        scroll-behavior: smooth;
-    }
-
-    /*
-     * Both columns end level. The conversation grows inside its
-     * own scroll instead of pushing the page down past the
-     * panel beside it.
-     */
-    .career-context {
-        max-height: 78vh;
-        overflow-y: auto;
-    }
-
-    .conversation-tools {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        padding: 8px 18px;
-        border-bottom: 1px solid var(--line, #e7e2d4);
-    }
-
-    .conversation-tool-spacer {
-        flex: 1;
-    }
-
-    .conversation-tool {
-        background: none;
-        border: 1px solid var(--line, #e7e2d4);
-        border-radius: 100px;
-        padding: 4px 12px;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .conversation-tool:hover {
-        border-color: var(--gold, #cf9a3d);
-        color: var(--ink, #0d1a2b);
-    }
-
-    .message-text p {
-        margin: 0 0 8px;
-    }
-
-    .message-text p:last-child {
-        margin-bottom: 0;
-    }
-
-    .adviser-heading {
-        margin: 12px 0 6px;
-        font-size: 13px;
-        font-weight: 700;
-        color: var(--ink, #0d1a2b);
-    }
-
-    .adviser-list {
-        margin: 0 0 10px;
-        padding-left: 26px;
-    }
-
-    .adviser-list li::marker {
-        color: var(--gold, #cf9a3d);
-    }
-
-    .adviser-list li {
-        margin-bottom: 4px;
-    }
-
-    .match-pager {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 12px 0 4px;
-    }
-
-    .match-pager-dot {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 1px solid var(--line, #e7e2d4);
-        background: none;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-    }
-
-    .match-pager-dot.active {
-        background: var(--gold, #cf9a3d);
-        border-color: var(--gold, #cf9a3d);
-        color: white;
-        font-weight: 700;
-    }
-
-    .match-pager-label {
-        margin-left: auto;
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink-dim, #5b6675);
-    }
-
-    .context-toggle {
-        margin-left: auto;
-        align-self: flex-start;
-        background: none;
-        border: 1px solid var(--line, #e7e2d4);
-        border-radius: 100px;
-        padding: 4px 12px;
-        font: inherit;
-        font-size: 11px;
-        color: var(--ink-dim, #5b6675);
-        cursor: pointer;
-    }
-
-    .context-summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 18px;
-        align-items: flex-end;
-        padding: 14px 0;
-    }
-
-    .summary-figure,
-    .summary-role {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .summary-number {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--ink, #0d1a2b);
-        line-height: 1.1;
-    }
-
-    .summary-label {
-        font-size: 10px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        color: var(--ink-dim, #5b6675);
-    }
-
-    .summary-role-name {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--ink, #0d1a2b);
-    }
-
-    .readiness-bar {
-        display: block;
-        height: 8px;
-        border-radius: 100px;
-        background: #eceade;
-        overflow: hidden;
-        margin: 6px 0;
-    }
-
-    .readiness-bar span {
-        display: block;
-        height: 100%;
-        border-radius: 100px;
-        background: var(--gold, #cf9a3d);
-    }
-
-    .gap-chips {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
-        margin-top: 6px;
-    }
-
-    .gap-chip {
-        font-size: 11px;
-        padding: 3px 10px;
-        border-radius: 100px;
-        background: var(--rose-wash, #fbeceb);
-        color: var(--rose, #c65b4e);
-    }
-
-    .gap-size {
-        display: inline-block;
-        min-width: 16px;
-        margin-left: 4px;
-        padding: 0 4px;
-        border-radius: 100px;
-        background: var(--rose, #c65b4e);
-        color: white;
-        font-size: 10px;
-        text-align: center;
-    }
-
-    .gap-chip.matched {
-        background: var(--green-wash, #e9f3ee);
-        color: var(--green, #4c8a68);
-    }
-
-    .career-context {
-            display: block;
-        }
+    
 
         .context-item {
             border-right: none !important;
@@ -1563,6 +959,44 @@
 
         .composer-send span {
             display: none;
+        }
+    }
+
+    /*
+     * Both columns share one fixed height on wide screens.
+     *
+     * Previously the row grew to whichever column was taller,
+     * so the chat's box stretched while its message area kept
+     * its own height, leaving empty space under the composer.
+     * Now the height is set once, the message area fills
+     * whatever the header and composer leave, and the context
+     * panel scrolls inside the same height.
+     */
+    @media (min-width: 851px) {
+        .adviser-workspace {
+            --adviser-height: clamp(560px, 74vh, 900px);
+
+            height: var(--adviser-height);
+            grid-template-rows: minmax(0, 1fr);
+        }
+
+        .adviser-shell {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            min-height: 0;
+        }
+
+        .adviser-shell .conversation-body {
+            flex: 1 1 auto;
+            min-height: 0;
+            max-height: none;
+        }
+
+        .career-context {
+            height: 100%;
+            min-height: 0;
+            overflow-y: auto;
         }
     }
 </style>
