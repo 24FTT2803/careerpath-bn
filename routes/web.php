@@ -1,28 +1,25 @@
 <?php
 
-use App\Http\Controllers\Admin\AdvertisementController;
-use App\Http\Controllers\Admin\BiicfController;
-use App\Http\Controllers\Admin\BusinessPlanController;
-use App\Http\Controllers\Admin\CareerController as AdminCareerController;
+use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\HistoryController;
+use App\Http\Controllers\Student\ProfileController;
+use App\Http\Controllers\Student\MilestoneController;
+use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\CareerAdviserController;
+use App\Http\Controllers\Student\BiicfExplorerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\CareerController as AdminCareerController;
+use App\Http\Controllers\Admin\BiicfController;
+use App\Http\Controllers\Admin\AdvertisementController;
+use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\GroupMembershipController;
 use App\Http\Controllers\Admin\OrganisationController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\SponsorshipController;
-use App\Http\Controllers\Admin\StudentController as AdminStudentController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserPlanGrantController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
-use App\Http\Controllers\Student\BiicfExplorerController;
-use App\Http\Controllers\Student\CareerAdviserController;
-use App\Http\Controllers\Student\CareerRecommendationController;
-use App\Http\Controllers\Student\DashboardController;
-use App\Http\Controllers\Student\HistoryController;
-use App\Http\Controllers\Student\MilestoneController;
-use App\Http\Controllers\Student\ProfileController;
-use App\Http\Middleware\AdminMiddleware;
-use App\Http\Middleware\LecturerMiddleware;
-use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -70,7 +67,7 @@ require __DIR__.'/auth.php';
 // ============================================
 Route::middleware([
     'auth',
-    RoleMiddleware::class.':student',
+    \App\Http\Middleware\RoleMiddleware::class . ':student',
 ])
     ->prefix('student')
     ->name('student.')
@@ -263,7 +260,7 @@ Route::middleware([
 // ============================================
 Route::middleware([
     'auth',
-    LecturerMiddleware::class,
+    \App\Http\Middleware\LecturerMiddleware::class,
 ])
     ->get(
         '/student/profile/export/{userId}/{generation?}',
@@ -285,7 +282,7 @@ Route::middleware(['auth'])
         )
             ->name('dashboard')
             ->middleware(
-                LecturerMiddleware::class
+                \App\Http\Middleware\LecturerMiddleware::class
             );
 
         Route::get(
@@ -294,7 +291,7 @@ Route::middleware(['auth'])
         )
             ->name('students.index')
             ->middleware(
-                LecturerMiddleware::class
+                \App\Http\Middleware\LecturerMiddleware::class
             );
 
         Route::get(
@@ -303,7 +300,7 @@ Route::middleware(['auth'])
         )
             ->name('students.show')
             ->middleware(
-                LecturerMiddleware::class
+                \App\Http\Middleware\LecturerMiddleware::class
             );
 
         // CAREER ROUTES
@@ -313,7 +310,7 @@ Route::middleware(['auth'])
         )
             ->name('careers.index')
             ->middleware(
-                LecturerMiddleware::class
+                \App\Http\Middleware\LecturerMiddleware::class
             );
 
         Route::get(
@@ -322,19 +319,19 @@ Route::middleware(['auth'])
         )
             ->name('careers.show')
             ->middleware(
-                LecturerMiddleware::class
+                \App\Http\Middleware\LecturerMiddleware::class
             );
 
         // View milestone proof for admin/lecturer
         Route::get('/students/{studentId}/milestones/{milestoneId}/proof', [MilestoneController::class, 'viewProofAdmin'])
             ->name('milestones.proof')
-            ->middleware(LecturerMiddleware::class);
+            ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
 
         // ============================================
         // BUSINESS MANAGEMENT (Admin ONLY)
         // ============================================
         Route::middleware(
-            AdminMiddleware::class
+            \App\Http\Middleware\AdminMiddleware::class
         )
             ->prefix('business')
             ->name('business.')
@@ -570,9 +567,9 @@ Route::middleware(['auth'])
         // ============================================
         // BIICF MANAGEMENT (Admin ONLY)
         // ============================================
-        Route::middleware(AdminMiddleware::class)->group(function () {
-
-            Route::get('/biicf', function () {
+        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+    
+            Route::get('/biicf', function() {
                 return redirect()->route('admin.biicf.sub-sectors');
             })->name('biicf');
 
@@ -601,14 +598,6 @@ Route::middleware(['auth'])
             Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
             Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');
 
-            // Proficiency Levels - Use 'biicf.' NOT 'admin.biicf.'
-            Route::get('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevels'])->name('biicf.proficiency-levels');
-            Route::get('/biicf/proficiency-levels/create', [BiicfController::class, 'proficiencyLevelCreate'])->name('biicf.proficiency-levels.create');
-            Route::post('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevelStore'])->name('biicf.proficiency-levels.store');
-            Route::get('/biicf/proficiency-levels/{level}/edit', [BiicfController::class, 'proficiencyLevelEdit'])->name('biicf.proficiency-levels.edit');
-            Route::put('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelUpdate'])->name('biicf.proficiency-levels.update');
-            Route::delete('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelDestroy'])->name('biicf.proficiency-levels.destroy');
-
             // Trainings - Use 'biicf.' NOT 'admin.biicf.'
             Route::get('/biicf/trainings', [BiicfController::class, 'trainings'])->name('biicf.trainings');
             Route::get('/biicf/trainings/create', [BiicfController::class, 'trainingCreate'])->name('biicf.trainings.create');
@@ -619,7 +608,7 @@ Route::middleware(['auth'])
         });
 
         // Admin ONLY routes - Users
-        Route::middleware(AdminMiddleware::class)->group(function () {
+        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
             Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
             Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
@@ -632,7 +621,7 @@ Route::middleware(['auth'])
 // ============================================
 // LECTURER ROUTES
 // ============================================
-Route::middleware(['auth', LecturerMiddleware::class])
+Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
     ->prefix('lecturer')
     ->name('lecturer.')
     ->group(function () {

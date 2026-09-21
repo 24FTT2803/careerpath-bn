@@ -54,7 +54,12 @@ class CareerAdviserController extends Controller
 
         $profileCompletion = (int) $student->profile_completion;
 
-        $topRecommendation = $student
+        /*
+         * Every current match, not just the first. The panel
+         * pages through them so a student can see the gaps for
+         * each rather than only their top role.
+         */
+        $recommendations = $student
             ->currentRecommendations()
             ->with([
                 'career',
@@ -62,13 +67,85 @@ class CareerAdviserController extends Controller
             ])
             ->orderBy('rank')
             ->orderByDesc('match_score')
-            ->first();
+            ->get();
 
-        $skillGapCount = collect(
+        $topRecommendation = $recommendations->first();
+
+        $matchPanels = $recommendations->map(
+            fn ($recommendation) => [
+                'title' => $recommendation->jobRole?->title
+                    ?? $recommendation->career?->job_title
+                    ?? 'Role',
+
+                'match' => (float) $recommendation->match_score,
+
+                'readiness' => (float) (
+                    $recommendation->career_readiness_score ?? 0
+                ),
+
+                /*
+                 * The size of each gap as well as its name. How
+                 * far short a student is matters more than the
+                 * fact that they are short.
+                 */
+                'gaps' => collect(
+                    $recommendation->skill_gaps ?? []
+                )
+                    ->map(fn ($gap) => is_array($gap)
+                        ? [
+                            'name' => $gap['skill_name']
+                                ?? $gap['name']
+                                ?? null,
+
+                            'size' => (int) ($gap['gap'] ?? 0),
+
+                            'current' => $gap['current_level']
+                                ?? null,
+
+                            'required' => $gap['required_label']
+                                ?? $gap['recommended_level']
+                                ?? null,
+                        ]
+                        : ['name' => $gap, 'size' => 0])
+                    ->filter(fn ($gap) => filled($gap['name']))
+                    ->values()
+                    ->all(),
+
+                'matched' => collect(
+                    $recommendation->matched_skills ?? []
+                )
+                    ->filter()
+                    ->values()
+                    ->all(),
+            ]
+        )->values();
+
+        /*
+         * The gaps themselves, not just how many. Shown on the
+         * page so a student can see what the adviser is talking
+         * about without asking for it.
+         */
+        $skillGaps = collect(
             $topRecommendation?->skill_gaps ?? []
         )
             ->filter(fn ($gap) => filled($gap))
-            ->count();
+            ->map(fn ($gap) => is_array($gap)
+                ? ($gap['skill_name'] ?? $gap['name'] ?? null)
+                : $gap)
+            ->filter()
+            ->values();
+
+        $skillGapCount = $skillGaps->count();
+
+        $matchedSkills = collect(
+            $topRecommendation?->matched_skills ?? []
+        )
+            ->filter(fn ($skill) => filled($skill))
+            ->values();
+
+        $readinessScore = (float) (
+            $topRecommendation?->career_readiness_score ?? 0
+        );
 
         /*
          * Messages are always stored. This entitlement decides
@@ -108,6 +185,10 @@ class CareerAdviserController extends Controller
                 'conversationMessages',
                 'adviserHistoryEnabled',
                 'skillGapCount',
+                'skillGaps',
+                'matchPanels',
+                'matchedSkills',
+                'readinessScore',
                 'biicfRoleCount',
                 'biicfSubSectorCount',
                 'biicfAvailable',

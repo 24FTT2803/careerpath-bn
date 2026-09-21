@@ -816,13 +816,13 @@
 
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <div class="sidebar-brand">
-            <div class="brand-icon"><i class="fas fa-crown"></i></div>
-            <div>
-                <span class="brand-text">CareerPath <span>BN</span></span>
-                <span class="brand-sub">Administration</span>
-            </div>
-        </div>
+        <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
+    <img
+        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        alt="CareerPath BN"
+        style="height: 48px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+    >
+</div>
 
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>
@@ -856,10 +856,6 @@
                 <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}">
                     <i class="fas fa-tools"></i>
                     <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
-                </a>
-                <a href="{{ route('admin.biicf.proficiency-levels') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.proficiency-levels*') ? 'active' : '' }}">
-                    <i class="fas fa-level-up-alt"></i>
-                    <span>Proficiency Levels</span>
                 </a>
                 <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
                     <i class="fas fa-graduation-cap"></i>

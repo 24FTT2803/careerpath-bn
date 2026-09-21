@@ -1,0 +1,316 @@
+diff --git a/resources/views/admin/layouts/admin.blade.php b/resources/views/admin/layouts/admin.blade.php
+index 1040587..29283e3 100644
+--- a/resources/views/admin/layouts/admin.blade.php
++++ b/resources/views/admin/layouts/admin.blade.php
+@@ -816,13 +816,13 @@
+ 
+     <!-- Sidebar -->
+     <aside class="admin-sidebar">
+-        <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
+-    <img
+-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+-        alt="CareerPath BN"
+-        style="height: 48px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+-    >
+-</div>
++        <div class="sidebar-brand">
++            <div class="brand-icon"><i class="fas fa-crown"></i></div>
++            <div>
++                <span class="brand-text">CareerPath <span>BN</span></span>
++                <span class="brand-sub">Administration</span>
++            </div>
++        </div>
+ 
+         <nav class="sidebar-nav">
+             <div class="nav-label">Main</div>
+@@ -857,6 +857,10 @@
+                     <i class="fas fa-tools"></i>
+                     <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
+                 </a>
++                <a href="{{ route('admin.biicf.proficiency-levels') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.proficiency-levels*') ? 'active' : '' }}">
++                    <i class="fas fa-level-up-alt"></i>
++                    <span>Proficiency Levels</span>
++                </a>
+                 <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
+                     <i class="fas fa-graduation-cap"></i>
+                     <span>Trainings</span>
+diff --git a/resources/views/layouts/app.blade.php b/resources/views/layouts/app.blade.php
+index a2130c3..744ecc6 100644
+--- a/resources/views/layouts/app.blade.php
++++ b/resources/views/layouts/app.blade.php
+@@ -398,6 +398,23 @@
+             margin: 20px auto 0;
+         }
+ 
++        .ad-slot-pause {
++            float: right;
++            background: none;
++            border: 0;
++            padding: 0;
++            font: inherit;
++            font-size: 9px;
++            letter-spacing: 0.08em;
++            text-transform: uppercase;
++            color: var(--text-muted);
++            cursor: pointer;
++        }
++
++        .ad-slot-pause:hover {
++            color: var(--primary);
++        }
++
+         .ad-slot-label {
+             display: block;
+             font-size: 9px;
+@@ -512,19 +529,14 @@
+     <nav class="site-nav">
+         <div class="container">
+             <div class="nav-inner">
+-                <a href="{{ route('student.dashboard') }}" class="nav-brand" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
+-    <img
+-        src="{{ asset('images/careerpath-badge.png') }}"
+-        alt="CareerPath BN"
+-        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
+-    >
+-    <img
+-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+-        alt=""
+-        aria-hidden="true"
+-        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
+-    >
+-</a>
++                <a href="{{ route('student.dashboard') }}" class="nav-brand">
++                    <div class="icon"><i class="fas fa-compass"></i></div>
++                    <div>
++                        <span class="text">CareerPath <span>BN</span></span>
++                        <span class="sub">Politeknik Brunei</span>
++                    </div>
++                </a>
++
+                 <div class="nav-right">
+                     <a href="{{ route('student.dashboard') }}" class="nav-link {{ request()->routeIs('student.dashboard') ? 'active' : '' }}">
+                         <i class="fas fa-th-large"></i> Dashboard
+@@ -665,13 +677,15 @@
+             @endphp
+ 
+             <x-advertisement
+-                :advertisement="$advertisements->get('one')"
++                :advertisements="$advertisements->get('one')"
++                :placement="($pageAdvertisementSlots ?? collect())->get('one')"
+             />
+ 
+             @yield('content')
+ 
+             <x-advertisement
+-                :advertisement="$advertisements->get('two')"
++                :advertisements="$advertisements->get('two')"
++                :placement="($pageAdvertisementSlots ?? collect())->get('two')"
+             />
+         </div>
+     </main>
+@@ -757,5 +771,113 @@ function confirmStudentLogout() {
+ 
+     </script>
+     
++    <script>
++        document.addEventListener('DOMContentLoaded', function () {
++            var reduced = window.matchMedia
++                && window.matchMedia(
++                    '(prefers-reduced-motion: reduce)'
++                ).matches;
++
++            document.querySelectorAll('[data-ad-rotate]').forEach(function (slot) {
++                var items = slot.querySelectorAll('.ad-slot-item');
++                var pause = slot.querySelector('.ad-slot-pause');
++
++                if (items.length < 2) {
++                    return;
++                }
++
++                var current = 0;
++                var timer = null;
++
++                /*
++                 * Someone who has asked for less motion gets the
++                 * first advertisement and nothing moving, rather
++                 * than a slot that cycles regardless.
++                 */
++                var running = !reduced;
++
++                function show(index) {
++                    items.forEach(function (item, position) {
++                        item.hidden = position !== index;
++
++                        var video = item.querySelector('video');
++
++                        if (!video) {
++                            return;
++                        }
++
++                        if (position === index) {
++                            video.currentTime = 0;
++                            video.play().catch(function () {});
++                        } else {
++                            video.pause();
++                        }
++                    });
++                }
++
++                function advance() {
++                    current = (current + 1) % items.length;
++                    show(current);
++                    schedule();
++                }
++
++                function schedule() {
++                    window.clearTimeout(timer);
++
++                    if (!running) {
++                        return;
++                    }
++
++                    var video = items[current].querySelector('video');
++
++                    /*
++                     * A video is allowed to finish rather than
++                     * being cut off partway, so the dwell time
++                     * is a floor and not a deadline.
++                     */
++                    if (video) {
++                        video.onended = advance;
++
++                        return;
++                    }
++
++                    timer = window.setTimeout(
++                        advance,
++                        parseInt(slot.dataset.adDwell, 10) * 1000
++                    );
++                }
++
++                if (pause) {
++                    pause.addEventListener('click', function () {
++                        running = !running;
++
++                        pause.textContent = running
++                            ? 'Pause'
++                            : 'Resume';
++
++                        pause.setAttribute(
++                            'aria-label',
++                            running
++                                ? 'Pause advertisements'
++                                : 'Resume advertisements'
++                        );
++
++                        if (running) {
++                            schedule();
++                        } else {
++                            window.clearTimeout(timer);
++                        }
++                    });
++
++                    if (reduced) {
++                        pause.textContent = 'Resume';
++                    }
++                }
++
++                show(0);
++                schedule();
++            });
++        });
++    </script>
+ </body>
+ </html>
+\ No newline at end of file
+diff --git a/routes/web.php b/routes/web.php
+index c0d112a..ee01e37 100644
+--- a/routes/web.php
++++ b/routes/web.php
+@@ -6,6 +6,7 @@
+ use App\Http\Controllers\Admin\CareerController as AdminCareerController;
+ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+ use App\Http\Controllers\Admin\GroupMembershipController;
++use App\Http\Controllers\Admin\OrganisationController;
+ use App\Http\Controllers\Admin\OrganisationGroupController;
+ use App\Http\Controllers\Admin\SponsorshipController;
+ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+@@ -365,6 +366,35 @@
+                     'features.global'
+                 );
+ 
++                /*
++                 * The institutions whose structures this
++                 * platform holds.
++                 */
++                Route::post(
++                    '/organisations',
++                    [OrganisationController::class, 'store']
++                )->name('organisations.store');
++
++                Route::put(
++                    '/organisations/{organisation}',
++                    [OrganisationController::class, 'update']
++                )->name('organisations.update');
++
++                Route::put(
++                    '/organisations/{organisation}/archive',
++                    [OrganisationController::class, 'archive']
++                )->name('organisations.archive');
++
++                Route::put(
++                    '/organisations/{organisation}/restore',
++                    [OrganisationController::class, 'restore']
++                )->name('organisations.restore');
++
++                Route::delete(
++                    '/organisations/{organisation}',
++                    [OrganisationController::class, 'destroy']
++                )->name('organisations.destroy');
++
+                 /*
+                  * Organisations funding access for groups of
+                  * students.
+@@ -433,6 +463,11 @@
+                     [OrganisationGroupController::class, 'update']
+                 )->name('groups.update');
+ 
++                Route::put(
++                    '/groups/{group}/move',
++                    [OrganisationGroupController::class, 'move']
++                )->name('groups.move');
++
+                 Route::put(
+                     '/groups/{group}/archive',
+                     [OrganisationGroupController::class, 'archive']
+@@ -516,6 +551,16 @@
+                  * placements render at all is decided by the
+                  * plan features above.
+                  */
++                Route::put(
++                    '/advertisements/{advertisement}/reorder',
++                    [AdvertisementController::class, 'reorder']
++                )->name('advertisements.reorder');
++
++                Route::put(
++                    '/advertisement-slots/{slot}',
++                    [AdvertisementController::class, 'updateSlot']
++                )->name('advertisements.slots.update');
++
+                 Route::resource(
+                     'advertisements',
+                     AdvertisementController::class
+@@ -556,6 +601,13 @@
+             Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
+             Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');
+ 
++            // Proficiency Levels - Use 'biicf.' NOT 'admin.biicf.'
++            Route::get('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevels'])->name('biicf.proficiency-levels');
++            Route::get('/biicf/proficiency-levels/create', [BiicfController::class, 'proficiencyLevelCreate'])->name('biicf.proficiency-levels.create');
++            Route::post('/biicf/proficiency-levels', [BiicfController::class, 'proficiencyLevelStore'])->name('biicf.proficiency-levels.store');
++            Route::get('/biicf/proficiency-levels/{level}/edit', [BiicfController::class, 'proficiencyLevelEdit'])->name('biicf.proficiency-levels.edit');
++            Route::put('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelUpdate'])->name('biicf.proficiency-levels.update');
++            Route::delete('/biicf/proficiency-levels/{level}', [BiicfController::class, 'proficiencyLevelDestroy'])->name('biicf.proficiency-levels.destroy');
+ 
+             // Trainings - Use 'biicf.' NOT 'admin.biicf.'
+             Route::get('/biicf/trainings', [BiicfController::class, 'trainings'])->name('biicf.trainings');

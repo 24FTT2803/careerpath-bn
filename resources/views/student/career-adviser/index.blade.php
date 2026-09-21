@@ -435,6 +435,213 @@
     |--------------------------------------------------------------------------
     */
 
+    /*
+     * The conversation scrolls inside itself. It used to extend
+     * the page, so a long history meant scrolling the whole
+     * document to reach the box you type in.
+     */
+    .conversation-body {
+        max-height: 62vh;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+
+    /*
+     * Both columns end level. The conversation grows inside its
+     * own scroll instead of pushing the page down past the
+     * panel beside it.
+     */
+    .career-context {
+        max-height: 78vh;
+        overflow-y: auto;
+    }
+
+    .conversation-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-bottom: 1px solid var(--line, #e7e2d4);
+    }
+
+    .conversation-tool-spacer {
+        flex: 1;
+    }
+
+    .conversation-tool {
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .conversation-tool:hover {
+        border-color: var(--gold, #cf9a3d);
+        color: var(--ink, #0d1a2b);
+    }
+
+    .message-text p {
+        margin: 0 0 8px;
+    }
+
+    .message-text p:last-child {
+        margin-bottom: 0;
+    }
+
+    .adviser-heading {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .adviser-list {
+        margin: 0 0 10px;
+        padding-left: 26px;
+    }
+
+    .adviser-list li::marker {
+        color: var(--gold, #cf9a3d);
+    }
+
+    .adviser-list li {
+        margin-bottom: 4px;
+    }
+
+    .match-pager {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 0 4px;
+    }
+
+    .match-pager-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid var(--line, #e7e2d4);
+        background: none;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .match-pager-dot.active {
+        background: var(--gold, #cf9a3d);
+        border-color: var(--gold, #cf9a3d);
+        color: white;
+        font-weight: 700;
+    }
+
+    .match-pager-label {
+        margin-left: auto;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .context-toggle {
+        margin-left: auto;
+        align-self: flex-start;
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .context-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-end;
+        padding: 14px 0;
+    }
+
+    .summary-figure,
+    .summary-role {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-number {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+        line-height: 1.1;
+    }
+
+    .summary-label {
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .summary-role-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .readiness-bar {
+        display: block;
+        height: 8px;
+        border-radius: 100px;
+        background: #eceade;
+        overflow: hidden;
+        margin: 6px 0;
+    }
+
+    .readiness-bar span {
+        display: block;
+        height: 100%;
+        border-radius: 100px;
+        background: var(--gold, #cf9a3d);
+    }
+
+    .gap-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .gap-chip {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 100px;
+        background: var(--rose-wash, #fbeceb);
+        color: var(--rose, #c65b4e);
+    }
+
+    .gap-size {
+        display: inline-block;
+        min-width: 16px;
+        margin-left: 4px;
+        padding: 0 4px;
+        border-radius: 100px;
+        background: var(--rose, #c65b4e);
+        color: white;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .gap-chip.matched {
+        background: var(--green-wash, #e9f3ee);
+        color: var(--green, #4c8a68);
+    }
+
     .career-context {
         min-width: 0;
         padding: 20px;
@@ -633,7 +840,214 @@
             grid-template-columns: minmax(0, 1fr) 270px;
         }
 
-        .career-context {
+        /*
+     * The conversation scrolls inside itself. It used to extend
+     * the page, so a long history meant scrolling the whole
+     * document to reach the box you type in.
+     */
+    .conversation-body {
+        max-height: 62vh;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+
+    /*
+     * Both columns end level. The conversation grows inside its
+     * own scroll instead of pushing the page down past the
+     * panel beside it.
+     */
+    .career-context {
+        max-height: 78vh;
+        overflow-y: auto;
+    }
+
+    .conversation-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-bottom: 1px solid var(--line, #e7e2d4);
+    }
+
+    .conversation-tool-spacer {
+        flex: 1;
+    }
+
+    .conversation-tool {
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .conversation-tool:hover {
+        border-color: var(--gold, #cf9a3d);
+        color: var(--ink, #0d1a2b);
+    }
+
+    .message-text p {
+        margin: 0 0 8px;
+    }
+
+    .message-text p:last-child {
+        margin-bottom: 0;
+    }
+
+    .adviser-heading {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .adviser-list {
+        margin: 0 0 10px;
+        padding-left: 26px;
+    }
+
+    .adviser-list li::marker {
+        color: var(--gold, #cf9a3d);
+    }
+
+    .adviser-list li {
+        margin-bottom: 4px;
+    }
+
+    .match-pager {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 0 4px;
+    }
+
+    .match-pager-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid var(--line, #e7e2d4);
+        background: none;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .match-pager-dot.active {
+        background: var(--gold, #cf9a3d);
+        border-color: var(--gold, #cf9a3d);
+        color: white;
+        font-weight: 700;
+    }
+
+    .match-pager-label {
+        margin-left: auto;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .context-toggle {
+        margin-left: auto;
+        align-self: flex-start;
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .context-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-end;
+        padding: 14px 0;
+    }
+
+    .summary-figure,
+    .summary-role {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-number {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+        line-height: 1.1;
+    }
+
+    .summary-label {
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .summary-role-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .readiness-bar {
+        display: block;
+        height: 8px;
+        border-radius: 100px;
+        background: #eceade;
+        overflow: hidden;
+        margin: 6px 0;
+    }
+
+    .readiness-bar span {
+        display: block;
+        height: 100%;
+        border-radius: 100px;
+        background: var(--gold, #cf9a3d);
+    }
+
+    .gap-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .gap-chip {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 100px;
+        background: var(--rose-wash, #fbeceb);
+        color: var(--rose, #c65b4e);
+    }
+
+    .gap-size {
+        display: inline-block;
+        min-width: 16px;
+        margin-left: 4px;
+        padding: 0 4px;
+        border-radius: 100px;
+        background: var(--rose, #c65b4e);
+        color: white;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .gap-chip.matched {
+        background: var(--green-wash, #e9f3ee);
+        color: var(--green, #4c8a68);
+    }
+
+    .career-context {
             padding: 17px;
         }
     }
@@ -643,7 +1057,214 @@
             grid-template-columns: 1fr;
         }
 
-        .career-context {
+        /*
+     * The conversation scrolls inside itself. It used to extend
+     * the page, so a long history meant scrolling the whole
+     * document to reach the box you type in.
+     */
+    .conversation-body {
+        max-height: 62vh;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+
+    /*
+     * Both columns end level. The conversation grows inside its
+     * own scroll instead of pushing the page down past the
+     * panel beside it.
+     */
+    .career-context {
+        max-height: 78vh;
+        overflow-y: auto;
+    }
+
+    .conversation-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-bottom: 1px solid var(--line, #e7e2d4);
+    }
+
+    .conversation-tool-spacer {
+        flex: 1;
+    }
+
+    .conversation-tool {
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .conversation-tool:hover {
+        border-color: var(--gold, #cf9a3d);
+        color: var(--ink, #0d1a2b);
+    }
+
+    .message-text p {
+        margin: 0 0 8px;
+    }
+
+    .message-text p:last-child {
+        margin-bottom: 0;
+    }
+
+    .adviser-heading {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .adviser-list {
+        margin: 0 0 10px;
+        padding-left: 26px;
+    }
+
+    .adviser-list li::marker {
+        color: var(--gold, #cf9a3d);
+    }
+
+    .adviser-list li {
+        margin-bottom: 4px;
+    }
+
+    .match-pager {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 0 4px;
+    }
+
+    .match-pager-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid var(--line, #e7e2d4);
+        background: none;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .match-pager-dot.active {
+        background: var(--gold, #cf9a3d);
+        border-color: var(--gold, #cf9a3d);
+        color: white;
+        font-weight: 700;
+    }
+
+    .match-pager-label {
+        margin-left: auto;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .context-toggle {
+        margin-left: auto;
+        align-self: flex-start;
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .context-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-end;
+        padding: 14px 0;
+    }
+
+    .summary-figure,
+    .summary-role {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-number {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+        line-height: 1.1;
+    }
+
+    .summary-label {
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .summary-role-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .readiness-bar {
+        display: block;
+        height: 8px;
+        border-radius: 100px;
+        background: #eceade;
+        overflow: hidden;
+        margin: 6px 0;
+    }
+
+    .readiness-bar span {
+        display: block;
+        height: 100%;
+        border-radius: 100px;
+        background: var(--gold, #cf9a3d);
+    }
+
+    .gap-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .gap-chip {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 100px;
+        background: var(--rose-wash, #fbeceb);
+        color: var(--rose, #c65b4e);
+    }
+
+    .gap-size {
+        display: inline-block;
+        min-width: 16px;
+        margin-left: 4px;
+        padding: 0 4px;
+        border-radius: 100px;
+        background: var(--rose, #c65b4e);
+        color: white;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .gap-chip.matched {
+        background: var(--green-wash, #e9f3ee);
+        color: var(--green, #4c8a68);
+    }
+
+    .career-context {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             gap: 0 22px;
@@ -703,7 +1324,214 @@
     }
 
     @media (max-width: 600px) {
-        .career-context {
+        /*
+     * The conversation scrolls inside itself. It used to extend
+     * the page, so a long history meant scrolling the whole
+     * document to reach the box you type in.
+     */
+    .conversation-body {
+        max-height: 62vh;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+
+    /*
+     * Both columns end level. The conversation grows inside its
+     * own scroll instead of pushing the page down past the
+     * panel beside it.
+     */
+    .career-context {
+        max-height: 78vh;
+        overflow-y: auto;
+    }
+
+    .conversation-tools {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-bottom: 1px solid var(--line, #e7e2d4);
+    }
+
+    .conversation-tool-spacer {
+        flex: 1;
+    }
+
+    .conversation-tool {
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .conversation-tool:hover {
+        border-color: var(--gold, #cf9a3d);
+        color: var(--ink, #0d1a2b);
+    }
+
+    .message-text p {
+        margin: 0 0 8px;
+    }
+
+    .message-text p:last-child {
+        margin-bottom: 0;
+    }
+
+    .adviser-heading {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .adviser-list {
+        margin: 0 0 10px;
+        padding-left: 26px;
+    }
+
+    .adviser-list li::marker {
+        color: var(--gold, #cf9a3d);
+    }
+
+    .adviser-list li {
+        margin-bottom: 4px;
+    }
+
+    .match-pager {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 12px 0 4px;
+    }
+
+    .match-pager-dot {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 1px solid var(--line, #e7e2d4);
+        background: none;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .match-pager-dot.active {
+        background: var(--gold, #cf9a3d);
+        border-color: var(--gold, #cf9a3d);
+        color: white;
+        font-weight: 700;
+    }
+
+    .match-pager-label {
+        margin-left: auto;
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .context-toggle {
+        margin-left: auto;
+        align-self: flex-start;
+        background: none;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 100px;
+        padding: 4px 12px;
+        font: inherit;
+        font-size: 11px;
+        color: var(--ink-dim, #5b6675);
+        cursor: pointer;
+    }
+
+    .context-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 18px;
+        align-items: flex-end;
+        padding: 14px 0;
+    }
+
+    .summary-figure,
+    .summary-role {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-number {
+        font-size: 22px;
+        font-weight: 700;
+        color: var(--ink, #0d1a2b);
+        line-height: 1.1;
+    }
+
+    .summary-label {
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .summary-role-name {
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .readiness-bar {
+        display: block;
+        height: 8px;
+        border-radius: 100px;
+        background: #eceade;
+        overflow: hidden;
+        margin: 6px 0;
+    }
+
+    .readiness-bar span {
+        display: block;
+        height: 100%;
+        border-radius: 100px;
+        background: var(--gold, #cf9a3d);
+    }
+
+    .gap-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .gap-chip {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 100px;
+        background: var(--rose-wash, #fbeceb);
+        color: var(--rose, #c65b4e);
+    }
+
+    .gap-size {
+        display: inline-block;
+        min-width: 16px;
+        margin-left: 4px;
+        padding: 0 4px;
+        border-radius: 100px;
+        background: var(--rose, #c65b4e);
+        color: white;
+        font-size: 10px;
+        text-align: center;
+    }
+
+    .gap-chip.matched {
+        background: var(--green-wash, #e9f3ee);
+        color: var(--green, #4c8a68);
+    }
+
+    .career-context {
             display: block;
         }
 
@@ -849,6 +1677,24 @@
 
             </div>
 
+            <div class="conversation-tools">
+                <span class="conversation-tool-spacer"></span>
+
+                <button
+                    type="button"
+                    id="jumpTop"
+                    class="conversation-tool"
+                    title="Back to the start"
+                >&uarr; Top</button>
+
+                <button
+                    type="button"
+                    id="jumpLatest"
+                    class="conversation-tool"
+                    title="Jump to the latest reply"
+                >&darr; Latest</button>
+            </div>
+
             <div
                 id="careerAdviserConversation"
                 class="conversation-body"
@@ -902,9 +1748,13 @@
                                 @endif
                             </p>
 
-                            <p class="message-text">
-                                {{ $storedMessage->content }}
-                            </p>
+                            <div class="message-text">
+                                @if($storedMessage->isFromStudent())
+                                    <p>{{ $storedMessage->content }}</p>
+                                @else
+                                    {!! App\Support\AdviserText::toHtml($storedMessage->content) !!}
+                                @endif
+                            </div>
 
                         </div>
 
@@ -1102,152 +1952,133 @@
 
             </div>
 
-            {{-- Profile Completion --}}
-            <div class="context-item">
+            {{--
+                A summary is enough most of the time. The full
+                stack pushed the conversation off the screen,
+                which is the thing a student came here for.
+            --}}
+            @if($matchPanels->isEmpty())
+                <p class="context-description" style="padding:14px 0;">
+                    Generate your career recommendations to see
+                    your readiness and competency gaps here.
+                </p>
+            @else
+                <div class="match-pager">
+                    @foreach($matchPanels as $index => $panel)
+                        <button
+                            type="button"
+                            class="match-pager-dot {{ $index === 0 ? 'active' : '' }}"
+                            data-match-index="{{ $index }}"
+                        >{{ $index + 1 }}</button>
+                    @endforeach
 
-                <div class="context-label">
-                    <i class="fas fa-user-check"></i>
-                    Profile Completion
+                    <span class="match-pager-label" id="matchPagerLabel">
+                        Match 1 of {{ $matchPanels->count() }}
+                    </span>
                 </div>
 
-                <div class="profile-progress-row">
-                    <p class="context-value">
-                        {{ $profileCompletion }}%
-                    </p>
-                </div>
-
-                <div
-                    class="profile-progress-track"
-                    role="progressbar"
-                    aria-label="Profile completion"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    aria-valuenow="{{ $profileCompletion }}"
-                >
+                @foreach($matchPanels as $index => $panel)
                     <div
-                        class="profile-progress-fill"
-                        style="width: {{ min(max($profileCompletion, 0), 100) }}%;"
-                    ></div>
-                </div>
+                        class="match-panel"
+                        data-match-panel="{{ $index }}"
+                        @if($index > 0) style="display:none" @endif
+                    >
 
-                @if($profileCompletion >= 70)
-                    <span class="context-status success">
-                        <i class="fas fa-circle-check"></i>
-                        Recommendation ready
-                    </span>
-                @else
-                    <span class="context-status warning">
-                        <i class="fas fa-circle-exclamation"></i>
-                        More profile details needed
-                    </span>
-                @endif
+                        <div class="context-item">
+                            <div class="context-label">
+                                <i class="fas fa-bullseye"></i>
+                                Career Match
+                            </div>
 
-            </div>
+                            <div class="context-value career-name">
+                                {{ $panel['title'] }}
+                            </div>
 
-            {{-- Top Career Recommendation --}}
-            <div class="context-item">
+                            <div class="context-summary">
+                                <div class="summary-figure">
+                                    <span class="summary-number">
+                                        {{ round($panel['match']) }}%
+                                    </span>
+                                    <span class="summary-label">Match</span>
+                                </div>
 
-                <div class="context-label">
-                    <i class="fas fa-star"></i>
-                    Top Career Match
-                </div>
+                                <div class="summary-figure">
+                                    <span class="summary-number">
+                                        {{ round($panel['readiness']) }}%
+                                    </span>
+                                    <span class="summary-label">Readiness</span>
+                                </div>
 
-                @if(
-                    $topRecommendation
-                    && (
-                        $topRecommendation->jobRole
-                        || $topRecommendation->career
-                    )
-                )
+                                <div class="summary-figure">
+                                    <span class="summary-number">
+                                        {{ count($panel['gaps']) }}
+                                    </span>
+                                    <span class="summary-label">
+                                        {{ Str::plural('gap', count($panel['gaps'])) }}
+                                    </span>
+                                </div>
+                            </div>
 
-                    <p class="context-value career-name">
-                        {{
-                            $topRecommendation->jobRole?->title
-                            ?? $topRecommendation->career?->job_title
-                            ?? 'Career'
-                        }}
-                    </p>
+                            <div class="readiness-bar" role="img"
+                                aria-label="Readiness {{ round($panel['readiness']) }} per cent">
+                                <span style="width: {{ max(2, min(100, $panel['readiness'])) }}%"></span>
+                            </div>
 
-                    <p class="context-description">
-                        {{ round($topRecommendation->match_score ?? 0) }}%
-                        match based on your latest recommendation.
-                    </p>
+                            <p class="context-description">
+                                Readiness comes from your recorded
+                                competency levels against what this
+                                role asks for.
+                            </p>
+                        </div>
 
-                    <span class="context-status success">
-                        <i class="fas fa-ranking-star"></i>
-                        Rank #{{ $topRecommendation->rank ?? 1 }}
-                    </span>
+                        @if($panel['gaps'] !== [])
+                            <div class="context-item">
+                                <div class="context-label">
+                                    <i class="fas fa-triangle-exclamation"></i>
+                                    Competency Gaps
+                                    ({{ count($panel['gaps']) }})
+                                </div>
 
-                @else
+                                <div class="gap-chips">
+                                    @foreach($panel['gaps'] as $gap)
+                                        <span
+                                            class="gap-chip"
+                                            @if($gap['current'] && $gap['required'])
+                                                title="{{ $gap['current'] }} &rarr; {{ $gap['required'] }}"
+                                            @endif
+                                        >
+                                            {{ $gap['name'] }}
 
-                    <p class="context-value career-name">
-                        Not available yet
-                    </p>
+                                            @if($gap['size'] > 0)
+                                                <strong class="gap-size">
+                                                    {{ $gap['size'] }}
+                                                </strong>
+                                            @endif
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
 
-                    <p class="context-description">
-                        Career recommendations will appear here once they
-                        are available for your profile.
-                    </p>
+                        @if($panel['matched'] !== [])
+                            <div class="context-item">
+                                <div class="context-label">
+                                    <i class="fas fa-circle-check"></i>
+                                    Already Matched
+                                    ({{ count($panel['matched']) }})
+                                </div>
 
-                    <span class="context-status neutral">
-                        <i class="fas fa-clock"></i>
-                        No recommendation
-                    </span>
+                                <div class="gap-chips">
+                                    @foreach($panel['matched'] as $skill)
+                                        <span class="gap-chip matched">{{ $skill }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
 
-                @endif
-
-            </div>
-
-            {{-- Skill Gaps --}}
-            <div class="context-item">
-
-                <div class="context-label">
-                    <i class="fas fa-arrow-trend-up"></i>
-                    Priority Skill Gaps
-                </div>
-
-                @if($topRecommendation)
-
-                    <p class="context-value">
-                        {{ $skillGapCount }}
-                    </p>
-
-                    @if($skillGapCount > 0)
-                        <p class="context-description">
-                            {{ Str::plural('gap', $skillGapCount) }}
-                            identified in your top career recommendation.
-                        </p>
-
-                        <span class="context-status warning">
-                            <i class="fas fa-screwdriver-wrench"></i>
-                            Development areas
-                        </span>
-                    @else
-                        <p class="context-description">
-                            No skill gaps are currently listed for your
-                            top recommendation.
-                        </p>
-
-                        <span class="context-status success">
-                            <i class="fas fa-circle-check"></i>
-                            No gaps listed
-                        </span>
-                    @endif
-
-                @else
-
-                    <p class="context-value">
-                        —
-                    </p>
-
-                    <p class="context-description">
-                        Skill-gap information will be available with your
-                        career recommendations.
-                    </p>
-
-                @endif
-
-            </div>
+                    </div>
+                @endforeach
+            @endif
 
             {{-- BIICF Explorer --}}
             <div class="context-item">
@@ -1301,6 +2132,8 @@
                     Browse BIICF Explorer
                     <i class="fas fa-arrow-right"></i>
                 </a>
+
+            </div>
 
             </div>
 
@@ -1740,3 +2573,68 @@
 </script>
 
 @endsection
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var conversation = document.getElementById(
+            'careerAdviserConversation'
+        );
+
+        var dots = document.querySelectorAll('.match-pager-dot');
+        var panels = document.querySelectorAll('[data-match-panel]');
+        var pagerLabel = document.getElementById('matchPagerLabel');
+
+        dots.forEach(function (dot) {
+            dot.addEventListener('click', function () {
+                var wanted = dot.dataset.matchIndex;
+
+                panels.forEach(function (panel) {
+                    panel.style.display =
+                        panel.dataset.matchPanel === wanted
+                            ? ''
+                            : 'none';
+                });
+
+                dots.forEach(function (other) {
+                    other.classList.toggle(
+                        'active',
+                        other === dot
+                    );
+                });
+
+                if (pagerLabel) {
+                    pagerLabel.textContent =
+                        'Match '
+                        + (parseInt(wanted, 10) + 1)
+                        + ' of '
+                        + panels.length;
+                }
+            });
+        });
+
+        var top = document.getElementById('jumpTop');
+        var latest = document.getElementById('jumpLatest');
+
+        if (conversation && top) {
+            top.addEventListener('click', function () {
+                conversation.scrollTo({ top: 0 });
+            });
+        }
+
+        if (conversation && latest) {
+            latest.addEventListener('click', function () {
+                conversation.scrollTo({
+                    top: conversation.scrollHeight
+                });
+            });
+        }
+
+        /*
+         * Open on the newest reply rather than the welcome
+         * message, which is what a returning student wants.
+         */
+        if (conversation) {
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+    });
+</script>
