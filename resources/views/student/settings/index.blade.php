@@ -518,12 +518,13 @@
                     <i class="fas fa-bell"></i> Notifications
                 </a>
 
-                <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                    @csrf
-                    <button type="submit" class="nav-item danger">
-                        <i class="fas fa-sign-out-alt"></i> Log Out
-                    </button>
-                </form>
+             <button
+            type="button"
+            class="nav-item danger"
+            onclick="confirmStudentLogout()"
+        >
+            <i class="fas fa-sign-out-alt"></i> Log Out
+             </button>
             </aside>
 
             <!-- Content -->
