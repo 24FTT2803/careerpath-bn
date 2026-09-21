@@ -146,7 +146,40 @@
         purposes.
     </p>
 
-    <h2>9. Your Rights</h2>
+        <h2>9. Cookies</h2>
+    <p>
+        This website uses a small number of cookies, all of which are strictly
+        necessary for the site to function.
+    </p>
+    <ul>
+        <li>
+            <strong>Session cookie</strong> — keeps you logged in during your
+            visit. It is removed when you close your browser or when your
+            session expires.
+        </li>
+        <li>
+            <strong>CSRF token cookie</strong> — protects against cross-site
+            request forgery on form submissions.
+        </li>
+        <li>
+            <strong>Consent cookie</strong> — remembers that you have dismissed
+            the cookie notice, so it is not shown on every page.
+        </li>
+    </ul>
+    <p>
+        We do not use analytics, advertising, or third-party tracking cookies.
+        We do not share your browsing behaviour with anyone. The Google Fonts
+        and Font Awesome resources loaded by this site are served from public
+        content delivery networks and do not set cookies on your device.
+    </p>
+    <p>
+        You can clear cookies at any time through your browser settings.
+        Clearing them will log you out, and the cookie notice will be shown
+        again on your next visit.
+    </p>
+
+
+    <h2>10. Your Rights</h2>
     <p>You have the right to:</p>
     <ul>
         <li>Access your personal data at any time through your profile page.</li>
@@ -157,14 +190,14 @@
         <li>Request information about how your data is processed by contacting us at the address below.</li>
     </ul>
 
-    <h2>10. Changes to This Policy</h2>
+    <h2>11. Changes to This Policy</h2>
     <p>
         We may update this policy from time to time. Material changes will be communicated
         through the Platform. Continued use after an update constitutes acceptance of the
         revised policy.
     </p>
 
-    <h2>11. Contact</h2>
+    <h2>12. Contact</h2>
     <p>
         For questions about this Privacy Policy or to exercise your data rights, contact:<br>
         <strong>School of Information and Communication Technology</strong><br>

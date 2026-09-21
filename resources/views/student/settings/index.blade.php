@@ -518,12 +518,13 @@
                     <i class="fas fa-bell"></i> Notifications
                 </a>
 
-                <form method="POST" action="{{ route('logout') }}" style="margin:0;">
-                    @csrf
-                    <button type="submit" class="nav-item danger">
-                        <i class="fas fa-sign-out-alt"></i> Log Out
-                    </button>
-                </form>
+             <button
+            type="button"
+            class="nav-item danger"
+            onclick="confirmStudentLogout()"
+        >
+            <i class="fas fa-sign-out-alt"></i> Log Out
+             </button>
             </aside>
 
             <!-- Content -->
@@ -681,11 +682,6 @@
                 <div class="panel">
                     <div class="panel-title"><i class="fas fa-lock"></i> Change Password</div>
 
-                    @if(session('success'))
-                        <div class="alert alert-success">
-                            <i class="fas fa-check-circle"></i> {{ session('success') }}
-                        </div>
-                    @endif
 
                     @if($errors->any())
                         <div class="alert alert-danger">
@@ -716,9 +712,9 @@
                             <input id="password_confirmation" type="password" name="password_confirmation" required>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" data-confirm-update data-item-name="your password">
-                            <i class="fas fa-save"></i> Update Password
-                        </button>
+                        <button type="submit" class="btn btn-primary">
+    <i class="fas fa-save"></i> Update Password
+</button>
                     </form>
                 </div>
 

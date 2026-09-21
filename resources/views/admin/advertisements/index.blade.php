@@ -37,12 +37,6 @@
         </a>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success">
-            <i class="fas fa-check-circle"></i>
-            {{ session('success') }}
-        </div>
-    @endif
 
     <div class="info-banner info-banner-blue">
         <i class="fas fa-info-circle"></i>
