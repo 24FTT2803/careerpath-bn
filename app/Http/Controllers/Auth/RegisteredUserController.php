@@ -85,9 +85,17 @@ class RegisteredUserController extends Controller
         // Log activity - New student registration
         NotificationHelper::logStudentRegistration($user->id, $fullName);
 
-        event(new Registered($user));
+                event(new Registered($user));
 
         Auth::login($user);
+
+        /*
+         * Marks the redirect that follows as the student's
+         * first view of the dashboard, so the header can
+         * greet them without saying "Welcome back" to an
+         * account they created seconds ago.
+         */
+        $request->session()->flash('first_visit', true);
 
         return redirect()->route('student.dashboard');
     }

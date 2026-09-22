@@ -659,7 +659,14 @@
         <!-- Header -->
         <div class="dashboard-header">
             <div>
-                <h1>Welcome back, <span>{{ Auth::user()->first_name ?? Auth::user()->name }}</span></h1>
+                 <h1>
+                @if(session('first_visit'))
+                    Welcome,
+                @else
+                    Welcome back,
+                @endif
+                <span>{{ Auth::user()->first_name ?? Auth::user()->name }}</span>
+            </h1>
                 <p class="subtitle">{{ Auth::user()->programme ?? 'Complete your profile to get started' }}</p>
             </div>
             <div class="badges">
