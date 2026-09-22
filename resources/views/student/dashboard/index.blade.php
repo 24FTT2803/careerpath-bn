@@ -510,6 +510,93 @@
         color: var(--border);
     }
 
+    /* Milestones panel on the dashboard */
+.milestones-panel .milestones-list {
+    display: flex;
+    flex-direction: column;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.milestone-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+}
+
+.milestone-row:last-child {
+    border-bottom: none;
+}
+
+.milestone-row.completed {
+    color: var(--text-muted);
+}
+
+.milestone-row .milestone-status-icon {
+    flex-shrink: 0;
+    font-size: 14px;
+    width: 16px;
+    text-align: center;
+}
+
+.milestone-row.completed .milestone-status-icon {
+    color: var(--success);
+}
+
+.milestone-row:not(.completed) .milestone-status-icon {
+    color: var(--border);
+}
+
+.milestone-row .milestone-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.milestones-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+    text-align: center;
+}
+
+.milestones-footer a {
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.milestones-footer a:hover {
+    color: var(--accent);
+}
+
+.milestones-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--text-muted);
+}
+
+.milestones-empty i {
+    font-size: 28px;
+    color: var(--border);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.milestones-empty p {
+    font-size: 13px;
+    margin: 0 0 12px;
+}
+
     @media (max-width: 1024px) {
         .stats-grid {
             grid-template-columns: repeat(2, 1fr);
@@ -794,40 +881,63 @@
                 @endif
             </div>
 
-            <!-- Right Column -->
-            <div class="dashboard-side">
-                <!-- Recent Activity -->
-                <div class="panel recent-activity-panel">
-                    <div class="panel-header">
-                        <h3><i class="fas fa-clock"></i> Recent Activity</h3>
-                    </div>
-
-                    @if(isset($recentActivities) && count($recentActivities) > 0)
-                        <div class="recent-activity-list">
-                            @foreach($recentActivities as $activity)
-                                <div class="activity-item">
-                                    <div class="activity-icon">
-                                        <i class="fas fa-{{ $activity['icon'] ?? 'bell' }}"></i>
-                                    </div>
-                                    <div class="activity-content">
-                                        <div class="message">
-                                            {{ $activity['message'] ?? 'Activity logged' }}
-                                        </div>
-                                        <div class="time">
-                                            {{ $activity['time'] ?? 'Just now' }}
-                                        </div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="no-activity">
-                            <i class="fas fa-inbox"></i>
-                            No recent activity
-                        </div>
-                    @endif
-                </div>
+                <!-- Right Column -->
+    <div class="dashboard-side">
+        <!-- Milestones -->
+        <div class="panel milestones-panel">
+            <div class="panel-header">
+                <h3><i class="fas fa-flag-checkered"></i> My Milestones</h3>
             </div>
+
+            @php
+                /*
+                 * Incomplete items first, so the student sees what
+                 * still needs doing before what is already done.
+                 * Only the first five are shown here; the full list
+                 * lives on the milestones page.
+                 */
+                $dashboardMilestones = $milestones
+                    ->sortBy('is_completed')
+                    ->take(5);
+            @endphp
+
+            @if($dashboardMilestones->isNotEmpty())
+                <div class="milestones-list">
+                    @foreach($dashboardMilestones as $milestone)
+                        <div class="milestone-row {{ $milestone->is_completed ? 'completed' : '' }}">
+                            <span class="milestone-status-icon">
+                                @if($milestone->is_completed)
+                                    <i class="fas fa-check-circle"></i>
+                                @else
+                                    <i class="far fa-circle"></i>
+                                @endif
+                            </span>
+
+                            <span class="milestone-title">
+                                {{ $milestone->title }}
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+
+                <div class="milestones-footer">
+                    <a href="{{ route('student.milestones') }}">
+                        View all milestones
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+            @else
+                <div class="milestones-empty">
+                    <i class="fas fa-flag-checkered"></i>
+                    <p>No milestones yet</p>
+
+                    <a href="{{ route('student.milestones') }}" class="btn btn-outline btn-sm">
+                        <i class="fas fa-plus"></i> Add Milestone
+                    </a>
+                </div>
+            @endif
+        </div>
+    </div>
         </div>
 
     </div>
