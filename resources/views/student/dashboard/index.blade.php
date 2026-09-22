@@ -49,6 +49,58 @@
         color: var(--accent);
     }
 
+          /* Greeting transition: crossfade between two lines */
+    .dashboard-greeting {
+        display: grid;
+    }
+
+    .dashboard-greeting .greeting-line {
+        grid-area: 1 / 1;
+        color: var(--primary);
+    }
+
+    .dashboard-greeting .greeting-name {
+        color: var(--accent);
+    }
+
+    .greeting-line-1 {
+        animation: greeting-line-1-cycle 5.5s ease-in-out forwards;
+    }
+
+    @keyframes greeting-line-1-cycle {
+        0%, 40% {
+            opacity: 1;
+        }
+        68%, 100% {
+            opacity: 0;
+        }
+    }
+
+    .greeting-line-2 {
+        opacity: 0;
+        animation: greeting-line-2-cycle 5.5s ease-in-out forwards;
+    }
+
+    @keyframes greeting-line-2-cycle {
+        0%, 40% {
+            opacity: 0;
+        }
+        68%, 100% {
+            opacity: 1;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .greeting-line-1 {
+            display: none;
+        }
+
+        .greeting-line-2 {
+            animation: none;
+            opacity: 1;
+        }
+    }
+
     .dashboard-header .subtitle {
         color: var(--text-muted);
         font-size: 14px;
@@ -659,13 +711,29 @@
         <!-- Header -->
         <div class="dashboard-header">
             <div>
-                 <h1>
-                @if(session('first_visit'))
-                    Welcome,
-                @else
-                    Welcome back,
-                @endif
-                <span>{{ Auth::user()->first_name ?? Auth::user()->name }}</span>
+                             @php
+                $studentFirstName = Auth::user()->first_name
+                    ?? Auth::user()->name;
+
+                $isFirstVisit = session('first_visit') === true;
+            @endphp
+
+            <h1 class="dashboard-greeting">
+                <span class="greeting-line greeting-line-1">
+                    @if($isFirstVisit)
+                        Welcome, <span class="greeting-name">{{ $studentFirstName }}</span>!
+                    @else
+                        Welcome back, <span class="greeting-name">{{ $studentFirstName }}</span>!
+                    @endif
+                </span>
+
+                <span class="greeting-line greeting-line-2">
+                    @if($isFirstVisit)
+                        This is your dashboard.
+                    @else
+                        Glad to have you back.
+                    @endif
+                </span>
             </h1>
                 <p class="subtitle">{{ Auth::user()->programme ?? 'Complete your profile to get started' }}</p>
             </div>

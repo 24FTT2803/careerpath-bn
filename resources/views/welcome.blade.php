@@ -883,6 +883,94 @@
             .biicf-stats { grid-template-columns: 1fr; }
             .footer-logos { flex-direction: column; align-items: flex-start; }
         }
+
+                /* ============================================
+           ENTRANCE ANIMATIONS
+           ============================================ */
+
+        @media (prefers-reduced-motion: no-preference) {
+
+            .reveal {
+                opacity: 0;
+                transform: translateY(20px);
+                transition:
+                    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+                    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+            }
+
+            .reveal.visible {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .reveal-stagger > * {
+                opacity: 0;
+                transform: translateY(20px);
+                transition:
+                    opacity 0.7s cubic-bezier(0.2, 0.7, 0.2, 1),
+                    transform 0.7s cubic-bezier(0.2, 0.7, 0.2, 1);
+            }
+
+            .reveal-stagger.visible > * {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            .reveal-stagger.visible > *:nth-child(1) { transition-delay: 0s; }
+            .reveal-stagger.visible > *:nth-child(2) { transition-delay: 0.1s; }
+            .reveal-stagger.visible > *:nth-child(3) { transition-delay: 0.2s; }
+            .reveal-stagger.visible > *:nth-child(4) { transition-delay: 0.3s; }
+            .reveal-stagger.visible > *:nth-child(5) { transition-delay: 0.4s; }
+            .reveal-stagger.visible > *:nth-child(6) { transition-delay: 0.5s; }
+
+            .hero-content .reveal-hero {
+                opacity: 0;
+                transform: translateY(20px);
+                animation: hero-fade-up 0.9s
+                    cubic-bezier(0.2, 0.7, 0.2, 1)
+                    forwards;
+            }
+
+            .hero-content .reveal-hero.delay-1 { animation-delay: 0.1s; }
+            .hero-content .reveal-hero.delay-2 { animation-delay: 0.25s; }
+            .hero-content .reveal-hero.delay-3 { animation-delay: 0.4s; }
+            .hero-content .reveal-hero.delay-4 { animation-delay: 0.55s; }
+
+            @keyframes hero-fade-up {
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .hero-image .reveal-hero {
+                opacity: 0;
+                transform: scale(0.96);
+                animation: hero-scale-in 1s
+                    cubic-bezier(0.2, 0.7, 0.2, 1)
+                    forwards;
+                animation-delay: 0.3s;
+            }
+
+            @keyframes hero-scale-in {
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal,
+            .reveal-stagger > *,
+            .reveal-hero {
+                opacity: 1 !important;
+                transform: none !important;
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -941,14 +1029,14 @@
     ============================================ -->
     <section class="hero">
         <div class="container">
-            <div class="hero-grid">
-                <div>
-                    <div class="hero-badge">
+                        <div class="hero-grid">
+                <div class="hero-content">
+                    <div class="hero-badge reveal-hero">
                         <i class="fas fa-robot"></i> AI-Powered Career Guidance
                     </div>
-                    <h1>Discover Your <span>Career Path</span> with Confidence</h1>
-                    <p>AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
-                    <div class="hero-actions">
+                    <h1 class="reveal-hero delay-1">Discover Your <span>Career Path</span> with Confidence</h1>
+                    <p class="reveal-hero delay-2">AI-powered career guidance platform aligned with the Brunei ICT Industry Competency Framework (BIICF).</p>
+                    <div class="hero-actions reveal-hero delay-3">
                         <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-accent">
                             <i class="fas fa-rocket"></i> Get Started Free
                         </a>
@@ -956,7 +1044,7 @@
                             <i class="fas fa-play-circle"></i> Learn More
                         </a>
                     </div>
-                    <div class="hero-stats">
+                    <div class="hero-stats reveal-hero delay-4">
                         @php
                     $totalJobRoles = \App\Models\BiicfJobRole::count();
                     $totalCompetencies = \App\Models\BiicfCompetency::count();
@@ -977,7 +1065,7 @@
                     </div>
                     <div style="height: 80px;"></div>
                 </div>
-                <div class="hero-image">
+                    <div class="hero-image reveal-hero">
                     <div class="hero-illustration">
                         <div class="icon-grid">
                             <div class="icon-item">
@@ -1025,7 +1113,7 @@
             <h2>Everything You Need for Career Success</h2>
             <p>From profile building to career matching, we've got you covered.</p>
         </div>
-        <div class="features-grid">
+            <div class="features-grid reveal-stagger">
             <div class="feature-card">
                 <div class="feature-icon"><i class="fas fa-user-cog"></i></div>
                 <h3>Career Profiling</h3>
@@ -1070,7 +1158,7 @@
                 <h2>From Profile to Career in 4 Steps</h2>
                 <p>Simple, structured, and effective career discovery.</p>
             </div>
-            <div class="steps-grid">
+                <div class="steps-grid reveal-stagger">
                 <div class="step">
                     <div class="step-number">1</div>
                     <h4>Build Your Profile</h4>
@@ -1103,7 +1191,7 @@
     <section class="biicf-section" id="biicf">
         <div class="container">
             <div class="biicf-grid">
-                <div class="biicf-content">
+                    <div class="biicf-content reveal">
                     <span class="tag"><i class="fas fa-certificate"></i> Framework Alignment</span>
                     <h2>Aligned with <span>BIICF</span></h2>
                     <p>The Brunei ICT Industry Competency Framework (BIICF) articulates the competencies needed to perform various ICT job roles. CareerPath BN makes it navigable for students.</p>
@@ -1137,7 +1225,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="biicf-image">
+                    <div class="biicf-image reveal">
                     <div class="placeholder">
                         <i class="fas fa-certificate"></i>
                         <h4>Brunei ICT Industry</h4>
@@ -1155,10 +1243,10 @@
     CTA SECTION
     ============================================ -->
     <section class="cta-section">
-        <div class="container">
-            <h2>Ready to Discover Your Career Path?</h2>
-            <p>This website bridges the gap between students and industry by providing personalized career recommendations based on the BIICF framework. So Join Now !</p>
-            <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-accent" style="font-size:16px;padding:14px 40px;">
+            <div class="container">
+            <h2 class="reveal">Ready to Discover Your Career Path?</h2>
+            <p class="reveal">This website bridges the gap between students and industry by providing personalized career recommendations based on the BIICF framework. So Join Now !</p>
+            <a href="{{ Route::has('register') ? route('register') : '#' }}" class="btn btn-accent reveal" style="font-size:16px;padding:14px 40px;">
                 <i class="fas fa-arrow-right"></i> Get Started Now
             </a>
         </div>
@@ -1175,7 +1263,7 @@
             <p>Driving the future of career guidance for ICT students in Brunei.</p>
         </div>
         
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;">
+                <div class="reveal-stagger" style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;">
             <div style="background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:var(--radius);padding:40px;color:white;text-align:center;">
                 <div style="font-size:48px;margin-bottom:16px;color:var(--accent);">
                     <i class="fas fa-eye"></i>
@@ -1199,7 +1287,7 @@
             </div>
         </div>
         
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px;">
+            <div class="reveal-stagger" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px;">
             <div style="text-align:center;padding:20px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);">
                 <div style="font-size:28px;color:var(--accent);margin-bottom:8px;">
                     <i class="fas fa-lightbulb"></i>
@@ -1304,7 +1392,7 @@
     <!-- ============================================
     SCROLL EFFECT
     ============================================ -->
-    <script>
+        <script>
         document.addEventListener('DOMContentLoaded', function() {
             const header = document.getElementById('site-header');
             window.addEventListener('scroll', function() {
@@ -1313,6 +1401,47 @@
                 } else {
                     header.classList.remove('scrolled');
                 }
+            });
+
+            /*
+             * Reveal-on-scroll: elements marked .reveal or
+             * .reveal-stagger stay hidden until they enter the
+             * viewport. The hero is excluded because it uses
+             * CSS animations that play on page load.
+             */
+            var targets = document.querySelectorAll(
+                '.reveal, .reveal-stagger'
+            );
+
+            if (targets.length === 0) {
+                return;
+            }
+
+            if (!('IntersectionObserver' in window)) {
+                targets.forEach(function (el) {
+                    el.classList.add('visible');
+                });
+
+                return;
+            }
+
+            var observer = new IntersectionObserver(
+                function (entries) {
+                    entries.forEach(function (entry) {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                },
+                {
+                    threshold: 0.12,
+                    rootMargin: '0px 0px -40px 0px'
+                }
+            );
+
+            targets.forEach(function (el) {
+                observer.observe(el);
             });
         });
     </script>
