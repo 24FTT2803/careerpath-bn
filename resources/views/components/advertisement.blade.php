@@ -30,14 +30,6 @@
     >
         <span class="ad-slot-label">
             Advertisement
-
-            @if($rotates)
-                <button
-                    type="button"
-                    class="ad-slot-pause"
-                    aria-label="Pause advertisements"
-                >Pause</button>
-            @endif
         </span>
 
         @foreach($items as $index => $advertisement)

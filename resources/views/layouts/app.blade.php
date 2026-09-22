@@ -636,22 +636,6 @@
             margin: 20px auto 0;
         }
 
-        .ad-slot-pause {
-            float: right;
-            background: none;
-            border: 0;
-            padding: 0;
-            font: inherit;
-            font-size: 9px;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            cursor: pointer;
-        }
-
-        .ad-slot-pause:hover {
-            color: var(--primary);
-        }
 
         .ad-slot-label {
             display: block;
@@ -1059,7 +1043,6 @@
 
             document.querySelectorAll('[data-ad-rotate]').forEach(function (slot) {
                 var items = slot.querySelectorAll('.ad-slot-item');
-                var pause = slot.querySelector('.ad-slot-pause');
 
                 if (items.length < 2) {
                     return;
@@ -1124,33 +1107,6 @@
                         advance,
                         parseInt(slot.dataset.adDwell, 10) * 1000
                     );
-                }
-
-                if (pause) {
-                    pause.addEventListener('click', function () {
-                        running = !running;
-
-                        pause.textContent = running
-                            ? 'Pause'
-                            : 'Resume';
-
-                        pause.setAttribute(
-                            'aria-label',
-                            running
-                                ? 'Pause advertisements'
-                                : 'Resume advertisements'
-                        );
-
-                        if (running) {
-                            schedule();
-                        } else {
-                            window.clearTimeout(timer);
-                        }
-                    });
-
-                    if (reduced) {
-                        pause.textContent = 'Resume';
-                    }
                 }
 
                 show(0);
