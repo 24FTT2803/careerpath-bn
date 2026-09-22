@@ -6,6 +6,15 @@
 
 <style>
     .edit-profile {
+
+    --paper: var(--bg);
+    --ink: var(--text);
+    --ink-dim: var(--text-muted);
+    --line: var(--border);
+    --gold: var(--accent);
+    --rose: var(--danger);
+    --green: var(--success);
+
         padding: 20px 0 40px;
         font-family: 'Inter', -apple-system, sans-serif;
         background: var(--paper);
