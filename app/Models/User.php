@@ -57,6 +57,22 @@ class User extends Authenticatable
         ];
     }
 
+        /**
+     * Store the email in lowercase.
+     *
+     * Politeknik Brunei student emails use uppercase letters in
+     * the local part (e.g. 24FTT2803@student.pb.edu.bn). We
+     * accept whatever case the user types, but store it lowered
+     * so the same address is never two accounts and logins
+     * match regardless of capitalisation.
+     */
+    public function setEmailAttribute($value): void
+    {
+        $this->attributes['email'] = strtolower(
+            trim((string) $value)
+        );
+    }
+
     // ============================================
     // VALIDATION HELPERS
     // ============================================
@@ -93,7 +109,6 @@ class User extends Authenticatable
         return [
             'required',
             'string',
-            'lowercase',
             'email',
             'max:255',
             'regex:'.$pattern,
@@ -168,6 +183,34 @@ class User extends Authenticatable
     public function unreadNotifications()
     {
         return $this->notifications()->where('is_read', false);
+    }
+
+        /**
+     * Notifications shown on the user's own bell and page.
+     *
+     * Excludes administrator activity entries — registrations,
+     * profile updates and recommendation generation — which
+     * are recorded against the user but are not for them to
+     * read. The admin dashboard still reads these through
+     * Notification::getDashboardActivities().
+     */
+    public function visibleNotifications()
+    {
+        return $this->notifications()
+            ->whereNotIn(
+                'type',
+                ['user', 'profile', 'career']
+            );
+    }
+
+    /**
+     * Unread count for the user's own bell, excluding
+     * administrator activity entries.
+     */
+    public function visibleUnreadNotifications()
+    {
+        return $this->visibleNotifications()
+            ->where('is_read', false);
     }
 
     /**

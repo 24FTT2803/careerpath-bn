@@ -768,7 +768,7 @@
 
                     @auth
     @php
-        $unreadNotificationCount = Auth::user()->unreadNotifications()->count();
+        $unreadNotificationCount = Auth::user()->visibleUnreadNotifications()->count();
     @endphp
 @endauth
 
@@ -864,8 +864,8 @@
                                 </a>
                                 <a href="{{ route('student.notifications') }}" class="dropdown-item">
                                     <i class="fas fa-bell"></i> Notifications
-                                    @if(Auth::user()->unreadNotifications()->count() > 0)
-                                        <span class="badge-count">{{ Auth::user()->unreadNotifications()->count() }}</span>
+                                    @if(Auth::user()->visibleUnreadNotifications()->count() > 0)
+                                       <span class="badge-count">{{ Auth::user()->visibleUnreadNotifications()->count() }}</span>
                                     @endif
                                 </a>
                                 <div class="dropdown-divider"></div>

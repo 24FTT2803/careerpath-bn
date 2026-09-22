@@ -32,7 +32,6 @@ class RegisteredUserController extends Controller
             'email' => [
                 'required',
                 'string',
-                'lowercase',
                 'email',
                 'max:255',
                 'unique:users,email', // This ensures email is unique

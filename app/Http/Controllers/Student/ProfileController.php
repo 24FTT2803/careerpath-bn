@@ -1019,7 +1019,7 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $notifications = $user
-            ->notifications()
+            ->visibleNotifications()
             ->orderBy(
                 'created_at',
                 'desc'
@@ -1027,7 +1027,7 @@ class ProfileController extends Controller
             ->paginate(20);
 
         $unreadCount = $user
-            ->unreadNotifications()
+            ->visibleUnreadNotifications()
             ->count();
 
                 return view(
@@ -1051,7 +1051,7 @@ class ProfileController extends Controller
         $user = Auth::user();
 
         $notifications = $user
-            ->notifications()
+            ->visiblenotifications()
             ->orderBy('created_at', 'desc')
             ->limit(8)
             ->get()
@@ -1071,19 +1071,24 @@ class ProfileController extends Controller
 
         return response()->json([
             'notifications' => $notifications,
-            'unread_count' => $user->unreadNotifications()->count(),
+            'unread_count' => $user->visibleNotifications()->count(),
         ]);
     }
 
     /**
      * Mark a notification as read.
      */
-    public function markAsRead($id)
+        public function markAsRead($id)
     {
         $notification = Notification::where(
             'user_id',
             Auth::id()
-        )->findOrFail($id);
+        )
+            ->whereIn(
+                'type',
+                ['milestone', 'recommendation', 'system', 'reminder']
+            )
+            ->findOrFail($id);
 
         $notification->update([
             'is_read' => true,
@@ -1103,10 +1108,14 @@ class ProfileController extends Controller
      */
     public function markAllAsRead()
     {
-        Notification::where(
+            Notification::where(
             'user_id',
             Auth::id()
         )
+            ->whereIn(
+                'type',
+                ['milestone', 'recommendation', 'system', 'reminder']
+            )
             ->where(
                 'is_read',
                 false
