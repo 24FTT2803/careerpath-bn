@@ -4,12 +4,14 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\GroupMembership;
+use App\Models\LecturerAssignment;
 use App\Models\OrganisationGroup;
 use App\Models\User;
 use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class GroupMembershipController extends Controller
@@ -58,11 +60,41 @@ class GroupMembershipController extends Controller
                 ->limit(25)
                 ->get();
 
-        $programmeNames = $this->programmeAncestorNames($group);
+                $programmeNames = $this->programmeAncestorNames($group);
+
+        /*
+         * Lecturers assigned to teach this class, plus the
+         * search candidates for assigning more.
+         */
+        $lecturers = $group
+            ->assignedLecturers()
+            ->orderBy('name')
+            ->get();
+
+        $lecturerSearch = trim(
+            $request->string('lq')->toString()
+        );
+
+        $lecturerCandidates = $lecturerSearch === ''
+            ? collect()
+            : User::query()
+                ->where('role', 'lecturer')
+                ->whereNotIn('id', $lecturers->pluck('id'))
+                ->where(function ($query) use ($lecturerSearch) {
+                    $query
+                        ->where('name', 'like', "%{$lecturerSearch}%")
+                        ->orWhere('email', 'like', "%{$lecturerSearch}%");
+                })
+                ->orderBy('name')
+                ->limit(25)
+                ->get();
 
         return view(
             'admin.business.groups.members',
             [
+                'lecturers' => $lecturers,
+                'lecturerSearch' => $lecturerSearch,
+                'lecturerCandidates' => $lecturerCandidates,
                 'group' => $group,
                 'members' => $members,
                 'candidates' => $candidates,
@@ -182,7 +214,7 @@ class GroupMembershipController extends Controller
             return [];
         }
 
-        return $members
+                return $members
             ->filter(
                 fn (User $member) => $member->programme !== null
                     && ! in_array(
@@ -193,5 +225,57 @@ class GroupMembershipController extends Controller
             )
             ->pluck('id')
             ->all();
+    }
+
+    /**
+     * Assign a lecturer to teach this class.
+     */
+    public function assignLecturer(
+        Request $request,
+        OrganisationGroup $group
+    ) {
+        $validated = $request->validate([
+            'user_ids' => ['required', 'array'],
+            'user_ids.*' => [
+                Rule::exists('users', 'id')
+                    ->where('role', 'lecturer'),
+            ],
+        ]);
+
+        foreach ($validated['user_ids'] as $userId) {
+            LecturerAssignment::firstOrCreate([
+                'user_id' => $userId,
+                'organisation_group_id' => $group->id,
+            ]);
+        }
+
+        return redirect()
+            ->route(
+                'admin.business.groups.members.index',
+                $group
+            )
+            ->with('success', 'Lecturer assigned to the class.');
+    }
+
+    /**
+     * Remove a lecturer from this class.
+     */
+    public function unassignLecturer(
+        OrganisationGroup $group,
+        User $user
+    ) {
+        LecturerAssignment::where(
+            'user_id',
+            $user->id
+        )
+            ->where('organisation_group_id', $group->id)
+            ->delete();
+
+        return redirect()
+            ->route(
+                'admin.business.groups.members.index',
+                $group
+            )
+            ->with('success', 'Lecturer removed from the class.');
     }
 }

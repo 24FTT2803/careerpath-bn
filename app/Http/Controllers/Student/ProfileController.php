@@ -777,7 +777,7 @@ class ProfileController extends Controller
         CareerReportBuilder $reportBuilder,
         ?RecommendationGeneration $generation = null
     ) {
-        $user = User::findOrFail($userId);
+                $user = User::findOrFail($userId);
         $currentUser = Auth::user();
 
         // Only allow admins and lecturers to view other students' profiles
@@ -789,6 +789,27 @@ class ProfileController extends Controller
             )
         ) {
             abort(403, 'Unauthorized access.');
+        }
+
+        /*
+         * A lecturer may only export students in the classes
+         * they teach. 404 rather than 403 so the lecturer
+         * cannot confirm the student exists outside their
+         * scope.
+         */
+        if (
+            $currentUser->role === 'lecturer'
+            && $currentUser->id !== $user->id
+        ) {
+            $scope = app(
+                \App\Services\Lecturer\LecturerScopeResolver::class
+            );
+
+            abort_unless(
+                $user->role === 'student'
+                    && $scope->canSeeStudent($currentUser, $user),
+                404
+            );
         }
 
         if (! $user->isStudent()) {

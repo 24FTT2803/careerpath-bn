@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -308,6 +309,36 @@ class User extends Authenticatable
     public function groupMemberships()
     {
         return $this->hasMany(GroupMembership::class);
+    }
+
+        /**
+     * Classes this user teaches, when the user is a lecturer.
+     *
+     * Distinct from groupMemberships(), which is about
+     * belonging. Teaching a class and being a member of it
+     * are different things, and keeping them in separate
+     * tables means the student-facing counts in
+     * group_memberships stay honest.
+     */
+    public function lecturerAssignments(): HasMany
+    {
+        return $this->hasMany(
+            LecturerAssignment::class
+        );
+    }
+
+    /**
+     * The organisation groups this lecturer is assigned to
+     * teach, as a proper relation.
+     */
+    public function assignedGroups(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            OrganisationGroup::class,
+            'lecturer_assignments',
+            'user_id',
+            'organisation_group_id'
+        )->withTimestamps();
     }
 
     /**

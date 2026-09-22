@@ -7,12 +7,19 @@ use App\Models\CareerRecommendation;
 use App\Models\StudentMilestone;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\RecommendationGeneration;
 
 class DashboardController extends Controller
 {
+    public function __construct(
+        private \App\Services\Lecturer\LecturerScopeResolver $scope
+    ) {}
+
     /**
-     * Lecturer dashboard: cohort-wide readiness, common competency gaps,
-     * at-risk students, and recent milestone proof submissions to review.
+     * Lecturer dashboard: readiness, competency gaps, at-risk
+     * students and recent milestone proof submissions — all
+     * scoped to the classes this lecturer teaches.
      *
      * Note: there is currently no lecturer-to-student "advisee" assignment
      * in the data model, so this shows the full student cohort rather than
@@ -22,7 +29,13 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        $students = User::where('role', 'student')
+                /*
+         * Scoped to this lecturer's classes. A lecturer with no
+         * assignments sees an empty dashboard, which matches the
+         * empty state on the students page.
+         */
+        $students = $this->scope
+            ->studentsQueryFor(Auth::user())
             ->with(['profile'])
             ->get();
 
@@ -50,17 +63,24 @@ class DashboardController extends Controller
             ->values();
 
         // Students grouped by programme.
-        $studentsByProgramme = User::where('role', 'student')
+                /*
+         * Same scoping as $students above. Both must agree so
+         * the numbers on the dashboard match the list.
+         */
+        $studentsByProgramme = $this->scope
+            ->studentsQueryFor(Auth::user())
             ->selectRaw('programme, COUNT(*) as count')
             ->groupBy('programme')
             ->orderByDesc('count')
             ->get();
 
         // Common competency gaps across all students' latest recommendations.
-        $skillGaps = $this->getCommonSkillGaps();
+        $studentIds = $students->pluck('id')->all();
 
-        // Recent milestone proof submissions awaiting lecturer review.
+        $skillGaps = $this->getCommonSkillGaps($studentIds);
+
         $recentSubmissions = StudentMilestone::whereNotNull('proof_submitted_at')
+            ->whereIn('user_id', $studentIds)
             ->with('user:id,first_name,last_name,name,programme')
             ->orderByDesc('proof_submitted_at')
             ->limit(8)
@@ -82,11 +102,50 @@ class DashboardController extends Controller
      * dashboard's equivalent, kept independent here so lecturer/admin views
      * can evolve separately without risk of one breaking the other).
      */
-    private function getCommonSkillGaps()
+            /**
+     * Common skill gaps across the lecturer's students only.
+     *
+     * @param  array<int, int>  $studentIds
+     * @return array<string, int>
+     */
+    private function getCommonSkillGaps(array $studentIds)
     {
+        if ($studentIds === []) {
+            return [];
+        }
+
         try {
             $gaps = [];
-            $recommendations = CareerRecommendation::whereNotNull('skill_gaps')->get();
+
+            /*
+             * Only the newest generation per student.
+             *
+             * Selected by generation number rather than status,
+             * because a generation marked "outdated" is still
+             * the student's active set of results.
+             *
+             * @see User::currentRecommendationGeneration()
+             */
+            $latestGenerationIds = RecommendationGeneration::query()
+                ->whereIn('user_id', $studentIds)
+                ->selectRaw('MAX(id) as id')
+                ->groupBy('user_id')
+                ->pluck('id');
+
+            $recommendations = CareerRecommendation::whereNotNull('skill_gaps')
+                ->whereIn('recommendation_generation_id', $latestGenerationIds)
+                ->get();
+
+            /*
+             * Count unique students per skill, not occurrences.
+             *
+             * A student whose current recommendations list the
+             * same gap three times should count as one student,
+             * not three. The dedup key pairs the skill with the
+             * student's ID, and $seen is declared outside the
+             * loop so it persists across every recommendation.
+             */
+            $seen = [];
 
             foreach ($recommendations as $rec) {
                 $skillGaps = $rec->skill_gaps;
@@ -108,10 +167,19 @@ class DashboardController extends Controller
                         continue;
                     }
 
-                    if (is_string($skillName) || is_numeric($skillName)) {
-                        $skillName = (string) $skillName;
-                        $gaps[$skillName] = ($gaps[$skillName] ?? 0) + 1;
+                    if (! is_string($skillName) && ! is_numeric($skillName)) {
+                        continue;
                     }
+
+                    $skillName = (string) $skillName;
+                    $key = $skillName . '|' . $rec->user_id;
+
+                    if (isset($seen[$key])) {
+                        continue;
+                    }
+
+                    $seen[$key] = true;
+                    $gaps[$skillName] = ($gaps[$skillName] ?? 0) + 1;
                 }
             }
 

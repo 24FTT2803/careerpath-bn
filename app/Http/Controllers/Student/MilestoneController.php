@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 use App\Rules\NoProfanity;
+use App\Models\User;
 
 class MilestoneController extends Controller
 {
@@ -172,15 +173,39 @@ class MilestoneController extends Controller
         return Storage::disk('local')->download($filePath, $fileName);
     }
 
-    /**
-     * View proof file for admin/lecturer
+        /**
+     * View proof file for admin or lecturer.
+     *
+     * Admins see every proof. Lecturers see only proofs
+     * belonging to students in the classes they teach.
      */
     public function viewProofAdmin(int $studentId, int $milestoneId): StreamedResponse|\Illuminate\Http\RedirectResponse
     {
         $user = Auth::user();
         
-        if (!in_array($user->role, ['admin', 'lecturer'])) {
+        if (! in_array($user->role, ['admin', 'lecturer'])) {
             abort(403, 'Unauthorized access.');
+        }
+
+        /*
+         * A lecturer must not be able to reach a proof by
+         * guessing IDs. If the student is outside the
+         * lecturer's classes, respond 404 rather than 403 so
+         * the lecturer cannot confirm the student exists.
+         */
+        if ($user->role === 'lecturer') {
+            $scope = app(
+                \App\Services\Lecturer\LecturerScopeResolver::class
+            );
+
+            $target = User::find($studentId);
+
+            abort_unless(
+                $target !== null
+                    && $target->role === 'student'
+                    && $scope->canSeeStudent($user, $target),
+                404
+            );
         }
 
         $milestone = StudentMilestone::where('user_id', $studentId)

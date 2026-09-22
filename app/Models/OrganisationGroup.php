@@ -130,6 +130,23 @@ class OrganisationGroup extends Model
         );
     }
 
+        /**
+     * Lecturers assigned to teach this group.
+     *
+     * Separate from memberships(), which is about students
+     * belonging to the group. A lecturer teaching DADT04 is
+     * not a member of it in the student sense.
+     */
+    public function assignedLecturers(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            User::class,
+            'lecturer_assignments',
+            'organisation_group_id',
+            'user_id'
+        )->withTimestamps();
+    }
+
     public function sponsoredAccessGrants(): HasMany
     {
         return $this->hasMany(

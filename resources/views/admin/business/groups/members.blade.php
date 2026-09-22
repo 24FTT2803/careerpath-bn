@@ -107,11 +107,12 @@
                                     View
                                 </a>
 
-                                <form
+                                 <form
                                     method="POST"
                                     action="{{ route('admin.business.groups.members.destroy', [$group, $member]) }}"
                                     class="inline"
-                                    onsubmit="return confirm('Remove {{ $member->name }} from {{ $group->name }}?');"
+                                    data-confirm-delete
+                                    data-item-name="{{ $member->name }}"
                                 >
                                     @csrf
                                     @method('DELETE')
@@ -198,6 +199,120 @@
                     class="btn btn-primary"
                 >
                     <i class="fas fa-plus"></i> Add selected
+                </button>
+            </form>
+        @endif
+        </div>
+
+    <!-- Lecturers teaching this class -->
+    <div class="card">
+        <h3 class="card-heading">
+            Lecturers ({{ $lecturers->count() }})
+        </h3>
+
+        <p class="field-hint" style="margin-bottom:12px;">
+            Lecturers assigned to this class can see the
+            students in it. They cannot see students outside
+            the classes they are assigned to.
+        </p>
+
+        @if($lecturers->isEmpty())
+            <p class="empty-text">No lecturers assigned yet.</p>
+        @else
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach($lecturers as $lecturer)
+                        <tr>
+                            <td class="cell-title">{{ $lecturer->name }}</td>
+                            <td class="cell-sub">{{ $lecturer->email }}</td>
+                            <td><div class="row-actions">
+                                    <form
+                                    method="POST"
+                                    action="{{ route('admin.business.groups.lecturers.destroy', [$group, $lecturer]) }}"
+                                    class="inline"
+                                    data-confirm-delete
+                                    data-item-name="{{ $lecturer->name }}"
+                                >
+                                    @csrf
+                                    @method('DELETE')
+
+                                    <button type="submit" class="link link-danger">
+                                        Remove
+                                    </button>
+                                </form>
+                            </div></td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        @endif
+
+        <h4 class="card-heading" style="margin-top:20px;font-size:14px;">
+            Add a lecturer
+        </h4>
+
+        <form
+            method="GET"
+            action="{{ route('admin.business.groups.members.index', $group) }}"
+            class="flex gap-2 mb-4"
+        >
+            <input
+                type="text"
+                name="lq"
+                value="{{ $lecturerSearch }}"
+                placeholder="Search by name or email"
+                class="field-input"
+            >
+
+            <button type="submit" class="btn btn-subtle">
+                Search
+            </button>
+        </form>
+
+        @if($lecturerSearch === '')
+            <p class="cell-sub">
+                Search for a lecturer to assign them to this class.
+            </p>
+        @elseif($lecturerCandidates->isEmpty())
+            <p class="cell-sub">
+                No lecturers found for "{{ $lecturerSearch }}".
+            </p>
+        @else
+            <form
+                method="POST"
+                action="{{ route('admin.business.groups.lecturers.store', $group) }}"
+            >
+                @csrf
+
+                <div class="border border-gray-200 rounded-lg p-3 mb-4">
+                    @foreach($lecturerCandidates as $candidate)
+                        <label class="flex items-center gap-2 py-1 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="user_ids[]"
+                                value="{{ $candidate->id }}"
+                            >
+
+                            <span>
+                                {{ $candidate->name }}
+                                <span class="text-xs text-gray-400">
+                                    {{ $candidate->email }}
+                                </span>
+                            </span>
+                        </label>
+                    @endforeach
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Assign selected
                 </button>
             </form>
         @endif

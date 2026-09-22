@@ -13,7 +13,16 @@
                     <span class="wave">👋</span>
                     <h1>Welcome back, {{ auth()->user()->name }}</h1>
                 </div>
-                <p class="subtitle">{{ now()->timezone(config('app.business_timezone'))->format('l, F j, Y') }} · Cohort overview across all students</p>
+               <p class="subtitle">
+    {{ now()->timezone(config('app.business_timezone'))->format('l, F j, Y') }}
+    ·
+
+    @if($totalStudents > 0)
+        Overview of the students in your classes
+    @else
+        No classes assigned to you yet
+    @endif
+</p>
                 <div class="quick-stats">
                     <span class="stat-chip">
                         <i class="fas fa-users"></i> {{ $totalStudents }} Students
@@ -67,8 +76,8 @@
                 <span class="stat-label">Profile Completion</span>
                 <span class="stat-value">{{ $completionRate }}%</span>
                 <span class="stat-change neutral">
-                    <i class="fas fa-minus"></i> Cohort average
-                </span>
+    <i class="fas fa-minus"></i> Average across your students
+</span>
             </div>
             <div class="stat-progress">
                 <div class="progress-bar" style="width: {{ $completionRate }}%"></div>
@@ -114,7 +123,7 @@
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-exclamation-triangle"></i> Students Needing Attention</h3>
-                <a href="{{ route('admin.students.index') }}" class="link">View All →</a>
+                <a href="{{ route('lecturer.students.index') }}" class="link">View All →</a>
             </div>
             @if($atRiskStudents->isEmpty())
                 <div class="empty-state">
@@ -190,7 +199,7 @@
         <div class="card">
             <div class="card-header">
                 <h3><i class="fas fa-chart-bar"></i> Common Competency Gaps</h3>
-                <span class="badge">Cohort-wide</span>
+                <span class="badge">Across your students</span>
             </div>
             @if(empty($skillGaps))
                 <div class="empty-state">

@@ -835,10 +835,31 @@
                 <i class="fas fa-th-large"></i>
                 <span>Dashboard</span>
             </a>
-            <a href="{{ route('admin.students.index') }}" class="sidebar-link {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
-                <i class="fas fa-user-graduate"></i>
-                <span>Students</span>
-            </a>
+                        @if(auth()->user()->role === 'lecturer')
+                <a
+                    href="{{ route('lecturer.students.index') }}"
+                    class="sidebar-link {{
+                        request()->routeIs('lecturer.students.*')
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-user-graduate"></i>
+                    <span>My Students</span>
+                </a>
+            @else
+                <a
+                    href="{{ route('admin.students.index') }}"
+                    class="sidebar-link {{
+                        request()->routeIs('admin.students.*')
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-user-graduate"></i>
+                    <span>Students</span>
+                </a>
+            @endif
             <a href="{{ route('admin.careers.index') }}" class="sidebar-link {{ request()->routeIs('admin.careers.*') ? 'active' : '' }}">
                 <i class="fas fa-briefcase"></i>
                 <span>Careers</span>

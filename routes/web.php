@@ -290,13 +290,18 @@ Route::middleware(['auth'])
                 \App\Http\Middleware\LecturerMiddleware::class
             );
 
+                /*
+         * Admin only. Lecturers have their own scoped page at
+         * /lecturer/students; letting them reach this one would
+         * show every student in the institution.
+         */
         Route::get(
             '/students',
             [AdminStudentController::class, 'index']
         )
             ->name('students.index')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                \App\Http\Middleware\AdminMiddleware::class
             );
 
         Route::get(
@@ -305,7 +310,7 @@ Route::middleware(['auth'])
         )
             ->name('students.show')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                \App\Http\Middleware\AdminMiddleware::class
             );
 
         // CAREER ROUTES
@@ -327,7 +332,11 @@ Route::middleware(['auth'])
                 \App\Http\Middleware\LecturerMiddleware::class
             );
 
-        // View milestone proof for admin/lecturer
+                /*
+         * Admin and lecturer. The controller checks that a
+         * lecturer only views proofs belonging to students in
+         * the classes they teach.
+         */
         Route::get('/students/{studentId}/milestones/{milestoneId}/proof', [MilestoneController::class, 'viewProofAdmin'])
             ->name('milestones.proof')
             ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
@@ -506,6 +515,21 @@ Route::middleware(['auth'])
                 )->name('groups.members.destroy');
 
                 /*
+                 * Lecturers assigned to teach a class. Separate
+                 * from members, because teaching a class and
+                 * belonging to it are different relationships.
+                 */
+                Route::post(
+                    '/groups/{group}/lecturers',
+                    [GroupMembershipController::class, 'assignLecturer']
+                )->name('groups.lecturers.store');
+
+                Route::delete(
+                    '/groups/{group}/lecturers/{user}',
+                    [GroupMembershipController::class, 'unassignLecturer']
+                )->name('groups.lecturers.destroy');
+
+                /*
                  * The levels an institution uses are its own to
                  * name, so types are managed here rather than
                  * fixed in code.
@@ -634,4 +658,19 @@ Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
             '/dashboard',
             [LecturerDashboardController::class, 'index']
         )->name('dashboard');
+
+        /*
+         * The scoped student list. The controller enforces
+         * that only students in this lecturer's classes are
+         * visible, on both the list and the individual view.
+         */
+        Route::get(
+            '/students',
+            [\App\Http\Controllers\Lecturer\StudentController::class, 'index']
+        )->name('students.index');
+
+        Route::get(
+            '/students/{student}',
+            [\App\Http\Controllers\Lecturer\StudentController::class, 'show']
+        )->name('students.show');
     });
