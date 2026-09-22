@@ -586,17 +586,21 @@
                             platform can be demonstrated.
                         </p>
 
-                        <form
-                            method="POST"
-                            action="{{ route('student.settings.upgrade') }}"
-                            onsubmit="return confirm('Upgrade to Premium? No payment will be taken.');"
-                        >
-                            @csrf
+                    <form
+                    method="POST"
+                    action="{{ route('student.settings.upgrade') }}"
+                    id="upgradeForm"
+                >
+                    @csrf
 
-                            <button type="submit" class="btn btn-primary">
-                                <i class="fas fa-arrow-up"></i> Upgrade to Premium
-                            </button>
-                        </form>
+                    <button
+                        type="button"
+                        class="btn btn-primary"
+                        onclick="confirmUpgrade()"
+                    >
+                        <i class="fas fa-arrow-up"></i> Upgrade to Premium
+                    </button>
+                </form>
                     @else
                         <p class="hint" style="margin-top:16px;">
                             You are on Premium. No payment was taken —
@@ -742,5 +746,25 @@
 
     </div>
 </div>
+<script>
+function confirmUpgrade() {
+    if (typeof showConfirmModal === 'function') {
+        showConfirmModal({
+            title: 'Upgrade to Premium',
+            message: 'This will upgrade your account to Premium. No payment will be taken \u2014 this is a demonstration of the upgrade, not a purchase. Are you sure you want to continue?',
+            confirmText: 'Yes, Upgrade',
+            cancelText: 'Cancel',
+            type: 'info',
+            onConfirm: function () {
+                document.getElementById('upgradeForm').submit();
+            }
+        });
+    } else {
+        if (confirm('Upgrade to Premium? No payment will be taken.')) {
+            document.getElementById('upgradeForm').submit();
+        }
+    }
+}
+</script>
 
 @endsection
