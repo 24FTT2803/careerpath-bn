@@ -61,14 +61,21 @@
         margin-bottom: 12px;
     }
 
+    .lab-image-frame {
+        display: flex;
+        justify-content: center;
+        background: #000;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+
     .lab-image {
         display: block;
         width: auto;
         height: auto;
         max-width: 100%;
         max-height: 560px;
-        border-radius: 8px;
-        margin-bottom: 14px;
     }
 
     .lab-body {
@@ -103,11 +110,13 @@
                 {{ $note->created_at->format('d M Y') }}
             </div>
             @if($note->imageUrl())
-                <img
-                    src="{{ $note->imageUrl() }}"
-                    alt="{{ $note->title }}"
-                    class="lab-image"
-                >
+                <div class="lab-image-frame">
+                    <img
+                        src="{{ $note->imageUrl() }}"
+                        alt="{{ $note->title }}"
+                        class="lab-image"
+                    >
+                </div>
             @endif
             <div class="lab-body">{{ $note->body }}</div>
         </article>
