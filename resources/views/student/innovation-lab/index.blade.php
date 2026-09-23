@@ -11,6 +11,15 @@
         padding: 24px 0 48px;
     }
 
+    .lab-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 24px;
+    }
+
     .lab-heading {
         font-size: 22px;
         font-weight: 700;
@@ -28,7 +37,7 @@
     .lab-sub {
         font-size: 14px;
         color: #6b7280;
-        margin-bottom: 24px;
+        margin-bottom: 0;
     }
 
     .lab-note {
@@ -54,9 +63,10 @@
 
     .lab-image {
         display: block;
+        width: auto;
+        height: auto;
         max-width: 100%;
-        max-height: 360px;
-        object-fit: cover;
+        max-height: 560px;
         border-radius: 8px;
         margin-bottom: 14px;
     }
@@ -77,10 +87,18 @@
 </style>
 
 <div class="lab-page">
-    <h1 class="lab-heading">
-        <i class="fas fa-lightbulb"></i> Innovation Lab
-    </h1>
-    <p class="lab-sub">Notes from the developers about what's new and what we're building.</p>
+    <div class="lab-header">
+        <div>
+            <h1 class="lab-heading">
+                <i class="fas fa-lightbulb"></i> Innovation Lab
+            </h1>
+            <p class="lab-sub">Notes from the developers about what's new and what we're building.</p>
+        </div>
+
+        <a href="{{ route('student.dashboard') }}" class="btn btn-outline btn-sm">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
 
     @forelse($notes as $note)
         <article class="lab-note">

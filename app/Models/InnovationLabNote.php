@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Storage;
 
 class InnovationLabNote extends Model
 {
@@ -27,8 +26,13 @@ class InnovationLabNote extends Model
 
     public function imageUrl(): ?string
     {
+        /*
+         * Built from the request host rather than APP_URL, so the
+         * picture still loads when APP_URL does not match the
+         * address the site is actually served from.
+         */
         return $this->image_path
-            ? Storage::disk('public')->url($this->image_path)
+            ? asset('storage/'.$this->image_path)
             : null;
     }
 }
