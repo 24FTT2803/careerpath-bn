@@ -46,7 +46,10 @@
                                     >
                                 @endif
                                 <span class="cell-title">{{ $note->title }}</span>
-                                <span class="cell-sub">{{ \Illuminate\Support\Str::limit($note->body, 90) }}</span>
+                                <span
+                                    class="cell-sub"
+                                    style="display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:420px;"
+                                >{{ $note->body }}</span>
                             </td>
                             <td>{{ $note->author->name ?? 'Unknown' }}</td>
                             <td>
