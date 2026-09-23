@@ -94,10 +94,6 @@
             </h1>
             <p class="lab-sub">Notes from the developers about what's new and what we're building.</p>
         </div>
-
-        <a href="{{ route('student.dashboard') }}" class="btn btn-outline btn-sm">
-            <i class="fas fa-arrow-left"></i> Back to Dashboard
-        </a>
     </div>
 
     @forelse($notes as $note)
