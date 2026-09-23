@@ -981,10 +981,28 @@
                     </span>
                 </a>
             @endif
-            @if(auth()->user()->role === 'admin')
+                        @if(auth()->user()->role === 'admin')
                 <a href="{{ route('admin.users.index') }}" class="sidebar-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                     <i class="fas fa-users"></i>
                     <span>Manage Users</span>
+                </a>
+
+                <a
+                    href="{{ route(
+                        'admin.business.innovation-lab.index'
+                    ) }}"
+                    class="sidebar-link {{
+                        request()->routeIs(
+                            'admin.business.innovation-lab.*'
+                        )
+                            ? 'active'
+                            : ''
+                    }}"
+                >
+                    <i class="fas fa-lightbulb"></i>
+                    <span>
+                        Innovation Lab
+                    </span>
                 </a>
             @endif
         </nav>

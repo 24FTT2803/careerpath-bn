@@ -7,12 +7,14 @@ use App\Http\Controllers\Student\MilestoneController;
 use App\Http\Controllers\Student\CareerRecommendationController;
 use App\Http\Controllers\Student\CareerAdviserController;
 use App\Http\Controllers\Student\BiicfExplorerController;
+use App\Http\Controllers\Student\InnovationLabController as StudentInnovationLabController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\AdvertisementController;
+use App\Http\Controllers\Admin\InnovationLabController;
 use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\GroupMembershipController;
 use App\Http\Controllers\Admin\OrganisationController;
@@ -103,6 +105,12 @@ Route::middleware([
             '/history',
             [HistoryController::class, 'index']
         )->name('history');
+
+        // Innovation Lab
+        Route::get(
+            '/innovation-lab',
+            [StudentInnovationLabController::class, 'index']
+        )->name('innovation-lab');
 
         // Career Adviser
         Route::get(
@@ -590,6 +598,16 @@ Route::middleware(['auth'])
                 Route::resource(
                     'advertisements',
                     AdvertisementController::class
+                )->except(['show']);
+
+                /*
+                 * Developer notes admins post for students to
+                 * read from the Innovation Lab button on their
+                 * dashboard.
+                 */
+                Route::resource(
+                    'innovation-lab',
+                    InnovationLabController::class
                 )->except(['show']);
             });
 

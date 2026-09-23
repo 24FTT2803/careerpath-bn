@@ -844,6 +844,14 @@
                 BIICF Explorer
             </a>
 
+            <a
+                href="{{ route('student.innovation-lab') }}"
+                class="btn btn-outline"
+            >
+                <i class="fas fa-lightbulb"></i>
+                Innovation Lab
+            </a>
+
         </div>
 
         <!-- Main Content -->
