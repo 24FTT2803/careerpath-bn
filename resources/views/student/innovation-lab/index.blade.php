@@ -52,6 +52,15 @@
         margin-bottom: 12px;
     }
 
+    .lab-image {
+        display: block;
+        max-width: 100%;
+        max-height: 360px;
+        object-fit: cover;
+        border-radius: 8px;
+        margin-bottom: 14px;
+    }
+
     .lab-body {
         font-size: 14px;
         line-height: 1.6;
@@ -82,6 +91,13 @@
                     &middot; {{ $note->author->name }}
                 @endif
             </div>
+            @if($note->imageUrl())
+                <img
+                    src="{{ $note->imageUrl() }}"
+                    alt="{{ $note->title }}"
+                    class="lab-image"
+                >
+            @endif
             <div class="lab-body">{{ $note->body }}</div>
         </article>
     @empty

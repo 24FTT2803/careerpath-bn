@@ -3,6 +3,8 @@
 use App\Models\InnovationLabNote;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 uses(RefreshDatabase::class);
 
@@ -52,6 +54,59 @@ test('admin can edit and delete a note', function () {
         ->assertRedirect();
 
     $this->assertDatabaseMissing('innovation_lab_notes', ['id' => $note->id]);
+});
+
+test('admin can attach, replace and remove a picture', function () {
+    Storage::fake('public');
+
+    $admin = labUser('admin');
+
+    $this->actingAs($admin)
+        ->post(route('admin.business.innovation-lab.store'), [
+            'title' => 'With picture',
+            'body' => 'Body',
+            'image' => UploadedFile::fake()->image('one.jpg'),
+        ])
+        ->assertSessionHasNoErrors();
+
+    $note = InnovationLabNote::firstOrFail();
+    $first = $note->image_path;
+
+    expect($first)->not->toBeNull();
+    Storage::disk('public')->assertExists($first);
+
+    $this->actingAs($admin)
+        ->put(route('admin.business.innovation-lab.update', $note), [
+            'title' => 'With picture',
+            'body' => 'Body',
+            'image' => UploadedFile::fake()->image('two.png'),
+        ]);
+
+    Storage::disk('public')->assertMissing($first);
+    $second = $note->fresh()->image_path;
+    Storage::disk('public')->assertExists($second);
+
+    $this->actingAs($admin)
+        ->put(route('admin.business.innovation-lab.update', $note), [
+            'title' => 'With picture',
+            'body' => 'Body',
+            'remove_image' => '1',
+        ]);
+
+    Storage::disk('public')->assertMissing($second);
+    expect($note->fresh()->image_path)->toBeNull();
+});
+
+test('non-image uploads are rejected', function () {
+    Storage::fake('public');
+
+    $this->actingAs(labUser('admin'))
+        ->post(route('admin.business.innovation-lab.store'), [
+            'title' => 'Bad file',
+            'body' => 'Body',
+            'image' => UploadedFile::fake()->create('notes.pdf', 10, 'application/pdf'),
+        ])
+        ->assertSessionHasErrors('image');
 });
 
 test('title and body are required', function () {

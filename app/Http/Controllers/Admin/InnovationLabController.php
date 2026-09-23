@@ -5,10 +5,14 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\InnovationLabNote;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rules\File;
 use Illuminate\View\View;
 
 class InnovationLabController extends Controller
 {
+    private const MAX_IMAGE_KILOBYTES = 5120;
+
     public function index(): View
     {
         return view('admin.innovation-lab.index', [
@@ -30,6 +34,7 @@ class InnovationLabController extends Controller
     {
         InnovationLabNote::create(
             $this->validated($request) + [
+                'image_path' => $this->storeImage($request),
                 'created_by' => $request->user()->id,
             ]
         );
@@ -48,7 +53,19 @@ class InnovationLabController extends Controller
 
     public function update(Request $request, InnovationLabNote $innovationLab)
     {
-        $innovationLab->update($this->validated($request));
+        $data = $this->validated($request);
+
+        $uploaded = $this->storeImage($request);
+
+        if ($uploaded !== null) {
+            $this->deleteImage($innovationLab);
+            $data['image_path'] = $uploaded;
+        } elseif ($request->boolean('remove_image')) {
+            $this->deleteImage($innovationLab);
+            $data['image_path'] = null;
+        }
+
+        $innovationLab->update($data);
 
         return redirect()
             ->route('admin.business.innovation-lab.index')
@@ -57,6 +74,8 @@ class InnovationLabController extends Controller
 
     public function destroy(InnovationLabNote $innovationLab)
     {
+        $this->deleteImage($innovationLab);
+
         $innovationLab->delete();
 
         return redirect()
@@ -69,12 +88,38 @@ class InnovationLabController extends Controller
      */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $validated = $request->validate([
             'title' => ['required', 'string', 'max:150'],
             'body' => ['required', 'string'],
+            'image' => [
+                'nullable',
+                File::image()
+                    ->types(['jpg', 'jpeg', 'png', 'webp', 'gif'])
+                    ->max(self::MAX_IMAGE_KILOBYTES),
+            ],
             'is_published' => ['nullable', 'boolean'],
-        ]) + [
+        ]);
+
+        unset($validated['image']);
+
+        return $validated + [
             'is_published' => $request->boolean('is_published'),
         ];
+    }
+
+    private function storeImage(Request $request): ?string
+    {
+        if (! $request->hasFile('image')) {
+            return null;
+        }
+
+        return $request->file('image')->store('innovation-lab', 'public');
+    }
+
+    private function deleteImage(InnovationLabNote $note): void
+    {
+        if ($note->image_path) {
+            Storage::disk('public')->delete($note->image_path);
+        }
     }
 }

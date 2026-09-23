@@ -23,6 +23,7 @@
     <div class="card" style="max-width:720px;">
         <form
             method="POST"
+            enctype="multipart/form-data"
             action="{{ $note->exists
                 ? route('admin.business.innovation-lab.update', $note)
                 : route('admin.business.innovation-lab.store') }}"
@@ -56,6 +57,36 @@
                     required
                 >{{ old('body', $note->body) }}</textarea>
                 @error('body')
+                    <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <label class="field-label">Picture (optional)</label>
+
+                @if($note->imageUrl())
+                    <div style="margin-bottom:10px;">
+                        <p class="field-hint" style="margin-bottom:6px;">Currently showing</p>
+                        <img
+                            src="{{ $note->imageUrl() }}"
+                            alt=""
+                            style="max-width:240px;max-height:160px;border-radius:8px;border:1px solid var(--border);display:block;"
+                        >
+                        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-muted);margin-top:8px;">
+                            <input type="checkbox" name="remove_image" value="1">
+                            Remove this picture
+                        </label>
+                    </div>
+                @endif
+
+                <input
+                    type="file"
+                    name="image"
+                    accept="image/*"
+                    class="field-input"
+                >
+                <div class="field-hint">JPG, PNG, WebP or GIF, up to 5 MB.</div>
+                @error('image')
                     <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
                 @enderror
             </div>

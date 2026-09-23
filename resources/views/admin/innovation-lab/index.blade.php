@@ -38,6 +38,13 @@
                     @foreach($notes as $note)
                         <tr>
                             <td>
+                                @if($note->imageUrl())
+                                    <img
+                                        src="{{ $note->imageUrl() }}"
+                                        alt=""
+                                        style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);float:left;margin-right:12px;"
+                                    >
+                                @endif
                                 <span class="cell-title">{{ $note->title }}</span>
                                 <span class="cell-sub">{{ \Illuminate\Support\Str::limit($note->body, 90) }}</span>
                             </td>
