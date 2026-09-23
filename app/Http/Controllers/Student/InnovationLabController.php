@@ -12,7 +12,6 @@ class InnovationLabController extends Controller
     {
         return view('student.innovation-lab.index', [
             'notes' => InnovationLabNote::query()
-                ->with('author')
                 ->where('is_published', true)
                 ->latest()
                 ->get(),

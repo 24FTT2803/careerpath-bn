@@ -105,9 +105,6 @@
             <h2>{{ $note->title }}</h2>
             <div class="lab-meta">
                 {{ $note->created_at->format('d M Y') }}
-                @if($note->author)
-                    &middot; {{ $note->author->name }}
-                @endif
             </div>
             @if($note->imageUrl())
                 <img
