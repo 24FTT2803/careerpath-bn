@@ -128,6 +128,31 @@ test('students cannot manage notes', function () {
         ->assertForbidden();
 });
 
+test('web addresses in a note become links without trailing punctuation', function () {
+    $note = new InnovationLabNote([
+        'body' => 'Register: https://forms.gle/abc123. Also see http://example.com/a?x=1&y=2, thanks',
+    ]);
+
+    $html = (string) $note->bodyHtml();
+
+    expect($html)
+        ->toContain('<a href="https://forms.gle/abc123" target="_blank" rel="noopener noreferrer nofollow">https://forms.gle/abc123</a>.')
+        ->toContain('<a href="http://example.com/a?x=1&amp;y=2" target="_blank" rel="noopener noreferrer nofollow">http://example.com/a?x=1&amp;y=2</a>,');
+});
+
+test('note text cannot inject markup', function () {
+    $note = new InnovationLabNote([
+        'body' => '<script>alert(1)</script> https://a.com/"onmouseover="x',
+    ]);
+
+    $html = (string) $note->bodyHtml();
+
+    expect($html)
+        ->not->toContain('<script>')
+        ->toContain('&lt;script&gt;')
+        ->not->toContain('"onmouseover');
+});
+
 test('students see published notes only', function () {
     InnovationLabNote::create([
         'title' => 'Visible note',

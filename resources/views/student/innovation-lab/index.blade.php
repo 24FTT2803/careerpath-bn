@@ -85,6 +85,16 @@
         white-space: pre-line;
     }
 
+    .lab-body a {
+        color: #2a5a8c;
+        text-decoration: underline;
+        overflow-wrap: anywhere;
+    }
+
+    .lab-body a:hover {
+        color: #c9a84c;
+    }
+
     .lab-empty {
         text-align: center;
         color: #9ca3af;
@@ -118,7 +128,7 @@
                     >
                 </div>
             @endif
-            <div class="lab-body">{{ $note->body }}</div>
+            <div class="lab-body">{{ $note->bodyHtml() }}</div>
         </article>
     @empty
         <p class="lab-empty">No notes yet. Check back soon.</p>

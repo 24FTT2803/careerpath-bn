@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\HtmlString;
 
 class InnovationLabNote extends Model
 {
@@ -22,6 +23,34 @@ class InnovationLabNote extends Model
     public function author(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * The body as safe HTML with web addresses turned into links.
+     *
+     * The text is escaped before linking, so anything an admin
+     * types stays plain text and cannot inject markup.
+     */
+    public function bodyHtml(): HtmlString
+    {
+        $linked = preg_replace_callback(
+            '~https?://(?:(?!&quot;|&#039;|&lt;|&gt;)[^\s<])+~i',
+            function (array $match): string {
+                $url = $match[0];
+                $trailing = '';
+
+                if (preg_match('~[.,;:!?)]+$~', $url, $end)) {
+                    $trailing = $end[0];
+                    $url = substr($url, 0, -strlen($trailing));
+                }
+
+                return '<a href="'.$url.'" target="_blank" rel="noopener noreferrer nofollow">'
+                    .$url.'</a>'.$trailing;
+            },
+            e($this->body)
+        );
+
+        return new HtmlString($linked);
     }
 
     public function imageUrl(): ?string
