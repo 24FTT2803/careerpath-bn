@@ -247,6 +247,11 @@ Route::middleware([
                 )->name('sub-sector.roles');
 
                 Route::get(
+                    '/job-roles',
+                    [BiicfExplorerController::class, 'allRoles']
+                )->name('job-roles.index');
+
+                Route::get(
                     '/job-roles-search',
                     [BiicfExplorerController::class, 'searchJobRoles']
                 )->name('job-roles.search');
