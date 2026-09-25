@@ -816,11 +816,11 @@
 
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
+                <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
-        style="height: 48px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+        style="height: 64px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
     >
 </div>
 

@@ -982,16 +982,16 @@
         <div class="container">
             <div class="header-inner">
                 <a href="{{ url('/') }}" class="logo" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
-    <img
-        src="{{ asset('images/careerpath-badge.png') }}"
+        <img
+        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
         alt="CareerPath BN"
-        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
+        style="height: 64px; width: 64px; object-fit: contain; display: block; flex-shrink: 0;"
     >
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt=""
         aria-hidden="true"
-        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
+        style="height: 56px; width: auto; display: block; flex-shrink: 0;"
     >
 </a>
 

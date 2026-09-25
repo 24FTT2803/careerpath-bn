@@ -330,7 +330,7 @@
         <div class="container">
             <a href="{{ url('/') }}" class="logo">
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
         style="height: 44px; width: auto; display: block;"
     >
