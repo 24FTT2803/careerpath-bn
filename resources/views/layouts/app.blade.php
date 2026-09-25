@@ -193,6 +193,56 @@
         }
 
         /* ============================================
+           BACK TO DASHBOARD
+           ============================================ */
+        .nav-brand-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .nav-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: white;
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .nav-back:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateX(-2px);
+        }
+
+        .nav-back:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .nav-brand-group {
+                gap: 8px;
+            }
+
+            .nav-back {
+                width: 34px;
+                height: 34px;
+                font-size: 14px;
+            }
+        }
+
+        /* ============================================
    NOTIFICATION POPUP
    ============================================ */
 
@@ -751,7 +801,18 @@
     <nav class="site-nav">
         <div class="container">
             <div class="nav-inner">
-                <a href="{{ route('student.dashboard') }}" class="nav-brand" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
+                <div class="nav-brand-group">
+                    {{-- Back to dashboard: shown on every page except the dashboard itself --}}
+                    @unless(request()->routeIs('student.dashboard'))
+                        <a href="{{ route('dashboard') }}"
+                           class="nav-back"
+                           title="Back to dashboard"
+                           aria-label="Back to dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    @endunless
+
+                <a href="{{ route('dashboard') }}" class="nav-brand" title="Go to dashboard" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
         <img
         src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
         alt="CareerPath BN"
@@ -764,6 +825,7 @@
         style="height: 56px; width: auto; display: block; flex-shrink: 0;"
     >
 </a>
+                </div>
                 <div class="nav-right">
 
                     @auth
