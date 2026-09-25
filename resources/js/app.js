@@ -430,7 +430,10 @@ function initialiseCertificateFileInput(
                 );
 
             if (error) {
-                window.alert(error);
+                showFileProblemModal(
+                    error,
+                    input
+                );
 
                 if (
                     ! restoreCertificateFile(
@@ -512,6 +515,176 @@ window.clearSelectedCertificateFile =
             );
         }
     };
+
+// ============================================
+// FILE SIZE GUARDS
+// ============================================
+
+/*
+ * PHP rejects a request larger than post_max_size before
+ * Laravel runs, so the student would lose everything typed
+ * on the form. These checks catch oversized files in the
+ * browser first and explain the problem in a popup.
+ *
+ * - <input type="file" data-max-bytes="..."> is checked as
+ *   soon as a file is picked.
+ * - <form data-max-request-bytes="..."> is checked on submit,
+ *   so several files that are each fine cannot add up to
+ *   more than the server accepts. data-max-file-bytes is the
+ *   server's own per-file limit.
+ */
+function formatMegabytes(bytes) {
+    return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+function showFileProblemModal(
+    message,
+    input = null,
+    title = 'File too large'
+) {
+    showConfirmModal({
+        title: title,
+        message: message,
+        confirmText: input
+            ? 'Choose another file'
+            : 'OK',
+        cancelText: 'Close',
+        type: 'danger',
+        onConfirm: input
+            ? function() {
+                input.click();
+            }
+            : null
+    });
+}
+
+window.showFileProblemModal =
+    showFileProblemModal;
+
+// Capture phase, so this runs before the input's own change
+// handlers (such as the profile picture preview) see the file.
+document.addEventListener(
+    'change',
+    function(event) {
+        const input =
+            event.target;
+
+        if (
+            ! (input instanceof HTMLInputElement)
+            || input.type !== 'file'
+            || ! input.dataset.maxBytes
+        ) {
+            return;
+        }
+
+        const file =
+            input.files?.[0];
+
+        const maximum =
+            Number(input.dataset.maxBytes);
+
+        if (
+            ! file
+            || ! maximum
+            || file.size <= maximum
+        ) {
+            return;
+        }
+
+        input.value = '';
+
+        const label =
+            input.dataset.fileLabel
+            || 'Files';
+
+        showFileProblemModal(
+            `This file is ${formatMegabytes(file.size)}. `
+            + `${label} must be ${formatMegabytes(maximum)} or smaller. `
+            + 'Please compress the image (for example, save it as a JPG) or choose a smaller file.',
+            input
+        );
+    },
+    true
+);
+
+// Capture phase on the document, so this runs before any
+// confirmation popup attached to the form itself.
+document.addEventListener(
+    'submit',
+    function(event) {
+        const form =
+            event.target;
+
+        if (
+            ! (form instanceof HTMLFormElement)
+            || ! form.dataset.maxRequestBytes
+        ) {
+            return;
+        }
+
+        const maximumRequest =
+            Number(form.dataset.maxRequestBytes);
+
+        const maximumFile =
+            Number(form.dataset.maxFileBytes || 0);
+
+        let total = 0;
+        let oversizedFile = null;
+
+        form
+            .querySelectorAll(
+                'input[type="file"]'
+            )
+            .forEach(
+                function(input) {
+                    Array.from(input.files || [])
+                        .forEach(
+                            function(file) {
+                                total += file.size;
+
+                                if (
+                                    maximumFile
+                                    && file.size > maximumFile
+                                    && ! oversizedFile
+                                ) {
+                                    oversizedFile = file;
+                                }
+                            }
+                        );
+                }
+            );
+
+        if (oversizedFile) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            showFileProblemModal(
+                `One of your files is ${formatMegabytes(oversizedFile.size)}, `
+                + `but the server only accepts files up to ${formatMegabytes(maximumFile)}. `
+                + 'Please choose a smaller file before saving.'
+            );
+
+            return;
+        }
+
+        if (
+            maximumRequest
+            && total > maximumRequest
+        ) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            showFileProblemModal(
+                `Your files add up to ${formatMegabytes(total)}, `
+                + `but the server accepts at most ${formatMegabytes(maximumRequest)} in one save. `
+                + 'Please use smaller files, or save some of them now and add the rest in a second save.',
+                null,
+                'Files too large together'
+            );
+        }
+    },
+    true
+);
 
 // ============================================
 // AUTO-ATTACH CONFIRMATIONS

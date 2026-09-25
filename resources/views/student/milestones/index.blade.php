@@ -818,6 +818,101 @@
     </div>
 </div>
 
+<div class="proof-modal" id="proofModal" hidden role="dialog" aria-modal="true" aria-labelledby="proofModalTitle">
+    <div class="proof-modal-card">
+        <div class="proof-modal-icon"><i class="fas fa-file-circle-exclamation"></i></div>
+        <h3 class="proof-modal-title" id="proofModalTitle"></h3>
+        <p class="proof-modal-message" id="proofModalMessage"></p>
+        <div class="proof-modal-actions">
+            <button type="button" class="proof-modal-btn secondary" id="proofModalSecondary"></button>
+            <button type="button" class="proof-modal-btn primary" id="proofModalPrimary"></button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .proof-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(13, 31, 51, 0.55);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        z-index: 2000;
+    }
+    .proof-modal[hidden] {
+        display: none;
+    }
+    .proof-modal-card {
+        background: #fff;
+        border-radius: 16px;
+        padding: 28px 24px 22px;
+        width: 100%;
+        max-width: 420px;
+        text-align: center;
+        box-shadow: 0 20px 50px rgba(13, 31, 51, 0.25);
+        animation: proofModalIn 0.18s ease-out;
+    }
+    @keyframes proofModalIn {
+        from { opacity: 0; transform: translateY(8px) scale(0.98); }
+        to { opacity: 1; transform: none; }
+    }
+    .proof-modal-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        background: #fdecea;
+        color: #c0392b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+    }
+    .proof-modal-title {
+        margin: 0 0 8px;
+        font-size: 20px;
+        color: #1a3a5c;
+    }
+    .proof-modal-message {
+        margin: 0 0 22px;
+        color: #6b7280;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+    .proof-modal-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .proof-modal-btn {
+        border-radius: 10px;
+        padding: 10px 18px;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        border: 2px solid #1a3a5c;
+        font-family: inherit;
+    }
+    .proof-modal-btn.primary {
+        background: #1a3a5c;
+        color: #fff;
+    }
+    .proof-modal-btn.primary:hover {
+        background: #2a5a8c;
+        border-color: #2a5a8c;
+    }
+    .proof-modal-btn.secondary {
+        background: #fff;
+        color: #1a3a5c;
+    }
+    .proof-modal-btn.secondary:hover {
+        background: #f3f4f6;
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('milestone-form');
@@ -825,11 +920,103 @@
         const titleError = document.getElementById('title-error');
         const submitBtn = document.getElementById('submit-milestone');
 
+        /*
+         * Proof files are capped at 10 MB (see MilestoneController).
+         * Checking here stops an oversized file before it is sent,
+         * because the server rejects very large uploads before
+         * Laravel's validation can show a friendly message.
+         */
+        const MAX_PROOF_BYTES = 10 * 1024 * 1024;
+
+        /*
+         * In-page popup used instead of the browser's alert().
+         * Buttons are optional; the popup always closes on the
+         * secondary button, the backdrop or Escape.
+         */
+        const modal = document.getElementById('proofModal');
+        const modalTitle = document.getElementById('proofModalTitle');
+        const modalMessage = document.getElementById('proofModalMessage');
+        const modalPrimary = document.getElementById('proofModalPrimary');
+        const modalSecondary = document.getElementById('proofModalSecondary');
+        let modalPrimaryAction = null;
+        let modalSecondaryAction = null;
+
+        const closeProofModal = function() {
+            modal.hidden = true;
+            document.body.style.overflow = '';
+        };
+
+        const showProofModal = function(options) {
+            modalTitle.textContent = options.title;
+            modalMessage.textContent = options.message;
+            modalPrimary.textContent = options.primaryLabel;
+            modalSecondary.textContent = options.secondaryLabel;
+            modalPrimaryAction = options.onPrimary || null;
+            modalSecondaryAction = options.onSecondary || null;
+            modal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            modalPrimary.focus();
+        };
+
+        modalPrimary.addEventListener('click', function() {
+            const action = modalPrimaryAction;
+            closeProofModal();
+            if (action) action();
+        });
+
+        modalSecondary.addEventListener('click', function() {
+            const action = modalSecondaryAction;
+            closeProofModal();
+            if (action) action();
+        });
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) closeProofModal();
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && !modal.hidden) closeProofModal();
+        });
+
+        // Set when the add form's file was removed for being too large,
+        // so the form does not quietly save the milestone without proof.
+        let addProofRejected = false;
+
+        const rejectIfTooLarge = function(input, nameSpan) {
+            const file = input.files && input.files[0];
+            if (!file || file.size <= MAX_PROOF_BYTES) {
+                return false;
+            }
+            const sizeMb = (file.size / (1024 * 1024)).toFixed(1);
+            input.value = '';
+            if (nameSpan) {
+                nameSpan.textContent = 'Too large (' + sizeMb + ' MB)';
+                nameSpan.classList.remove('has-file');
+                nameSpan.style.color = '#c0392b';
+            }
+            showProofModal({
+                title: 'File too large',
+                message: 'This file is ' + sizeMb + ' MB. Proof files must be 10 MB or smaller. Please compress the image (for example, save it as a JPG) or choose a smaller file.',
+                primaryLabel: 'Choose another file',
+                onPrimary: function() { input.click(); },
+                secondaryLabel: 'Close',
+            });
+            return true;
+        };
+
         // File name display for add form
         const addFileInput = document.getElementById('add-proof-file');
         const addFileName = document.getElementById('add-file-name');
         if (addFileInput && addFileName) {
             addFileInput.addEventListener('change', function() {
+                addFileName.style.color = '';
+                if (rejectIfTooLarge(this, addFileName)) {
+                    addProofRejected = true;
+                    return;
+                }
+                if (this.files && this.files.length > 0) {
+                    addProofRejected = false;
+                }
                 if (this.files && this.files.length > 0) {
                     addFileName.textContent = this.files[0].name;
                     addFileName.classList.add('has-file');
@@ -844,6 +1031,10 @@
         document.querySelectorAll('.complete-form .file-input').forEach(function(input) {
             input.addEventListener('change', function() {
                 const fileNameSpan = document.getElementById('proof-name-' + this.id.replace('proof-', ''));
+                fileNameSpan.style.color = '';
+                if (rejectIfTooLarge(this, fileNameSpan)) {
+                    return;
+                }
                 if (this.files && this.files.length > 0) {
                     fileNameSpan.textContent = this.files[0].name;
                     fileNameSpan.classList.add('has-file');
@@ -881,6 +1072,31 @@
                     this.classList.remove('error-input');
                     titleError.style.display = 'none';
                 }
+            });
+        }
+
+        // Stop the add form from saving without proof straight after
+        // a file was rejected; let the student choose what to do.
+        if (form && addFileInput) {
+            form.addEventListener('submit', function(e) {
+                if (e.defaultPrevented || !addProofRejected) {
+                    return;
+                }
+                if (addFileInput.files && addFileInput.files.length > 0) {
+                    return;
+                }
+                e.preventDefault();
+                showProofModal({
+                    title: 'No proof attached',
+                    message: 'Your file was too large and was removed, so this milestone has no proof yet. Choose a smaller file, or save the milestone now and add proof later.',
+                    primaryLabel: 'Choose another file',
+                    onPrimary: function() { addFileInput.click(); },
+                    secondaryLabel: 'Save without proof',
+                    onSecondary: function() {
+                        addProofRejected = false;
+                        form.submit();
+                    },
+                });
             });
         }
     });

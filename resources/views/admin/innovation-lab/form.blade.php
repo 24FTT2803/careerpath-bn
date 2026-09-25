@@ -24,6 +24,8 @@
         <form
             method="POST"
             enctype="multipart/form-data"
+            data-max-file-bytes="{{ App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() * 1024 }}"
+            data-max-request-bytes="{{ App\Http\Controllers\Admin\AdvertisementController::requestLimitKilobytes() * 1024 }}"
             action="{{ $note->exists
                 ? route('admin.business.innovation-lab.update', $note)
                 : route('admin.business.innovation-lab.store') }}"
@@ -84,6 +86,8 @@
                     name="image"
                     accept="image/*"
                     class="field-input"
+                    data-max-bytes="{{ 5 * 1024 * 1024 }}"
+                    data-file-label="Pictures"
                 >
                 <div class="field-hint">JPG, PNG, WebP or GIF, up to 5 MB.</div>
                 @error('image')

@@ -1049,6 +1049,8 @@
             action="{{ route('student.profile.update') }}"
             enctype="multipart/form-data"
             id="profile-form"
+            data-max-file-bytes="{{ App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() * 1024 }}"
+            data-max-request-bytes="{{ App\Http\Controllers\Admin\AdvertisementController::requestLimitKilobytes() * 1024 }}"
             data-confirm-update
             data-item-name="your profile"
         >
@@ -1128,6 +1130,8 @@
                                 id="profile-picture-input"
                                 class="cpbn-profile-picture-input"
                                 accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                data-max-bytes="{{ 5 * 1024 * 1024 }}"
+                                data-file-label="Profile pictures"
                             >
 
                             <label
