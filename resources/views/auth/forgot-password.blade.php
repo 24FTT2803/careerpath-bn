@@ -346,10 +346,6 @@
                         <i class="fas fa-paper-plane"></i> Email Password Reset Link
                     </button>
                 </form>
-
-                <div class="auth-footer">
-                    <p>Remembered it after all? <a href="{{ route('login') }}">Log in</a></p>
-                </div>
             </div>
         </div>
     </main>
