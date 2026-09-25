@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -175,9 +176,23 @@ class User extends Authenticatable
         return $this->hasMany(StudentInterest::class);
     }
 
+    /**
+     * The app's own notifications table (keyed by user_id).
+     *
+     * This overrides the notifications() relation from Laravel's
+     * Notifiable trait, which expects Laravel's built-in table
+     * with notifiable_type / notifiable_id columns. Do not remove.
+     */
     public function notifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(
+            new ResetPasswordNotification($token)
+        );
     }
 
     public function unreadNotifications()
