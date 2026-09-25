@@ -1071,7 +1071,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'notifications' => $notifications,
-            'unread_count' => $user->visibleNotifications()->count(),
+            'unread_count' => $user->visibleUnreadNotifications()->count(),
         ]);
     }
 
