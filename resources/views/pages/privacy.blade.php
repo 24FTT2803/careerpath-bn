@@ -25,8 +25,8 @@
         </li>
         <li>
             <strong>Student profile:</strong> student ID, programme, CGPA, phone number
-            (stored in international E.164 format), date of birth, nationality, address,
-            short biography and profile picture.
+            (stored in international E.164 format), date of birth, nationality
+            and profile picture.
         </li>
         <li>
             <strong>Academic records:</strong> institution, programme name, level, dates,

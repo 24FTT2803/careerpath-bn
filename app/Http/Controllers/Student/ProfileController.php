@@ -227,10 +227,8 @@ class ProfileController extends Controller
                 'string',
                 'size:2',
             ],
-            'address' => ['nullable', 'string', 'max:300'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
-            'bio' => ['nullable', 'string', 'max:500'],
             'profile_picture' => [
                 'nullable',
                 File::image()
@@ -576,11 +574,9 @@ class ProfileController extends Controller
             ['user_id' => $user->id],
             [
                 'phone' => $normalizedPhone,
-                'address' => $request->address,
                 'date_of_birth' => $request->date_of_birth,
                 'nationality' => $request->nationality,
                 'profile_picture' => $profilePicturePath,
-                'bio' => $request->bio,
             ]
         );
 

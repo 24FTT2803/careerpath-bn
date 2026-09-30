@@ -1319,39 +1319,6 @@
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>
-
-                    <div class="cpbn-field full">
-                        <label>Address</label>
-
-                        <textarea
-                            name="address"
-                            rows="2"
-                            maxlength="300"
-                        >{{ old('address', $user->profile->address ?? '') }}</textarea>
-
-                        @error('address')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="cpbn-field full">
-                        <label>Bio / About You</label>
-
-                        <textarea
-                            name="bio"
-                            rows="3"
-                            maxlength="500"
-                            placeholder="e.g. Application Development student interested in web development and AI."
-                        >{{ old('bio', $user->profile->bio ?? '') }}</textarea>
-
-                        <span class="hint">
-                            Briefly introduce yourself, your interests and what you are currently working towards.
-                        </span>
-
-                        @error('bio')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
                 </div>
             </div>
 

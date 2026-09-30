@@ -466,12 +466,10 @@ class User extends Authenticatable
         $profile = $this->profile;
         $aspiration = $this->aspirations;
 
-        $hasPersonalProfile = $profile && (
+            $hasPersonalProfile = $profile && (
             filled($profile->phone)
-            || filled($profile->address)
             || $profile->date_of_birth
             || filled($profile->nationality)
-            || filled($profile->bio)
         );
 
         $hasAcademicInformation = (

@@ -9,12 +9,10 @@ class StudentProfile extends Model
     protected $fillable = [
         'user_id',
         'phone',
-        'address',
         'date_of_birth',
         'nationality',
         'profile_picture',
         'social_links',
-        'bio',
         'profile_complete',
         'completion_percentage',
     ];
