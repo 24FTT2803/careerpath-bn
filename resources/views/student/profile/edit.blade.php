@@ -802,6 +802,12 @@
         text-decoration: underline;
     }
 
+    
+    .edit-profile .cpbn-file-selected[hidden],
+    .edit-profile .cpbn-clear-file[hidden] {
+        display: none;
+    }
+
     /* Submit Buttons */
     .edit-profile .cpbn-btn {
         display: inline-flex;

@@ -818,6 +818,38 @@
                 min-width: 160px;
             }
         }
+
+        /* File upload fields: branded button instead of the browser default */
+        input[type="file"] {
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-muted, #6b7280);
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 12px;
+            padding: 8px 16px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--primary, #1a3a5c);
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-light, #2a5a8c);
+        }
+
+        input[type="file"]:focus-visible::file-selector-button {
+            outline: 2px solid var(--accent, #c9a84c);
+            outline-offset: 2px;
+        }
+
     </style>
 </head>
 <body>
