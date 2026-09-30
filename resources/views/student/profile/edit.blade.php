@@ -1222,16 +1222,42 @@
                         >
                     </div>
 
-                    <div class="cpbn-field">
+                                        <div class="cpbn-field">
                         <label>Student ID <span class="req">*</span></label>
 
-                        <input
-                            type="text"
-                            name="student_id"
-                            value="{{ old('student_id', $user->student_id) }}"
-                            maxlength="20"
-                            required
-                        >
+                        @if($user->hasVerifiedStudentId())
+                            <input
+                                type="text"
+                                value="{{ $user->student_id }}"
+                                disabled
+                            >
+
+                            <span class="hint">
+                                <x-student-id-status :student="$user" :show-id="false" />
+                                Locked. Contact an admin or your lecturer if this is wrong.
+                            </span>
+                        @else
+                            <input
+                                type="text"
+                                name="student_id"
+                                value="{{ old('student_id', $user->student_id) }}"
+                                maxlength="9"
+                                required
+                                placeholder="e.g. 24FTT2803"
+                                pattern="[0-9]{2}[A-Za-z]{3}[0-9]{4}"
+                                title="2 digits, 3 letters, 4 digits (e.g. 24FTT2803)"
+                                style="text-transform:uppercase;"
+                            >
+
+                            <span class="hint">
+                                @if($user->student_id)
+                                    <x-student-id-status :student="$user" :show-id="false" />
+                                    An admin or your lecturer will confirm this ID.
+                                @else
+                                    Your Politeknik Brunei ID, e.g. 24FTT2803.
+                                @endif
+                            </span>
+                        @endif
 
                         @error('student_id')
                             <div class="error">{{ $message }}</div>

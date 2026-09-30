@@ -86,7 +86,7 @@
                                 </td>
 
                                 <td class="cell-sub">
-                                    {{ $student->student_id ?? '—' }}
+                                    <x-student-id-status :student="$student" />
                                 </td>
 
                                 <td>

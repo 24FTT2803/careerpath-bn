@@ -543,7 +543,7 @@
                     </div>
                     <div class="info-row">
                         <span class="label">Student ID</span>
-                        <span class="value">{{ Auth::user()->student_id ?? 'Not set' }}</span>
+                        <span class="value"><x-student-id-status :student="Auth::user()" /></span>
                     </div>
                     <div class="info-row">
                         <span class="label">Programme</span>

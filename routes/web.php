@@ -287,6 +287,27 @@ Route::middleware([
     ->name('student.profile.export.admin');
 
 // ============================================
+// STAFF: STUDENT ID VERIFICATION
+// ============================================
+Route::middleware([
+    'auth',
+    \App\Http\Middleware\LecturerMiddleware::class,
+])
+    ->prefix('staff/students/{student}/student-id')
+    ->name('staff.student-id.')
+    ->group(function () {
+        Route::post(
+            '/verify',
+            [\App\Http\Controllers\Staff\StudentIdVerificationController::class, 'verify']
+        )->name('verify');
+
+        Route::delete(
+            '/verify',
+            [\App\Http\Controllers\Staff\StudentIdVerificationController::class, 'revoke']
+        )->name('revoke');
+    });
+
+// ============================================
 // ADMIN ROUTES
 // ============================================
 Route::middleware(['auth'])

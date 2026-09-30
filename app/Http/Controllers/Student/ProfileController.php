@@ -205,13 +205,25 @@ class ProfileController extends Controller
         Request $request,
         RecommendationStatusService $recommendationStatus
     ) {
-        /** @var User $user */
+                /** @var User $user */
         $user = Auth::user();
+
+        /*
+         * Once staff have verified the Student ID, the student
+         * can no longer change it; anything submitted is ignored.
+         */
+        $studentIdLocked = $user->hasVerifiedStudentId();
+
+        if (! $studentIdLocked) {
+            $request->merge([
+                'student_id' => User::normaliseStudentId($request->input('student_id')),
+            ]);
+        }
 
         $request->validate([
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['required', 'string', 'max:100'],
-            'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,'.$user->id],
+            'student_id' => $studentIdLocked ? ['exclude'] : User::studentIdRules($user->id),
             'phone' => [
                 'nullable',
                 'string',
@@ -426,7 +438,7 @@ class ProfileController extends Controller
             'phone_country.required_with' => 'Please select a country for the phone number.',
 
             'phone_country.size' => 'The selected phone country is invalid.',
-            'student_id.unique' => 'This Student ID is already taken.',
+                        ...User::studentIdMessages(),
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
@@ -559,15 +571,20 @@ class ProfileController extends Controller
         $fullName = $request->first_name.' '.$request->last_name;
 
         // Update User
-        $user->update([
+            $userData = [
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'name' => $fullName,
-            'student_id' => $request->student_id,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
             'phone' => $normalizedPhone,
-        ]);
+        ];
+
+        if (! $studentIdLocked) {
+            $userData['student_id'] = $request->student_id;
+        }
+
+        $user->update($userData);
 
         // Update Profile
         $user->profile()->updateOrCreate(

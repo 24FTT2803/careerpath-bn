@@ -598,7 +598,7 @@
                 <div class="info-row">
                     <span class="label">Student ID</span>
                     <span class="value">
-                        {{ $user->student_id ?? 'Not set' }}
+                        <x-student-id-status :student="$user" />
                     </span>
                 </div>
 

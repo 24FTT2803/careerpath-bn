@@ -38,7 +38,7 @@
             <tbody>
                 <tr>
                     <td class="cell-sub" style="width:30%;">Student ID</td>
-                    <td>{{ $student->student_id ?? '—' }}</td>
+                    <td><x-student-id-status :student="$student" :actions="true" /></td>
                 </tr>
                 <tr>
                     <td class="cell-sub">Email</td>
