@@ -31,7 +31,7 @@
                                 Reset your password
                             </h1>
                             <p style="margin:0;font-size:14px;color:#6b7280;">
-                                Hello {{ $user->first_name ?? $user->name }},
+                                Hello {{ $user->name }},
                             </p>
                         </td>
                     </tr>

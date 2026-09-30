@@ -785,8 +785,7 @@
         <div class="dashboard-header">
             <div>
                              @php
-                $studentFirstName = Auth::user()->first_name
-                    ?? Auth::user()->name;
+                $studentFirstName = Auth::user()->name;
 
                 $isFirstVisit = session('first_visit') === true;
             @endphp

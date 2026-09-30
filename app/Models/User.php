@@ -69,6 +69,18 @@ class User extends Authenticatable
      * so the same address is never two accounts and logins
      * match regardless of capitalisation.
      */
+
+    public function setNameAttribute($value): void
+    {
+        /*
+         * Full names are typed as one field (e.g. "Nur Aisyah
+         * binti Hassan"), so tidy stray and doubled spaces.
+         */
+        $this->attributes['name'] = trim(
+            preg_replace('/\s+/', ' ', (string) $value)
+        );
+    }
+
     public function setEmailAttribute($value): void
     {
         $this->attributes['email'] = strtolower(

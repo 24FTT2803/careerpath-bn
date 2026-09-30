@@ -19,8 +19,7 @@ function submitStudentId(User $student, ?string $studentId)
         ->actingAs($student)
         ->from(route('student.profile.edit'))
         ->put(route('student.profile.update'), [
-            'first_name' => 'Test',
-            'last_name' => 'Student',
+            'name' => 'Test Student',
             'student_id' => $studentId,
         ]);
 }

@@ -1147,7 +1147,7 @@
                         </p>
 
                         <p>
-                            Hi {{ $student->first_name ?? $student->name }}.
+                            Hi {{ $student->name }}.
                             This space will help you understand your career
                             recommendations and turn them into practical next steps.
                         </p>

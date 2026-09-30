@@ -1052,12 +1052,12 @@
     <div style="display:flex;align-items:center;gap:10px;">
         <!-- Avatar -->
         <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">
-            {{ substr(auth()->user()->first_name ?? auth()->user()->name, 0, 1) }}
+           {{ substr(auth()->user()->name, 0, 1) }}
         </div>
         
         <!-- User Info -->
         <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.3;">{{ auth()->user()->first_name ?? auth()->user()->name }}</div>
+            <div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
             <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.04em;line-height:1.3;">{{ ucfirst(auth()->user()->role) }}</div>
         </div>
         

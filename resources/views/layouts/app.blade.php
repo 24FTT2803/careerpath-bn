@@ -535,10 +535,14 @@
             display: block;
         }
 
-        .nav-user .name {
+            .nav-user .name {
             font-size: 13px;
             font-weight: 500;
             color: var(--text);
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .nav-user .chevron {
@@ -943,8 +947,7 @@
                                     {{
                                         strtoupper(
                                             substr(
-                                                Auth::user()->first_name
-                                                    ?? Auth::user()->name,
+                                            Auth::user()->name,
                                                 0,
                                                 1
                                             )
@@ -952,7 +955,7 @@
                                     }}
                                 @endif
                             </div>
-                            <span class="name">{{ Auth::user()->first_name ?? Auth::user()->name }}</span>
+                            <span class="name" title="{{ Auth::user()->name }}">{{ Auth::user()->name }}</span>
                             <span class="chevron"><i class="fas fa-chevron-down"></i></span>
                         </div>
 

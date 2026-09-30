@@ -1094,8 +1094,7 @@
                     $profileInitial =
                         strtoupper(
                             substr(
-                                $user->first_name
-                                    ?? $user->name
+                                    $user->name
                                     ?? 'S',
                                 0,
                                 1
@@ -1189,34 +1188,20 @@
                 </div>
 
                 <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>First Name <span class="req">*</span></label>
+                        <div class="cpbn-field full">
+                        <label>Full Name (as on IC) <span class="req">*</span></label>
 
                         <input
                             type="text"
-                            name="first_name"
-                            value="{{ old('first_name', $user->first_name ?? '') }}"
-                            maxlength="100"
+                            name="name"
+                            value="{{ old('name', $user->name) }}"
+                            maxlength="255"
+                            autocomplete="name"
+                            placeholder="e.g. Nur Aisyah binti Hassan"
                             required
                         >
 
-                        @error('first_name')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Last Name <span class="req">*</span></label>
-
-                        <input
-                            type="text"
-                            name="last_name"
-                            value="{{ old('last_name', $user->last_name ?? '') }}"
-                            maxlength="100"
-                            required
-                        >
-
-                        @error('last_name')
+                        @error('name')
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>

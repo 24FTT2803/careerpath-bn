@@ -503,9 +503,8 @@
                         {{
                             strtoupper(
                                 substr(
-                                    $user->first_name
-                                        ?? $user->name
-                                        ?? 'S',
+                                    $user->name
+                                    ?? 'S',
                                     0,
                                     1
                                 )

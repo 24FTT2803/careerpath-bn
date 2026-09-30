@@ -14,6 +14,7 @@ use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
 use App\Models\StudentProject;
 use App\Models\User;
+use App\Rules\NoProfanity;
 use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
@@ -221,8 +222,7 @@ class ProfileController extends Controller
         }
 
         $request->validate([
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
+            'name' => ['required', 'string', 'max:255', new NoProfanity],
             'student_id' => $studentIdLocked ? ['exclude'] : User::studentIdRules($user->id),
             'phone' => [
                 'nullable',
@@ -438,6 +438,7 @@ class ProfileController extends Controller
             'phone_country.required_with' => 'Please select a country for the phone number.',
 
             'phone_country.size' => 'The selected phone country is invalid.',
+                        'name.required' => 'Please enter your full name.',
                         ...User::studentIdMessages(),
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
@@ -567,14 +568,9 @@ class ProfileController extends Controller
                 null;
         }
 
-        // Combine first and last name into full name
-        $fullName = $request->first_name.' '.$request->last_name;
-
         // Update User
             $userData = [
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'name' => $fullName,
+            'name' => $request->name,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
             'phone' => $normalizedPhone,

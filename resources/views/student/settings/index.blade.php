@@ -490,8 +490,7 @@
                             {{
                                 strtoupper(
                                     substr(
-                                        Auth::user()->first_name
-                                            ?? Auth::user()->name,
+                                        Auth::user()->name,
                                         0,
                                         1
                                     )
