@@ -1044,9 +1044,12 @@
             </div>
 
             <p class="progress-note">
-                {{ $profileCompletion >= 70
-                    ? '✅ Profile complete — ready for career matching!'
-                    : 'Your progress can be saved now and completed later.' }}
+                                @if($profileCompletion >= 70)
+                    <i class="fas fa-circle-check" style="color:var(--green);"></i>
+                    Profile complete — ready for career matching!
+                @else
+                    Your progress can be saved now and completed later.
+                @endif
             </p>
         </div>
 
@@ -2746,7 +2749,7 @@
                                         </span>
                                     @elseif($existingCertification?->certificate_file_path)
                                         <div class="cpbn-file-missing">
-                                            ⚠ An evidence record exists, but the stored file could not be found.
+                                            <i class="fas fa-triangle-exclamation"></i> An evidence record exists, but the stored file could not be found.
                                         </div>
                                     @endif
 

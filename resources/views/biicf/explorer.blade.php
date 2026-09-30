@@ -1180,7 +1180,7 @@ function biicfExplorer() {
             const entry = this.statusEntry(competencyId);
             if (!entry) return '';
             if (!entry.student_has_skill) return 'Not logged';
-            return entry.meets_requirement ? '✅ Met' : `You: ${entry.student_level}`;
+            return entry.meets_requirement ? '✓ Met' : `You: ${entry.student_level}`;
         },
 
         statusClass(competencyId) {

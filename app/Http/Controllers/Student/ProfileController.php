@@ -1260,7 +1260,7 @@ class ProfileController extends Controller
             ->route('student.milestones')
             ->with(
                 'success',
-                '🎉 Milestone completed!'
+                'Milestone completed!'
             );
     }
 

@@ -565,7 +565,7 @@
                 @if(($profileCompletion ?? 0) < 100)
                     Complete your profile to get better career recommendations
                 @else
-                    🎉 Your profile is complete!
+                    <i class="fas fa-circle-check" style="color:var(--success);"></i> Your profile is complete!
                 @endif
             </p>
         </div>

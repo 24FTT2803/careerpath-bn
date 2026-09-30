@@ -6,7 +6,7 @@
 <div>
     <div class="page-header">
         <div>
-            <h1>👤 {{ $student->name }}</h1>
+            <h1><i class="fas fa-user-graduate"></i> {{ $student->name }}</h1>
             <p class="subtitle">
                 {{ $student->programme ?? 'Programme not set' }}
             </p>

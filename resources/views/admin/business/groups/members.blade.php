@@ -7,7 +7,7 @@
     <div class="page-header">
         <div>
             <h1>
-                👥 {{ $group->name }}
+                <i class="fas fa-users"></i> {{ $group->name }}
             </h1>
             <p class="subtitle">
                 {{ $group->pathLabel() }}

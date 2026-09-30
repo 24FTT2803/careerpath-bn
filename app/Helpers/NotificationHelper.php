@@ -28,7 +28,7 @@ class NotificationHelper
         return self::create(
             $userId,
             'system',
-            'Profile Complete! 🎉',
+            'Profile Complete!',
             'Your profile is ready. Generate your personalised career recommendations when you are ready!',
             route(
                 'student.recommendations.index',
@@ -64,7 +64,7 @@ class NotificationHelper
         return self::create(
             $userId,
             'milestone',
-            'Milestone Completed! 🎯',
+            'Milestone Completed!',
             "You completed: {$milestoneName}. Keep up the great work!",
             route('student.milestones', absolute: false)
         );

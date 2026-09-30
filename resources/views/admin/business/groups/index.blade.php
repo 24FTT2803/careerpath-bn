@@ -181,7 +181,7 @@
 <div>
     <div class="page-header">
         <div>
-            <h1>🏫 Academic Groups</h1>
+            <h1><i class="fas fa-school"></i> Academic Groups</h1>
 
             <p class="subtitle">
                 @if($organisation)

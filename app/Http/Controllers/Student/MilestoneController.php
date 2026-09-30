@@ -113,7 +113,7 @@ class MilestoneController extends Controller
             );
 
             return redirect()->route('student.milestones')
-                ->with('success', '🎉 Milestone completed with proof!');
+                ->with('success', 'Milestone completed with proof!');
         }
 
         // No new file uploaded, but proof already exists from earlier

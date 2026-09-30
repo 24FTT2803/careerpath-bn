@@ -464,12 +464,9 @@
 
         <div class="settings-header">
             <div>
-                <h1>Settings <span>⚙️</span></h1>
+                <h1>Settings <span><i class="fas fa-gear" style="font-size:0.75em;"></i></span></h1>
                 <p class="subtitle">Manage your account settings and preferences</p>
             </div>
-            <a href="{{ route('student.dashboard') }}" class="btn btn-outline btn-sm">
-                <i class="fas fa-arrow-left"></i> Back to Dashboard
-            </a>
         </div>
 
         <div class="settings-grid">

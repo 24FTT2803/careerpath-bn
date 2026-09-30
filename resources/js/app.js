@@ -35,11 +35,11 @@ function showConfirmModal(options) {
     const modal = document.createElement('div');
     modal.className = 'cpbn-modal';
 
-    const iconMap = {
-        danger: '⚠️',
-        warning: '⚡',
-        info: 'ℹ️',
-        success: '✅'
+        const iconMap = {
+        danger: '<i class="fas fa-triangle-exclamation" style="color:#c0392b;margin-right:6px;"></i>',
+        warning: '<i class="fas fa-circle-exclamation" style="color:#a88830;margin-right:6px;"></i>',
+        info: '<i class="fas fa-circle-info" style="color:#1a3a5c;margin-right:6px;"></i>',
+        success: '<i class="fas fa-circle-check" style="color:#2d8f5c;margin-right:6px;"></i>'
     };
 
     const btnClass =
@@ -49,7 +49,7 @@ function showConfirmModal(options) {
 
     modal.innerHTML = `
         <div class="cpbn-modal-header">
-            <h3>${iconMap[type] || 'ℹ️'} ${title}</h3>
+            <h3>${iconMap[type] || iconMap.info}${title}</h3>
             <button
                 type="button"
                 class="cpbn-modal-close"

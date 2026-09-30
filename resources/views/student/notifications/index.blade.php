@@ -300,7 +300,7 @@
 
         <div class="notif-header">
             <div>
-                <h1>Notifications <span>📬</span></h1>
+                <h1>Notifications <span><i class="fas fa-bell" style="font-size:0.75em;"></i></span></h1>
                 <p class="subtitle">Stay updated with your career progress</p>
             </div>
             <div class="actions">
@@ -312,9 +312,6 @@
                         </button>
                     </form>
                 @endif
-                <a href="{{ route('student.dashboard') }}" class="btn btn-outline btn-sm">
-                    <i class="fas fa-arrow-left"></i> Back
-                </a>
             </div>
         </div>
 
