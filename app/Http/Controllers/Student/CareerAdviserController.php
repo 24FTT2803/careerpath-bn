@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\AI\CareerAdviserService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
+use App\Support\AdviserText;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
@@ -416,6 +417,18 @@ class CareerAdviserController extends Controller
 
                 'period_unit' => $updatedQuota['period_unit'],
             ];
+
+            /*
+             * Formatted server-side by the same class the stored
+             * history uses, so a live reply and the same reply
+             * after a reload are laid out identically rather than
+             * depending on which path rendered it.
+             */
+            $response['message_html'] = AdviserText::toHtml(
+                is_string($response['message'] ?? null)
+                    ? $response['message']
+                    : ''
+            );
 
             return response()->json(
                 $response

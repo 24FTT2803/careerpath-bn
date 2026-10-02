@@ -4,12 +4,16 @@ namespace App\Providers;
 
 use App\Contracts\CareerAdviserClient;
 use App\Contracts\CareerAiClient;
+use App\Contracts\ChatTransport;
 use App\Models\AdvertisementSlot;
 use App\Services\AI\GroqCareerAdviserClient;
 use App\Services\AI\GroqCareerAiClient;
+use App\Services\AI\GroqClient;
 use App\Services\AI\HttpCareerAiClient;
 use App\Services\AI\MockCareerAdviserClient;
 use App\Services\AI\MockCareerAiClient;
+use App\Services\AI\OpenAiCompatibleClient;
+use App\Services\AI\OpenRouterClient;
 use App\Services\Business\AdvertisementService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -19,6 +23,37 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        /*
+         * Which service runs the model. Bound separately from the
+         * career clients so switching provider leaves the prompts
+         * and schemas, and therefore the advice, untouched.
+         */
+        $this->app->bind(
+            ChatTransport::class,
+            function ($app) {
+                return match (config('career-ai.transport')) {
+                    'groq' => $app->make(
+                        GroqClient::class
+                    ),
+
+                    'openrouter' => $app->make(
+                        OpenRouterClient::class
+                    ),
+
+                    /*
+                     * Any other name is read as a provider speaking
+                     * OpenAI's API, served by its own config block.
+                     * Adding one is configuration, not code. A name
+                     * with no block still fails loudly, naming the
+                     * setting it could not find.
+                     */
+                    default => new OpenAiCompatibleClient(
+                        (string) config('career-ai.transport')
+                    ),
+                };
+            }
+        );
+
         $this->app->bind(
             CareerAiClient::class,
             function ($app) {

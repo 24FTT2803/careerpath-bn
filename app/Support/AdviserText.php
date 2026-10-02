@@ -69,7 +69,41 @@ class AdviserText
             $paragraph = [];
         };
 
-        $flushList = function () use (&$list, &$listTag, &$html) {
+        $nested = [];
+
+        /*
+         * Bullets that follow a numbered point belong to it. The
+         * model writes "4. Practical next steps:" and then its
+         * sub-points as bullets, so closing the numbered list and
+         * starting a separate bulleted one puts them beside the
+         * point they expand on rather than under it.
+         */
+        $flushNested = function () use (&$nested, &$list) {
+            if ($nested === [] || $list === []) {
+                return;
+            }
+
+            $lastIndex = array_key_last($list);
+
+            $list[$lastIndex] = preg_replace(
+                '/<\/li>$/',
+                '<ul class="adviser-list adviser-sublist">'
+                    .implode('', $nested)
+                    .'</ul></li>',
+                $list[$lastIndex]
+            ) ?? $list[$lastIndex];
+
+            $nested = [];
+        };
+
+        $flushList = function () use (
+            &$list,
+            &$listTag,
+            &$html,
+            $flushNested
+        ) {
+            $flushNested();
+
             if ($list === []) {
                 return;
             }
@@ -108,6 +142,12 @@ class AdviserText
                     $flushList();
                 }
 
+                /*
+                 * Closes any sub-points gathered under the
+                 * previous number before starting the next one.
+                 */
+                $flushNested();
+
                 $listTag = 'ol';
                 $list[] = '<li>'.self::inline($match[2]).'</li>';
 
@@ -123,8 +163,16 @@ class AdviserText
             if (preg_match('/^(?:-|\*|\x{2022}|\x{00B7}|\x{25CF}|\x{25AA})\s+(.*)$/u', $line, $match)) {
                 $flushParagraph();
 
-                if ($listTag === 'ol') {
-                    $flushList();
+                /*
+                 * Inside a numbered list these are sub-points of
+                 * the number above, not a list of their own.
+                 */
+                if ($listTag === 'ol' && $list !== []) {
+                    $nested[] = '<li>'
+                        .self::inline($match[1])
+                        .'</li>';
+
+                    continue;
                 }
 
                 $listTag = 'ul';

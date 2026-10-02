@@ -3,13 +3,14 @@
 namespace App\Services\AI;
 
 use App\Contracts\CareerAdviserClient;
+use App\Contracts\ChatTransport;
 use JsonException;
 use UnexpectedValueException;
 
 class GroqCareerAdviserClient implements CareerAdviserClient
 {
     public function __construct(
-        private GroqClient $groq
+        private ChatTransport $transport
     ) {}
 
     /**
@@ -83,7 +84,7 @@ class GroqCareerAdviserClient implements CareerAdviserClient
             ],
         ];
 
-        $result = $this->groq->chat(
+        $result = $this->transport->chat(
             $messages,
             $this->responseFormat(),
             $this->temperature()
@@ -119,10 +120,13 @@ class GroqCareerAdviserClient implements CareerAdviserClient
      * provider defaults to. Competency names and proficiency
      * levels are defined terms that must be reproduced exactly,
      * and a loosely phrased answer paraphrases them.
+     *
+     * Read from the top level rather than a provider block: it is
+     * a decision about the advice, not about who serves it.
      */
     private function temperature(): ?float
     {
-        $value = config('career-ai.groq.adviser_temperature');
+        $value = config('career-ai.adviser_temperature');
 
         return $value === null ? null : (float) $value;
     }

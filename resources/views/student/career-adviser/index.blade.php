@@ -292,8 +292,18 @@
     }
 
     .message-text {
-        white-space: pre-wrap;
         overflow-wrap: anywhere;
+    }
+
+    /*
+     * pre-wrap belongs only where the content is raw text, to
+     * keep the line breaks a student typed. On the container it
+     * also preserved the template's own indentation, which
+     * arrived as a blank line above and below every message.
+     */
+    p.message-text,
+    .message-plain {
+        white-space: pre-wrap;
     }
 
     /*
@@ -563,9 +573,32 @@
         color: var(--ink, #0d1a2b);
     }
 
+    /*
+     * Tailwind's preflight resets ol and ul to list-style: none,
+     * so the markers have to be asked for again by name. Without
+     * this the lists are built correctly and render as a run of
+     * unnumbered paragraphs.
+     */
     .adviser-list {
         margin: 0 0 10px;
         padding-left: 26px;
+    }
+
+    ol.adviser-list {
+        list-style: decimal outside;
+    }
+
+    ul.adviser-list {
+        list-style: disc outside;
+    }
+
+    .adviser-sublist {
+        margin: 6px 0 0;
+        padding-left: 22px;
+    }
+
+    ul.adviser-sublist {
+        list-style: circle outside;
     }
 
     .adviser-list li::marker {
@@ -1232,7 +1265,7 @@
 
                             <div class="message-text">
                                 @if($storedMessage->isFromStudent())
-                                    <p>{{ $storedMessage->content }}</p>
+                                    <p class="message-plain">{{ $storedMessage->content }}</p>
                                 @else
                                     {!! App\Support\AdviserText::toHtml($storedMessage->content) !!}
                                 @endif
@@ -1771,10 +1804,20 @@
                 }
             }
 
+            /*
+             * html is the server's already-formatted version of
+             * the reply. Without it a live answer arrived as one
+             * run of text while the same answer, reloaded from
+             * history, came back with its headings and lists —
+             * because only the Blade side was formatting. Student
+             * messages and errors deliberately pass no html and
+             * stay plain text.
+             */
             function addMessage(
                 type,
                 message,
-                extraClass = ''
+                extraClass = '',
+                html = null
             ) {
                 const wrapper =
                     document.createElement('div');
@@ -1822,12 +1865,18 @@
                         : 'Career Adviser';
 
                 const text =
-                    document.createElement('p');
+                    document.createElement(
+                        html ? 'div' : 'p'
+                    );
 
                 text.className =
                     'message-text';
 
-                text.textContent = message;
+                if (html) {
+                    text.innerHTML = html;
+                } else {
+                    text.textContent = message;
+                }
 
                 bubble.appendChild(name);
                 bubble.appendChild(text);
@@ -2054,7 +2103,9 @@
 
                     addMessage(
                         'adviser',
-                        data.message
+                        data.message,
+                        '',
+                        data.message_html
                     );
                 } catch (error) {
                     loadingMessage.remove();
