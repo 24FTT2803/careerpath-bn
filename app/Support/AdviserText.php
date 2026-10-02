@@ -96,9 +96,17 @@ class AdviserText
             $nested = [];
         };
 
+        /*
+         * The number the model gave the first item. A list broken
+         * by a paragraph has to resume where it left off, or the
+         * second half starts again at one.
+         */
+        $listStart = null;
+
         $flushList = function () use (
             &$list,
             &$listTag,
+            &$listStart,
             &$html,
             $flushNested
         ) {
@@ -108,12 +116,21 @@ class AdviserText
                 return;
             }
 
-            $html .= '<'.$listTag.' class="adviser-list">'
+            $html .= '<'.$listTag.' class="adviser-list"'
+                .(
+                    $listTag === 'ol'
+                        && $listStart !== null
+                        && $listStart > 1
+                            ? ' start="'.$listStart.'"'
+                            : ''
+                )
+                .'>'
                 .implode('', $list)
                 .'</'.$listTag.'>';
 
             $list = [];
             $listTag = null;
+            $listStart = null;
         };
 
         foreach ($lines as $line) {
@@ -122,9 +139,14 @@ class AdviserText
                     ?? $line
             );
 
+            /*
+             * A blank line ends a paragraph but not a list. The
+             * model puts one between numbered sections, and
+             * closing the list there started the next section at
+             * one again. Real prose or a heading still closes it.
+             */
             if ($line === '') {
                 $flushParagraph();
-                $flushList();
 
                 continue;
             }
@@ -147,6 +169,10 @@ class AdviserText
                  * previous number before starting the next one.
                  */
                 $flushNested();
+
+                if ($listTag !== 'ol' || $list === []) {
+                    $listStart = (int) $match[1];
+                }
 
                 $listTag = 'ol';
                 $list[] = '<li>'.self::inline($match[2]).'</li>';
