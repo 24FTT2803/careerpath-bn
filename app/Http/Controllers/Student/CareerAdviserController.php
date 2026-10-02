@@ -168,6 +168,34 @@ class CareerAdviserController extends Controller
 
         $conversationMessages ??= collect();
 
+        /*
+         * A short form for the header. The full wording stays
+         * under the composer, but only when the student has to
+         * do something about it.
+         */
+        $quotaSummary = match (true) {
+            $careerAdviserQuota['mode'] === 'unlimited' => 'Unlimited questions',
+
+            ! $careerAdviserQuota['allowed'] => 'Limit reached',
+
+            $careerAdviserQuota['remaining'] !== null => $careerAdviserQuota['remaining']
+                    .' of '
+                    .$careerAdviserQuota['amount']
+                    .' left',
+
+            default => '',
+        };
+
+        $quotaTone = match (true) {
+            ! $careerAdviserQuota['allowed'] => 'exhausted',
+
+            $careerAdviserQuota['mode'] !== 'unlimited'
+                && $careerAdviserQuota['remaining'] !== null
+                && $careerAdviserQuota['remaining'] <= 1 => 'warning',
+
+            default => '',
+        };
+
         $biicfRoleCount = BiicfJobRole::count();
         $biicfSubSectorCount = BiicfSubSector::count();
 
@@ -193,7 +221,9 @@ class CareerAdviserController extends Controller
                 'biicfSubSectorCount',
                 'biicfAvailable',
                 'careerAdviserAccess',
-                'careerAdviserQuota'
+                'careerAdviserQuota',
+                'quotaSummary',
+                'quotaTone'
             )
         );
     }

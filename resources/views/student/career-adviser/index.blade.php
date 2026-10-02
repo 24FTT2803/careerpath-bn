@@ -107,7 +107,7 @@
 
     .adviser-workspace {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) 300px;
+        grid-template-columns: minmax(0, 1fr) 290px;
         gap: 18px;
         align-items: stretch;
     }
@@ -191,7 +191,7 @@
 
     .conversation-body {
         min-height: 410px;
-        padding: 28px;
+        padding: 20px 22px;
         background:
             linear-gradient(
                 180deg,
@@ -204,7 +204,12 @@
         display: flex;
         align-items: flex-start;
         gap: 11px;
-        max-width: 760px;
+
+        /*
+         * Wide enough to use the column it sits in. The old cap
+         * left a band of empty space beside every answer.
+         */
+        max-width: 100%;
     }
 
     .adviser-message + .adviser-message {
@@ -222,21 +227,19 @@
     }
 
     /*
-     * A question is usually one line. Stored ones stretched to
-     * the full width of the conversation, so an old question
-     * looked heavier than the answer under it.
+     * A question is usually one line. This caps the bubble
+     * itself: the previous attempt styled a .message-body
+     * wrapper that the markup never had, so it matched nothing
+     * and stored questions kept stretching the full width.
      */
-    .student-message .message-body {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        max-width: 520px;
-        margin-left: auto;
+    .student-message .message-bubble {
+        width: auto;
+        max-width: 560px;
+        padding: 10px 14px;
     }
 
-    .student-message .message-bubble {
-        display: inline-block;
-        width: auto;
+    .student-message .message-text p {
+        margin: 0;
     }
 
     .student-message .message-name {
@@ -418,6 +421,7 @@
     }
 
     .composer-note {
+        margin-top: 6px;
         margin: 7px 0 0;
         color: var(--adviser-muted);
         font-size: 10.5px;
@@ -459,7 +463,7 @@
      * document to reach the box you type in.
      */
     .conversation-body {
-        max-height: 62vh;
+        max-height: 78vh;
         overflow-y: auto;
         scroll-behavior: smooth;
     }
@@ -479,6 +483,40 @@
     .career-context {
         min-height: 0;
         overflow-y: auto;
+    }
+
+    .header-tools {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-left: auto;
+    }
+
+    .header-quota {
+        font-size: 11px;
+        padding: 3px 10px;
+        border-radius: 100px;
+        background: #eef2f7;
+        color: var(--adviser-muted, #6b7280);
+        white-space: nowrap;
+    }
+
+    .header-quota.warning {
+        background: #fbf1de;
+        color: #8a6420;
+    }
+
+    .header-quota.exhausted {
+        background: #fbeceb;
+        color: #c0392b;
+    }
+
+    .header-tools .conversation-tool {
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        border-radius: 50%;
+        line-height: 1;
     }
 
     .conversation-tools {
@@ -974,7 +1012,12 @@
      */
     @media (min-width: 851px) {
         .adviser-workspace {
-            --adviser-height: clamp(560px, 74vh, 900px);
+            /*
+             * Taller than it was. Answers run to several
+             * paragraphs and a list, and the old height showed
+             * only a fraction of one before scrolling.
+             */
+            --adviser-height: clamp(660px, 88vh, 1280px);
 
             height: var(--adviser-height);
             grid-template-rows: minmax(0, 1fr);
@@ -1104,29 +1147,34 @@
                     </div>
                 </div>
 
-                <div class="preview-status">
-                    <span class="preview-status-dot"></span>
-                    Prototype adviser active
+                {{--
+                    These sat in a row of their own above the
+                    conversation. Folded into the header they
+                    cost no height at all.
+                --}}
+                <div class="header-tools">
+                    <span
+                        id="headerQuota"
+                        class="header-quota {{ $quotaTone ?? '' }}"
+                    >{{ $quotaSummary ?? '' }}</span>
+
+                    <button
+                        type="button"
+                        id="jumpTop"
+                        class="conversation-tool"
+                        title="Back to the start"
+                        aria-label="Back to the start"
+                    >&uarr;</button>
+
+                    <button
+                        type="button"
+                        id="jumpLatest"
+                        class="conversation-tool"
+                        title="Jump to the latest reply"
+                        aria-label="Jump to the latest reply"
+                    >&darr;</button>
                 </div>
 
-            </div>
-
-            <div class="conversation-tools">
-                <span class="conversation-tool-spacer"></span>
-
-                <button
-                    type="button"
-                    id="jumpTop"
-                    class="conversation-tool"
-                    title="Back to the start"
-                >&uarr; Top</button>
-
-                <button
-                    type="button"
-                    id="jumpLatest"
-                    class="conversation-tool"
-                    title="Jump to the latest reply"
-                >&darr; Latest</button>
             </div>
 
             <div
@@ -1287,81 +1335,65 @@
 
                 </div>
 
-                <p
-                    id="careerAdviserQuota"
-                    class="adviser-quota {{
-                        ! $careerAdviserQuota['allowed']
-                            && $careerAdviserQuota['reason']
-                                === 'quota_exceeded'
-                            ? 'exhausted'
-                            : (
-                                $careerAdviserQuota['allowed']
-                                && $careerAdviserQuota['mode']
-                                    !== 'unlimited'
-                                && $careerAdviserQuota['remaining']
-                                    !== null
-                                && $careerAdviserQuota['remaining']
-                                    <= 1
-                                    ? 'warning'
-                                    : ''
-                            )
-                    }}"
-                >
-                    @if($careerAdviserQuota['mode'] === 'unlimited')
-                        <i class="fas fa-infinity"></i>
-                        <span>Unlimited questions</span>
-
-                    @elseif(
-                        ! $careerAdviserQuota['allowed']
-                        && $careerAdviserQuota['reason']
-                            === 'quota_exceeded'
+                {{--
+                    The short form lives in the header. This only
+                    appears when there is something a student has
+                    to act on, rather than restating a healthy
+                    quota under every message box.
+                --}}
+                @if(
+                    ! $careerAdviserQuota['allowed']
+                    || (
+                        $careerAdviserQuota['mode'] !== 'unlimited'
+                        && $careerAdviserQuota['remaining'] !== null
+                        && $careerAdviserQuota['remaining'] <= 1
                     )
+                )
+                    <p
+                        id="careerAdviserQuota"
+                        class="adviser-quota {{
+                            ! $careerAdviserQuota['allowed']
+                                && $careerAdviserQuota['reason']
+                                    === 'quota_exceeded'
+                                ? 'exhausted'
+                                : 'warning'
+                        }}"
+                    >
                         <i class="fas fa-circle-exclamation"></i>
 
                         <span>
-                            Usage limit reached.
+                            @if(
+                                ! $careerAdviserQuota['allowed']
+                                && $careerAdviserQuota['reason']
+                                    === 'quota_exceeded'
+                            )
+                                Usage limit reached.
 
-                            @if($careerAdviserQuota['next_available_at'])
-                                Next question available
-                                {{
-                                    $careerAdviserQuota[
-                                        'next_available_at'
-                                    ]->timezone(config('app.business_timezone'))->format('d M, g:i A')
-                                }}.
+                                @if($careerAdviserQuota['next_available_at'])
+                                    Next question available
+                                    {{
+                                        $careerAdviserQuota[
+                                            'next_available_at'
+                                        ]->timezone(config('app.business_timezone'))->format('d M, g:i A')
+                                    }}.
+                                @endif
+                            @elseif(! $careerAdviserQuota['allowed'])
+                                {{ $careerAdviserQuota['message'] }}
+                            @else
+                                {{ $careerAdviserQuota['remaining'] }}
+                                of
+                                {{ $careerAdviserQuota['amount'] }}
+                                questions remaining.
                             @endif
                         </span>
-
-                    @elseif($careerAdviserQuota['remaining'] !== null)
-                        @if($careerAdviserQuota['remaining'] <= 1)
-                            <i class="fas fa-triangle-exclamation"></i>
-                        @endif
-
-                        <span>
-                            {{
-                                $careerAdviserQuota[
-                                    'remaining'
-                                ]
-                            }}
-                            of
-                            {{
-                                $careerAdviserQuota[
-                                    'amount'
-                                ]
-                            }}
-                            questions remaining
-                        </span>
-
-                    @else
-                        <i class="fas fa-circle-exclamation"></i>
-                        <span>
-                            {{ $careerAdviserQuota['message'] }}
-                        </span>
-                    @endif
-                </p>
+                    </p>
+                @else
+                    <span id="careerAdviserQuota" hidden></span>
+                @endif
 
                 <p class="composer-note">
-                    Responses use your current CareerPath profile,
-                    recommendations and available BIICF data.
+                    Guidance only — no vacancies, placements or
+                    employer introductions.
                 </p>
 
             </div>
@@ -1628,6 +1660,87 @@
                     'careerAdviserQuota'
                 );
 
+            const headerQuota =
+                document.getElementById(
+                    'headerQuota'
+                );
+
+            /*
+             * The header carries the short form. The notice under
+             * the composer only appears when a student has to act,
+             * so after sending a message both have to be brought
+             * up to date, not just the one that happens to be on
+             * screen.
+             */
+            function updateHeaderQuota(quota) {
+                if (! headerQuota || ! quota) {
+                    return;
+                }
+
+                headerQuota.classList.remove(
+                    'warning',
+                    'exhausted'
+                );
+
+                if (quota.mode === 'unlimited') {
+                    headerQuota.textContent = 'Unlimited questions';
+
+                    return;
+                }
+
+                if (! quota.allowed) {
+                    headerQuota.classList.add('exhausted');
+                    headerQuota.textContent = 'Limit reached';
+
+                    return;
+                }
+
+                if (
+                    quota.remaining === null
+                    || quota.remaining === undefined
+                ) {
+                    headerQuota.textContent = '';
+
+                    return;
+                }
+
+                if (quota.remaining <= 1) {
+                    headerQuota.classList.add('warning');
+                }
+
+                headerQuota.textContent =
+                    quota.remaining
+                    + ' of '
+                    + quota.amount
+                    + ' left';
+            }
+
+            /*
+             * Revealed only while it says something actionable,
+             * so a healthy quota does not take a line under every
+             * message box.
+             */
+            function setNoticeVisible(quota) {
+                if (! quotaNotice) {
+                    return;
+                }
+
+                const actionable =
+                    ! quota.allowed
+                    || (
+                        quota.mode !== 'unlimited'
+                        && quota.remaining !== null
+                        && quota.remaining !== undefined
+                        && quota.remaining <= 1
+                    );
+
+                quotaNotice.hidden = ! actionable;
+
+                if (actionable) {
+                    quotaNotice.classList.add('adviser-quota');
+                }
+            }
+
             function updateSendState() {
                 const hasMessage =
                     promptInput.value.trim() !== '';
@@ -1756,6 +1869,9 @@
                 if (! quotaNotice || ! quota) {
                     return;
                 }
+
+                updateHeaderQuota(quota);
+                setNoticeVisible(quota);
 
                 quotaNotice.classList.remove(
                     'warning',

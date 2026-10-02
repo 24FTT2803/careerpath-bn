@@ -35,6 +35,22 @@ class FeatureDefinitionSeeder extends Seeder
                 'sort_order' => 30,
             ],
             [
+                /*
+                 * Seconds a student must wait before generating
+                 * again. Generation takes a few seconds and the
+                 * button stays live throughout, so this absorbs
+                 * an accidental second press. Zero, or switching
+                 * the feature off globally, removes the pause.
+                 */
+                'key' => 'career_recommendations.regeneration_cooldown',
+                'name' => 'Regeneration Cooldown (seconds)',
+                'category' => 'Career Recommendations',
+                'value_type' => 'number',
+                'parent_key' => 'career_recommendations.enabled',
+                'sort_order' => 603,
+            ],
+
+            [
                 'key' => 'career_recommendations.download.enabled',
                 'name' => 'Download Recommendations',
                 'category' => 'Career Recommendations',
