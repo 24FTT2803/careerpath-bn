@@ -258,7 +258,7 @@
                     <label>Project Titles</label>
                     <input type="text" name="projects_text"
                            value="{{ old('projects_text', implode(', ', $user->projects->pluck('title')->toArray())) }}"
-                           placeholder="e.g. E-Commerce Website, Mobile Banking App">
+                           placeholder="E-Commerce Website, Mobile Banking App">
                 </div>
             </div>
 
@@ -273,7 +273,7 @@
                     <label>Certifications</label>
                     <input type="text" name="certifications_text"
                            value="{{ old('certifications_text', implode(', ', $user->certifications->pluck('certification_name')->toArray())) }}"
-                           placeholder="e.g. AWS Certified, CCNA, CompTIA Security+">
+                           placeholder="AWS Certified, CCNA, CompTIA Security+">
                 </div>
             </div>
 
@@ -287,7 +287,7 @@
                     <label>What is your dream career?</label>
                     <input type="text" name="career_goals_text"
                            value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}"
-                           placeholder="e.g. Software Engineer, Data Scientist">
+                           placeholder="Software Engineer, Data Scientist">
                 </div>
                 <div class="cpbn-field full" style="margin-bottom:16px">
                     <label>Your Vision Statement</label>

@@ -22,7 +22,7 @@
                 <div class="form-group">
                     <label>Name <span class="text-danger">*</span></label>
                     <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
-                           value="{{ old('name') }}" placeholder="e.g. Software Development" required>
+                           value="{{ old('name') }}" placeholder="Software Development" required>
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -40,7 +40,7 @@
                 <div class="form-group">
                     <label>Lead Organisation</label>
                     <input type="text" name="lead_organisation" class="form-control @error('lead_organisation') is-invalid @enderror" 
-                           value="{{ old('lead_organisation') }}" placeholder="e.g. AITI">
+                           value="{{ old('lead_organisation') }}" placeholder="AITI">
                     @error('lead_organisation')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

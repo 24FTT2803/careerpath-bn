@@ -367,7 +367,7 @@
                         <label>Full Name (as on IC) <span class="required">*</span></label>
                         <div class="input-wrapper">
                             <input type="text" name="name" value="{{ old('name') }}"
-                                   placeholder="e.g. Nur Aisyah binti Hassan" required
+                                   placeholder="Nur Aisyah binti Hassan" required
                                    maxlength="255" autocomplete="name"
                                    class="{{ $errors->has('name') ? 'error-input' : '' }}">
                         </div>

@@ -1197,7 +1197,7 @@
                             value="{{ old('name', $user->name) }}"
                             maxlength="255"
                             autocomplete="name"
-                            placeholder="e.g. Nur Aisyah binti Hassan"
+                            placeholder="Nur Aisyah binti Hassan"
                             required
                         >
 
@@ -1237,7 +1237,7 @@
                                 value="{{ old('student_id', $user->student_id) }}"
                                 maxlength="9"
                                 required
-                                placeholder="e.g. 24FTT2803"
+                                placeholder="24FTT2803"
                                 pattern="[0-9]{2}[A-Za-z]{3}[0-9]{4}"
                                 title="2 digits, 3 letters, 4 digits (e.g. 24FTT2803)"
                                 style="text-transform:uppercase;"
@@ -1313,26 +1313,36 @@
                                 Select your nationality
                             </option>
 
-                            @foreach([
-                                'Brunei Darussalam',
-                                'Cambodia',
-                                'Indonesia',
-                                'Laos',
-                                'Malaysia',
-                                'Myanmar',
-                                'Philippines',
-                                'Singapore',
-                                'Thailand',
-                                'Timor-Leste',
-                                'Vietnam'
-                            ] as $nationality)
-                                <option
-                                    value="{{ $nationality }}"
-                                    {{ old('nationality', $user->profile->nationality ?? '') === $nationality ? 'selected' : '' }}
-                                >
-                                    {{ $nationality }}
-                                </option>
-                            @endforeach
+                            @php
+                                $chosenNationality = old(
+                                    'nationality',
+                                    $user->profile->nationality ?? ''
+                                );
+                            @endphp
+
+                            {{--
+                                Southeast Asia first, because that is
+                                where almost every student is from.
+                                The rest of the world follows so
+                                nobody has to leave this blank.
+                            --}}
+                            <optgroup label="Southeast Asia">
+                                @foreach(config('nationalities.regional') as $nationality)
+                                    <option
+                                        value="{{ $nationality }}"
+                                        @selected($chosenNationality === $nationality)
+                                    >{{ $nationality }}</option>
+                                @endforeach
+                            </optgroup>
+
+                            <optgroup label="Elsewhere">
+                                @foreach(config('nationalities.other') as $nationality)
+                                    <option
+                                        value="{{ $nationality }}"
+                                        @selected($chosenNationality === $nationality)
+                                    >{{ $nationality }}</option>
+                                @endforeach
+                            </optgroup>
                         </select>
 
                         @error('nationality')
@@ -2457,7 +2467,7 @@
                                         name="projects[{{ $index }}][title]"
                                         value="{{ $project['title'] ?? '' }}"
                                         maxlength="150"
-                                        placeholder="e.g. Hobbee Apps"
+                                        placeholder="Hobbee Apps"
                                         required
                                     >
                                 </div>
@@ -2469,7 +2479,7 @@
                                         name="projects[{{ $index }}][role]"
                                         value="{{ $project['role'] ?? '' }}"
                                         maxlength="100"
-                                        placeholder="e.g. Laravel Developer, UI Designer, Team Member"
+                                        placeholder="Laravel Developer, UI Designer, Team Member"
                                     >
                                 </div>
 
@@ -2480,7 +2490,7 @@
                                         name="projects[{{ $index }}][project_url]"
                                         value="{{ $project['project_url'] ?? '' }}"
                                         maxlength="255"
-                                        placeholder="e.g. GitHub repository or live project link"
+                                        placeholder="GitHub repository or live project link"
                                     >
                                 </div>
 
@@ -2501,7 +2511,7 @@
                                         name="projects[{{ $index }}][technologies_used]"
                                         value="{{ $technologies }}"
                                         maxlength="500"
-                                        placeholder="e.g. Laravel, MySQL, JavaScript"
+                                        placeholder="Laravel, MySQL, JavaScript"
                                     >
 
                                     <span class="cpbn-file-note">
@@ -2533,7 +2543,7 @@
                                         name="projects[{{ $index }}][achievements]"
                                         rows="2"
                                         maxlength="500"
-                                        placeholder="e.g. Completed the authentication module and integrated the recommendation API."
+                                        placeholder="Completed the authentication module and integrated the recommendation API."
                                     >{{ $project['achievements'] ?? '' }}</textarea>
                                 </div>
                             </div>
@@ -2659,7 +2669,7 @@
                                         name="certifications[{{ $index }}][certification_name]"
                                         value="{{ $certification['certification_name'] ?? '' }}"
                                         maxlength="150"
-                                        placeholder="e.g. AWS Certified Cloud Practitioner"
+                                        placeholder="AWS Certified Cloud Practitioner"
                                         required
                                     >
                                 </div>
@@ -2672,7 +2682,7 @@
                                         name="certifications[{{ $index }}][issuing_organization]"
                                         value="{{ $certification['issuing_organization'] ?? '' }}"
                                         maxlength="150"
-                                        placeholder="e.g. Amazon Web Services, Cisco, Politeknik Brunei"
+                                        placeholder="Amazon Web Services, Cisco, Politeknik Brunei"
                                     >
                                 </div>
 
@@ -2793,7 +2803,7 @@
                             name="career_goals_text"
                             value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}"
                             maxlength="100"
-                            placeholder="e.g. Software Engineer"
+                            placeholder="Software Engineer"
                         >
                     </div>
 
@@ -2804,7 +2814,7 @@
                             name="vision_statement"
                             rows="2"
                             maxlength="500"
-                            placeholder="e.g. I want to use technology to build useful solutions that improve people's work and daily lives."
+                            placeholder="I want to use technology to build useful solutions that improve people's work and daily lives."
                         >{{ old('vision_statement', $user->aspirations->vision_statement ?? '') }}</textarea>
 
                         <span class="hint">
@@ -2818,7 +2828,7 @@
                             name="long_term_goals"
                             rows="2"
                             maxlength="500"
-                            placeholder="e.g. Become a senior developer and eventually lead software projects."
+                            placeholder="Become a senior developer and eventually lead software projects."
                         >{{ old('long_term_goals', $user->aspirations->long_term_goals ?? '') }}</textarea>
 
                         <span class="hint">

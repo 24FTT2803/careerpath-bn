@@ -22,7 +22,7 @@
                 <div class="form-group">
                     <label>Training Name <span class="text-danger">*</span></label>
                     <input type="text" name="name" class="form-control @error('name') is-invalid @enderror" 
-                           value="{{ old('name') }}" placeholder="e.g. CCNA Certification" required>
+                           value="{{ old('name') }}" placeholder="CCNA Certification" required>
                     @error('name')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -31,7 +31,7 @@
                 <div class="form-group">
                     <label>Provider</label>
                     <input type="text" name="provider" class="form-control @error('provider') is-invalid @enderror" 
-                           value="{{ old('provider') }}" placeholder="e.g. Cisco">
+                           value="{{ old('provider') }}" placeholder="Cisco">
                     @error('provider')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -40,7 +40,7 @@
                 <div class="form-group">
                     <label>Certification Body</label>
                     <input type="text" name="certification_body" class="form-control @error('certification_body') is-invalid @enderror" 
-                           value="{{ old('certification_body') }}" placeholder="e.g. Cisco Systems">
+                           value="{{ old('certification_body') }}" placeholder="Cisco Systems">
                     @error('certification_body')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

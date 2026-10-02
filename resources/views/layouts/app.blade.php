@@ -686,7 +686,13 @@
             display: block;
             width: 100%;
             max-width: 728px;
-            margin: 0 auto 20px;
+
+            /*
+             * The top banner sat flush against the navigation,
+             * which read as part of the header rather than as
+             * advertising.
+             */
+            margin: 24px auto 20px;
             border: 1px solid var(--border);
             border-radius: var(--radius);
             background: var(--card);

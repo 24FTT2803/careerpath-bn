@@ -837,8 +837,8 @@
             <div class="stat-card">
                 <div class="stat-top">
                     <div>
-                        <div class="stat-label">Career Recommendations</div>
-                        <div class="stat-number">{{ $recommendationCount ?? 0 }}</div>
+                        <div class="stat-label">Competency Gaps</div>
+                        <div class="stat-number">{{ $competencyGapCount ?? 0 }}</div>
                     </div>
                     <div class="stat-icon green"><i class="fas fa-bullseye"></i></div>
                 </div>
