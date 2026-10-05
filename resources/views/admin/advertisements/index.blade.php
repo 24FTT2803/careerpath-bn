@@ -9,6 +9,17 @@
      * banner is obvious from the list rather than only once it
      * is live.
      */
+    .ads-table th,
+    .ads-table td {
+        padding-right: 16px;
+        vertical-align: middle;
+    }
+
+    .ads-table th:last-child,
+    .ads-table td:last-child {
+        padding-right: 0;
+    }
+
     .ad-thumb {
         display: block;
         width: 160px;
@@ -143,7 +154,7 @@
             @if($items->isEmpty())
                 <p class="empty-text">Nothing here yet.</p>
             @else
-                <table class="admin-table">
+                <table class="admin-table ads-table">
                     <thead>
                         <tr>
                             <th>Order</th>
@@ -236,15 +247,19 @@
                                     {{ $advertisement->organisationGroup?->name ?? 'All students' }}
                                 </td>
 
-                                <td class="cell-sub">
-                                    {{ $reach[$advertisement->id] ?? 0 }}
-                                    {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
+                                <td>
+                                    <span class="cell-sub">
+                                        {{ $reach[$advertisement->id] ?? 0 }}
+                                        {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
+                                    </span>
                                 </td>
 
-                                <td class="cell-sub">
-                                    {{ $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
-                                    &rarr;
-                                    {{ $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
+                                <td>
+                                    <span class="cell-sub" style="white-space:nowrap;">
+                                        {{ $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
+                                        &rarr;
+                                        {{ $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
+                                    </span>
                                 </td>
 
                                 <td>
