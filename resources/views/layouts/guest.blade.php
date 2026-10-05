@@ -53,6 +53,7 @@
         .back-link{display:inline-flex;align-items:center;gap:8px;margin-top:32px;padding:10px 20px;background:var(--gold);color:white;border-radius:4px;font-weight:500}
         .back-link:hover{background:var(--gold-bright);color:var(--ink);text-decoration:none}
     </style>
+    @include('partials.motion')
 </head>
 <body>
     <div class="container">

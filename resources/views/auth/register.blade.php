@@ -328,6 +328,7 @@
             .name-row { grid-template-columns: 1fr; }
         }
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 

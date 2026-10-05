@@ -974,6 +974,7 @@
         }
 
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 
@@ -1007,13 +1008,24 @@
                 <div class="nav-actions">
                     @if (Route::has('login'))
                         @auth
-                            <a href="{{ url('/student/dashboard') }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-th-large"></i> Dashboard
-                            </a>
+                            @if (auth()->user()->role === 'admin')
+                                <a href="{{ route('admin.dashboard') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-th-large"></i> Dashboard
+                                </a>
+                            @elseif (auth()->user()->role === 'lecturer')
+                                <a href="{{ route('lecturer.dashboard') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-th-large"></i> Dashboard
+                                </a>
+                            @else
+                                <a href="{{ route('student.dashboard') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-th-large"></i> Dashboard
+                                </a>
+                            @endif
                         @else
                             <a href="{{ route('login') }}" class="btn btn-outline btn-sm">
                                 <i class="fas fa-sign-in-alt"></i> Log In
                             </a>
+
                             @if (Route::has('register'))
                                 <a href="{{ route('register') }}" class="btn btn-accent btn-sm">
                                     <i class="fas fa-user-plus"></i> Sign Up

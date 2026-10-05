@@ -845,6 +845,7 @@
         }
 
     </style>
+    @include('partials.motion')
 </head>
 <body>
 

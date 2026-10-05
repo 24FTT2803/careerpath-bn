@@ -280,6 +280,7 @@
             .auth-card h1 { font-size: 24px; }
         }
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 
