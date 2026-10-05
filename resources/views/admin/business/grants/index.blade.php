@@ -6,7 +6,7 @@
 <div>
     <div class="page-header">
         <div>
-            <h1>🎟️ Access Grants</h1>
+            <h1><i class="fas fa-ticket"></i> Access Grants</h1>
             <p class="subtitle">
                 Give an individual account the benefits of a plan
             </p>

@@ -51,7 +51,7 @@
 
     .cpbn-analysis-nav {
         display:flex;
-        justify-content:space-between;
+        justify-content:flex-end;
         align-items:center;
         flex-wrap:wrap;
         gap:12px;
@@ -456,21 +456,6 @@
     <div class="cpbn-analysis-wrap">
 
                         <div class="cpbn-analysis-nav">
-            <a href="{{ route('student.dashboard') }}" class="cpbn-back">
-                <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    width="14"
-                    height="14"
-                >
-                    <path d="M19 12H5"/>
-                    <path d="M12 19l-7-7 7-7"/>
-                </svg>
-
-                Back to Dashboard
-            </a>
 
             <span class="cpbn-rank">
                 #{{ $careerRecommendation->rank }} Career Match

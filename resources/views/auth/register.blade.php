@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Sign Up — CareerPath BN</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -326,6 +328,7 @@
             .name-row { grid-template-columns: 1fr; }
         }
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 
@@ -333,7 +336,7 @@
         <div class="container">
             <a href="{{ url('/') }}" class="logo">
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
         style="height: 44px; width: auto; display: block;"
     >
@@ -361,30 +364,17 @@
                 <form method="POST" action="{{ route('register') }}">
                     @csrf
 
-                    <div class="name-row">
                         <div class="field">
-                            <label>First Name <span class="required">*</span></label>
-                            <div class="input-wrapper">
-                                <input type="text" name="first_name" value="{{ old('first_name') }}"
-                                       placeholder="Ahmad" required
-                                       class="{{ $errors->has('first_name') ? 'error-input' : '' }}">
-                            </div>
-                            @error('first_name')
-                                <div class="error">{{ $message }}</div>
-                            @enderror
+                        <label>Full Name (as on IC) <span class="required">*</span></label>
+                        <div class="input-wrapper">
+                            <input type="text" name="name" value="{{ old('name') }}"
+                                   placeholder="Nur Aisyah binti Hassan" required
+                                   maxlength="255" autocomplete="name"
+                                   class="{{ $errors->has('name') ? 'error-input' : '' }}">
                         </div>
-
-                        <div class="field">
-                            <label>Last Name <span class="required">*</span></label>
-                            <div class="input-wrapper">
-                                <input type="text" name="last_name" value="{{ old('last_name') }}"
-                                       placeholder="Bin Abdullah" required
-                                       class="{{ $errors->has('last_name') ? 'error-input' : '' }}">
-                            </div>
-                            @error('last_name')
-                                <div class="error">{{ $message }}</div>
-                            @enderror
-                        </div>
+                        @error('name')
+                            <div class="error">{{ $message }}</div>
+                        @enderror
                     </div>
 
                     <div class="field">

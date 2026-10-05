@@ -11,7 +11,8 @@
     <div class="page-header">
         <div>
             <h1>
-                {{ $isEdit ? '✏️ Edit Advertisement' : '📣 New Advertisement' }}
+                <i class="fas {{ $isEdit ? 'fa-edit' : 'fa-plus-circle' }}"></i>
+                {{ $isEdit ? 'Edit Advertisement' : 'New Advertisement' }}
             </h1>
             <p class="subtitle">
                 What appears in the placement, and who sees it

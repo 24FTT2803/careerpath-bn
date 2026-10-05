@@ -23,7 +23,7 @@
                     <div class="form-group half">
                         <label>Title <span class="text-danger">*</span></label>
                         <input type="text" name="title" class="form-control @error('title') is-invalid @enderror" 
-                               value="{{ old('title') }}" placeholder="e.g. Software Developer" required>
+                               value="{{ old('title') }}" placeholder="Software Developer" required>
                         @error('title')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -48,7 +48,7 @@
                 <div class="form-group">
                     <label>Functional Group</label>
                     <input type="text" name="functional_group" class="form-control @error('functional_group') is-invalid @enderror" 
-                           value="{{ old('functional_group') }}" placeholder="e.g. Software and Systems">
+                           value="{{ old('functional_group') }}" placeholder="Software and Systems">
                     @error('functional_group')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -103,7 +103,7 @@
                     <label>Alternative Titles (comma separated)</label>
                     <input type="text" name="alternative_titles_text" class="form-control" 
                            value="{{ old('alternative_titles_text') }}" 
-                           placeholder="e.g. IT Generalist, Network Administrator">
+                           placeholder="IT Generalist, Network Administrator">
                     <small class="form-text text-muted">Separate multiple titles with commas.</small>
                 </div>
 

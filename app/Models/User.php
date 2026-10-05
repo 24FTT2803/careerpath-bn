@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\Rule;
+use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
 {
@@ -52,6 +54,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'last_login_at' => 'datetime',
+            'student_id_verified_at' => 'datetime',
             'last_active_at' => 'datetime',
             'show_ads' => 'boolean',
         ];
@@ -66,6 +69,18 @@ class User extends Authenticatable
      * so the same address is never two accounts and logins
      * match regardless of capitalisation.
      */
+
+    public function setNameAttribute($value): void
+    {
+        /*
+         * Full names are typed as one field (e.g. "Nur Aisyah
+         * binti Hassan"), so tidy stray and doubled spaces.
+         */
+        $this->attributes['name'] = trim(
+            preg_replace('/\s+/', ' ', (string) $value)
+        );
+    }
+
     public function setEmailAttribute($value): void
     {
         $this->attributes['email'] = strtolower(
@@ -74,8 +89,123 @@ class User extends Authenticatable
     }
 
     // ============================================
+    // STUDENT ID
+    // ============================================
+
+    /**
+     * Politeknik Brunei student ID: 2-digit intake year,
+     * 3 letters, 4 digits (e.g. 24FTT2803).
+     */
+    public const STUDENT_ID_PATTERN = '/^\d{2}[A-Z]{3}\d{4}$/';
+
+    /**
+     * The domain whose mailbox names are student IDs.
+     */
+    public const STUDENT_EMAIL_DOMAIN = 'student.pb.edu.bn';
+
+    public const STUDENT_ID_FORMAT_MESSAGE = 'Student ID must look like 24FTT2803 (2 digits, 3 letters, 4 digits).';
+
+    /**
+     * Keep verification in step with the ID itself.
+     *
+     * Changing the ID clears any earlier approval, unless the
+     * same save is the approval (an admin entering it). An ID
+     * that matches the student's own confirmed school email
+     * is approved automatically.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (User $user): void {
+            $idChanged = $user->isDirty('student_id');
+            $verificationSetNow = $user->isDirty('student_id_verified_at');
+
+            if (($idChanged && ! $verificationSetNow) || blank($user->student_id)) {
+                $user->student_id_verified_at = null;
+                $user->student_id_verified_by = null;
+            }
+
+            if ($user->student_id_verified_at === null && $user->studentIdMatchesSchoolEmail()) {
+                $user->student_id_verified_at = now();
+                $user->student_id_verified_by = null;
+            }
+        });
+    }
+
+    /**
+     * Store student IDs uppercase with no spaces, so the same
+     * ID typed two ways is still one student.
+     */
+    public function setStudentIdAttribute($value): void
+    {
+        $this->attributes['student_id'] = self::normaliseStudentId($value);
+    }
+
+    public static function normaliseStudentId(mixed $value): ?string
+    {
+        $normalised = strtoupper(preg_replace('/\s+/', '', (string) $value));
+
+        return $normalised === '' ? null : $normalised;
+    }
+
+    /**
+     * Validation rules for a student ID field.
+     *
+     * @return array<int, mixed>
+     */
+    public static function studentIdRules(?int $ignoreUserId = null, bool $required = true): array
+    {
+        return [
+            $required ? 'required' : 'nullable',
+            'string',
+            'regex:'.self::STUDENT_ID_PATTERN,
+            Rule::unique('users', 'student_id')->ignore($ignoreUserId),
+        ];
+    }
+
+    /**
+     * Messages to go with studentIdRules().
+     *
+     * @return array<string, string>
+     */
+    public static function studentIdMessages(): array
+    {
+        return [
+            'student_id.required' => 'Please enter your Student ID.',
+            'student_id.regex' => self::STUDENT_ID_FORMAT_MESSAGE,
+            'student_id.unique' => 'This Student ID already belongs to another account. If it is yours, please contact an administrator.',
+        ];
+    }
+
+    public function hasVerifiedStudentId(): bool
+    {
+        return filled($this->student_id) && $this->student_id_verified_at !== null;
+    }
+
+    /**
+     * True when the ID is the mailbox name of the student's
+     * own confirmed @student.pb.edu.bn address.
+     */
+    public function studentIdMatchesSchoolEmail(): bool
+    {
+        if ($this->role !== 'student' || blank($this->student_id) || $this->email_verified_at === null) {
+            return false;
+        }
+
+        [$mailbox, $domain] = array_pad(explode('@', (string) $this->email, 2), 2, '');
+
+        return $domain === self::STUDENT_EMAIL_DOMAIN
+            && self::normaliseStudentId($mailbox) === $this->student_id;
+    }
+
+    public function studentIdVerifier(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'student_id_verified_by');
+    }
+
+    // ============================================
     // VALIDATION HELPERS
     // ============================================
+
 
     /**
      * Get the allowed domains for a specific role
@@ -175,9 +305,23 @@ class User extends Authenticatable
         return $this->hasMany(StudentInterest::class);
     }
 
+    /**
+     * The app's own notifications table (keyed by user_id).
+     *
+     * This overrides the notifications() relation from Laravel's
+     * Notifiable trait, which expects Laravel's built-in table
+     * with notifiable_type / notifiable_id columns. Do not remove.
+     */
     public function notifications()
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(
+            new ResetPasswordNotification($token)
+        );
     }
 
     public function unreadNotifications()
@@ -451,12 +595,10 @@ class User extends Authenticatable
         $profile = $this->profile;
         $aspiration = $this->aspirations;
 
-        $hasPersonalProfile = $profile && (
+            $hasPersonalProfile = $profile && (
             filled($profile->phone)
-            || filled($profile->address)
             || $profile->date_of_birth
             || filled($profile->nationality)
-            || filled($profile->bio)
         );
 
         $hasAcademicInformation = (

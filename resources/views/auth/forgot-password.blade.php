@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Forgot Password — CareerPath BN</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -278,16 +280,17 @@
             .auth-card h1 { font-size: 24px; }
         }
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 
     <header class="auth-header">
     <div class="container">
         <a href="{{ url('/') }}" class="logo">
-            <img
-                src="{{ asset('images/careerpath-logo-v2.png') }}"
+                        <img
+                src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
                 alt="CareerPath BN"
-                style="height: 44px; width: auto; display: block;"
+                style="height: 60px; width: auto; display: block;"
             >
         </a>
     </div>
@@ -346,10 +349,6 @@
                         <i class="fas fa-paper-plane"></i> Email Password Reset Link
                     </button>
                 </form>
-
-                <div class="auth-footer">
-                    <p>Remembered it after all? <a href="{{ route('login') }}">Log in</a></p>
-                </div>
             </div>
         </div>
     </main>

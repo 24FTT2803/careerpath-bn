@@ -503,9 +503,8 @@
                         {{
                             strtoupper(
                                 substr(
-                                    $user->first_name
-                                        ?? $user->name
-                                        ?? 'S',
+                                    $user->name
+                                    ?? 'S',
                                     0,
                                     1
                                 )
@@ -565,7 +564,7 @@
                 @if(($profileCompletion ?? 0) < 100)
                     Complete your profile to get better career recommendations
                 @else
-                    🎉 Your profile is complete!
+                    <i class="fas fa-circle-check" style="color:var(--success);"></i> Your profile is complete!
                 @endif
             </p>
         </div>
@@ -598,7 +597,7 @@
                 <div class="info-row">
                     <span class="label">Student ID</span>
                     <span class="value">
-                        {{ $user->student_id ?? 'Not set' }}
+                        <x-student-id-status :student="$user" />
                     </span>
                 </div>
 

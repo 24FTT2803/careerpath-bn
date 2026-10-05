@@ -34,7 +34,7 @@
 <div>
     <div class="page-header">
         <div>
-            <h1>📣 Advertisements</h1>
+            <h1><i class="fas fa-bullhorn"></i> Advertisements</h1>
             <p class="subtitle">
                 Manage what appears in the student ad placements
             </p>

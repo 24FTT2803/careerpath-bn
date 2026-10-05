@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Log In — CareerPath BN</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -323,6 +325,7 @@
             .form-options { flex-direction: column; gap: 12px; align-items: flex-start; }
         }
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 
@@ -330,7 +333,7 @@
         <div class="container">
             <a href="{{ url('/') }}" class="logo">
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
         style="height: 44px; width: auto; display: block;"
     >

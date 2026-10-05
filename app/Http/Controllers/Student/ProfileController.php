@@ -14,6 +14,7 @@ use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
 use App\Models\StudentProject;
 use App\Models\User;
+use App\Rules\NoProfanity;
 use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
@@ -205,13 +206,24 @@ class ProfileController extends Controller
         Request $request,
         RecommendationStatusService $recommendationStatus
     ) {
-        /** @var User $user */
+                /** @var User $user */
         $user = Auth::user();
 
+        /*
+         * Once staff have verified the Student ID, the student
+         * can no longer change it; anything submitted is ignored.
+         */
+        $studentIdLocked = $user->hasVerifiedStudentId();
+
+        if (! $studentIdLocked) {
+            $request->merge([
+                'student_id' => User::normaliseStudentId($request->input('student_id')),
+            ]);
+        }
+
         $request->validate([
-            'first_name' => ['required', 'string', 'max:100'],
-            'last_name' => ['required', 'string', 'max:100'],
-            'student_id' => ['nullable', 'string', 'max:20', 'unique:users,student_id,'.$user->id],
+            'name' => ['required', 'string', 'max:255', new NoProfanity],
+            'student_id' => $studentIdLocked ? ['exclude'] : User::studentIdRules($user->id),
             'phone' => [
                 'nullable',
                 'string',
@@ -227,10 +239,8 @@ class ProfileController extends Controller
                 'string',
                 'size:2',
             ],
-            'address' => ['nullable', 'string', 'max:300'],
             'date_of_birth' => ['nullable', 'date', 'before:today'],
             'nationality' => ['nullable', 'string', 'max:100'],
-            'bio' => ['nullable', 'string', 'max:500'],
             'profile_picture' => [
                 'nullable',
                 File::image()
@@ -428,7 +438,8 @@ class ProfileController extends Controller
             'phone_country.required_with' => 'Please select a country for the phone number.',
 
             'phone_country.size' => 'The selected phone country is invalid.',
-            'student_id.unique' => 'This Student ID is already taken.',
+                        'name.required' => 'Please enter your full name.',
+                        ...User::studentIdMessages(),
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
@@ -557,30 +568,28 @@ class ProfileController extends Controller
                 null;
         }
 
-        // Combine first and last name into full name
-        $fullName = $request->first_name.' '.$request->last_name;
-
         // Update User
-        $user->update([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'name' => $fullName,
-            'student_id' => $request->student_id,
+            $userData = [
+            'name' => $request->name,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
             'phone' => $normalizedPhone,
-        ]);
+        ];
+
+        if (! $studentIdLocked) {
+            $userData['student_id'] = $request->student_id;
+        }
+
+        $user->update($userData);
 
         // Update Profile
         $user->profile()->updateOrCreate(
             ['user_id' => $user->id],
             [
                 'phone' => $normalizedPhone,
-                'address' => $request->address,
                 'date_of_birth' => $request->date_of_birth,
                 'nationality' => $request->nationality,
                 'profile_picture' => $profilePicturePath,
-                'bio' => $request->bio,
             ]
         );
 
@@ -1071,7 +1080,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'notifications' => $notifications,
-            'unread_count' => $user->visibleNotifications()->count(),
+            'unread_count' => $user->visibleUnreadNotifications()->count(),
         ]);
     }
 
@@ -1247,7 +1256,7 @@ class ProfileController extends Controller
             ->route('student.milestones')
             ->with(
                 'success',
-                '🎉 Milestone completed!'
+                'Milestone completed!'
             );
     }
 

@@ -4,6 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CareerPath BN — AI Career Guidance for Politeknik Brunei</title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
     <meta name="description" content="CareerPath BN maps your interests, competencies and academic profile to real BIICF-aligned careers.">
 
     <!-- Fonts -->
@@ -972,6 +974,7 @@
         }
 
     </style>
+    @include('partials.motion', ['reveal' => false])
 </head>
 <body>
 
@@ -982,16 +985,16 @@
         <div class="container">
             <div class="header-inner">
                 <a href="{{ url('/') }}" class="logo" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
-    <img
-        src="{{ asset('images/careerpath-badge.png') }}"
+        <img
+        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
         alt="CareerPath BN"
-        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
+        style="height: 64px; width: 64px; object-fit: contain; display: block; flex-shrink: 0;"
     >
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt=""
         aria-hidden="true"
-        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
+        style="height: 56px; width: auto; display: block; flex-shrink: 0;"
     >
 </a>
 
@@ -1005,13 +1008,24 @@
                 <div class="nav-actions">
                     @if (Route::has('login'))
                         @auth
-                            <a href="{{ url('/student/dashboard') }}" class="btn btn-primary btn-sm">
-                                <i class="fas fa-th-large"></i> Dashboard
-                            </a>
+                            @if (auth()->user()->role === 'admin')
+                                <a href="{{ route('admin.dashboard') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-th-large"></i> Dashboard
+                                </a>
+                            @elseif (auth()->user()->role === 'lecturer')
+                                <a href="{{ route('lecturer.dashboard') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-th-large"></i> Dashboard
+                                </a>
+                            @else
+                                <a href="{{ route('student.dashboard') }}" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-th-large"></i> Dashboard
+                                </a>
+                            @endif
                         @else
                             <a href="{{ route('login') }}" class="btn btn-outline btn-sm">
                                 <i class="fas fa-sign-in-alt"></i> Log In
                             </a>
+
                             @if (Route::has('register'))
                                 <a href="{{ route('register') }}" class="btn btn-accent btn-sm">
                                     <i class="fas fa-user-plus"></i> Sign Up

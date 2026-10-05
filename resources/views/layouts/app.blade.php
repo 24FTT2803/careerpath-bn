@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', config('app.name', 'CareerPath BN'))</title>
+        <title>
+        @hasSection('title')
+            @yield('title') — CareerPath BN
+        @else
+            CareerPath BN
+        @endif
+    </title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -190,6 +198,56 @@
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+
+        /* ============================================
+           BACK TO DASHBOARD
+           ============================================ */
+        .nav-brand-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            flex-shrink: 0;
+        }
+
+        .nav-back {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1.5px solid var(--border);
+            background: white;
+            color: var(--primary);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            text-decoration: none;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .nav-back:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            transform: translateX(-2px);
+        }
+
+        .nav-back:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        @media (max-width: 600px) {
+            .nav-brand-group {
+                gap: 8px;
+            }
+
+            .nav-back {
+                width: 34px;
+                height: 34px;
+                font-size: 14px;
+            }
         }
 
         /* ============================================
@@ -477,10 +535,14 @@
             display: block;
         }
 
-        .nav-user .name {
+            .nav-user .name {
             font-size: 13px;
             font-weight: 500;
             color: var(--text);
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .nav-user .chevron {
@@ -624,7 +686,13 @@
             display: block;
             width: 100%;
             max-width: 728px;
-            margin: 0 auto 20px;
+
+            /*
+             * The top banner sat flush against the navigation,
+             * which read as part of the header rather than as
+             * advertising.
+             */
+            margin: 24px auto 20px;
             border: 1px solid var(--border);
             border-radius: var(--radius);
             background: var(--card);
@@ -744,26 +812,71 @@
                 font-size: 17px;
             }
         }
+
+        /* File upload fields: branded button instead of the browser default */
+        input[type="file"] {
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-muted, #6b7280);
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 12px;
+            padding: 8px 16px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--primary, #1a3a5c);
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-light, #2a5a8c);
+        }
+
+        input[type="file"]:focus-visible::file-selector-button {
+            outline: 2px solid var(--accent, #c9a84c);
+            outline-offset: 2px;
+        }
+
     </style>
+    @include('partials.motion')
 </head>
 <body>
 
     <nav class="site-nav">
         <div class="container">
             <div class="nav-inner">
-                <a href="{{ route('student.dashboard') }}" class="nav-brand" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
-    <img
-        src="{{ asset('images/careerpath-badge.png') }}"
+                <div class="nav-brand-group">
+                    {{-- Back to dashboard: shown on every page except the dashboard itself --}}
+                    @unless(request()->routeIs('student.dashboard'))
+                        <a href="{{ route('dashboard') }}"
+                           class="nav-back"
+                           title="Back to dashboard"
+                           aria-label="Back to dashboard">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    @endunless
+
+                <a href="{{ route('dashboard') }}" class="nav-brand" title="Go to dashboard" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
+        <img
+        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
         alt="CareerPath BN"
-        style="height: 48px; width: 48px; object-fit: contain; display: block; flex-shrink: 0;"
+        style="height: 64px; width: 64px; object-fit: contain; display: block; flex-shrink: 0;"
     >
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt=""
         aria-hidden="true"
-        style="height: 40px; width: auto; display: block; flex-shrink: 0;"
+        style="height: 56px; width: auto; display: block; flex-shrink: 0;"
     >
 </a>
+                </div>
                 <div class="nav-right">
 
                     @auth
@@ -841,8 +954,7 @@
                                     {{
                                         strtoupper(
                                             substr(
-                                                Auth::user()->first_name
-                                                    ?? Auth::user()->name,
+                                            Auth::user()->name,
                                                 0,
                                                 1
                                             )
@@ -850,7 +962,7 @@
                                     }}
                                 @endif
                             </div>
-                            <span class="name">{{ Auth::user()->first_name ?? Auth::user()->name }}</span>
+                            <span class="name" title="{{ Auth::user()->name }}">{{ Auth::user()->name }}</span>
                             <span class="chevron"><i class="fas fa-chevron-down"></i></span>
                         </div>
 

@@ -69,17 +69,68 @@ class AdviserText
             $paragraph = [];
         };
 
-        $flushList = function () use (&$list, &$listTag, &$html) {
+        $nested = [];
+
+        /*
+         * Bullets that follow a numbered point belong to it. The
+         * model writes "4. Practical next steps:" and then its
+         * sub-points as bullets, so closing the numbered list and
+         * starting a separate bulleted one puts them beside the
+         * point they expand on rather than under it.
+         */
+        $flushNested = function () use (&$nested, &$list) {
+            if ($nested === [] || $list === []) {
+                return;
+            }
+
+            $lastIndex = array_key_last($list);
+
+            $list[$lastIndex] = preg_replace(
+                '/<\/li>$/',
+                '<ul class="adviser-list adviser-sublist">'
+                    .implode('', $nested)
+                    .'</ul></li>',
+                $list[$lastIndex]
+            ) ?? $list[$lastIndex];
+
+            $nested = [];
+        };
+
+        /*
+         * The number the model gave the first item. A list broken
+         * by a paragraph has to resume where it left off, or the
+         * second half starts again at one.
+         */
+        $listStart = null;
+
+        $flushList = function () use (
+            &$list,
+            &$listTag,
+            &$listStart,
+            &$html,
+            $flushNested
+        ) {
+            $flushNested();
+
             if ($list === []) {
                 return;
             }
 
-            $html .= '<'.$listTag.' class="adviser-list">'
+            $html .= '<'.$listTag.' class="adviser-list"'
+                .(
+                    $listTag === 'ol'
+                        && $listStart !== null
+                        && $listStart > 1
+                            ? ' start="'.$listStart.'"'
+                            : ''
+                )
+                .'>'
                 .implode('', $list)
                 .'</'.$listTag.'>';
 
             $list = [];
             $listTag = null;
+            $listStart = null;
         };
 
         foreach ($lines as $line) {
@@ -88,9 +139,14 @@ class AdviserText
                     ?? $line
             );
 
+            /*
+             * A blank line ends a paragraph but not a list. The
+             * model puts one between numbered sections, and
+             * closing the list there started the next section at
+             * one again. Real prose or a heading still closes it.
+             */
             if ($line === '') {
                 $flushParagraph();
-                $flushList();
 
                 continue;
             }
@@ -108,6 +164,16 @@ class AdviserText
                     $flushList();
                 }
 
+                /*
+                 * Closes any sub-points gathered under the
+                 * previous number before starting the next one.
+                 */
+                $flushNested();
+
+                if ($listTag !== 'ol' || $list === []) {
+                    $listStart = (int) $match[1];
+                }
+
                 $listTag = 'ol';
                 $list[] = '<li>'.self::inline($match[2]).'</li>';
 
@@ -123,8 +189,16 @@ class AdviserText
             if (preg_match('/^(?:-|\*|\x{2022}|\x{00B7}|\x{25CF}|\x{25AA})\s+(.*)$/u', $line, $match)) {
                 $flushParagraph();
 
-                if ($listTag === 'ol') {
-                    $flushList();
+                /*
+                 * Inside a numbered list these are sub-points of
+                 * the number above, not a list of their own.
+                 */
+                if ($listTag === 'ol' && $list !== []) {
+                    $nested[] = '<li>'
+                        .self::inline($match[1])
+                        .'</li>';
+
+                    continue;
                 }
 
                 $listTag = 'ul';

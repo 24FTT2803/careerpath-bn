@@ -34,6 +34,17 @@ class DashboardController extends Controller
         $recommendationCount =
             $recommendations->count();
 
+        /*
+         * How far short the student is for their best match.
+         * The old tile counted the recommendations themselves,
+         * which is always three and tells a student nothing.
+         */
+        $competencyGapCount = collect(
+            $recommendations->first()?->skill_gaps ?? []
+        )
+            ->filter(fn ($gap) => filled($gap))
+            ->count();
+
         $readinessScore =
             $this->calculateReadinessScore(
                 $user
@@ -68,6 +79,7 @@ class DashboardController extends Controller
                 'profileCompletion',
                 'recommendations',
                 'recommendationCount',
+                'competencyGapCount',
                 'readinessScore',
                 'milestones',
                 'milestoneCount',

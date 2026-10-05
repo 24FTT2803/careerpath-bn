@@ -4,7 +4,15 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Admin - CareerPath BN')</title>
+        <title>
+        @hasSection('title')
+            @yield('title') — CareerPath BN
+        @else
+            Admin — CareerPath BN
+        @endif
+    </title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -810,17 +818,50 @@
                 min-width: 160px;
             }
         }
+
+        /* File upload fields: branded button instead of the browser default */
+        input[type="file"] {
+            font-family: inherit;
+            font-size: 13px;
+            color: var(--text-muted, #6b7280);
+            cursor: pointer;
+        }
+
+        input[type="file"]::file-selector-button {
+            margin-right: 12px;
+            padding: 8px 16px;
+            border: 0;
+            border-radius: 8px;
+            background: var(--primary, #1a3a5c);
+            color: #fff;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-light, #2a5a8c);
+        }
+
+        input[type="file"]:focus-visible::file-selector-button {
+            outline: 2px solid var(--accent, #c9a84c);
+            outline-offset: 2px;
+        }
+
     </style>
+    @include('partials.motion')
 </head>
 <body>
 
     <!-- Sidebar -->
     <aside class="admin-sidebar">
-        <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
+                <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
     <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}"
+        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
-        style="height: 48px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+        style="height: 64px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
     >
 </div>
 
@@ -1012,12 +1053,12 @@
     <div style="display:flex;align-items:center;gap:10px;">
         <!-- Avatar -->
         <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">
-            {{ substr(auth()->user()->first_name ?? auth()->user()->name, 0, 1) }}
+           {{ substr(auth()->user()->name, 0, 1) }}
         </div>
         
         <!-- User Info -->
         <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.3;">{{ auth()->user()->first_name ?? auth()->user()->name }}</div>
+            <div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
             <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.04em;line-height:1.3;">{{ ucfirst(auth()->user()->role) }}</div>
         </div>
         

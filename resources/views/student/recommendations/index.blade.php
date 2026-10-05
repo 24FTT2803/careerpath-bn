@@ -509,20 +509,35 @@
                 >
                     @csrf
 
+                    {{--
+                        Disabled while the pause runs, with the
+                        remaining time on the button itself, so
+                        a student can see why it will not go
+                        rather than pressing it and being told.
+                    --}}
                     <button
                         type="submit"
                         class="generate-button"
+                        id="generateButton"
+                        data-cooldown="{{ $cooldownSeconds ?? 0 }}"
+                        @disabled(($cooldownSeconds ?? 0) > 0)
                     >
                         <i
                             class="fas
                             fa-wand-magic-sparkles"
                         ></i>
 
-                        {{
-                            $hasRecommendations
-                                ? 'Refresh Recommendations'
-                                : 'Generate Recommendations'
-                        }}
+                        <span id="generateButtonLabel">
+                            @if(($cooldownSeconds ?? 0) > 0)
+                                Please wait {{ $cooldownSeconds }}s
+                            @else
+                                {{
+                                    $hasRecommendations
+                                        ? 'Refresh Recommendations'
+                                        : 'Generate Recommendations'
+                                }}
+                            @endif
+                        </span>
                     </button>
                 </form>
             @else
@@ -540,6 +555,8 @@
                 </button>
             @endif
         </section>
+
+        <x-guidance-disclaimer />
 
         {{--
             Future advertisement placement goes here.
@@ -659,3 +676,47 @@
 </div>
 
 @endsection
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var button = document.getElementById('generateButton');
+        var label = document.getElementById('generateButtonLabel');
+
+        if (!button || !label) {
+            return;
+        }
+
+        var remaining = parseInt(button.dataset.cooldown, 10) || 0;
+
+        if (remaining < 1) {
+            return;
+        }
+
+        /*
+         * The server decides whether a generation is allowed.
+         * This only counts the same pause down in front of the
+         * student so the button does not sit dead with no
+         * explanation of when it will work again.
+         */
+        var ready = @js(
+            $hasRecommendations
+                ? 'Refresh Recommendations'
+                : 'Generate Recommendations'
+        );
+
+        var timer = window.setInterval(function () {
+            remaining -= 1;
+
+            if (remaining > 0) {
+                label.textContent = 'Please wait ' + remaining + 's';
+
+                return;
+            }
+
+            window.clearInterval(timer);
+
+            label.textContent = ready;
+            button.disabled = false;
+        }, 1000);
+    });
+</script>

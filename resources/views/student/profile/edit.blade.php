@@ -802,6 +802,12 @@
         text-decoration: underline;
     }
 
+    
+    .edit-profile .cpbn-file-selected[hidden],
+    .edit-profile .cpbn-clear-file[hidden] {
+        display: none;
+    }
+
     /* Submit Buttons */
     .edit-profile .cpbn-btn {
         display: inline-flex;
@@ -1038,9 +1044,12 @@
             </div>
 
             <p class="progress-note">
-                {{ $profileCompletion >= 70
-                    ? '✅ Profile complete — ready for career matching!'
-                    : 'Your progress can be saved now and completed later.' }}
+                                @if($profileCompletion >= 70)
+                    <i class="fas fa-circle-check" style="color:var(--green);"></i>
+                    Profile complete — ready for career matching!
+                @else
+                    Your progress can be saved now and completed later.
+                @endif
             </p>
         </div>
 
@@ -1049,6 +1058,8 @@
             action="{{ route('student.profile.update') }}"
             enctype="multipart/form-data"
             id="profile-form"
+            data-max-file-bytes="{{ App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() * 1024 }}"
+            data-max-request-bytes="{{ App\Http\Controllers\Admin\AdvertisementController::requestLimitKilobytes() * 1024 }}"
             data-confirm-update
             data-item-name="your profile"
         >
@@ -1083,8 +1094,7 @@
                     $profileInitial =
                         strtoupper(
                             substr(
-                                $user->first_name
-                                    ?? $user->name
+                                    $user->name
                                     ?? 'S',
                                 0,
                                 1
@@ -1128,6 +1138,8 @@
                                 id="profile-picture-input"
                                 class="cpbn-profile-picture-input"
                                 accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                                data-max-bytes="{{ 5 * 1024 * 1024 }}"
+                                data-file-label="Profile pictures"
                             >
 
                             <label
@@ -1176,34 +1188,20 @@
                 </div>
 
                 <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>First Name <span class="req">*</span></label>
+                        <div class="cpbn-field full">
+                        <label>Full Name (as on IC) <span class="req">*</span></label>
 
                         <input
                             type="text"
-                            name="first_name"
-                            value="{{ old('first_name', $user->first_name ?? '') }}"
-                            maxlength="100"
+                            name="name"
+                            value="{{ old('name', $user->name) }}"
+                            maxlength="255"
+                            autocomplete="name"
+                            placeholder="Nur Aisyah binti Hassan"
                             required
                         >
 
-                        @error('first_name')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Last Name <span class="req">*</span></label>
-
-                        <input
-                            type="text"
-                            name="last_name"
-                            value="{{ old('last_name', $user->last_name ?? '') }}"
-                            maxlength="100"
-                            required
-                        >
-
-                        @error('last_name')
+                        @error('name')
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>
@@ -1218,16 +1216,42 @@
                         >
                     </div>
 
-                    <div class="cpbn-field">
+                                        <div class="cpbn-field">
                         <label>Student ID <span class="req">*</span></label>
 
-                        <input
-                            type="text"
-                            name="student_id"
-                            value="{{ old('student_id', $user->student_id) }}"
-                            maxlength="20"
-                            required
-                        >
+                        @if($user->hasVerifiedStudentId())
+                            <input
+                                type="text"
+                                value="{{ $user->student_id }}"
+                                disabled
+                            >
+
+                            <span class="hint">
+                                <x-student-id-status :student="$user" :show-id="false" />
+                                Locked. Contact an admin or your lecturer if this is wrong.
+                            </span>
+                        @else
+                            <input
+                                type="text"
+                                name="student_id"
+                                value="{{ old('student_id', $user->student_id) }}"
+                                maxlength="9"
+                                required
+                                placeholder="24FTT2803"
+                                pattern="[0-9]{2}[A-Za-z]{3}[0-9]{4}"
+                                title="2 digits, 3 letters, 4 digits (e.g. 24FTT2803)"
+                                style="text-transform:uppercase;"
+                            >
+
+                            <span class="hint">
+                                @if($user->student_id)
+                                    <x-student-id-status :student="$user" :show-id="false" />
+                                    An admin or your lecturer will confirm this ID.
+                                @else
+                                    Your Politeknik Brunei ID, e.g. 24FTT2803.
+                                @endif
+                            </span>
+                        @endif
 
                         @error('student_id')
                             <div class="error">{{ $message }}</div>
@@ -1289,62 +1313,39 @@
                                 Select your nationality
                             </option>
 
-                            @foreach([
-                                'Brunei Darussalam',
-                                'Cambodia',
-                                'Indonesia',
-                                'Laos',
-                                'Malaysia',
-                                'Myanmar',
-                                'Philippines',
-                                'Singapore',
-                                'Thailand',
-                                'Timor-Leste',
-                                'Vietnam'
-                            ] as $nationality)
-                                <option
-                                    value="{{ $nationality }}"
-                                    {{ old('nationality', $user->profile->nationality ?? '') === $nationality ? 'selected' : '' }}
-                                >
-                                    {{ $nationality }}
-                                </option>
-                            @endforeach
+                            @php
+                                $chosenNationality = old(
+                                    'nationality',
+                                    $user->profile->nationality ?? ''
+                                );
+                            @endphp
+
+                            {{--
+                                Southeast Asia first, because that is
+                                where almost every student is from.
+                                The rest of the world follows so
+                                nobody has to leave this blank.
+                            --}}
+                            <optgroup label="Southeast Asia">
+                                @foreach(config('nationalities.regional') as $nationality)
+                                    <option
+                                        value="{{ $nationality }}"
+                                        @selected($chosenNationality === $nationality)
+                                    >{{ $nationality }}</option>
+                                @endforeach
+                            </optgroup>
+
+                            <optgroup label="Elsewhere">
+                                @foreach(config('nationalities.other') as $nationality)
+                                    <option
+                                        value="{{ $nationality }}"
+                                        @selected($chosenNationality === $nationality)
+                                    >{{ $nationality }}</option>
+                                @endforeach
+                            </optgroup>
                         </select>
 
                         @error('nationality')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="cpbn-field full">
-                        <label>Address</label>
-
-                        <textarea
-                            name="address"
-                            rows="2"
-                            maxlength="300"
-                        >{{ old('address', $user->profile->address ?? '') }}</textarea>
-
-                        @error('address')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="cpbn-field full">
-                        <label>Bio / About You</label>
-
-                        <textarea
-                            name="bio"
-                            rows="3"
-                            maxlength="500"
-                            placeholder="e.g. Application Development student interested in web development and AI."
-                        >{{ old('bio', $user->profile->bio ?? '') }}</textarea>
-
-                        <span class="hint">
-                            Briefly introduce yourself, your interests and what you are currently working towards.
-                        </span>
-
-                        @error('bio')
                             <div class="error">{{ $message }}</div>
                         @enderror
                     </div>
@@ -2466,7 +2467,7 @@
                                         name="projects[{{ $index }}][title]"
                                         value="{{ $project['title'] ?? '' }}"
                                         maxlength="150"
-                                        placeholder="e.g. Hobbee Apps"
+                                        placeholder="Hobbee Apps"
                                         required
                                     >
                                 </div>
@@ -2478,7 +2479,7 @@
                                         name="projects[{{ $index }}][role]"
                                         value="{{ $project['role'] ?? '' }}"
                                         maxlength="100"
-                                        placeholder="e.g. Laravel Developer, UI Designer, Team Member"
+                                        placeholder="Laravel Developer, UI Designer, Team Member"
                                     >
                                 </div>
 
@@ -2489,7 +2490,7 @@
                                         name="projects[{{ $index }}][project_url]"
                                         value="{{ $project['project_url'] ?? '' }}"
                                         maxlength="255"
-                                        placeholder="e.g. GitHub repository or live project link"
+                                        placeholder="GitHub repository or live project link"
                                     >
                                 </div>
 
@@ -2510,7 +2511,7 @@
                                         name="projects[{{ $index }}][technologies_used]"
                                         value="{{ $technologies }}"
                                         maxlength="500"
-                                        placeholder="e.g. Laravel, MySQL, JavaScript"
+                                        placeholder="Laravel, MySQL, JavaScript"
                                     >
 
                                     <span class="cpbn-file-note">
@@ -2542,7 +2543,7 @@
                                         name="projects[{{ $index }}][achievements]"
                                         rows="2"
                                         maxlength="500"
-                                        placeholder="e.g. Completed the authentication module and integrated the recommendation API."
+                                        placeholder="Completed the authentication module and integrated the recommendation API."
                                     >{{ $project['achievements'] ?? '' }}</textarea>
                                 </div>
                             </div>
@@ -2668,7 +2669,7 @@
                                         name="certifications[{{ $index }}][certification_name]"
                                         value="{{ $certification['certification_name'] ?? '' }}"
                                         maxlength="150"
-                                        placeholder="e.g. AWS Certified Cloud Practitioner"
+                                        placeholder="AWS Certified Cloud Practitioner"
                                         required
                                     >
                                 </div>
@@ -2681,7 +2682,7 @@
                                         name="certifications[{{ $index }}][issuing_organization]"
                                         value="{{ $certification['issuing_organization'] ?? '' }}"
                                         maxlength="150"
-                                        placeholder="e.g. Amazon Web Services, Cisco, Politeknik Brunei"
+                                        placeholder="Amazon Web Services, Cisco, Politeknik Brunei"
                                     >
                                 </div>
 
@@ -2743,7 +2744,7 @@
                                         </span>
                                     @elseif($existingCertification?->certificate_file_path)
                                         <div class="cpbn-file-missing">
-                                            ⚠ An evidence record exists, but the stored file could not be found.
+                                            <i class="fas fa-triangle-exclamation"></i> An evidence record exists, but the stored file could not be found.
                                         </div>
                                     @endif
 
@@ -2802,7 +2803,7 @@
                             name="career_goals_text"
                             value="{{ old('career_goals_text', $user->aspirations->career_goals[0] ?? '') }}"
                             maxlength="100"
-                            placeholder="e.g. Software Engineer"
+                            placeholder="Software Engineer"
                         >
                     </div>
 
@@ -2813,7 +2814,7 @@
                             name="vision_statement"
                             rows="2"
                             maxlength="500"
-                            placeholder="e.g. I want to use technology to build useful solutions that improve people's work and daily lives."
+                            placeholder="I want to use technology to build useful solutions that improve people's work and daily lives."
                         >{{ old('vision_statement', $user->aspirations->vision_statement ?? '') }}</textarea>
 
                         <span class="hint">
@@ -2827,7 +2828,7 @@
                             name="long_term_goals"
                             rows="2"
                             maxlength="500"
-                            placeholder="e.g. Become a senior developer and eventually lead software projects."
+                            placeholder="Become a senior developer and eventually lead software projects."
                         >{{ old('long_term_goals', $user->aspirations->long_term_goals ?? '') }}</textarea>
 
                         <span class="hint">

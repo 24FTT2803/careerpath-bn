@@ -20,7 +20,8 @@
     <div class="page-header">
         <div>
             <h1>
-                {{ $isEdit ? '✏️ Edit Group' : '🏫 New Group' }}
+                <i class="fas {{ $isEdit ? 'fa-edit' : 'fa-plus-circle' }}"></i>
+                {{ $isEdit ? 'Edit Group' : 'New Group' }}
             </h1>
             <p class="subtitle">
                 Where this group sits in the structure

@@ -139,7 +139,7 @@
                         </span>
                         @if($isStudent && $user->student_id)
                             <span class="user-id">
-                                <i class="fas fa-id-card"></i> {{ $user->student_id }}
+                                <i class="fas fa-id-card"></i> <x-student-id-status :student="$user" />
                             </span>
                         @endif
                         @if($isLecturer || $isAdmin)

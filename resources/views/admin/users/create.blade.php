@@ -80,6 +80,7 @@
                 <div class="cpbn-field">
                     <label>Student ID <span class="req">*</span></label>
                     <input type="text" name="student_id" value="{{ old('student_id') }}">
+                    <p style="font-size:12px;color:#6b7280;margin-top:4px;">Format: 24FTT2803. IDs you enter here are marked verified.</p>
                     @error('student_id')<p class="err">{{ $message }}</p>@enderror
                 </div>
 

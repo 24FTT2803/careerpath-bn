@@ -59,6 +59,13 @@ class PlanSeeder extends Seeder
                 'career_recommendations.result_count' => 3,
 
                 /*
+                 * The same short pause on every plan. It guards
+                 * against a double press, not against use, so
+                 * paying more does not shorten it.
+                 */
+                'career_recommendations.regeneration_cooldown' => 30,
+
+                /*
                  * Initial seed only.
                  *
                  * Admin can later change BOTH the amount
@@ -132,6 +139,12 @@ class PlanSeeder extends Seeder
                 'career_recommendations.enabled' => true,
 
                 'career_recommendations.result_count' => 5,
+
+                /*
+                 * The same pause as the free plan. It guards
+                 * against a double press, not against use.
+                 */
+                'career_recommendations.regeneration_cooldown' => 30,
 
                 'career_recommendations.generation_quota' => [
                     'mode' => 'unlimited',

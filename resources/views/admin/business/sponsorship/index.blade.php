@@ -6,7 +6,7 @@
 <div>
     <div class="page-header">
         <div>
-            <h1>🤝 Sponsorship</h1>
+            <h1><i class="fas fa-handshake"></i> Sponsorship</h1>
             <p class="subtitle">
                 Organisations funding access for groups of students
             </p>

@@ -74,7 +74,7 @@
                 <div class="info-list">
                     <div class="info-row">
                         <span class="info-label">Student ID</span>
-                        <span class="info-value">{{ $student->student_id ?? '-' }}</span>
+                        <span class="info-value"><x-student-id-status :student="$student" :actions="true" /></span>
                     </div>
                     <div class="info-row">
                         <span class="info-label">Email</span>

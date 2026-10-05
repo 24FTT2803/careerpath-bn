@@ -10,7 +10,6 @@
         <div class="welcome-content">
             <div class="welcome-text">
                 <div class="greeting">
-                    <span class="wave">👋</span>
                     <h1>Welcome back, {{ auth()->user()->name }}</h1>
                 </div>
                <p class="subtitle">

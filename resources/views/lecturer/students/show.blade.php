@@ -6,7 +6,7 @@
 <div>
     <div class="page-header">
         <div>
-            <h1>👤 {{ $student->name }}</h1>
+            <h1><i class="fas fa-user-graduate"></i> {{ $student->name }}</h1>
             <p class="subtitle">
                 {{ $student->programme ?? 'Programme not set' }}
             </p>
@@ -38,7 +38,7 @@
             <tbody>
                 <tr>
                     <td class="cell-sub" style="width:30%;">Student ID</td>
-                    <td>{{ $student->student_id ?? '—' }}</td>
+                    <td><x-student-id-status :student="$student" :actions="true" /></td>
                 </tr>
                 <tr>
                     <td class="cell-sub">Email</td>

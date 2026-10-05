@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'CareerPath BN')</title>
+        <title>
+        @hasSection('title')
+            @yield('title') — CareerPath BN
+        @else
+            CareerPath BN
+        @endif
+    </title>
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
+    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -45,6 +53,7 @@
         .back-link{display:inline-flex;align-items:center;gap:8px;margin-top:32px;padding:10px 20px;background:var(--gold);color:white;border-radius:4px;font-weight:500}
         .back-link:hover{background:var(--gold-bright);color:var(--ink);text-decoration:none}
     </style>
+    @include('partials.motion')
 </head>
 <body>
     <div class="container">

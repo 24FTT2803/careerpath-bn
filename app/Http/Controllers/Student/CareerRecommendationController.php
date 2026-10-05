@@ -9,6 +9,7 @@ use App\Models\RecommendationGeneration;
 use App\Models\User;
 use App\Services\AI\CareerRecommendationService;
 use App\Services\AI\CareerReportBuilder;
+use App\Services\AI\RegenerationCooldown;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -24,7 +25,8 @@ class CareerRecommendationController extends Controller
     public function __construct(
         private CareerRecommendationService $recommendationService,
         private EntitlementService $entitlements,
-        private FeatureUsageService $featureUsage
+        private FeatureUsageService $featureUsage,
+        private RegenerationCooldown $cooldown
     ) {}
 
     /**
@@ -69,6 +71,13 @@ class CareerRecommendationController extends Controller
             ->currentRecommendationGeneration()
             ->first();
 
+        /*
+         * Shown as a countdown on the button, so the pause is
+         * visible rather than only enforced after a click.
+         */
+        $cooldownSeconds = $this->cooldown
+            ->secondsRemaining($student);
+
         return view(
             'student.recommendations.index',
             compact(
@@ -76,7 +85,8 @@ class CareerRecommendationController extends Controller
                 'recommendations',
                 'currentGeneration',
                 'generationAccess',
-                'generationQuota'
+                'generationQuota',
+                'cooldownSeconds'
             )
         );
     }
@@ -311,6 +321,21 @@ class CareerRecommendationController extends Controller
                     'warning',
                     'Career recommendation generation is unavailable. '
                     .$generationAccess['message']
+                );
+        }
+
+        /*
+        * The pause comes before the quota, so a double press
+        * costs the student nothing. Spending a quota use on a
+        * request they did not mean to make would be the worst
+        * outcome of the two.
+        */
+        if ($this->cooldown->blocks($student)) {
+            return redirect()
+                ->route('student.recommendations.index')
+                ->with(
+                    'warning',
+                    $this->cooldown->message($student)
                 );
         }
 

@@ -27,8 +27,7 @@ class RegisteredUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
-            'first_name' => ['required', 'string', 'max:255', new NoProfanity],
-            'last_name' => ['required', 'string', 'max:255', new NoProfanity],
+            'name' => ['required', 'string', 'max:255', new NoProfanity],
             'email' => [
                 'required',
                 'string',
@@ -45,6 +44,7 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'terms' => ['required', 'accepted'],
         ], [
+            'name.required' => 'Please enter your full name.',
             'email.unique' => 'This email is already registered. Please use a different email address.',
             'email.regex' => 'Please use a valid email address from gmail.com, pb.edu.bn, or student.pb.edu.bn',
             'email.required' => 'Email address is required.',
@@ -54,13 +54,8 @@ class RegisteredUserController extends Controller
             'programme.in' => 'Please select a valid programme.',
         ]);
 
-        // Combine first and last name
-        $fullName = $request->first_name.' '.$request->last_name;
-
-        $user = User::create([
-            'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
-            'name' => $fullName,
+            $user = User::create([
+            'name' => $request->name,
             'email' => $request->email,
             'programme' => $request->programme,
             'password' => Hash::make($request->password),
@@ -83,7 +78,7 @@ class RegisteredUserController extends Controller
         ]);
 
         // Log activity - New student registration
-        NotificationHelper::logStudentRegistration($user->id, $fullName);
+        NotificationHelper::logStudentRegistration($user->id, $user->name);
 
                 event(new Registered($user));
 

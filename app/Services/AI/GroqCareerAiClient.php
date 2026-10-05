@@ -3,6 +3,7 @@
 namespace App\Services\AI;
 
 use App\Contracts\CareerAiClient;
+use App\Contracts\ChatTransport;
 use JsonException;
 use RuntimeException;
 use UnexpectedValueException;
@@ -10,9 +11,8 @@ use UnexpectedValueException;
 class GroqCareerAiClient implements CareerAiClient
 {
     public function __construct(
-        private GroqClient $groq
-    ) {
-    }
+        private ChatTransport $transport
+    ) {}
 
     /**
      * Generate three BIICF career recommendations
@@ -98,14 +98,13 @@ class GroqCareerAiClient implements CareerAiClient
             [
                 'role' => 'user',
 
-                'content' =>
-                    "CareerPath recommendation context:\n"
-                    . $contextJson
-                    . "\n\nSelect and rank the student's top three BIICF career recommendations.",
+                'content' => "CareerPath recommendation context:\n"
+                    .$contextJson
+                    ."\n\nSelect and rank the student's top three BIICF career recommendations.",
             ],
         ];
 
-        $result = $this->groq->chat(
+        $result = $this->transport->chat(
             $messages,
             $this->responseFormat(
                 $eligibleRoleIds
@@ -207,20 +206,16 @@ class GroqCareerAiClient implements CareerAiClient
             'type' => 'json_schema',
 
             'json_schema' => [
-                'name' =>
-                    'career_recommendation_response',
+                'name' => 'career_recommendation_response',
 
-                'strict' =>
-                    true,
+                'strict' => true,
 
                 'schema' => [
-                    'type' =>
-                        'object',
+                    'type' => 'object',
 
                     'properties' => [
                         'schema_version' => [
-                            'type' =>
-                                'string',
+                            'type' => 'string',
 
                             'enum' => [
                                 '2.0',
@@ -228,8 +223,7 @@ class GroqCareerAiClient implements CareerAiClient
                         ],
 
                         'status' => [
-                            'type' =>
-                                'string',
+                            'type' => 'string',
 
                             'enum' => [
                                 'completed',
@@ -237,69 +231,52 @@ class GroqCareerAiClient implements CareerAiClient
                         ],
 
                         'recommendations' => [
-                            'type' =>
-                                'array',
+                            'type' => 'array',
 
-                            'minItems' =>
-                                3,
+                            'minItems' => 3,
 
-                            'maxItems' =>
-                                3,
+                            'maxItems' => 3,
 
                             'items' => [
-                                'type' =>
-                                    'object',
+                                'type' => 'object',
 
                                 'properties' => [
                                     'biicf_job_role_id' => [
-                                        'type' =>
-                                            'integer',
+                                        'type' => 'integer',
 
-                                        'enum' =>
-                                            $eligibleRoleIds,
+                                        'enum' => $eligibleRoleIds,
                                     ],
 
                                     'rank' => [
-                                        'type' =>
-                                            'integer',
+                                        'type' => 'integer',
 
-                                        'minimum' =>
-                                            1,
+                                        'minimum' => 1,
 
-                                        'maximum' =>
-                                            3,
+                                        'maximum' => 3,
                                     ],
 
                                     'match_score' => [
-                                        'type' =>
-                                            'number',
+                                        'type' => 'number',
 
-                                        'minimum' =>
-                                            0,
+                                        'minimum' => 0,
 
-                                        'maximum' =>
-                                            100,
+                                        'maximum' => 100,
                                     ],
 
                                     'development_plan' => [
-                                        'type' =>
-                                            'array',
+                                        'type' => 'array',
 
-                                        'minItems' =>
-                                            3,
+                                        'minItems' => 3,
 
-                                        'maxItems' =>
-                                            3,
+                                        'maxItems' => 3,
 
                                         'items' => [
-                                            'type' =>
-                                                'string',
+                                            'type' => 'string',
                                         ],
                                     ],
 
                                     'explanation' => [
-                                        'type' =>
-                                            'string',
+                                        'type' => 'string',
                                     ],
                                 ],
 
@@ -311,8 +288,7 @@ class GroqCareerAiClient implements CareerAiClient
                                     'explanation',
                                 ],
 
-                                'additionalProperties' =>
-                                    false,
+                                'additionalProperties' => false,
                             ],
                         ],
                     ],
@@ -323,8 +299,7 @@ class GroqCareerAiClient implements CareerAiClient
                         'recommendations',
                     ],
 
-                    'additionalProperties' =>
-                        false,
+                    'additionalProperties' => false,
                 ],
             ],
         ];

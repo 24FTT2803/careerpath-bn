@@ -2,11 +2,12 @@
 
 namespace App\Services\AI;
 
+use App\Contracts\ChatTransport;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 use UnexpectedValueException;
 
-class GroqClient
+class GroqClient implements ChatTransport
 {
     /**
      * Send a chat completion request to Groq.

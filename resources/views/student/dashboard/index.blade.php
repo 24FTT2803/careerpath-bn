@@ -565,92 +565,162 @@
         color: var(--border);
     }
 
-    /* Milestones panel on the dashboard */
-.milestones-panel .milestones-list {
-    display: flex;
-    flex-direction: column;
-    max-height: 300px;
-    overflow-y: auto;
-}
+       /* Milestones panel on the dashboard */
+    .dashboard-side {
+        display: flex;
+        flex-direction: column;
+    }
 
-.milestone-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 13px;
-}
+    .milestones-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
 
-.milestone-row:last-child {
-    border-bottom: none;
-}
+    .milestones-count {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--text-muted);
+    }
 
-.milestone-row.completed {
-    color: var(--text-muted);
-}
+    .milestones-progress {
+        height: 6px;
+        border-radius: 100px;
+        background: var(--bg);
+        overflow: hidden;
+        margin-bottom: 16px;
+    }
 
-.milestone-row .milestone-status-icon {
-    flex-shrink: 0;
-    font-size: 14px;
-    width: 16px;
-    text-align: center;
-}
+    .milestones-progress span {
+        display: block;
+        height: 100%;
+        border-radius: 100px;
+        background: var(--success);
+    }
 
-.milestone-row.completed .milestone-status-icon {
-    color: var(--success);
-}
+    .milestones-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
 
-.milestone-row:not(.completed) .milestone-status-icon {
-    color: var(--border);
-}
+    .milestone-card {
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 16px 18px;
+        transition: var(--transition);
+    }
 
-.milestone-row .milestone-title {
-    flex: 1;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
+    .milestone-card:hover {
+        border-color: var(--accent-light);
+        box-shadow: var(--shadow);
+    }
 
-.milestones-footer {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-    text-align: center;
-}
+    .milestone-card .milestone-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 12px;
+    }
 
-.milestones-footer a {
-    color: var(--primary);
-    font-size: 12px;
-    font-weight: 600;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-}
+    .milestone-card .milestone-title {
+        min-width: 0;
+        font-weight: 600;
+        font-size: 15px;
+        line-height: 1.35;
+        color: var(--primary);
+        overflow-wrap: anywhere;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
 
-.milestones-footer a:hover {
-    color: var(--accent);
-}
+    .milestone-card.completed .milestone-title {
+        color: var(--text-muted);
+    }
 
-.milestones-empty {
-    text-align: center;
-    padding: 24px 12px;
-    color: var(--text-muted);
-}
+    .milestone-card .milestone-meta {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
 
-.milestones-empty i {
-    font-size: 28px;
-    color: var(--border);
-    margin-bottom: 8px;
-    display: block;
-}
+    .milestone-pill {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 4px 12px;
+        border-radius: 100px;
+        white-space: nowrap;
+    }
 
-.milestones-empty p {
-    font-size: 13px;
-    margin: 0 0 12px;
-}
+    .milestone-pill.done {
+        color: var(--success);
+        background: rgba(45, 143, 92, 0.12);
+    }
+
+    .milestone-pill.active {
+        color: var(--accent-dark);
+        background: rgba(201, 168, 76, 0.12);
+    }
+
+    .milestone-pill.overdue {
+        color: var(--danger);
+        background: rgba(192, 57, 43, 0.1);
+    }
+
+    .milestones-footer {
+        margin-top: auto;
+        padding-top: 16px;
+        text-align: center;
+    }
+
+    .milestones-footer a {
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .milestones-footer a:hover {
+        color: var(--accent);
+    }
+
+    .milestones-empty {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--text-muted);
+    }
+
+    .milestones-empty i {
+        font-size: 32px;
+        color: var(--border);
+        margin-bottom: 12px;
+    }
+
+    .milestones-empty h4 {
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--primary);
+        margin: 0 0 6px;
+    }
+
+    .milestones-empty p {
+        font-size: 13px;
+        margin: 0 0 16px;
+    }
 
     @media (max-width: 1024px) {
         .stats-grid {
@@ -715,8 +785,7 @@
         <div class="dashboard-header">
             <div>
                              @php
-                $studentFirstName = Auth::user()->first_name
-                    ?? Auth::user()->name;
+                $studentFirstName = Auth::user()->name;
 
                 $isFirstVisit = session('first_visit') === true;
             @endphp
@@ -768,8 +837,8 @@
             <div class="stat-card">
                 <div class="stat-top">
                     <div>
-                        <div class="stat-label">Career Recommendations</div>
-                        <div class="stat-number">{{ $recommendationCount ?? 0 }}</div>
+                        <div class="stat-label">Competency Gaps</div>
+                        <div class="stat-number">{{ $competencyGapCount ?? 0 }}</div>
                     </div>
                     <div class="stat-icon green"><i class="fas fa-bullseye"></i></div>
                 </div>
@@ -969,39 +1038,78 @@
 
                 <!-- Right Column -->
     <div class="dashboard-side">
-        <!-- Milestones -->
+                <!-- Milestones -->
         <div class="panel milestones-panel">
-            <div class="panel-header">
-                <h3><i class="fas fa-flag-checkered"></i> My Milestones</h3>
-            </div>
-
             @php
                 /*
                  * Incomplete items first, so the student sees what
                  * still needs doing before what is already done.
-                 * Only the first five are shown here; the full list
-                 * lives on the milestones page.
+                 * Three are shown to mirror Top Career Matches; the
+                 * full list lives on the milestones page.
                  */
                 $dashboardMilestones = $milestones
                     ->sortBy('is_completed')
-                    ->take(5);
+                    ->take(3);
+
+                $milestonesTotal = $milestones->count();
+                $milestonesDone = $milestones->where('is_completed', true)->count();
+                $milestonesPercent = $milestonesTotal > 0
+                    ? (int) round($milestonesDone / $milestonesTotal * 100)
+                    : 0;
             @endphp
 
+            <div class="panel-header">
+                <h3><i class="fas fa-flag-checkered"></i> My Milestones</h3>
+
+                @if($milestonesTotal > 0)
+                    <span class="milestones-count">
+                        {{ $milestonesDone }}/{{ $milestonesTotal }} done
+                    </span>
+                @endif
+            </div>
+
             @if($dashboardMilestones->isNotEmpty())
+                <div class="milestones-progress" aria-label="{{ $milestonesPercent }}% of milestones completed">
+                    <span style="width: {{ $milestonesPercent }}%;"></span>
+                </div>
+
                 <div class="milestones-list">
                     @foreach($dashboardMilestones as $milestone)
-                        <div class="milestone-row {{ $milestone->is_completed ? 'completed' : '' }}">
-                            <span class="milestone-status-icon">
-                                @if($milestone->is_completed)
-                                    <i class="fas fa-check-circle"></i>
-                                @else
-                                    <i class="far fa-circle"></i>
-                                @endif
-                            </span>
+                        @php
+                            $isOverdue = ! $milestone->is_completed
+                                && $milestone->target_date
+                                && $milestone->target_date->isPast();
 
-                            <span class="milestone-title">
-                                {{ $milestone->title }}
-                            </span>
+                            $metaParts = array_filter([
+                                $milestone->category
+                                    ? \Illuminate\Support\Str::headline($milestone->category)
+                                    : null,
+                                $milestone->is_completed
+                                    ? ($milestone->completed_date ? 'Completed '.$milestone->completed_date->format('j M Y') : null)
+                                    : ($milestone->target_date ? 'Due '.$milestone->target_date->format('j M Y') : null),
+                            ]);
+                        @endphp
+
+                        <div class="milestone-card {{ $milestone->is_completed ? 'completed' : '' }}">
+                            <div class="milestone-top">
+                                <div class="milestone-title">
+                                    {{ $milestone->title }}
+                                </div>
+
+                                @if($milestone->is_completed)
+                                    <span class="milestone-pill done">
+                                        <i class="fas fa-check"></i> Done
+                                    </span>
+                                @elseif($isOverdue)
+                                    <span class="milestone-pill overdue">Overdue</span>
+                                @else
+                                    <span class="milestone-pill active">In Progress</span>
+                                @endif
+                            </div>
+
+                            <div class="milestone-meta">
+                                {{ $metaParts ? implode(' · ', $metaParts) : 'No due date' }}
+                            </div>
                         </div>
                     @endforeach
                 </div>
@@ -1015,9 +1123,10 @@
             @else
                 <div class="milestones-empty">
                     <i class="fas fa-flag-checkered"></i>
-                    <p>No milestones yet</p>
+                    <h4>No Milestones Yet</h4>
+                    <p>Set goals to track your progress towards your career.</p>
 
-                    <a href="{{ route('student.milestones') }}" class="btn btn-outline btn-sm">
+                    <a href="{{ route('student.milestones') }}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus"></i> Add Milestone
                     </a>
                 </div>

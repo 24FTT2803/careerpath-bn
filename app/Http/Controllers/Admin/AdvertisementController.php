@@ -603,6 +603,18 @@ class AdvertisementController extends Controller
         return (int) min(array_filter($limits));
     }
 
+    /**
+     * The largest whole request PHP will accept, in kilobytes.
+     *
+     * Forms that send several files at once (such as the student
+     * profile) need the combined size to stay under this, even
+     * when each file is within its own limit.
+     */
+    public static function requestLimitKilobytes(): int
+    {
+        return max(self::iniKilobytes('post_max_size') - 256, 1);
+    }
+
     private static function iniKilobytes(string $key): int
     {
         $value = trim((string) ini_get($key));

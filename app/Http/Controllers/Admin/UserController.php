@@ -65,17 +65,21 @@ class UserController extends Controller
         // Phone validation
         $rules['phone'] = User::getPhoneValidationRules();
 
+            $request->merge([
+            'student_id' => User::normaliseStudentId($request->input('student_id')),
+        ]);
+
         // Only require student_id and programme if role is student
         if ($request->role === 'student') {
-            $rules['student_id'] = 'required|unique:users';
+            $rules['student_id'] = User::studentIdRules();
             $rules['programme'] =
                 'required|string|exists:organisation_groups,name';
         } else {
-            $rules['student_id'] = 'nullable|unique:users';
+            $rules['student_id'] = ['exclude'];
             $rules['programme'] = 'nullable|string';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, User::studentIdMessages());
 
         $user = User::create([
             'name' => $request->name,
@@ -83,11 +87,23 @@ class UserController extends Controller
             'phone' => $request->phone,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-            'student_id' => $request->student_id,
+                        'student_id' => $request->role === 'student'
+                ? $request->student_id
+                : null,
             'programme' => $request->role === 'student'
                 ? $request->programme
                 : null,
         ]);
+
+        /*
+         * An ID entered by an admin counts as verified by them.
+         */
+        if ($user->student_id !== null) {
+            $user->forceFill([
+                'student_id_verified_at' => now(),
+                'student_id_verified_by' => $request->user()->id,
+            ])->save();
+        }
 
         app(ProgrammeEnrolmentService::class)->syncFor(
             $user->fresh(),
@@ -135,17 +151,21 @@ class UserController extends Controller
         // Phone validation
         $rules['phone'] = ['nullable', 'string', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'];
 
+            $request->merge([
+            'student_id' => User::normaliseStudentId($request->input('student_id')),
+        ]);
+
         // Only require student_id and programme if role is student
         if ($request->role === 'student') {
-            $rules['student_id'] = 'required|unique:users,student_id,'.$id;
+            $rules['student_id'] = User::studentIdRules((int) $id);
             $rules['programme'] =
                 'required|string|exists:organisation_groups,name';
         } else {
-            $rules['student_id'] = 'nullable|unique:users,student_id,'.$id;
+            $rules['student_id'] = ['exclude'];
             $rules['programme'] = 'nullable|string';
         }
 
-        $request->validate($rules);
+        $request->validate($rules, User::studentIdMessages());
 
         $data = [
             'name' => $request->name,
@@ -161,7 +181,18 @@ class UserController extends Controller
             $data['password'] = Hash::make($request->password);
         }
 
-        $user->update($data);
+        $user->fill($data);
+
+        /*
+         * An admin entering or changing a student's ID vouches
+         * for it, so it is verified in the same save.
+         */
+        if ($user->isDirty('student_id') && $user->student_id !== null) {
+            $user->student_id_verified_at = now();
+            $user->student_id_verified_by = $request->user()->id;
+        }
+
+        $user->save();
 
         app(ProgrammeEnrolmentService::class)->syncFor(
             $user->fresh(),

@@ -95,7 +95,7 @@
                                 {{ $student->name }}
                             </a>
                         </h4>
-                        <span class="student-id">{{ $student->student_id ?? 'No ID' }}</span>
+                        <span class="student-id"><x-student-id-status :student="$student" /></span>
                         <span class="student-programme">{{ $student->programme ?? 'No Programme' }}</span>
                     </div>
                     <div class="student-card-status">
