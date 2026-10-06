@@ -110,6 +110,15 @@
         font-size: 12px;
     }
 
+    /* Header buttons: same height and shape side by side. */
+    .action-buttons .btn-primary {
+        border: 2px solid var(--primary);
+    }
+
+    .action-buttons .btn-primary:hover {
+        border-color: var(--primary-light);
+    }
+
     .btn-success {
         background: #2d8f5c;
         color: white;
@@ -524,7 +533,7 @@
             <div class="action-buttons">
                 <a
                     href="{{ route('student.profile.export') }}"
-                    class="btn btn-success btn-sm"
+                    class="btn btn-outline btn-sm"
                     target="_blank"
                 >
                     <i class="fas fa-file-pdf"></i>

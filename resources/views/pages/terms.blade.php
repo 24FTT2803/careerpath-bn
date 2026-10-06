@@ -120,9 +120,9 @@
         For questions about these Terms, contact:<br>
         <strong>School of Information and Communication Technology</strong><br>
         Politeknik Brunei, Block 2E, Ong Sum Ping Condominium, BA1311<br>
-        Email: <strong>contact@pb.edu.bn</strong><br>
+        Email: <strong>contact@pb.edu.bn</strong> / <strong>careerpathbn@gmail.com</strong><br>
         Phone: <strong>+673 2234630</strong>
     </p>
 
-    <a href="{{ url('/register') }}" class="back-link">← Back to Registration</a>
+    @include('pages._back-link')
 @endsection
