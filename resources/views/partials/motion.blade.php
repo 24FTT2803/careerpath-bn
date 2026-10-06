@@ -65,17 +65,6 @@
 </script>
 
 <style>
-    /* Smooth cross-fade between pages (Chrome/Edge; other browsers just navigate normally). */
-    @view-transition {
-        navigation: auto;
-    }
-
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-        animation-duration: 0.22s;
-        animation-timing-function: ease;
-    }
-
     /* ---------- Content reveal ---------- */
     html.motion-pending main {
         opacity: 0;
@@ -416,13 +405,6 @@
 
     html.motion-on .nav-links a.motion-current::after {
         width: 100%;
-    }
-
-    /* ---------- Respect "reduce motion" and printing ---------- */
-    @media (prefers-reduced-motion: reduce) {
-        @view-transition {
-            navigation: none;
-        }
     }
 
     @media print {
