@@ -727,9 +727,41 @@
                         This includes your profile, career recommendations, milestones, and all associated data.
                         <strong>This action cannot be undone.</strong>
                     </p>
+                    @if($errors->userDeletion->any())
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <ul style="margin:0;padding-left:16px;">
+                                @foreach($errors->userDeletion->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('student.profile.destroy') }}" data-confirm-delete data-item-name="your account">
                         @csrf
                         @method('DELETE')
+
+                        {{--
+                            Asked for again because the account and
+                            everything in it goes at this point,
+                            and a signed-in session is not proof of
+                            who is at the keyboard.
+                        --}}
+                        <div class="field" style="margin-bottom:16px;">
+                            <label for="delete_password">
+                                Confirm your password
+                            </label>
+
+                            <input
+                                id="delete_password"
+                                type="password"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                            >
+                        </div>
+
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash-alt"></i> Delete Account
                         </button>

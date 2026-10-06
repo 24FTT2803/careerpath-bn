@@ -2,60 +2,78 @@
 
 use App\Models\User;
 
-test('profile page is displayed', function () {
-    $user = User::factory()->create();
+/*
+ * These began as Breeze's profile tests, written against a single
+ * form that edited a name and an email address at /profile. The
+ * student profile replaced it: the routes moved under the student
+ * prefix, the form carries programme, competencies and interests,
+ * and the email address is not editable there at all.
+ */
 
+function student(): User
+{
+    return User::factory()->create(['role' => 'student']);
+}
+
+test('profile page is displayed', function () {
     $response = $this
-        ->actingAs($user)
-        ->get('/profile');
+        ->actingAs(student())
+        ->get(route('student.profile'));
 
     $response->assertOk();
 });
 
-test('profile information can be updated', function () {
-    $user = User::factory()->create();
+test(
+    'an update missing required details is refused',
+    function () {
+        $student = student();
 
-    $response = $this
-        ->actingAs($user)
-        ->patch('/profile', [
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        $response = $this
+            ->actingAs($student)
+            ->from(route('student.profile'))
+            ->put(route('student.profile.update'), [
+                'name' => 'Test User',
+            ]);
 
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect('/profile');
+        /*
+         * The profile carries far more than a name now, so a
+         * partial submission should not quietly save half of it.
+         */
+        $response->assertSessionHasErrors();
+    }
+);
 
-    $user->refresh();
+test(
+    'the email address cannot be changed from the profile',
+    function () {
+        $student = student();
+        $original = $student->email;
 
-    $this->assertSame('Test User', $user->name);
-    $this->assertSame('test@example.com', $user->email);
-    $this->assertNull($user->email_verified_at);
-});
+        $this
+            ->actingAs($student)
+            ->put(route('student.profile.update'), [
+                'name' => 'Test User',
+                'email' => 'somewhere.else@student.pb.edu.bn',
+            ]);
 
-test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
-
-    $response = $this
-        ->actingAs($user)
-        ->patch('/profile', [
-            'name' => 'Test User',
-            'email' => $user->email,
-        ]);
-
-    $response
-        ->assertSessionHasNoErrors()
-        ->assertRedirect('/profile');
-
-    $this->assertNotNull($user->refresh()->email_verified_at);
-});
+        /*
+         * Breeze let the profile form change an email and then
+         * reset the verification. Nothing in the student
+         * controllers accepts an email any more, and this is
+         * what keeps it that way.
+         */
+        expect($student->fresh()->email)->toBe($original)
+            ->and($student->fresh()->email_verified_at)
+            ->not->toBeNull();
+    }
+);
 
 test('user can delete their account', function () {
-    $user = User::factory()->create();
+    $student = student();
 
     $response = $this
-        ->actingAs($user)
-        ->delete('/profile', [
+        ->actingAs($student)
+        ->delete(route('student.profile.destroy'), [
             'password' => 'password',
         ]);
 
@@ -64,22 +82,29 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    $this->assertNull($user->fresh());
+    $this->assertNull($student->fresh());
 });
 
-test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+test(
+    'correct password must be provided to delete account',
+    function () {
+        $student = student();
 
-    $response = $this
-        ->actingAs($user)
-        ->from('/profile')
-        ->delete('/profile', [
-            'password' => 'wrong-password',
-        ]);
+        $response = $this
+            ->actingAs($student)
+            ->from(route('student.profile'))
+            ->delete(route('student.profile.destroy'), [
+                'password' => 'wrong-password',
+            ]);
 
-    $response
-        ->assertSessionHasErrorsIn('userDeletion', 'password')
-        ->assertRedirect('/profile');
+        /*
+         * Deleting takes the account and everything attached to
+         * it, so being signed in is not enough on its own.
+         */
+        $response
+            ->assertSessionHasErrorsIn('userDeletion', 'password')
+            ->assertRedirect(route('student.profile'));
 
-    $this->assertNotNull($user->fresh());
-});
+        $this->assertNotNull($student->fresh());
+    }
+);

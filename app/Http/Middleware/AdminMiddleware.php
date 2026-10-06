@@ -10,12 +10,21 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
         if (Auth::user()->role !== 'admin') {
-            abort(403, 'Unauthorized - Admin access required.');
+            /*
+             * The wording reaches the person on the 403 page, so
+             * it says which part of the site this was rather than
+             * only that something was refused.
+             */
+            abort(
+                403,
+                'This page is part of the administrator tools, '
+                .'which your account does not include.'
+            );
         }
 
         return $next($request);

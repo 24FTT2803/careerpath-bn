@@ -19,6 +19,7 @@ use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
+use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -206,7 +207,7 @@ class ProfileController extends Controller
         Request $request,
         RecommendationStatusService $recommendationStatus
     ) {
-                /** @var User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         /*
@@ -438,8 +439,8 @@ class ProfileController extends Controller
             'phone_country.required_with' => 'Please select a country for the phone number.',
 
             'phone_country.size' => 'The selected phone country is invalid.',
-                        'name.required' => 'Please enter your full name.',
-                        ...User::studentIdMessages(),
+            'name.required' => 'Please enter your full name.',
+            ...User::studentIdMessages(),
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
@@ -569,7 +570,7 @@ class ProfileController extends Controller
         }
 
         // Update User
-            $userData = [
+        $userData = [
             'name' => $request->name,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
@@ -722,6 +723,21 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request)
     {
+        /*
+         * Deleting an account takes everything with it and cannot
+         * be undone, so the password is asked for again. Without
+         * this, anyone who reaches an already signed-in session —
+         * a shared lab machine, an unattended laptop — can destroy
+         * a student's work with one click.
+         *
+         * The named error bag keeps the message beside this form
+         * rather than surfacing in the change-password panel
+         * above it, which shares the page.
+         */
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
+
         /** @var User $user */
         $user = Auth::user();
 
@@ -786,7 +802,7 @@ class ProfileController extends Controller
         CareerReportBuilder $reportBuilder,
         ?RecommendationGeneration $generation = null
     ) {
-                $user = User::findOrFail($userId);
+        $user = User::findOrFail($userId);
         $currentUser = Auth::user();
 
         // Only allow admins and lecturers to view other students' profiles
@@ -811,7 +827,7 @@ class ProfileController extends Controller
             && $currentUser->id !== $user->id
         ) {
             $scope = app(
-                \App\Services\Lecturer\LecturerScopeResolver::class
+                LecturerScopeResolver::class
             );
 
             abort_unless(
@@ -1039,7 +1055,7 @@ class ProfileController extends Controller
             ->visibleUnreadNotifications()
             ->count();
 
-                return view(
+        return view(
             'student.notifications.index',
             compact(
                 'notifications',
@@ -1087,7 +1103,7 @@ class ProfileController extends Controller
     /**
      * Mark a notification as read.
      */
-        public function markAsRead($id)
+    public function markAsRead($id)
     {
         $notification = Notification::where(
             'user_id',
@@ -1112,12 +1128,12 @@ class ProfileController extends Controller
             );
     }
 
-        /**
+    /**
      * Mark all notifications as read.
      */
     public function markAllAsRead()
     {
-            Notification::where(
+        Notification::where(
             'user_id',
             Auth::id()
         )
