@@ -738,7 +738,7 @@
         .footer-logos {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 16px;
             margin-top: 16px;
             flex-wrap: wrap;
         }
@@ -1355,6 +1355,13 @@
                                 <img src="{{ asset('images/aiti-logo.png') }}" alt="AITI" class="footer-logo">
                             @else
                                 <span class="logo-fallback"><i class="fas fa-building"></i> AITI</span>
+                            @endif
+                        </a>
+                        <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="logo-link">
+                            @if(file_exists(public_path('images/innovation-lab-logo.png')))
+                                <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="footer-logo">
+                            @else
+                                <span class="logo-fallback"><i class="fas fa-lightbulb"></i> Brunei Innovation Lab</span>
                             @endif
                         </a>
                     </div>

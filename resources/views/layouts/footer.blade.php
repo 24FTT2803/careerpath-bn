@@ -25,6 +25,13 @@
                             <span class="logo-fallback"><i class="fas fa-satellite-dish"></i> AITI</span>
                         @endif
                     </a>
+                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="logo-link">
+                        @if(file_exists(public_path('images/innovation-lab-logo.png')))
+                            <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="footer-logo">
+                        @else
+                            <span class="logo-fallback"><i class="fas fa-lightbulb"></i> Brunei Innovation Lab</span>
+                        @endif
+                    </a>
                 </div>
             </div>
             <div class="footer-col">

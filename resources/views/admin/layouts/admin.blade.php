@@ -363,6 +363,11 @@
             opacity: 1;
         }
 
+        /* Three-line wordmark: a little taller so its text stays readable. */
+        .admin-footer-logo.is-stacked {
+            height: 34px;
+        }
+
         .admin-footer-logo-fallback {
             display: inline-flex;
             align-items: center;
@@ -1319,6 +1324,15 @@
                 @else
                     <a href="https://www.aiti.gov.bn" target="_blank" class="admin-footer-logo-fallback">
                         <i class="fas fa-satellite-dish"></i> AITI
+                    </a>
+                @endif
+                @if(file_exists(public_path('images/innovation-lab-logo.png')))
+                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-link">
+                        <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="admin-footer-logo is-stacked">
+                    </a>
+                @else
+                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-fallback">
+                        <i class="fas fa-lightbulb"></i> Brunei Innovation Lab
                     </a>
                 @endif
             </div>
