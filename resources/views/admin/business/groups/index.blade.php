@@ -397,112 +397,114 @@
         @if($allOrganisations->isEmpty())
             <p class="empty-text">No organisations yet.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Organisation</th>
-                        <th>Structure</th>
-                        <th>Status</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($allOrganisations as $item)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.organisations.update', $item) }}"
-                                    class="inline-form"
-                                >
-                                    @csrf
-                                    @method('PUT')
-
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value="{{ $item->name }}"
-                                        maxlength="150"
-                                        required
-                                        class="field-input"
-                                        aria-label="Organisation name"
-                                    >
-
-                                    <input
-                                        type="text"
-                                        name="code"
-                                        value="{{ $item->code }}"
-                                        maxlength="40"
-                                        placeholder="Code"
-                                        class="field-input is-short"
-                                        aria-label="Code"
-                                    >
-
-                                    <button type="submit" class="btn btn-sm btn-subtle">
-                                        <i class="fas fa-check"></i> Save
-                                    </button>
-                                </form>
-                            </td>
-
-                            <td class="cell-sub">
-                                {{ $item->groups_count }}
-                                {{ Str::plural('group', $item->groups_count) }}
-                                &middot;
-                                {{ $item->group_types_count }}
-                                {{ Str::plural('type', $item->group_types_count) }}
-                            </td>
-
-                            <td>
-                                @if($item->is_active)
-                                    <span class="status-pill status-pill-green">Active</span>
-                                @else
-                                    <span class="status-pill status-pill-muted">Archived</span>
-                                @endif
-                            </td>
-
-                            <td><div class="row-actions">
-                                <a
-                                    href="{{ route('admin.business.groups.index', ['organisation' => $item->id]) }}"
-                                    class="link"
-                                >
-                                    <i class="fas fa-folder-open"></i> Open
-                                </a>
-
-                                @if($item->is_active)
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.organisations.archive', $item) }}"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="link"><i class="fas fa-box-archive"></i> Archive</button>
-                                    </form>
-                                @else
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.organisations.restore', $item) }}"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="link"><i class="fas fa-rotate-left"></i> Restore</button>
-                                    </form>
-                                @endif
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.organisations.destroy', $item) }}"
-                                    onsubmit="return confirm('Delete {{ $item->name }} and everything in it?');"
-                                >
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="link link-danger"><i class="fas fa-trash-alt"></i> Delete</button>
-                                </form>
-                            </div></td>
+                            <th>Organisation</th>
+                            <th>Structure</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($allOrganisations as $item)
+                            <tr>
+                                <td>
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.organisations.update', $item) }}"
+                                        class="inline-form"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value="{{ $item->name }}"
+                                            maxlength="150"
+                                            required
+                                            class="field-input"
+                                            aria-label="Organisation name"
+                                        >
+
+                                        <input
+                                            type="text"
+                                            name="code"
+                                            value="{{ $item->code }}"
+                                            maxlength="40"
+                                            placeholder="Code"
+                                            class="field-input is-short"
+                                            aria-label="Code"
+                                        >
+
+                                        <button type="submit" class="btn btn-sm btn-subtle">
+                                            <i class="fas fa-check"></i> Save
+                                        </button>
+                                    </form>
+                                </td>
+
+                                <td class="cell-sub">
+                                    {{ $item->groups_count }}
+                                    {{ Str::plural('group', $item->groups_count) }}
+                                    &middot;
+                                    {{ $item->group_types_count }}
+                                    {{ Str::plural('type', $item->group_types_count) }}
+                                </td>
+
+                                <td>
+                                    @if($item->is_active)
+                                        <span class="status-pill status-pill-green">Active</span>
+                                    @else
+                                        <span class="status-pill status-pill-muted">Archived</span>
+                                    @endif
+                                </td>
+
+                                <td><div class="row-actions">
+                                    <a
+                                        href="{{ route('admin.business.groups.index', ['organisation' => $item->id]) }}"
+                                        class="link"
+                                    >
+                                        <i class="fas fa-folder-open"></i> Open
+                                    </a>
+
+                                    @if($item->is_active)
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.business.organisations.archive', $item) }}"
+                                        >
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="link"><i class="fas fa-box-archive"></i> Archive</button>
+                                        </form>
+                                    @else
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.business.organisations.restore', $item) }}"
+                                        >
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="link"><i class="fas fa-rotate-left"></i> Restore</button>
+                                        </form>
+                                    @endif
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.organisations.destroy', $item) }}"
+                                        onsubmit="return confirm('Delete {{ $item->name }} and everything in it?');"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="link link-danger"><i class="fas fa-trash-alt"></i> Delete</button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
 
         <div class="add-row">

@@ -145,7 +145,13 @@
             @if($items->isEmpty())
                 <p class="empty-text">Nothing here yet.</p>
             @else
-                <div class="table-scroll">
+                {{--
+                    Nine columns, one of them a 160px preview, so
+                    this needs a higher floor than the shared
+                    default before Status and Actions start
+                    crushing into each other.
+                --}}
+                <div class="table-scroll" style="--table-floor: 1060px;">
                 <table class="admin-table">
                     <thead>
                         <tr>

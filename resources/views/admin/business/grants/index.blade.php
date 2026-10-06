@@ -154,54 +154,56 @@
         @if($activeGrants->isEmpty())
             <p class="empty-text">Nobody has been granted access.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Reason</th>
-                        <th>Runs</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($activeGrants as $grant)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <span class="cell-title">
-                                    {{ $grant->user?->name ?? 'Deleted account' }}
-                                </span>
-                                <span class="cell-sub">
-                                    {{ $grant->user?->student_id ?? $grant->user?->email }}
-                                </span>
-                            </td>
-
-                            <td class="capitalize">{{ $grant->source }}</td>
-
-                            <td class="cell-sub">
-                                {{ $grant->starts_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
-                                &rarr;
-                                {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
-                            </td>
-
-                            <td><div class="row-actions">
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.grants.revoke', $grant) }}"
-                                    onsubmit="return confirm('Revoke this access?');"
-                                >
-                                    @csrf
-                                    @method('PUT')
-
-                                    <button type="submit" class="link link-danger">
-                                        Revoke
-                                    </button>
-                                </form>
-                            </div></td>
+                            <th>Student</th>
+                            <th>Reason</th>
+                            <th>Runs</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($activeGrants as $grant)
+                            <tr>
+                                <td>
+                                    <span class="cell-title">
+                                        {{ $grant->user?->name ?? 'Deleted account' }}
+                                    </span>
+                                    <span class="cell-sub">
+                                        {{ $grant->user?->student_id ?? $grant->user?->email }}
+                                    </span>
+                                </td>
+
+                                <td class="capitalize">{{ $grant->source }}</td>
+
+                                <td class="cell-sub">
+                                    {{ $grant->starts_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
+                                    &rarr;
+                                    {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
+                                </td>
+
+                                <td><div class="row-actions">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.grants.revoke', $grant) }}"
+                                        onsubmit="return confirm('Revoke this access?');"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+
+                                        <button type="submit" class="link link-danger">
+                                            Revoke
+                                        </button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 
@@ -215,36 +217,38 @@
                 it was withdrawn.
             </p>
 
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Student</th>
-                        <th>Reason</th>
-                        <th>Ended</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($revokedGrants as $grant)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <span class="cell-title">
-                                    {{ $grant->user?->name ?? 'Deleted account' }}
-                                </span>
-                                <span class="cell-sub">
-                                    {{ $grant->user?->student_id ?? $grant->user?->email }}
-                                </span>
-                            </td>
-
-                            <td class="capitalize">{{ $grant->source }}</td>
-
-                            <td class="cell-sub">
-                                {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? '—' }}
-                            </td>
+                            <th>Student</th>
+                            <th>Reason</th>
+                            <th>Ended</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($revokedGrants as $grant)
+                            <tr>
+                                <td>
+                                    <span class="cell-title">
+                                        {{ $grant->user?->name ?? 'Deleted account' }}
+                                    </span>
+                                    <span class="cell-sub">
+                                        {{ $grant->user?->student_id ?? $grant->user?->email }}
+                                    </span>
+                                </td>
+
+                                <td class="capitalize">{{ $grant->source }}</td>
+
+                                <td class="cell-sub">
+                                    {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? '—' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     @endif
 </div>

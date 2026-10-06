@@ -44,118 +44,120 @@
         @if($sponsors->isEmpty())
             <p class="empty-text">No sponsors yet.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Code</th>
-                        <th>Funding</th>
-                        <th>Status</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($sponsors as $sponsor)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td colspan="2">
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.sponsorship.sponsors.update', $sponsor) }}"
-                                    style="display:flex;gap:8px;align-items:center;"
-                                >
-                                    @csrf
-                                    @method('PUT')
+                            <th>Name</th>
+                            <th>Code</th>
+                            <th>Funding</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
 
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value="{{ $sponsor->name }}"
-                                        maxlength="120"
-                                        required
-                                        class="field-input"
-                                        style="max-width:220px;"
-                                    >
-
-                                    <input
-                                        type="text"
-                                        name="code"
-                                        value="{{ $sponsor->code }}"
-                                        maxlength="40"
-                                        placeholder="Code"
-                                        class="field-input"
-                                        style="max-width:110px;"
-                                    >
-
-                                    <button type="submit" class="link">Save</button>
-                                </form>
-                            </td>
-
-                            <td>
-                                <span class="cell-title">
-                                    {{ $sponsor->active_grants_count }} active
-                                </span>
-
-                                @if($sponsor->sponsored_access_grants_count > $sponsor->active_grants_count)
-                                    <span class="cell-sub">
-                                        {{ $sponsor->sponsored_access_grants_count }} in total
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td>
-                                @if($sponsor->is_active)
-                                    <span class="status-pill status-pill-green">Active</span>
-                                @else
-                                    <span class="status-pill status-pill-muted">Suspended</span>
-                                @endif
-                            </td>
-
-                            <td><div class="row-actions">
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.sponsorship.sponsors.toggle', $sponsor) }}"
-                                    class="inline"
-                                >
-                                    @csrf
-                                    @method('PUT')
-
-                                    <button
-                                        type="submit"
-                                        class="link"
-                                    >
-                                        {{ $sponsor->is_active ? 'Suspend' : 'Reactivate' }}
-                                    </button>
-                                </form>
-
-                                @if($sponsor->sponsored_access_grants_count === 0)
+                    <tbody>
+                        @foreach($sponsors as $sponsor)
+                            <tr>
+                                <td colspan="2">
                                     <form
                                         method="POST"
-                                        action="{{ route('admin.business.sponsorship.sponsors.destroy', $sponsor) }}"
-                                        class="inline"
-                                        onsubmit="return confirm('Delete {{ $sponsor->name }}?');"
+                                        action="{{ route('admin.business.sponsorship.sponsors.update', $sponsor) }}"
+                                        style="display:flex;gap:8px;align-items:center;"
                                     >
                                         @csrf
-                                        @method('DELETE')
+                                        @method('PUT')
+
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value="{{ $sponsor->name }}"
+                                            maxlength="120"
+                                            required
+                                            class="field-input"
+                                            style="max-width:220px;"
+                                        >
+
+                                        <input
+                                            type="text"
+                                            name="code"
+                                            value="{{ $sponsor->code }}"
+                                            maxlength="40"
+                                            placeholder="Code"
+                                            class="field-input"
+                                            style="max-width:110px;"
+                                        >
+
+                                        <button type="submit" class="link">Save</button>
+                                    </form>
+                                </td>
+
+                                <td>
+                                    <span class="cell-title">
+                                        {{ $sponsor->active_grants_count }} active
+                                    </span>
+
+                                    @if($sponsor->sponsored_access_grants_count > $sponsor->active_grants_count)
+                                        <span class="cell-sub">
+                                            {{ $sponsor->sponsored_access_grants_count }} in total
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td>
+                                    @if($sponsor->is_active)
+                                        <span class="status-pill status-pill-green">Active</span>
+                                    @else
+                                        <span class="status-pill status-pill-muted">Suspended</span>
+                                    @endif
+                                </td>
+
+                                <td><div class="row-actions">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.sponsorship.sponsors.toggle', $sponsor) }}"
+                                        class="inline"
+                                    >
+                                        @csrf
+                                        @method('PUT')
 
                                         <button
                                             type="submit"
-                                            class="link link-danger"
+                                            class="link"
                                         >
-                                            Delete
+                                            {{ $sponsor->is_active ? 'Suspend' : 'Reactivate' }}
                                         </button>
                                     </form>
-                                @else
-                                    <span
-                                        class="link link-disabled"
-                                        title="They still fund access"
-                                    >Delete</span>
-                                @endif
-                            </div></td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
+
+                                    @if($sponsor->sponsored_access_grants_count === 0)
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.business.sponsorship.sponsors.destroy', $sponsor) }}"
+                                            class="inline"
+                                            onsubmit="return confirm('Delete {{ $sponsor->name }}?');"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button
+                                                type="submit"
+                                                class="link link-danger"
+                                            >
+                                                Delete
+                                            </button>
+                                        </form>
+                                    @else
+                                        <span
+                                            class="link link-disabled"
+                                            title="They still fund access"
+                                        >Delete</span>
+                                    @endif
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
 
         <div class="add-row">
@@ -336,51 +338,53 @@
         @if($activeGrants->isEmpty())
             <p class="empty-text">Nothing is sponsored at the moment.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Sponsor</th>
-                        <th>Plan</th>
-                        <th>Covers</th>
-                        <th>Runs</th>
-                        <th>Priority</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($activeGrants as $grant)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td class="cell-title">{{ $grant->sponsor?->name ?? '—' }}</td>
-                            <td>{{ $grant->plan?->name ?? '—' }}</td>
-                            <td>{{ $grant->organisationGroup?->name ?? 'Whole institution' }}</td>
-
-                            <td class="cell-sub">
-                                {{ $grant->starts_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
-                                &rarr;
-                                {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
-                            </td>
-
-                            <td>{{ $grant->priority }}</td>
-
-                            <td><div class="row-actions">
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.sponsorship.grants.revoke', $grant) }}"
-                                    onsubmit="return confirm('Withdraw this sponsorship?');"
-                                >
-                                    @csrf
-                                    @method('PUT')
-
-                                    <button type="submit" class="link link-danger">
-                                        Withdraw
-                                    </button>
-                                </form>
-                            </div></td>
+                            <th>Sponsor</th>
+                            <th>Plan</th>
+                            <th>Covers</th>
+                            <th>Runs</th>
+                            <th>Priority</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($activeGrants as $grant)
+                            <tr>
+                                <td class="cell-title">{{ $grant->sponsor?->name ?? '—' }}</td>
+                                <td>{{ $grant->plan?->name ?? '—' }}</td>
+                                <td>{{ $grant->organisationGroup?->name ?? 'Whole institution' }}</td>
+
+                                <td class="cell-sub">
+                                    {{ $grant->starts_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
+                                    &rarr;
+                                    {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
+                                </td>
+
+                                <td>{{ $grant->priority }}</td>
+
+                                <td><div class="row-actions">
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.sponsorship.grants.revoke', $grant) }}"
+                                        onsubmit="return confirm('Withdraw this sponsorship?');"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+
+                                        <button type="submit" class="link link-danger">
+                                            Withdraw
+                                        </button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 
@@ -393,30 +397,32 @@
                 Kept as a record of who funded what, and until when.
             </p>
 
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Sponsor</th>
-                        <th>Plan</th>
-                        <th>Covered</th>
-                        <th>Ended</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($withdrawnGrants as $grant)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td class="cell-title">{{ $grant->sponsor?->name ?? '—' }}</td>
-                            <td>{{ $grant->plan?->name ?? '—' }}</td>
-                            <td>{{ $grant->organisationGroup?->name ?? 'Whole institution' }}</td>
-
-                            <td class="cell-sub">
-                                {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? '—' }}
-                            </td>
+                            <th>Sponsor</th>
+                            <th>Plan</th>
+                            <th>Covered</th>
+                            <th>Ended</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($withdrawnGrants as $grant)
+                            <tr>
+                                <td class="cell-title">{{ $grant->sponsor?->name ?? '—' }}</td>
+                                <td>{{ $grant->plan?->name ?? '—' }}</td>
+                                <td>{{ $grant->organisationGroup?->name ?? 'Whole institution' }}</td>
+
+                                <td class="cell-sub">
+                                    {{ $grant->ends_at?->timezone(config('app.business_timezone'))?->timezone(config('app.business_timezone'))->format('j M Y') ?? '—' }}
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         </div>
     @endif
 </div>

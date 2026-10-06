@@ -24,67 +24,69 @@
         @if($notes->isEmpty())
             <p class="empty-text">No notes yet. Create one to let students know what you're building.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Note</th>
-                        <th>Author</th>
-                        <th>Status</th>
-                        <th>Posted</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach($notes as $note)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                @if($note->imageUrl())
-                                    <img
-                                        src="{{ $note->imageUrl() }}"
-                                        alt=""
-                                        style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);float:left;margin-right:12px;"
-                                    >
-                                @endif
-                                <span class="cell-title">{{ $note->title }}</span>
-                                <span
-                                    class="cell-sub"
-                                    style="display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:420px;"
-                                >{{ $note->body }}</span>
-                            </td>
-                            <td>{{ $note->author->name ?? 'Unknown' }}</td>
-                            <td>
-                                @if($note->is_published)
-                                    <span class="status-pill status-pill-green">Published</span>
-                                @else
-                                    <span class="status-pill status-pill-muted">Draft</span>
-                                @endif
-                            </td>
-                            <td>{{ $note->created_at->format('d M Y') }}</td>
-                            <td>
-                                <div class="row-actions">
-                                    <a
-                                        href="{{ route('admin.business.innovation-lab.edit', $note) }}"
-                                        class="link"
-                                    >Edit</a>
-
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.innovation-lab.destroy', $note) }}"
-                                        onsubmit="return confirm('Delete {{ $note->title }}?');"
-                                    >
-                                        @csrf
-                                        @method('DELETE')
-
-                                        <button type="submit" class="link link-danger">
-                                            Delete
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
+                            <th>Note</th>
+                            <th>Author</th>
+                            <th>Status</th>
+                            <th>Posted</th>
+                            <th></th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach($notes as $note)
+                            <tr>
+                                <td>
+                                    @if($note->imageUrl())
+                                        <img
+                                            src="{{ $note->imageUrl() }}"
+                                            alt=""
+                                            style="width:56px;height:56px;object-fit:cover;border-radius:6px;border:1px solid var(--border);float:left;margin-right:12px;"
+                                        >
+                                    @endif
+                                    <span class="cell-title">{{ $note->title }}</span>
+                                    <span
+                                        class="cell-sub"
+                                        style="display:-webkit-box;-webkit-line-clamp:2;line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;max-width:420px;"
+                                    >{{ $note->body }}</span>
+                                </td>
+                                <td>{{ $note->author->name ?? 'Unknown' }}</td>
+                                <td>
+                                    @if($note->is_published)
+                                        <span class="status-pill status-pill-green">Published</span>
+                                    @else
+                                        <span class="status-pill status-pill-muted">Draft</span>
+                                    @endif
+                                </td>
+                                <td>{{ $note->created_at->format('d M Y') }}</td>
+                                <td>
+                                    <div class="row-actions">
+                                        <a
+                                            href="{{ route('admin.business.innovation-lab.edit', $note) }}"
+                                            class="link"
+                                        >Edit</a>
+
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.business.innovation-lab.destroy', $note) }}"
+                                            onsubmit="return confirm('Delete {{ $note->title }}?');"
+                                        >
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button type="submit" class="link link-danger">
+                                                Delete
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 </div>

@@ -163,16 +163,25 @@
             >
 
             @php
-                $uploadLimitMb = round(
-                    App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() / 1024,
+                $imageLimitMb = round(
+                    App\Http\Controllers\Admin\AdvertisementController::assetLimitKilobytes(
+                        App\Models\Advertisement::TYPE_IMAGE
+                    ) / 1024,
+                    1
+                );
+
+                $videoLimitMb = round(
+                    App\Http\Controllers\Admin\AdvertisementController::assetLimitKilobytes(
+                        App\Models\Advertisement::TYPE_VIDEO
+                    ) / 1024,
                     1
                 );
             @endphp
 
             <p class="field-hint">
                 Banners are shown at 6:1, so 1456&times;243 is a
-                good size. This server accepts files up to
-                {{ $uploadLimitMb }} MB, and video up to
+                good size. Images may be up to {{ $imageLimitMb }} MB
+                and video up to {{ $videoLimitMb }} MB and
                 {{ App\Http\Controllers\Admin\AdvertisementController::MAX_VIDEO_SECONDS }}
                 seconds. An animated GIF is kept as it is, since
                 cropping would flatten it. Leave empty to keep
@@ -386,7 +395,14 @@
 
         var MAX_VIDEO_SECONDS = {{ App\Http\Controllers\Admin\AdvertisementController::MAX_VIDEO_SECONDS }};
 
-        var MAX_UPLOAD_BYTES = {{ App\Http\Controllers\Admin\AdvertisementController::uploadLimitKilobytes() * 1024 }};
+        /*
+         * The per-kind limits, not just the server ceiling.
+         * Checking only the ceiling let a 10 MB image upload in
+         * full and then fail validation at 5 MB, which is the
+         * slowest possible way to learn a file is too big.
+         */
+        var MAX_IMAGE_BYTES = {{ App\Http\Controllers\Admin\AdvertisementController::assetLimitKilobytes(App\Models\Advertisement::TYPE_IMAGE) * 1024 }};
+        var MAX_VIDEO_BYTES = {{ App\Http\Controllers\Admin\AdvertisementController::assetLimitKilobytes(App\Models\Advertisement::TYPE_VIDEO) * 1024 }};
 
         if (!input) {
             return;
@@ -468,12 +484,20 @@
                 return;
             }
 
-            if (file.size > MAX_UPLOAD_BYTES) {
+            var isVideo = file.type.indexOf('video/') === 0;
+
+            var limit = isVideo
+                ? MAX_VIDEO_BYTES
+                : MAX_IMAGE_BYTES;
+
+            if (file.size > limit) {
                 complain(
-                    'That file is '
+                    'That '
+                    + (isVideo ? 'video' : 'image')
+                    + ' is '
                     + (file.size / 1048576).toFixed(1)
-                    + ' MB. This server accepts up to '
-                    + (MAX_UPLOAD_BYTES / 1048576).toFixed(1)
+                    + ' MB. The limit is '
+                    + (limit / 1048576).toFixed(1)
                     + ' MB.'
                 );
 
@@ -482,7 +506,7 @@
                 return;
             }
 
-            if (file.type.indexOf('video/') === 0) {
+            if (isVideo) {
                 checkVideo(file);
 
                 return;

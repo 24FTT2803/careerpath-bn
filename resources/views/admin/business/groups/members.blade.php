@@ -60,75 +60,77 @@
                 Nobody belongs to this group yet.
             </p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Student ID</th>
-                        <th>Programme</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($members as $member)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <span class="cell-title">{{ $member->name }}</span>
-
-                                <span class="cell-sub">
-                                    {{ $member->email }}
-                                </span>
-                            </td>
-
-                            <td class="cell-sub">
-                                {{ $member->student_id ?? '—' }}
-                            </td>
-
-                            <td>
-                                {{ $member->programme ?? 'Not set' }}
-
-                                @if(in_array($member->id, $mismatched, true))
-                                    <span
-                                        class="text-yellow-600 text-xs block"
-                                        title="Their profile names a different programme than this group sits under"
-                                    >
-                                        <i class="fas fa-triangle-exclamation"></i>
-                                        does not match this branch
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td><div class="row-actions">
-                                <a
-                                    href="{{ route('admin.students.show', $member->id) }}"
-                                    class="link"
-                                >
-                                    View
-                                </a>
-
-                                 <form
-                                    method="POST"
-                                    action="{{ route('admin.business.groups.members.destroy', [$group, $member]) }}"
-                                    class="inline"
-                                    data-confirm-delete
-                                    data-item-name="{{ $member->name }}"
-                                >
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="link link-danger"
-                                    >
-                                        Remove
-                                    </button>
-                                </form>
-                            </div></td>
+                            <th>Name</th>
+                            <th>Student ID</th>
+                            <th>Programme</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($members as $member)
+                            <tr>
+                                <td>
+                                    <span class="cell-title">{{ $member->name }}</span>
+
+                                    <span class="cell-sub">
+                                        {{ $member->email }}
+                                    </span>
+                                </td>
+
+                                <td class="cell-sub">
+                                    {{ $member->student_id ?? '—' }}
+                                </td>
+
+                                <td>
+                                    {{ $member->programme ?? 'Not set' }}
+
+                                    @if(in_array($member->id, $mismatched, true))
+                                        <span
+                                            class="text-yellow-600 text-xs block"
+                                            title="Their profile names a different programme than this group sits under"
+                                        >
+                                            <i class="fas fa-triangle-exclamation"></i>
+                                            does not match this branch
+                                        </span>
+                                    @endif
+                                </td>
+
+                                <td><div class="row-actions">
+                                    <a
+                                        href="{{ route('admin.students.show', $member->id) }}"
+                                        class="link"
+                                    >
+                                        View
+                                    </a>
+
+                                     <form
+                                        method="POST"
+                                        action="{{ route('admin.business.groups.members.destroy', [$group, $member]) }}"
+                                        class="inline"
+                                        data-confirm-delete
+                                        data-item-name="{{ $member->name }}"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button
+                                            type="submit"
+                                            class="link link-danger"
+                                        >
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
     </div>
 
@@ -219,40 +221,42 @@
         @if($lecturers->isEmpty())
             <p class="empty-text">No lecturers assigned yet.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($lecturers as $lecturer)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td class="cell-title">{{ $lecturer->name }}</td>
-                            <td class="cell-sub">{{ $lecturer->email }}</td>
-                            <td><div class="row-actions">
-                                    <form
-                                    method="POST"
-                                    action="{{ route('admin.business.groups.lecturers.destroy', [$group, $lecturer]) }}"
-                                    class="inline"
-                                    data-confirm-delete
-                                    data-item-name="{{ $lecturer->name }}"
-                                >
-                                    @csrf
-                                    @method('DELETE')
-
-                                    <button type="submit" class="link link-danger">
-                                        Remove
-                                    </button>
-                                </form>
-                            </div></td>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($lecturers as $lecturer)
+                            <tr>
+                                <td class="cell-title">{{ $lecturer->name }}</td>
+                                <td class="cell-sub">{{ $lecturer->email }}</td>
+                                <td><div class="row-actions">
+                                        <form
+                                        method="POST"
+                                        action="{{ route('admin.business.groups.lecturers.destroy', [$group, $lecturer]) }}"
+                                        class="inline"
+                                        data-confirm-delete
+                                        data-item-name="{{ $lecturer->name }}"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+
+                                        <button type="submit" class="link link-danger">
+                                            Remove
+                                        </button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
 
         <h4 class="card-heading" style="margin-top:20px;font-size:14px;">

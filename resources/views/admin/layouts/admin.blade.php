@@ -947,14 +947,41 @@
             width: 100%;
         }
 
-        /* Wide tables scroll inside their card on smaller screens. */
-        .table-scroll {
+        /*
+         * Wide tables scroll inside their card rather than
+         * compressing past the point of being readable.
+         *
+         * The padding is deliberate: without it the last column
+         * sits flush against the edge at the end of the scroll,
+         * with nothing to show the row has finished.
+         */
+        /*
+         * Two names for the same job. The BIICF and dashboard
+         * pages were written against .table-responsive, which
+         * nothing defined — there is no Bootstrap here — so those
+         * tables had neither a floor nor anywhere to scroll.
+         * Both names are honoured rather than rewriting the
+         * markup of six pages.
+         */
+        .table-scroll,
+        .table-responsive {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
+            padding-right: 16px;
+            padding-bottom: 4px;
         }
 
-        .table-scroll .admin-table {
-            min-width: 820px;
+        /*
+         * The floor below which a table stops condensing and
+         * starts scrolling. Tables carrying more columns raise it
+         * for themselves with --table-floor, since one shared
+         * number either squashes the widest table or makes the
+         * narrowest scroll for no reason.
+         */
+        .table-scroll .admin-table,
+        .table-responsive .table,
+        .table-responsive .cpbn-table {
+            min-width: var(--table-floor, 820px);
         }
 
         /* Small inline forms (add a row, quick edit) line up neatly. */

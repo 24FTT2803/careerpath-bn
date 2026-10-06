@@ -425,6 +425,29 @@
             gap: 24px;
         }
 
+        /*
+         * The About grids. These were written inline, where a
+         * media query cannot reach them, so they stayed two and
+         * three columns at every width. On a phone the three
+         * column one could not fit, which pushed the whole page
+         * wider than the screen: the section itself still drew,
+         * and every other section — being only as wide as the
+         * viewport — left blank space beside it.
+         */
+        .about-pillars {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .about-values {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
+        }
+
         .feature-card {
             background: var(--card);
             border-radius: var(--radius);
@@ -1047,6 +1070,7 @@
             .step-arrow { display: none; }
             .biicf-grid { grid-template-columns: 1fr; text-align: center; }
             .biicf-stats { grid-template-columns: 1fr 1fr; }
+            .about-pillars { grid-template-columns: 1fr; }
             .footer-grid { grid-template-columns: 1fr; }
             .nav-links { display: none; }
             .footer-bottom { flex-direction: column; text-align: center; }
@@ -1060,6 +1084,7 @@
             .hero-stats { grid-template-columns: 1fr; gap: 12px; }
             .hero-stat { text-align: center; }
             .biicf-stats { grid-template-columns: 1fr; }
+            .about-values { grid-template-columns: 1fr; }
             .footer-logos { gap: 14px 18px; }
             .footer-logos .footer-logo { height: 32px; }
         }
@@ -1455,7 +1480,7 @@
             <p>Driving the future of career guidance for ICT students in Brunei.</p>
         </div>
         
-                <div class="reveal-stagger" style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;">
+                <div class="about-pillars reveal-stagger">
             <div style="background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:var(--radius);padding:40px;color:white;text-align:center;">
                 <div style="font-size:48px;margin-bottom:16px;color:var(--accent);">
                     <i class="fas fa-eye"></i>
@@ -1479,7 +1504,7 @@
             </div>
         </div>
         
-            <div class="reveal-stagger" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px;">
+            <div class="about-values reveal-stagger">
             <div style="text-align:center;padding:20px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);">
                 <div style="font-size:28px;color:var(--accent);margin-bottom:8px;">
                     <i class="fas fa-lightbulb"></i>

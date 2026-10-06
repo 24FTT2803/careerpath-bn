@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\File;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class AdvertisementController extends Controller
@@ -24,15 +25,19 @@ class AdvertisementController extends Controller
      */
     /**
      * Generous enough that an animated GIF is usable.
+     *
+     * Public because the form checks the same number in the
+     * browser. Two copies of a limit drift apart, and the one
+     * that drifts is always the friendlier one.
      */
-    private const MAX_IMAGE_KILOBYTES = 5120;
+    public const MAX_IMAGE_KILOBYTES = 5120;
 
     /**
      * Thirty seconds of video does not fit in ten megabytes at
      * any reasonable quality, so this is sized for the limit
      * rather than against it.
      */
-    private const MAX_VIDEO_KILOBYTES = 25600;
+    public const MAX_VIDEO_KILOBYTES = 25600;
 
     /**
      * How long a video advertisement may run.
@@ -448,7 +453,25 @@ class AdvertisementController extends Controller
 
                 'ends_at.after_or_equal' => 'The end date must not be before the start date.',
 
-                'asset.max' => 'The uploaded file is too large.',
+                /*
+                 * Named rather than left vague: this fires when
+                 * the file cleared the server's own ceiling but
+                 * not the limit for its kind.
+                 */
+                'asset.max' => 'That file is over the '
+                    .round(
+                        $this->assetLimitKilobytes(
+                            $request->input('type')
+                        ) / 1024,
+                        1
+                    )
+                    .' MB limit for '
+                    .(
+                        $request->input('type') === Advertisement::TYPE_VIDEO
+                            ? 'video'
+                            : 'images'
+                    )
+                    .'.',
             ]
         ) + [
             'is_active' => $request->boolean('is_active'),
@@ -532,11 +555,20 @@ class AdvertisementController extends Controller
             ? self::MAX_VIDEO_KILOBYTES
             : self::MAX_IMAGE_KILOBYTES;
 
-        abort_if(
-            $file->getSize() > $limit * 1024,
-            422,
-            'The uploaded file is too large.'
-        );
+        /*
+         * A validation failure rather than an abort, so the
+         * administrator lands back on the form with the message
+         * beside the field instead of on a bare error page.
+         */
+        if ($file->getSize() > $limit * 1024) {
+            throw ValidationException::withMessages([
+                'asset' => self::tooLargeMessage(
+                    $file->getSize(),
+                    $limit,
+                    $isVideo ? 'video' : 'image'
+                ),
+            ]);
+        }
 
         return $file->store(
             'advertisements',
@@ -549,15 +581,28 @@ class AdvertisementController extends Controller
      *
      * @return array<int, mixed>
      */
+    /**
+     * The ceiling actually applied to an upload of this type.
+     *
+     * The rule, the message and the browser all read this, so
+     * what an administrator is told matches what is enforced.
+     */
+    public static function assetLimitKilobytes(?string $type): int
+    {
+        return self::uploadLimitKilobytes(
+            $type === Advertisement::TYPE_VIDEO
+                ? self::MAX_VIDEO_KILOBYTES
+                : self::MAX_IMAGE_KILOBYTES
+        );
+    }
+
     private function assetRules(?string $type): array
     {
         if ($type === Advertisement::TYPE_VIDEO) {
             return [
                 'nullable',
                 File::types(self::VIDEO_TYPES)
-                    ->max($this->uploadLimitKilobytes(
-                        self::MAX_VIDEO_KILOBYTES
-                    )),
+                    ->max(self::assetLimitKilobytes($type)),
             ];
         }
 
@@ -565,9 +610,7 @@ class AdvertisementController extends Controller
             return [
                 'nullable',
                 File::types(self::IMAGE_TYPES)
-                    ->max($this->uploadLimitKilobytes(
-                        self::MAX_IMAGE_KILOBYTES
-                    )),
+                    ->max(self::assetLimitKilobytes($type)),
             ];
         }
 
@@ -586,6 +629,31 @@ class AdvertisementController extends Controller
      * promise the application cannot keep: the upload simply
      * fails with no useful explanation.
      */
+    /**
+     * One wording for every way a file can be too big.
+     *
+     * Saying only that something is too large leaves the
+     * administrator guessing by how much, so both numbers are
+     * named.
+     *
+     * @param  int  $bytes  What was sent.
+     * @param  int  $limitKilobytes  What is allowed.
+     * @param  string  $subject  What kind of file this was.
+     */
+    public static function tooLargeMessage(
+        int $bytes,
+        int $limitKilobytes,
+        string $subject
+    ): string {
+        return 'That '
+            .$subject
+            .' is '
+            .round($bytes / 1048576, 1)
+            .' MB. The limit is '
+            .round($limitKilobytes / 1024, 1)
+            .' MB.';
+    }
+
     public static function uploadLimitKilobytes(
         int $preferred = PHP_INT_MAX
     ): int {
@@ -677,11 +745,15 @@ class AdvertisementController extends Controller
             'That image could not be read.'
         );
 
-        abort_if(
-            strlen($binary) > self::MAX_IMAGE_KILOBYTES * 1024,
-            422,
-            'The cropped image is too large.'
-        );
+        if (strlen($binary) > self::MAX_IMAGE_KILOBYTES * 1024) {
+            throw ValidationException::withMessages([
+                'asset' => self::tooLargeMessage(
+                    strlen($binary),
+                    self::MAX_IMAGE_KILOBYTES,
+                    'cropped image'
+                ),
+            ]);
+        }
 
         $path = 'advertisements/'
             .Str::uuid()
