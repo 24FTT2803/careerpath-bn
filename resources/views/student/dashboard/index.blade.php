@@ -251,6 +251,41 @@
         white-space: normal;
     }
 
+    /* Quick actions: a small "pop" on hover. Scale (not a lift) keeps
+       the button under the cursor, so it never flickers or misses a click. */
+    .quick-actions .btn {
+        transition:
+            transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.22s ease,
+            background-color 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .quick-actions .btn i {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (hover: hover) {
+        .quick-actions .btn:hover,
+        .quick-actions .btn:focus-visible {
+            transform: scale(1.035);
+            box-shadow: 0 10px 22px -8px rgba(26, 58, 92, 0.4);
+        }
+
+        .quick-actions .btn:hover i,
+        .quick-actions .btn:focus-visible i {
+            transform: scale(1.18) rotate(-6deg);
+        }
+    }
+
+    @media (hover: none), (prefers-reduced-motion: reduce) {
+        .quick-actions .btn:hover,
+        .quick-actions .btn:hover i {
+            transform: none;
+        }
+    }
+
     .btn {
         display: inline-flex;
         align-items: center;
