@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Propaganistas\LaravelPhone\PhoneNumber;
+use Propaganistas\LaravelPhone\Rules\Phone;
 use App\Notifications\ResetPasswordNotification;
 
 class User extends Authenticatable
@@ -256,6 +259,63 @@ class User extends Authenticatable
             'max:20',
             'regex:/^[\+\d\s\-\(\)]{7,20}$/',
         ];
+    }
+
+    /**
+     * Phone rules shared by every form that edits a phone number
+     * (student profile, lecturer settings, admin user forms): the
+     * number must be valid for the chosen country.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function phoneWithCountryRules(): array
+    {
+        return [
+            'phone' => ['nullable', 'string', 'max:30', (new Phone)->countryField('phone_country')],
+            'phone_country' => ['nullable', 'required_with:phone', 'string', 'size:2'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function phoneWithCountryMessages(): array
+    {
+        return [
+            'phone.phone' => 'Enter a valid phone number for the selected country.',
+            'phone.max' => 'The phone number is too long.',
+            'phone_country.required_with' => 'Please select a country for the phone number.',
+            'phone_country.size' => 'The selected phone country is invalid.',
+        ];
+    }
+
+    /**
+     * Turn a validated phone number into the stored form
+     * (e.g. +6737123456) and refuse one that already belongs to
+     * another account.
+     *
+     * @throws ValidationException
+     */
+    public static function standardisePhone(?string $phone, ?string $country, ?int $ignoreUserId = null): ?string
+    {
+        if (blank($phone)) {
+            return null;
+        }
+
+        $standard = (new PhoneNumber($phone, strtoupper((string) $country)))->formatE164();
+
+        $taken = static::query()
+            ->where('phone', $standard)
+            ->when($ignoreUserId, fn ($query) => $query->where('id', '!=', $ignoreUserId))
+            ->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages([
+                'phone' => 'This phone number is already registered to another account.',
+            ]);
+        }
+
+        return $standard;
     }
 
     /**

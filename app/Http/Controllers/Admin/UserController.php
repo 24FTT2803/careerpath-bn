@@ -62,8 +62,8 @@ class UserController extends Controller
         $rules['email'] = User::getEmailValidationRules($request->role);
         $rules['email'][] = 'unique:users';
 
-        // Phone validation
-        $rules['phone'] = User::getPhoneValidationRules();
+        // Phone: valid for the chosen country, never shared between accounts
+        $rules += User::phoneWithCountryRules();
 
             $request->merge([
             'student_id' => User::normaliseStudentId($request->input('student_id')),
@@ -79,12 +79,14 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
-        $request->validate($rules, User::studentIdMessages());
+        $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
+
+        $phone = User::standardisePhone($request->phone, $request->phone_country);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $phone,
             'password' => Hash::make($request->password),
             'role' => $request->role,
                         'student_id' => $request->role === 'student'
@@ -113,6 +115,7 @@ class UserController extends Controller
         // Create student profile with phone number if provided
         StudentProfile::create([
             'user_id' => $user->id,
+            'phone' => $phone,
         ]);
 
         return redirect()->route('admin.users.index')
@@ -148,8 +151,8 @@ class UserController extends Controller
         $rules['email'] = User::getEmailValidationRules($request->role);
         $rules['email'][] = 'unique:users,email,'.$id;
 
-        // Phone validation
-        $rules['phone'] = ['nullable', 'string', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'];
+        // Phone: valid for the chosen country, never shared between accounts
+        $rules += User::phoneWithCountryRules();
 
             $request->merge([
             'student_id' => User::normaliseStudentId($request->input('student_id')),
@@ -165,12 +168,14 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
-        $request->validate($rules, User::studentIdMessages());
+        $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
+
+        $phone = User::standardisePhone($request->phone, $request->phone_country, $user->id);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $phone,
             'role' => $request->role,
             'student_id' => $request->role === 'student' ? $request->student_id : null,
             'programme' => $request->role === 'student' ? $request->programme : null,
@@ -193,6 +198,9 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        /* Keep the profile's copy of the phone in step, as the student's own form does. */
+        $user->profile?->update(['phone' => $phone]);
 
         app(ProgrammeEnrolmentService::class)->syncFor(
             $user->fresh(),

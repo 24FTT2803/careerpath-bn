@@ -116,6 +116,11 @@
                                 ) }}"
                                 alt="{{ $user->name }} profile picture"
                             >
+                        @elseif($user->avatar)
+                            <img
+                                src="{{ asset('storage/'.ltrim($user->avatar, '/')) }}"
+                                alt="{{ $user->name }} profile picture"
+                            >
                         @else
                             {{
                                 strtoupper(
@@ -206,7 +211,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Email</span>
-                                <span class="metric-value" style="font-size: 12px; word-break: break-all;">{{ $user->email }}</span>
+                                <span class="metric-value metric-value-email" title="{{ $user->email }}">{{ $user->email }}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
@@ -233,7 +238,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Email</span>
-                                <span class="metric-value" style="font-size: 12px; word-break: break-all;">{{ $user->email }}</span>
+                                <span class="metric-value metric-value-email" title="{{ $user->email }}">{{ $user->email }}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
@@ -652,6 +657,13 @@
         font-weight: 600;
         color: #1a3a5c;
         margin-top: 2px;
+    }
+
+    .metric-value-email {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .completion-badge {

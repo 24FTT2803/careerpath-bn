@@ -9,17 +9,6 @@
      * banner is obvious from the list rather than only once it
      * is live.
      */
-    .ads-table th,
-    .ads-table td {
-        padding-right: 16px;
-        vertical-align: middle;
-    }
-
-    .ads-table th:last-child,
-    .ads-table td:last-child {
-        padding-right: 0;
-    }
-
     .ad-thumb {
         display: block;
         width: 160px;
@@ -73,7 +62,7 @@
             <form
                 method="POST"
                 action="{{ route('admin.business.advertisements.slots.update', $slot) }}"
-                style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #f3f4f6;"
+                class="settings-strip"
             >
                 @csrf
                 @method('PUT')
@@ -124,9 +113,11 @@
                     >
                 </div>
 
-                <button type="submit" class="btn btn-subtle">Save</button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-check"></i> Save
+                </button>
 
-                <p class="field-hint" style="flex-basis:100%;">
+                <p class="field-hint" style="flex-basis:100%;margin-top:0;">
                     The first
                     {{ $slot->rotation_enabled ? $slot->rotation_size : 1 }}
                     {{ Str::plural('advertisement', $slot->resolveCount()) }}
@@ -154,7 +145,8 @@
             @if($items->isEmpty())
                 <p class="empty-text">Nothing here yet.</p>
             @else
-                <table class="admin-table ads-table">
+                <div class="table-scroll">
+                <table class="admin-table">
                     <thead>
                         <tr>
                             <th>Order</th>
@@ -247,19 +239,15 @@
                                     {{ $advertisement->organisationGroup?->name ?? 'All students' }}
                                 </td>
 
-                                <td>
-                                    <span class="cell-sub">
-                                        {{ $reach[$advertisement->id] ?? 0 }}
-                                        {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
-                                    </span>
+                                <td class="cell-sub">
+                                    {{ $reach[$advertisement->id] ?? 0 }}
+                                    {{ Str::plural('student', $reach[$advertisement->id] ?? 0) }}
                                 </td>
 
-                                <td>
-                                    <span class="cell-sub" style="white-space:nowrap;">
-                                        {{ $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
-                                        &rarr;
-                                        {{ $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
-                                    </span>
+                                <td class="cell-sub">
+                                    {{ $advertisement->starts_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'Immediately' }}
+                                    &rarr;
+                                    {{ $advertisement->ends_at?->timezone(config('app.business_timezone'))->format('j M Y') ?? 'No end' }}
                                 </td>
 
                                 <td>
@@ -299,6 +287,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             @endif
         </div>
     @endforeach

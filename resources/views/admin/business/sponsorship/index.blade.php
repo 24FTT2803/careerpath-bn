@@ -158,37 +158,42 @@
             </table>
         @endif
 
-        <form
-            method="POST"
-            action="{{ route('admin.business.sponsorship.sponsors.store') }}"
-            class="flex gap-2 flex-wrap"
-        >
-            @csrf
+        <div class="add-row">
+            <span class="add-row-label">Add a sponsor</span>
 
-            <input
-                type="text"
-                name="name"
-                maxlength="120"
-                required
-                placeholder="Sponsor name"
-                class="field-input"
+            <form
+                method="POST"
+                action="{{ route('admin.business.sponsorship.sponsors.store') }}"
+                class="inline-form"
             >
+                @csrf
 
-            <input
-                type="text"
-                name="code"
-                maxlength="40"
-                placeholder="Code (optional)"
-                class="field-input"
-            >
+                <input
+                    type="text"
+                    name="name"
+                    maxlength="120"
+                    required
+                    placeholder="Sponsor name"
+                    class="field-input"
+                >
 
-            <button
-                type="submit"
-                class="btn btn-subtle"
-            >
-                Add sponsor
-            </button>
-        </form>
+                <input
+                    type="text"
+                    name="code"
+                    maxlength="40"
+                    placeholder="Code (optional)"
+                    class="field-input is-short"
+                    style="flex-basis:160px;"
+                >
+
+                <button
+                    type="submit"
+                    class="btn btn-primary btn-sm"
+                >
+                    <i class="fas fa-plus"></i> Add sponsor
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- New sponsored access -->

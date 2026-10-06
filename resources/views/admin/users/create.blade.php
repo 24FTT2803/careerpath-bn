@@ -48,9 +48,11 @@
 
             <div class="cpbn-field">
                 <label>Phone Number</label>
-                <input type="text" name="phone" value="{{ old('phone') }}" placeholder="+673 123 4567">
-                <p class="cpbn-hint">Only digits, +, -, spaces, and parentheses allowed (7-20 characters)</p>
+                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" maxlength="30" autocomplete="tel">
+                <input type="hidden" id="phone_country" name="phone_country" value="{{ old('phone_country', 'BN') }}">
+                <p class="cpbn-hint">Choose the country, then enter the number. Brunei (+673) is selected by default.</p>
                 @error('phone')<p class="err">{{ $message }}</p>@enderror
+                @error('phone_country')<p class="err">{{ $message }}</p>@enderror
             </div>
 
             <div class="cpbn-field">

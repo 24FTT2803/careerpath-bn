@@ -717,4 +717,28 @@ Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
             '/students/{student}',
             [\App\Http\Controllers\Lecturer\StudentController::class, 'show']
         )->name('students.show');
+
+        /*
+         * The lecturer's own account settings. The controller
+         * refuses anyone who is not a lecturer.
+         */
+        Route::get(
+            '/settings',
+            [\App\Http\Controllers\Lecturer\SettingsController::class, 'show']
+        )->name('settings');
+
+        Route::put(
+            '/settings/profile',
+            [\App\Http\Controllers\Lecturer\SettingsController::class, 'updateProfile']
+        )->name('settings.profile');
+
+        Route::put(
+            '/settings/password',
+            [\App\Http\Controllers\Lecturer\SettingsController::class, 'updatePassword']
+        )->name('settings.password');
+
+        Route::delete(
+            '/settings',
+            [\App\Http\Controllers\Lecturer\SettingsController::class, 'destroy']
+        )->name('settings.destroy');
     });

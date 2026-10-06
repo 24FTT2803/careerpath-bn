@@ -850,6 +850,192 @@
             outline-offset: 2px;
         }
 
+
+        /* ============================================
+           ADMIN DESIGN REFINEMENTS (layout only)
+           ============================================ */
+
+        /* Label-style cells must stay table cells, or columns drift apart. */
+        .admin-table td.cell-sub,
+        .admin-table td.cell-title,
+        .admin-table th.cell-sub {
+            display: table-cell;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding-right: 16px;
+        }
+
+        .admin-table th:last-child,
+        .admin-table td:last-child {
+            padding-right: 0;
+        }
+
+        .admin-table td {
+            vertical-align: middle;
+        }
+
+        .admin-table th {
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 11px;
+        }
+
+        .admin-table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        .admin-table tbody tr:hover {
+            background: #fcfbf7;
+        }
+
+        /* Row actions: small outlined buttons instead of loose text links. */
+        .row-actions {
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .row-actions .link,
+        .row-actions .link-disabled {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.3;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .row-actions .link:hover {
+            background: #faf7ee;
+            border-color: var(--accent);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .row-actions .link-danger {
+            color: var(--danger);
+        }
+
+        .row-actions .link-danger:hover {
+            background: #fdf1f0;
+            border-color: #f0b8b1;
+            color: #a93226;
+        }
+
+        .row-actions .link-disabled {
+            color: #c3c7ce;
+            background: #fafafa;
+            cursor: not-allowed;
+        }
+
+        /* Phone country picker fills its field like any other input. */
+        .iti {
+            display: block;
+            width: 100%;
+        }
+
+        /* Wide tables scroll inside their card on smaller screens. */
+        .table-scroll {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-scroll .admin-table {
+            min-width: 820px;
+        }
+
+        /* Small inline forms (add a row, quick edit) line up neatly. */
+        .inline-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .inline-form .field-input {
+            width: auto;
+            min-width: 0;
+            flex: 1 1 200px;
+        }
+
+        .inline-form .field-input.is-short {
+            flex: 0 1 120px;
+        }
+
+        .inline-form .btn {
+            align-self: stretch;
+        }
+
+        .add-row {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 1px dashed #e2dccb;
+            border-radius: 10px;
+            background: #fcfbf7;
+        }
+
+        .add-row-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* Filter pills above a list. */
+        .filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        /* Search box with an icon. */
+        .search-field {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .search-field i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .search-field .field-input {
+            padding-left: 38px;
+        }
+
+        /* Settings strip (e.g. advertisement placement options). */
+        .settings-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            background: #f9fafb;
+            border: 1px solid #f0f1f3;
+        }
+
+        .settings-strip .btn {
+            height: 44px;
+        }
     </style>
     @include('partials.motion')
 </head>
@@ -905,6 +1091,13 @@
                 <i class="fas fa-briefcase"></i>
                 <span>Careers</span>
             </a>
+            @if(auth()->user()->role === 'lecturer')
+                <div class="nav-label" style="margin-top:16px;">Account</div>
+                <a href="{{ route('lecturer.settings') }}" class="sidebar-link {{ request()->routeIs('lecturer.settings') ? 'active' : '' }}">
+                    <i class="fas fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            @endif
             @if(auth()->user()->role === 'admin')
                 <div class="nav-label" style="margin-top:16px;">BIICF Management</div>
                 <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}">
@@ -1052,8 +1245,12 @@
 <div class="sidebar-footer" style="padding:16px 20px;border-top:1px solid rgba(255,255,255,0.06);">
     <div style="display:flex;align-items:center;gap:10px;">
         <!-- Avatar -->
-        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">
-           {{ substr(auth()->user()->name, 0, 1) }}
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden;">
+            @if(auth()->user()->avatar)
+                <img src="{{ asset('storage/'.ltrim(auth()->user()->avatar, '/')) }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+            @else
+                {{ substr(auth()->user()->name, 0, 1) }}
+            @endif
         </div>
         
         <!-- User Info -->

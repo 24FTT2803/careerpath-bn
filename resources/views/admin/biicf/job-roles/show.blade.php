@@ -162,7 +162,10 @@
     .btn-outline:hover { border-color: #c9a84c; color: #c9a84c; }
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
     .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; }
+    .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; padding: 0; }
+    .card-grid > .card { margin-bottom: 0; }
+    .card-body h4 { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8a6420; margin: 18px 0 4px; padding-bottom: 6px; border-bottom: 1px solid #f3f4f6; }
+    .card-body h4:first-child { margin-top: 0; }
     .card.full-width { grid-column: 1 / -1; }
     .card-header { padding: 16px 20px; background: #faf8f2; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 16px; color: #1a3a5c; }
     .card-body { padding: 20px; }

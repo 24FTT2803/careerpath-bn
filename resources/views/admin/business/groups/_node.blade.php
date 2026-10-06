@@ -15,6 +15,7 @@
 <div
     class="group-row"
     data-group-id="{{ $group->id }}"
+    data-depth="{{ $depth }}"
     data-name="{{ strtolower($group->name.' '.$group->code) }}"
     style="padding-left: {{ 12 + $depth * 22 }}px{{ $hidden ? ';display:none' : '' }}"
 >
@@ -38,6 +39,7 @@
             class="group-meta group-members"
             title="Manage who belongs to this group"
         >
+            <i class="fas fa-users"></i>
             {{ $group->memberships_count }} direct
 
             @if(($reach[$group->id] ?? 0) !== $group->memberships_count)
@@ -55,16 +57,20 @@
             'parent' => $group->id,
             'organisation' => $group->organisation_id,
         ]) }}">
-            <i class="fas fa-plus"></i> add inside
+            <i class="fas fa-plus"></i> Add inside
         </a>
 
-        <a href="{{ route('admin.business.groups.edit', $group) }}">edit</a>
+        <a href="{{ route('admin.business.groups.edit', $group) }}">
+            <i class="fas fa-pen"></i> Edit
+        </a>
 
         <button
             type="button"
             class="group-move-toggle"
             data-move-target="move-{{ $group->id }}-{{ $parentId ?? 'root' }}"
-        >move</button>
+        ><i class="fas fa-arrows-up-down-left-right"></i> Move</button>
+
+        <span class="action-divider" aria-hidden="true"></span>
 
         @if($group->is_active)
             <form
@@ -74,7 +80,7 @@
             >
                 @csrf
                 @method('PUT')
-                <button type="submit">archive</button>
+                <button type="submit"><i class="fas fa-box-archive"></i> Archive</button>
             </form>
         @else
             <form
@@ -83,12 +89,12 @@
             >
                 @csrf
                 @method('PUT')
-                <button type="submit">restore</button>
+                <button type="submit"><i class="fas fa-rotate-left"></i> Restore</button>
             </form>
         @endif
 
         @if($blocker)
-            <span class="group-blocked" title="{{ $blocker }}">delete</span>
+            <span class="group-blocked" title="{{ $blocker }}"><i class="fas fa-lock"></i> Delete</span>
         @else
             <form
                 method="POST"
@@ -97,7 +103,7 @@
             >
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="danger">delete</button>
+                <button type="submit" class="danger"><i class="fas fa-trash-alt"></i> Delete</button>
             </form>
         @endif
     </span>
@@ -136,7 +142,7 @@
             @endforeach
         </select>
 
-        <button type="submit" class="link">Move</button>
+        <button type="submit" class="link"><i class="fas fa-check"></i> Move here</button>
 
         @if(count($children) > 0)
             <span class="cell-sub">
@@ -156,7 +162,7 @@
 @endif
 
 @if(count($children) > 0 && $depth < 6)
-    <div class="group-branch">
+    <div class="group-branch" style="--depth: {{ $depth }}">
         @foreach($children as $child)
             @include('admin.business.groups._node', [
                 'group' => $child,

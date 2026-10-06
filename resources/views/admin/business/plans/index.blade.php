@@ -18,6 +18,8 @@
     }
 
     .business-page-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
         font-size: 28px;
         color: #1a3a5c;
         margin: 0 0 6px;

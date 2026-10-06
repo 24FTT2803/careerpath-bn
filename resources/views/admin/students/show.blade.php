@@ -427,6 +427,12 @@
         gap: 20px;
     }
 
+    /* The column gap already spaces the cards. */
+    .profile-col-side > .card,
+    .profile-col-main > .card {
+        margin-bottom: 0;
+    }
+
     /* Cards */
     .card {
         background: white;
