@@ -733,6 +733,11 @@ Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
         )->name('settings.profile');
 
         Route::put(
+               '/settings/avatar',
+               [\App\Http\Controllers\Lecturer\SettingsController::class, 'updateAvatar']
+           )->name('settings.avatar');
+           
+        Route::put(
             '/settings/password',
             [\App\Http\Controllers\Lecturer\SettingsController::class, 'updatePassword']
         )->name('settings.password');

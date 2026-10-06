@@ -24,9 +24,48 @@ class SettingsController extends Controller
 {
     public function show(): View
     {
+        $user = $this->lecturer();
+
         return view('lecturer.settings', [
-            'user' => $this->lecturer(),
+            'user' => $user,
+            'classes' => $user->assignedGroups()->orderBy('name')->get(),
         ]);
+    }
+
+    /**
+     * Change or remove the profile picture on its own, from the
+     * badge, without touching the rest of the profile.
+     */
+    public function updateAvatar(Request $request): RedirectResponse
+    {
+        $user = $this->lecturer();
+
+        $request->validate([
+            'avatar' => [
+                'required_without:remove_avatar',
+                'nullable',
+                File::image()->types(['jpg', 'jpeg', 'png', 'webp'])->max('5mb'),
+            ],
+            'remove_avatar' => ['nullable', 'boolean'],
+        ], [
+            'avatar.required_without' => 'Choose a picture to upload.',
+        ]);
+
+        if ($request->hasFile('avatar')) {
+            $this->deleteAvatarFile($user->avatar);
+            $user->update(['avatar' => $request->file('avatar')->store('avatars', 'public')]);
+
+            return redirect()
+                ->route('lecturer.settings')
+                ->with('success', 'Your profile picture has been updated.');
+        }
+
+        $this->deleteAvatarFile($user->avatar);
+        $user->update(['avatar' => null]);
+
+        return redirect()
+            ->route('lecturer.settings')
+            ->with('success', 'Your profile picture has been removed.');
     }
 
     public function updateProfile(Request $request): RedirectResponse

@@ -228,3 +228,88 @@ test('a lecturer can delete their account without affecting students', function 
         ->and($student->student_id_verified_by)->toBeNull()
         ->and($student->groupMemberships()->count())->toBe(1);
 });
+
+test('the profile page shows the lecturer badge with their classes', function () {
+    $this->seed(OrganisationGroupSeeder::class);
+
+    $class = OrganisationGroup::where('name', 'DADT04')->firstOrFail();
+    $lecturer = lecturerForSettings(['phone' => '+6737123456']);
+    $lecturer->assignedGroups()->attach($class->id);
+
+    $this->actingAs($lecturer)
+        ->get(route('lecturer.settings'))
+        ->assertOk()
+        ->assertSee('My Profile')
+        ->assertSee('Your lecturer badge', false)
+        ->assertSee('Lecturer')
+        ->assertSee('+673 712 3456')
+        ->assertSee($class->code ?: $class->name)
+        ->assertSee(route('lecturer.settings.avatar'), false);
+});
+
+test('the sidebar calls the page My Profile', function () {
+    $lecturer = lecturerForSettings();
+
+    $this->actingAs($lecturer)
+        ->get(route('lecturer.dashboard'))
+        ->assertOk()
+        ->assertSee('My Profile');
+});
+
+test('a lecturer can change their picture from the badge without resending details', function () {
+    Storage::fake('public');
+    $lecturer = lecturerForSettings(['phone' => '+6737123456']);
+
+    $this->actingAs($lecturer)
+        ->put(route('lecturer.settings.avatar'), [
+            'avatar' => UploadedFile::fake()->image('badge.png', 300, 300),
+        ])
+        ->assertRedirect(route('lecturer.settings'))
+        ->assertSessionHasNoErrors();
+
+    $lecturer->refresh();
+
+    expect($lecturer->avatar)->not->toBeNull()
+        ->and($lecturer->name)->toBe('Dr. Siti Aminah')
+        ->and($lecturer->phone)->toBe('+6737123456');
+
+    Storage::disk('public')->assertExists($lecturer->avatar);
+});
+
+test('a lecturer can remove their picture from the badge', function () {
+    Storage::fake('public');
+    $path = UploadedFile::fake()->image('old.jpg')->store('avatars', 'public');
+    $lecturer = lecturerForSettings(['avatar' => $path]);
+
+    $this->actingAs($lecturer)
+        ->put(route('lecturer.settings.avatar'), ['remove_avatar' => '1'])
+        ->assertRedirect(route('lecturer.settings'));
+
+    expect($lecturer->fresh()->avatar)->toBeNull();
+    Storage::disk('public')->assertMissing($path);
+});
+
+test('saving the badge picture needs an image', function () {
+    Storage::fake('public');
+    $lecturer = lecturerForSettings();
+
+    $this->actingAs($lecturer)
+        ->put(route('lecturer.settings.avatar'), [])
+        ->assertSessionHasErrors(['avatar' => 'Choose a picture to upload.']);
+
+    $this->actingAs($lecturer)
+        ->put(route('lecturer.settings.avatar'), [
+            'avatar' => UploadedFile::fake()->create('notes.pdf', 50, 'application/pdf'),
+        ])
+        ->assertSessionHasErrors('avatar');
+
+    expect($lecturer->fresh()->avatar)->toBeNull();
+});
+
+test('only lecturers can change a badge picture', function () {
+    $student = User::factory()->create(['role' => 'student']);
+
+    $this->actingAs($student)
+        ->put(route('lecturer.settings.avatar'), ['remove_avatar' => '1'])
+        ->assertForbidden();
+});

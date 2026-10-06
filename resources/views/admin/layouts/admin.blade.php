@@ -1099,8 +1099,8 @@
             @if(auth()->user()->role === 'lecturer')
                 <div class="nav-label" style="margin-top:16px;">Account</div>
                 <a href="{{ route('lecturer.settings') }}" class="sidebar-link {{ request()->routeIs('lecturer.settings') ? 'active' : '' }}">
-                    <i class="fas fa-gear"></i>
-                    <span>Settings</span>
+                    <i class="fas fa-id-badge"></i>
+                    <span>My Profile</span>
                 </a>
             @endif
             @if(auth()->user()->role === 'admin')
