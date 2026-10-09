@@ -6,6 +6,7 @@ use App\Models\BusinessSponsor;
 use App\Models\Notification;
 use App\Models\Organisation;
 use App\Models\OrganisationGroup;
+use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserPlanGrant;
 use Carbon\CarbonInterface;
@@ -145,6 +146,102 @@ class PremiumNotifier
             $scheduled ? 'Premium coming soon' : 'Premium activated',
             $lead.' '.$this->timing($startsAt, $endsAt)
         );
+    }
+
+    /**
+     * An administrator revoked a direct grant (Access Grants page).
+     *
+     * Students who still have Premium another way are told it
+     * carries on, so a revoke never reads as losing everything.
+     */
+    public function notifyDirectRevoke(UserPlanGrant $grant): void
+    {
+        $student = User::find($grant->user_id);
+
+        if ($student === null || ! $student->isStudent()) {
+            return;
+        }
+
+        $wasScheduled = $this->isScheduled($grant->starts_at);
+
+        $lead = match (true) {
+            $wasScheduled => 'The Premium that was scheduled for your account has been cancelled.',
+            $grant->source === 'trial' => 'Your Premium trial has been ended by an administrator.',
+            default => 'An administrator has ended Premium on your account.',
+        };
+
+        $access = $this->entitlements->accessFor($student);
+
+        if ($access['plan']?->code === 'premium') {
+            $through = $access['source'] === 'sponsored' && $access['grant']?->sponsor
+                ? ' through '.$access['grant']->sponsor->name
+                : '';
+
+            $this->send(
+                [$student->id],
+                'Premium access changed',
+                $lead." You still have Premium{$through}."
+            );
+
+            return;
+        }
+
+        $this->send(
+            [$student->id],
+            $wasScheduled ? 'Premium cancelled' : 'Premium ended',
+            $lead.' '.$this->nowOnPlan($access['plan']?->name)
+        );
+    }
+
+    /**
+     * Students who lost Premium because a sponsor stopped funding it
+     * (sponsorship withdrawn, or the sponsor suspended).
+     *
+     * @param  array<int, int>  $userIds
+     */
+    public function notifySponsorshipEnded(array $userIds, BusinessSponsor $sponsor): int
+    {
+        if ($userIds === []) {
+            return 0;
+        }
+
+        $free = Plan::query()
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->value('name');
+
+        return $this->send(
+            $userIds,
+            'Premium ended',
+            "{$sponsor->name} is no longer sponsoring Premium for you. ".$this->nowOnPlan($free)
+        );
+    }
+
+    /**
+     * Students a sponsor currently reaches, across all of its
+     * active sponsorships.
+     *
+     * @return array<int, int>
+     */
+    public function studentsCoveredBySponsor(BusinessSponsor $sponsor): array
+    {
+        return $sponsor->sponsoredAccessGrants()
+            ->where('is_active', true)
+            ->get(['organisation_id', 'organisation_group_id'])
+            ->flatMap(fn ($grant) => $this->studentsCoveredBy(
+                (int) $grant->organisation_id,
+                $grant->organisation_group_id ? (int) $grant->organisation_group_id : null
+            ))
+            ->unique()
+            ->values()
+            ->all();
+    }
+
+    private function nowOnPlan(?string $planName): string
+    {
+        return $planName
+            ? "Your account is now on the {$planName} plan."
+            : 'Your account no longer has Premium features.';
     }
 
     /**

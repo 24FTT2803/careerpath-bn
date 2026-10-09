@@ -111,12 +111,19 @@ class UserPlanGrantController extends Controller
      * The record is kept so there is a trace of who was given
      * what and when it was taken away.
      */
-    public function revoke(UserPlanGrant $grant)
+    public function revoke(UserPlanGrant $grant, PremiumNotifier $notifier)
     {
+        $wasLive = $grant->is_active;
+
         $grant->update([
             'is_active' => false,
             'ends_at' => $grant->ends_at ?? now(),
         ]);
+
+        /* Tell the student, so losing Premium is never a mystery. */
+        if ($wasLive) {
+            $notifier->notifyDirectRevoke($grant);
+        }
 
         return redirect()
             ->route('admin.business.grants.index')

@@ -4,6 +4,7 @@ use App\Models\BusinessSponsor;
 use App\Models\Notification;
 use App\Models\OrganisationGroup;
 use App\Models\Plan;
+use App\Models\SponsoredAccessGrant;
 use App\Models\User;
 use App\Models\UserPlanGrant;
 use Database\Seeders\FeatureDefinitionSeeder;
@@ -203,4 +204,133 @@ test('staff are never sent premium notifications', function () {
         ]);
 
     expect(Notification::where('user_id', $lecturer->id)->exists())->toBeFalse();
+});
+
+function directGrantFor(User $student, array $attributes = []): UserPlanGrant
+{
+    return UserPlanGrant::create(array_merge([
+        'user_id' => $student->id,
+        'plan_id' => Plan::where('code', 'premium')->value('id'),
+        'source' => 'admin',
+        'is_active' => true,
+    ], $attributes));
+}
+
+function sponsorClass(string $name = 'PB'): array
+{
+    $class = groupOfType('Class / Group');
+    $sponsor = BusinessSponsor::create(['name' => $name, 'is_active' => true]);
+
+    return [$class, $sponsor];
+}
+
+test('revoking premium tells the student it ended and which plan they are on now', function () {
+    $student = premiumStudentIn();
+    $grant = directGrantFor($student);
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.business.grants.revoke', $grant))
+        ->assertRedirect(route('admin.business.grants.index'));
+
+    $notification = Notification::where('user_id', $student->id)->sole();
+
+    expect($notification->type)->toBe('premium')
+        ->and($notification->title)->toBe('Premium ended')
+        ->and($notification->message)->toBe(
+            'An administrator has ended Premium on your account. Your account is now on the Free plan.'
+        );
+});
+
+test('revoking a trial says the trial ended', function () {
+    $student = premiumStudentIn();
+    $grant = directGrantFor($student, ['source' => 'trial']);
+
+    $this->actingAs($this->admin)->put(route('admin.business.grants.revoke', $grant));
+
+    expect(Notification::where('user_id', $student->id)->sole()->message)
+        ->toStartWith('Your Premium trial has been ended by an administrator.');
+});
+
+test('cancelling scheduled premium says it was cancelled', function () {
+    $student = premiumStudentIn();
+    $grant = directGrantFor($student, ['starts_at' => now()->addDays(5)]);
+
+    $this->actingAs($this->admin)->put(route('admin.business.grants.revoke', $grant));
+
+    expect(Notification::where('user_id', $student->id)->sole()->title)->toBe('Premium cancelled');
+});
+
+test('a revoke says premium continues when a sponsor still covers the student', function () {
+    [$class, $sponsor] = sponsorClass('PB');
+    $student = premiumStudentIn($class);
+    $grant = directGrantFor($student);
+
+    SponsoredAccessGrant::create([
+        'business_sponsor_id' => $sponsor->id,
+        'plan_id' => Plan::where('code', 'premium')->value('id'),
+        'organisation_id' => $class->organisation_id,
+        'is_active' => true,
+        'priority' => 0,
+    ]);
+
+    $this->actingAs($this->admin)->put(route('admin.business.grants.revoke', $grant));
+
+    $notification = Notification::where('user_id', $student->id)->sole();
+
+    expect($notification->title)->toBe('Premium access changed')
+        ->and($notification->message)->toBe(
+            'An administrator has ended Premium on your account. You still have Premium through PB.'
+        );
+});
+
+test('withdrawing a sponsorship tells only the students who lose premium', function () {
+    [$class, $sponsor] = sponsorClass('PB');
+    $losing = premiumStudentIn($class);
+    $keeping = premiumStudentIn($class);
+    directGrantFor($keeping);
+
+    $this->actingAs($this->admin)->post(route('admin.business.sponsorship.grants.store'), [
+        'business_sponsor_id' => $sponsor->id,
+    ]);
+
+    Notification::query()->delete();
+
+    $grant = SponsoredAccessGrant::query()->latest('id')->firstOrFail();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.business.sponsorship.grants.revoke', $grant))
+        ->assertSessionHas('success', 'Sponsored access withdrawn. 1 student was notified.');
+
+    $notification = Notification::where('user_id', $losing->id)->sole();
+
+    expect($notification->title)->toBe('Premium ended')
+        ->and($notification->message)->toBe(
+            'PB is no longer sponsoring Premium for you. Your account is now on the Free plan.'
+        )
+        ->and(Notification::where('user_id', $keeping->id)->exists())->toBeFalse();
+});
+
+test('suspending a sponsor tells its students, and reactivating tells them again', function () {
+    [$class, $sponsor] = sponsorClass('AITI');
+    $student = premiumStudentIn($class);
+
+    $this->actingAs($this->admin)->post(route('admin.business.sponsorship.grants.store'), [
+        'business_sponsor_id' => $sponsor->id,
+    ]);
+
+    Notification::query()->delete();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.business.sponsorship.sponsors.toggle', $sponsor))
+        ->assertSessionHas('success', 'Sponsor suspended. 1 student was notified.');
+
+    expect(Notification::where('user_id', $student->id)->sole()->title)->toBe('Premium ended');
+
+    Notification::query()->delete();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.business.sponsorship.sponsors.toggle', $sponsor->fresh()))
+        ->assertSessionHas('success', 'Sponsor reactivated. 1 student was notified.');
+
+    expect(Notification::where('user_id', $student->id)->sole()->title)->toBe('Premium activated');
 });

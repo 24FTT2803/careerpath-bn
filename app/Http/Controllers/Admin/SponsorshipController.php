@@ -118,19 +118,39 @@ class SponsorshipController extends Controller
      * already ignores grants belonging to an inactive sponsor,
      * so this suspends funding rather than erasing its history.
      */
-    public function toggleSponsor(BusinessSponsor $sponsor)
+    public function toggleSponsor(BusinessSponsor $sponsor, PremiumNotifier $notifier)
     {
+        /*
+         * Compare who has Premium before and after, so only the
+         * students whose access actually changed are notified.
+         */
+        $coveredIds = $notifier->studentsCoveredBySponsor($sponsor);
+        $premiumBefore = $notifier->alreadyPremium($coveredIds);
+
         $sponsor->update([
             'is_active' => ! $sponsor->is_active,
         ]);
+
+        $premiumAfter = $notifier->alreadyPremium($coveredIds);
+
+        $notified = $sponsor->is_active
+            ? $notifier->notifySponsorship(
+                array_values(array_diff($premiumAfter, $premiumBefore)),
+                $sponsor,
+                null,
+                null
+            )
+            : $notifier->notifySponsorshipEnded(
+                array_values(array_diff($premiumBefore, $premiumAfter)),
+                $sponsor
+            );
 
         return redirect()
             ->route('admin.business.sponsorship.index')
             ->with(
                 'success',
-                $sponsor->is_active
-                    ? 'Sponsor reactivated.'
-                    : 'Sponsor suspended.'
+                ($sponsor->is_active ? 'Sponsor reactivated. ' : 'Sponsor suspended. ')
+                    .$this->notifiedText($notified)
             );
     }
 
@@ -244,22 +264,45 @@ class SponsorshipController extends Controller
             ->route('admin.business.sponsorship.index')
             ->with(
                 'success',
-                'Sponsored access added. '
-                    .($notified === 1 ? '1 student was' : "{$notified} students were")
-                    .' notified.'
+                'Sponsored access added. '.$this->notifiedText($notified)
             );
     }
 
-    public function revokeGrant(SponsoredAccessGrant $grant)
+    public function revokeGrant(SponsoredAccessGrant $grant, PremiumNotifier $notifier)
     {
+        $coveredIds = $grant->is_active
+            ? $notifier->studentsCoveredBy(
+                (int) $grant->organisation_id,
+                $grant->organisation_group_id ? (int) $grant->organisation_group_id : null
+            )
+            : [];
+        $premiumBefore = $notifier->alreadyPremium($coveredIds);
+
         $grant->update([
             'is_active' => false,
             'ends_at' => $grant->ends_at ?? now(),
         ]);
 
+        /* Only students who no longer have Premium at all are told. */
+        $lostIds = array_values(array_diff(
+            $premiumBefore,
+            $notifier->alreadyPremium($coveredIds)
+        ));
+
+        $notified = $grant->sponsor
+            ? $notifier->notifySponsorshipEnded($lostIds, $grant->sponsor)
+            : 0;
+
         return redirect()
             ->route('admin.business.sponsorship.index')
-            ->with('success', 'Sponsored access withdrawn.');
+            ->with('success', 'Sponsored access withdrawn. '.$this->notifiedText($notified));
+    }
+
+    private function notifiedText(int $notified): string
+    {
+        return $notified === 1
+            ? '1 student was notified.'
+            : "{$notified} students were notified.";
     }
 
     /**
