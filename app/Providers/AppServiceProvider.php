@@ -15,6 +15,7 @@ use App\Services\AI\MockCareerAiClient;
 use App\Services\AI\OpenAiCompatibleClient;
 use App\Services\AI\OpenRouterClient;
 use App\Services\Business\AdvertisementService;
+use App\Services\Student\StudentAttention;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        /*
+         * One per request, so the navigation and the page share
+         * the same "new" badge checks instead of repeating them.
+         */
+        $this->app->scoped(StudentAttention::class);
+
         /*
          * Which service runs the model. Bound separately from the
          * career clients so switching provider leaves the prompts

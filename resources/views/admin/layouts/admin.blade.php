@@ -1070,6 +1070,7 @@
         }
     </style>
     @include('partials.motion')
+    @include('partials.attention')
 </head>
 <body>
 
@@ -1089,6 +1090,7 @@
                 $isLecturerOnly = auth()->user()->role === 'lecturer';
                 $dashboardRoute = $isLecturerOnly ? route('lecturer.dashboard') : route('admin.dashboard');
                 $dashboardActive = request()->routeIs('admin.dashboard') || request()->routeIs('lecturer.dashboard');
+                $pendingStudentIds = app(\App\Services\Student\StudentAttention::class)->pendingStudentIds(auth()->user());
             @endphp
             <a href="{{ $dashboardRoute }}" class="sidebar-link {{ $dashboardActive ? 'active' : '' }}">
                 <i class="fas fa-th-large"></i>
@@ -1105,6 +1107,9 @@
                 >
                     <i class="fas fa-user-graduate"></i>
                     <span>My Students</span>
+                    @if($pendingStudentIds > 0)
+                        <span class="badge attn-count" title="{{ $pendingStudentIds }} student {{ $pendingStudentIds === 1 ? 'ID' : 'IDs' }} waiting for verification">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
+                    @endif
                 </a>
             @else
                 <a
@@ -1117,6 +1122,9 @@
                 >
                     <i class="fas fa-user-graduate"></i>
                     <span>Students</span>
+                    @if($pendingStudentIds > 0)
+                        <span class="badge attn-count" title="{{ $pendingStudentIds }} student {{ $pendingStudentIds === 1 ? 'ID' : 'IDs' }} waiting for verification">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
+                    @endif
                 </a>
             @endif
             <a href="{{ route('admin.careers.index') }}" class="sidebar-link {{ request()->routeIs('admin.careers.*') ? 'active' : '' }}">

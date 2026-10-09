@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
+use App\Services\Student\StudentAttention;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -13,7 +14,8 @@ class HistoryController extends Controller
 {
     public function __construct(
         private EntitlementService $entitlements,
-        private RecommendationStatusService $recommendationStatus
+        private RecommendationStatusService $recommendationStatus,
+        private StudentAttention $attention
     ) {}
 
     /**
@@ -66,6 +68,9 @@ class HistoryController extends Controller
         $conversation = $adviserHistoryAccess['allowed']
             ? $student->careerAdviserConversation
             : null;
+
+        /* Opening History clears its "new" badge. */
+        $this->attention->markSeen($student, StudentAttention::HISTORY);
 
         return view(
             'student.history.index',

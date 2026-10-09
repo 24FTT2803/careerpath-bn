@@ -901,14 +901,25 @@
         </div>
 
         <!-- Quick Actions -->
+        @php
+            $attention = app(\App\Services\Student\StudentAttention::class)->for(auth()->user());
+        @endphp
+
         <div class="quick-actions">
 
             <a
                 href="{{ route('student.profile') }}"
-                class="btn btn-primary"
+                class="btn btn-primary attn-anchor"
             >
                 <i class="fas fa-user-edit"></i>
                 Update Profile
+                @if($attention['profile'])
+                    <span class="attn-dot is-gold" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="profile">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Complete your profile so we can match you with the right careers!</span>
+                    </span>
+                @endif
             </a>
 
             <a
@@ -917,10 +928,23 @@
                         'student.recommendations.index'
                     )
                 }}"
-                class="btn btn-outline"
+                class="btn btn-outline attn-anchor"
             >
                 <i class="fas fa-bullseye"></i>
                 Career Recommendations
+                @if($attention['recommendations'] === 'ready')
+                    <span class="attn-dot" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="recommendations-ready">
+                        <i class="fas fa-bullseye"></i>
+                        <span>Your profile is complete. Generate your career matches now!</span>
+                    </span>
+                @elseif($attention['recommendations'] === 'outdated')
+                    <span class="attn-dot" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="recommendations-outdated">
+                        <i class="fas fa-rotate"></i>
+                        <span>Your profile has changed. Refresh your career matches to keep them accurate.</span>
+                    </span>
+                @endif
             </a>
 
             <a

@@ -851,6 +851,7 @@
 
     </style>
     @include('partials.motion')
+    @include('partials.attention')
 </head>
 <body>
 
@@ -887,6 +888,7 @@
                     @auth
     @php
         $unreadNotificationCount = Auth::user()->visibleUnreadNotifications()->count();
+        $attention = app(\App\Services\Student\StudentAttention::class)->for(Auth::user());
     @endphp
 @endauth
 
@@ -895,9 +897,9 @@
        class="nav-notif"
        id="navNotifToggle"
        data-recent-url="{{ route('student.notifications.recent') }}">
-        <i class="fas fa-bell"></i>
+        <i class="fas fa-bell {{ ($unreadNotificationCount ?? 0) > 0 ? 'attn-ring' : '' }}"></i>
         @auth
-            <span class="badge"
+            <span class="badge attn-count"
                   id="notifBadge"
                   @if($unreadNotificationCount === 0) style="display:none" @endif>
                 {{ $unreadNotificationCount }}
@@ -967,6 +969,9 @@
                                     }}
                                 @endif
                             </div>
+                            @if($attention['any'] ?? false)
+                                <span class="attn-dot" title="Something new for you"></span>
+                            @endif
                             <span class="name" title="{{ Auth::user()->name }}">{{ Auth::user()->name }}</span>
                             <span class="chevron"><i class="fas fa-chevron-down"></i></span>
                         </div>
@@ -982,7 +987,7 @@
                                 <a href="{{ route('student.notifications') }}" class="dropdown-item">
                                     <i class="fas fa-bell"></i> Notifications
                                     @if(Auth::user()->visibleUnreadNotifications()->count() > 0)
-                                       <span class="badge-count">{{ Auth::user()->visibleUnreadNotifications()->count() }}</span>
+                                       <span class="badge-count attn-count">{{ Auth::user()->visibleUnreadNotifications()->count() }}</span>
                                     @endif
                                 </a>
                                 <div class="dropdown-divider"></div>
@@ -990,6 +995,11 @@
                                 @if(Auth::user()->role === 'student')
                                 <a href="{{ route('student.recommendations.index') }}" class="dropdown-item">
                                 <i class="fas fa-bullseye"></i> Career Recommendations
+                                @if(($attention['recommendations'] ?? null) === 'ready')
+                                    <span class="attn-pill is-gold" title="Your profile is complete. Generate your careers.">Ready</span>
+                                @elseif(($attention['recommendations'] ?? null) === 'outdated')
+                                    <span class="attn-pill is-gold" title="Your profile changed since your last results.">Update</span>
+                                @endif
                                 </a>
 
                                 <a href="{{ route('student.career-adviser') }}" class="dropdown-item">
@@ -1007,6 +1017,9 @@
 
                                 <a href="{{ route('student.history') }}" class="dropdown-item">
                                     <i class="fas fa-clock-rotate-left"></i> History
+                                    @if(($attention['history'] ?? 0) > 0)
+                                        <span class="attn-pill" title="New since you last looked">{{ $attention['history'] > 9 ? '9+' : $attention['history'] }} new</span>
+                                    @endif
                                 </a>
                                 @if(Auth::user()->role === 'admin' || Auth::user()->role === 'lecturer')
                                     <div class="dropdown-divider"></div>
