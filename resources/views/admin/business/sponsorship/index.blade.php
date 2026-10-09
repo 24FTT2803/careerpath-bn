@@ -154,7 +154,10 @@
                                             method="POST"
                                             action="{{ route('admin.business.sponsorship.sponsors.destroy', $sponsor) }}"
                                             class="inline"
-                                            onsubmit="return confirm('Delete {{ $sponsor->name }}?');"
+                                            data-confirm="Delete {{ $sponsor->name }}? This cannot be undone."
+                                            data-confirm-title="Delete Sponsor"
+                                            data-confirm-ok="Yes, Delete"
+                                            data-confirm-type="danger"
                                         >
                                             @csrf
                                             @method('DELETE')
@@ -388,7 +391,10 @@
                                     <form
                                         method="POST"
                                         action="{{ route('admin.business.sponsorship.grants.revoke', $grant) }}"
-                                        onsubmit="return confirm('Withdraw this sponsorship?');"
+                                        data-confirm="Withdraw this sponsorship from {{ $grant->sponsor?->name ?? 'this sponsor' }}? Students it covers lose this sponsored Premium. The record is kept."
+                                        data-confirm-title="Withdraw Sponsorship"
+                                        data-confirm-ok="Yes, Withdraw"
+                                        data-confirm-type="danger"
                                     >
                                         @csrf
                                         @method('PUT')

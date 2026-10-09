@@ -76,7 +76,10 @@
             <form
                 method="POST"
                 action="{{ route('admin.business.groups.archive', $group) }}"
-                onsubmit="return confirm('Archive {{ $group->name }}?');"
+                data-confirm="Archive {{ $group->name }}? You can restore it later."
+                data-confirm-title="Archive Group"
+                data-confirm-ok="Yes, Archive"
+                data-confirm-type="warning"
             >
                 @csrf
                 @method('PUT')
@@ -99,7 +102,10 @@
             <form
                 method="POST"
                 action="{{ route('admin.business.groups.destroy', $group) }}"
-                onsubmit="return confirm('Delete {{ $group->name }} permanently?');"
+                data-confirm="Delete {{ $group->name }} permanently? This cannot be undone."
+                data-confirm-title="Delete Group"
+                data-confirm-ok="Yes, Delete"
+                data-confirm-type="danger"
             >
                 @csrf
                 @method('DELETE')

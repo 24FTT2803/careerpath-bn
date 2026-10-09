@@ -1416,6 +1416,62 @@
 }
     </script>
     
+<script>
+    /*
+     * Popup confirmation for any admin form marked with data-confirm.
+     * Runs before other submit handlers (capture phase), so nothing
+     * starts until the admin says yes.
+     */
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+
+        if (! form.matches || ! form.matches('form[data-confirm]')) {
+            return;
+        }
+
+        if (form.dataset.confirmApproved === '1') {
+            delete form.dataset.confirmApproved;
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        var message = form.dataset.confirm;
+
+        var approve = function () {
+            form.dataset.confirmApproved = '1';
+
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        };
+
+        if (typeof window.showConfirmModal !== 'function') {
+            if (window.confirm(message)) {
+                approve();
+            }
+
+            return;
+        }
+
+        /* Names come from users, so show them as plain text only. */
+        var safe = document.createElement('div');
+        safe.textContent = message;
+
+        window.showConfirmModal({
+            title: form.dataset.confirmTitle || 'Please Confirm',
+            message: safe.innerHTML,
+            confirmText: form.dataset.confirmOk || 'Yes, Continue',
+            cancelText: 'Cancel',
+            type: form.dataset.confirmType || 'danger',
+            onConfirm: approve,
+        });
+    }, true);
+</script>
+
 <!-- Hidden Logout Form -->
 <form method="POST" action="{{ route('logout') }}" id="logout-form" style="display:none;">
     @csrf

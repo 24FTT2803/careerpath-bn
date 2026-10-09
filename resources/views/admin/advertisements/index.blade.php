@@ -279,7 +279,10 @@
                                     <form
                                         method="POST"
                                         action="{{ route('admin.business.advertisements.destroy', $advertisement) }}"
-                                        onsubmit="return confirm('Delete {{ $advertisement->title }}?');"
+                                        data-confirm="Delete {{ $advertisement->title }}? This cannot be undone."
+                                        data-confirm-title="Delete Advertisement"
+                                        data-confirm-ok="Yes, Delete"
+                                        data-confirm-type="danger"
                                     >
                                         @csrf
                                         @method('DELETE')

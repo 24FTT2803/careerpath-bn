@@ -493,7 +493,10 @@
                                     <form
                                         method="POST"
                                         action="{{ route('admin.business.organisations.destroy', $item) }}"
-                                        onsubmit="return confirm('Delete {{ $item->name }} and everything in it?');"
+                                        data-confirm="Delete {{ $item->name }} and everything in it? This cannot be undone."
+                                        data-confirm-title="Delete Group"
+                                        data-confirm-ok="Yes, Delete"
+                                        data-confirm-type="danger"
                                     >
                                         @csrf
                                         @method('DELETE')
@@ -571,7 +574,10 @@
                             <form
                                 method="POST"
                                 action="{{ route('admin.business.groups.types.destroy', $type) }}"
-                                onsubmit="return confirm('Remove the {{ $type->name }} type?');"
+                                data-confirm="Remove the {{ $type->name }} type?"
+                                data-confirm-title="Remove Type"
+                                data-confirm-ok="Yes, Remove"
+                                data-confirm-type="danger"
                             >
                                 @csrf
                                 @method('DELETE')

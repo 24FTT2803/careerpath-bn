@@ -189,7 +189,10 @@
                                     <form
                                         method="POST"
                                         action="{{ route('admin.business.grants.revoke', $grant) }}"
-                                        onsubmit="return confirm('Revoke this access?');"
+                                        data-confirm="Revoke Premium for {{ $grant->user?->name ?? 'this account' }}? It stops straight away, and the record is kept under Previously granted."
+                                        data-confirm-title="Revoke Premium"
+                                        data-confirm-ok="Yes, Revoke"
+                                        data-confirm-type="danger"
                                     >
                                         @csrf
                                         @method('PUT')

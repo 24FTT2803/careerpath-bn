@@ -71,7 +71,10 @@
                                         <form
                                             method="POST"
                                             action="{{ route('admin.business.innovation-lab.destroy', $note) }}"
-                                            onsubmit="return confirm('Delete {{ $note->title }}?');"
+                                            data-confirm="Delete {{ $note->title }}? This cannot be undone."
+                                            data-confirm-title="Delete Note"
+                                            data-confirm-ok="Yes, Delete"
+                                            data-confirm-type="danger"
                                         >
                                             @csrf
                                             @method('DELETE')
