@@ -172,7 +172,8 @@ test('staff see how many student IDs are waiting for verification', function () 
     $this->actingAs($admin)
         ->get(route('admin.dashboard'))
         ->assertOk()
-        ->assertSee('2 student IDs waiting for verification');
+        ->assertSee('2 students need their student ID verified.')
+        ->assertSee('data-attn-auto="pending-ids-2"', false);
 
     /* A lecturer only counts students in the classes they teach. */
     $class = OrganisationGroup::where('name', 'DADT04')->firstOrFail();
@@ -183,4 +184,32 @@ test('staff see how many student IDs are waiting for verification', function () 
     $mine->groupMemberships()->create(['organisation_group_id' => $class->id]);
 
     expect(app(StudentAttention::class)->pendingStudentIds($lecturer))->toBe(1);
+});
+
+test('lecturers are told about pending IDs in their own classes', function () {
+    $this->seed(OrganisationGroupSeeder::class);
+
+    $class = OrganisationGroup::where('name', 'DADT04')->firstOrFail();
+    $lecturer = User::factory()->create(['role' => 'lecturer']);
+    $lecturer->assignedGroups()->attach($class->id);
+
+    $student = attentionStudent(['student_id' => '24FTT0005']);
+    $student->groupMemberships()->create(['organisation_group_id' => $class->id]);
+
+    $this->actingAs($lecturer)
+        ->get(route('lecturer.dashboard'))
+        ->assertOk()
+        ->assertSee('1 student needs their student ID verified in your classes.');
+});
+
+test('the BIICF counts in the admin sidebar explain themselves', function () {
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->get(route('admin.dashboard'))
+        ->assertOk()
+        ->assertSee('ICT sub-sectors available in the BIICF framework.', false)
+        ->assertSee('available for career matching.', false)
+        ->assertSee('available for students to choose from.', false)
+        ->assertSee('available to suggest to students.', false);
 });

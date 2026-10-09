@@ -1091,6 +1091,13 @@
                 $dashboardRoute = $isLecturerOnly ? route('lecturer.dashboard') : route('admin.dashboard');
                 $dashboardActive = request()->routeIs('admin.dashboard') || request()->routeIs('lecturer.dashboard');
                 $pendingStudentIds = app(\App\Services\Student\StudentAttention::class)->pendingStudentIds(auth()->user());
+                $pendingTip = $pendingStudentIds === 1
+                    ? '1 student needs their student ID verified.'
+                    : $pendingStudentIds.' students need their student ID verified.';
+
+                if ($isLecturerOnly && $pendingStudentIds > 0) {
+                    $pendingTip = rtrim($pendingTip, '.').' in your classes.';
+                }
             @endphp
             <a href="{{ $dashboardRoute }}" class="sidebar-link {{ $dashboardActive ? 'active' : '' }}">
                 <i class="fas fa-th-large"></i>
@@ -1104,11 +1111,15 @@
                             ? 'active'
                             : ''
                     }}"
+                    @if($pendingStudentIds > 0)
+                        data-attn-tip="{{ $pendingTip }}"
+                        data-attn-auto="pending-ids-{{ $pendingStudentIds }}"
+                    @endif
                 >
                     <i class="fas fa-user-graduate"></i>
                     <span>My Students</span>
                     @if($pendingStudentIds > 0)
-                        <span class="badge attn-count" title="{{ $pendingStudentIds }} student {{ $pendingStudentIds === 1 ? 'ID' : 'IDs' }} waiting for verification">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
+                        <span class="badge attn-count">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
                     @endif
                 </a>
             @else
@@ -1119,11 +1130,15 @@
                             ? 'active'
                             : ''
                     }}"
+                    @if($pendingStudentIds > 0)
+                        data-attn-tip="{{ $pendingTip }}"
+                        data-attn-auto="pending-ids-{{ $pendingStudentIds }}"
+                    @endif
                 >
                     <i class="fas fa-user-graduate"></i>
                     <span>Students</span>
                     @if($pendingStudentIds > 0)
-                        <span class="badge attn-count" title="{{ $pendingStudentIds }} student {{ $pendingStudentIds === 1 ? 'ID' : 'IDs' }} waiting for verification">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
+                        <span class="badge attn-count">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
                     @endif
                 </a>
             @endif
@@ -1140,21 +1155,33 @@
             @endif
             @if(auth()->user()->role === 'admin')
                 <div class="nav-label" style="margin-top:16px;">BIICF Management</div>
-                <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}">
+                @php
+                    $biicfCounts = [
+                        'subSectors' => \App\Models\BiicfSubSector::count(),
+                        'jobRoles' => \App\Models\BiicfJobRole::count(),
+                        'competencies' => \App\Models\BiicfCompetency::count(),
+                        'trainings' => \App\Models\BiicfTraining::count(),
+                    ];
+                @endphp
+                <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}"
+                   data-attn-tip="There {{ $biicfCounts['subSectors'] === 1 ? 'is 1 ICT sub-sector' : 'are '.$biicfCounts['subSectors'].' ICT sub-sectors' }} available in the BIICF framework.">
                     <i class="fas fa-layer-group"></i>
-                    <span>Sub-Sectors <span class="badge">{{ \App\Models\BiicfSubSector::count() }}</span></span>
+                    <span>Sub-Sectors <span class="badge attn-count">{{ $biicfCounts['subSectors'] }}</span></span>
                 </a>
-                <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}">
+                <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $biicfCounts['jobRoles'] === 1 ? '1 job role is' : $biicfCounts['jobRoles'].' job roles are' }} available for career matching.">
                     <i class="fas fa-briefcase"></i>
-                    <span>Job Roles <span class="badge">{{ \App\Models\BiicfJobRole::count() }}</span></span>
+                    <span>Job Roles <span class="badge attn-count">{{ $biicfCounts['jobRoles'] }}</span></span>
                 </a>
-                <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}">
+                <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $biicfCounts['competencies'] === 1 ? '1 competency is' : $biicfCounts['competencies'].' competencies are' }} available for students to choose from.">
                     <i class="fas fa-tools"></i>
-                    <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
+                    <span>Competencies <span class="badge attn-count">{{ $biicfCounts['competencies'] }}</span></span>
                 </a>
-                <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
+                <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $biicfCounts['trainings'] === 1 ? '1 training programme is' : $biicfCounts['trainings'].' training programmes are' }} available to suggest to students.">
                     <i class="fas fa-graduation-cap"></i>
-                    <span>Trainings</span>
+                    <span>Trainings <span class="badge attn-count">{{ $biicfCounts['trainings'] }}</span></span>
                 </a>
             @endif
             @if(auth()->user()->role === 'admin')
