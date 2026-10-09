@@ -223,3 +223,87 @@ test(
             ->assertForbidden();
     }
 );
+
+test(
+    'sponsored access is always premium and the form offers no plan choice',
+    function () {
+        seedForSponsorship();
+
+        $sponsor = BusinessSponsor::create([
+            'name' => 'PB',
+            'is_active' => true,
+        ]);
+
+        $admin = sponsorshipAdmin();
+
+        $this->actingAs($admin)
+            ->get(route('admin.business.sponsorship.index'))
+            ->assertOk()
+            ->assertDontSee('name="plan_id"', false)
+            ->assertSee('Sponsored students always get Premium.');
+
+        $this->actingAs($admin)
+            ->post(
+                route('admin.business.sponsorship.grants.store'),
+                ['business_sponsor_id' => $sponsor->id]
+            )
+            ->assertRedirect(route('admin.business.sponsorship.index'))
+            ->assertSessionHasNoErrors();
+
+        expect(
+            SponsoredAccessGrant::query()->latest('id')->firstOrFail()->plan->code
+        )->toBe('premium');
+    }
+);
+
+test(
+    'a plan sent with the form cannot downgrade sponsored access',
+    function () {
+        seedForSponsorship();
+
+        $sponsor = BusinessSponsor::create([
+            'name' => 'PB',
+            'is_active' => true,
+        ]);
+
+        $freeId = Plan::where('code', '!=', 'premium')->value('id');
+
+        $this->actingAs(sponsorshipAdmin())
+            ->post(
+                route('admin.business.sponsorship.grants.store'),
+                [
+                    'business_sponsor_id' => $sponsor->id,
+                    'plan_id' => $freeId,
+                ]
+            )
+            ->assertSessionHasNoErrors();
+
+        expect(
+            SponsoredAccessGrant::query()->latest('id')->firstOrFail()->plan->code
+        )->toBe('premium');
+    }
+);
+
+test(
+    'sponsored access is refused clearly when premium is unavailable',
+    function () {
+        seedForSponsorship();
+
+        Plan::where('code', 'premium')->update(['is_active' => false]);
+
+        $sponsor = BusinessSponsor::create([
+            'name' => 'PB',
+            'is_active' => true,
+        ]);
+
+        $this->actingAs(sponsorshipAdmin())
+            ->post(
+                route('admin.business.sponsorship.grants.store'),
+                ['business_sponsor_id' => $sponsor->id]
+            )
+            ->assertRedirect(route('admin.business.sponsorship.index'))
+            ->assertSessionHasErrors('plan');
+
+        expect(SponsoredAccessGrant::count())->toBe(0);
+    }
+);

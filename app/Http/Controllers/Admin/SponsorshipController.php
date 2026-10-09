@@ -60,11 +60,6 @@ class SponsorshipController extends Controller
                     ->orderBy('name')
                     ->get(),
 
-                'plans' => Plan::query()
-                    ->where('is_active', true)
-                    ->orderBy('name')
-                    ->get(),
-
                 'groupOptions' => $this->groupOptions(),
             ]
         );
@@ -166,8 +161,6 @@ class SponsorshipController extends Controller
                     'exists:business_sponsors,id',
                 ],
 
-                'plan_id' => ['required', 'exists:plans,id'],
-
                 'organisation_group_id' => [
                     'nullable',
                     'exists:organisation_groups,id',
@@ -192,6 +185,25 @@ class SponsorshipController extends Controller
             ]
         );
 
+        /*
+         * Sponsored access is always Premium. A sponsor paying for
+         * the free plan would change nothing, so there is no plan
+         * to choose; any plan sent with the form is ignored.
+         */
+        $premiumId = Plan::query()
+            ->where('code', 'premium')
+            ->where('is_active', true)
+            ->value('id');
+
+        if ($premiumId === null) {
+            return redirect()
+                ->route('admin.business.sponsorship.index')
+                ->withInput()
+                ->withErrors([
+                    'plan' => 'The Premium plan is not available, so sponsored access cannot be added.',
+                ]);
+        }
+
         $groupId = $validated['organisation_group_id'] ?? null;
 
         /*
@@ -206,6 +218,7 @@ class SponsorshipController extends Controller
 
         SponsoredAccessGrant::create(
             $this->withWindow($validated) + [
+                'plan_id' => $premiumId,
                 'organisation_id' => $organisationId,
                 'priority' => $validated['priority'] ?? 0,
                 'is_active' => true,

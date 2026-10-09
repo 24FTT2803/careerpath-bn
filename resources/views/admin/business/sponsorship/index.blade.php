@@ -3,6 +3,26 @@
 @section('title', 'Sponsorship')
 
 @section('content')
+<style>
+    /* The plan is fixed to Premium: shown like a field, but not editable. */
+    .plan-fixed {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #faf7ee;
+        border-color: rgba(201, 168, 76, 0.45);
+        color: #8a6d22;
+        font-weight: 600;
+        cursor: default;
+    }
+
+    .plan-fixed .plan-fixed-lock {
+        margin-left: auto;
+        font-size: 12px;
+        color: #b8a26a;
+    }
+</style>
+
 <div>
     <div class="page-header">
         <div>
@@ -234,22 +254,20 @@
                     </div>
 
                     <div>
-                        <label class="field-label">
+                        <span class="field-label">
                             Plan
-                        </label>
+                        </span>
 
-                        <select
-                            name="plan_id"
-                            required
-                            class="field-input"
-                        >
-                            @foreach($plans as $plan)
-                                <option
-                                    value="{{ $plan->id }}"
-                                    @selected((int) old('plan_id') === $plan->id)
-                                >{{ $plan->name }}</option>
-                            @endforeach
-                        </select>
+                        {{-- Sponsored access is always Premium, so there is nothing to choose. --}}
+                        <div class="field-input plan-fixed" aria-label="Plan: Premium">
+                            <i class="fas fa-crown"></i>
+                            Premium
+                            <i class="fas fa-lock plan-fixed-lock" title="Set automatically"></i>
+                        </div>
+
+                        <p class="field-hint">
+                            Sponsored students always get Premium.
+                        </p>
                     </div>
 
                     <div>
