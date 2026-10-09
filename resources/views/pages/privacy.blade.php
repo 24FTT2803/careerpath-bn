@@ -202,7 +202,7 @@
         For questions about this Privacy Policy or to exercise your data rights, contact:<br>
         <strong>School of Information and Communication Technology</strong><br>
         Politeknik Brunei, Block 2E, Ong Sum Ping Condominium, BA1311<br>
-        Email: <strong>contact@pb.edu.bn</strong> / <strong>careerpathbn@gmail.com</strong><br>
+        Email: <strong>contact@pb.edu.bn</strong> (Politeknik Brunei, for study and school matters) / <strong>careerpathbn@gmail.com</strong> (CareerPath BN business email, for help with this website)<br>
         Phone: <strong>+673 2234630</strong>
     </p>
 

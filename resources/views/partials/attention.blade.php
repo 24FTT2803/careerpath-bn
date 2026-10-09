@@ -166,6 +166,24 @@
         transform: none;
     }
 
+    .attn-float.is-above {
+        transform: translateY(calc(-100% + 6px)) scale(0.96);
+        transform-origin: 20px 100%;
+    }
+
+    .attn-float.is-above.is-shown {
+        transform: translateY(-100%);
+    }
+
+    .attn-float.is-above::before {
+        top: 100%;
+        right: auto;
+        left: 16px;
+        margin-top: 0;
+        border-right-color: transparent;
+        border-top-color: #0d1f33;
+    }
+
     .attn-float.is-below::before {
         top: auto;
         bottom: 100%;
@@ -184,8 +202,12 @@
         }
 
         /* Keep the side bubble centred on its link, just without moving. */
-        .attn-float:not(.is-below) {
+        .attn-float:not(.is-below):not(.is-above) {
             transform: translateY(-50%) !important;
+        }
+
+        .attn-float.is-above {
+            transform: translateY(-100%) !important;
         }
     }
 
@@ -275,11 +297,18 @@
             var box = target.getBoundingClientRect();
             var roomRight = window.innerWidth - box.right;
 
-            floatTip.classList.remove('is-shown', 'is-below');
+            floatTip.classList.remove('is-shown', 'is-below', 'is-above');
 
-            if (roomRight >= 240) {
+            var wantsAbove = target.getAttribute('data-attn-place') === 'above';
+
+            if (roomRight >= 240 && ! wantsAbove) {
                 floatTip.style.left = (box.right + 14) + 'px';
                 floatTip.style.top = (box.top + box.height / 2) + 'px';
+            } else if (box.top >= 110) {
+                /* Near the right edge (e.g. footer): sit above instead. */
+                floatTip.classList.add('is-above');
+                floatTip.style.left = Math.max(8, Math.min(box.left, window.innerWidth - 248)) + 'px';
+                floatTip.style.top = (box.top - 12) + 'px';
             } else {
                 /* Not enough room on the right (small screens): go below. */
                 floatTip.classList.add('is-below');

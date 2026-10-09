@@ -1178,6 +1178,7 @@
 
     </style>
     @include('partials.motion', ['reveal' => false])
+    @include('partials.attention')
 </head>
 <body>
 
@@ -1596,9 +1597,22 @@
                     <div class="contact-row">
                         <i class="fas fa-envelope"></i>
                         <span>
-                            <a href="mailto:contact@pb.edu.bn">contact@pb.edu.bn</a>
+                            <a href="mailto:contact@pb.edu.bn"
+                               data-attn-place="above"
+                               data-attn-tip="Politeknik Brunei's official email, for questions about your studies, programmes or the school."
+                               data-email-confirm="This is Politeknik Brunei's official email. Use it for questions about your studies, programmes or the school. For help with CareerPath BN itself, use our business email instead."
+                               data-email-title="Email Politeknik Brunei"
+                               data-email-owner="Official Politeknik Brunei email"
+                               data-email-icon="fa-building-columns">contact@pb.edu.bn</a>
                             <span class="contact-sep">/</span>
-                            <a href="mailto:careerpathbn@gmail.com">careerpathbn@gmail.com</a>
+                            <a href="mailto:careerpathbn@gmail.com"
+                               data-attn-place="above"
+                               data-attn-tip="CareerPath BN's business email, for help with this website, your account, Premium or partnerships."
+                               data-email-confirm="This is the CareerPath BN team's business email. Use it for help with this website, your account, Premium or partnerships. For questions about your studies, contact Politeknik Brunei instead."
+                               data-email-title="Email CareerPath BN"
+                               data-email-owner="CareerPath BN business email"
+                               data-email-tone="gold"
+                               data-email-icon="fa-compass">careerpathbn@gmail.com</a>
                         </span>
                     </div>
                     <a class="contact-row" href="https://www.pb.edu.bn" target="_blank" rel="noopener">
@@ -1620,6 +1634,8 @@
             </div>
         </div>
     </footer>
+
+    @include('partials.email-confirm')
 
     <!-- ============================================
     SCROLL EFFECT
