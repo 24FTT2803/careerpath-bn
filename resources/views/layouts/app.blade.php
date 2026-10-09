@@ -425,6 +425,11 @@
     color: var(--accent-dark);
 }
 
+.notif-popup-icon.premium {
+    background: linear-gradient(135deg, #c9a84c, #e8d4a0);
+    color: #0d1f33;
+}
+
 .notif-popup-text {
     flex: 1;
     min-width: 0;
@@ -1249,6 +1254,7 @@
         profile: 'fa-user-edit',
         career: 'fa-briefcase',
         system: 'fa-bell',
+        premium: 'fa-crown',
     }[type] || 'fa-bell');
 
     const escapeHtml = (value) => {

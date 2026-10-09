@@ -190,6 +190,11 @@
         color: var(--primary);
     }
 
+    .notif-item .top .type.premium {
+        background: linear-gradient(135deg, #c9a84c, #e8d4a0);
+        color: #0d1f33;
+    }
+
     .notif-item .message {
         font-size: 13px;
         color: var(--text-muted);

@@ -8,6 +8,7 @@ use App\Models\Organisation;
 use App\Models\OrganisationGroup;
 use App\Models\Plan;
 use App\Models\SponsoredAccessGrant;
+use App\Services\Business\PremiumNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -152,7 +153,7 @@ class SponsorshipController extends Controller
             ->with('success', 'Sponsor deleted.');
     }
 
-    public function storeGrant(Request $request)
+    public function storeGrant(Request $request, PremiumNotifier $notifier)
     {
         $validated = $request->validate(
             [
@@ -216,7 +217,14 @@ class SponsorshipController extends Controller
             : OrganisationGroup::findOrFail($groupId)
                 ->organisation_id;
 
-        SponsoredAccessGrant::create(
+        /*
+         * Work out who this reaches before saving, so students
+         * who already have Premium are not told it was activated.
+         */
+        $coveredIds = $notifier->studentsCoveredBy($organisationId, $groupId);
+        $alreadyPremiumIds = $notifier->alreadyPremium($coveredIds);
+
+        $grant = SponsoredAccessGrant::create(
             $this->withWindow($validated) + [
                 'plan_id' => $premiumId,
                 'organisation_id' => $organisationId,
@@ -225,9 +233,21 @@ class SponsorshipController extends Controller
             ]
         );
 
+        $notified = $notifier->notifySponsorship(
+            array_values(array_diff($coveredIds, $alreadyPremiumIds)),
+            $grant->sponsor,
+            $grant->starts_at,
+            $grant->ends_at
+        );
+
         return redirect()
             ->route('admin.business.sponsorship.index')
-            ->with('success', 'Sponsored access added.');
+            ->with(
+                'success',
+                'Sponsored access added. '
+                    .($notified === 1 ? '1 student was' : "{$notified} students were")
+                    .' notified.'
+            );
     }
 
     public function revokeGrant(SponsoredAccessGrant $grant)

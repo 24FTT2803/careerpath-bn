@@ -53,6 +53,7 @@ class Notification extends Model
                     'user' => 'user-plus',
                     'profile' => 'user-edit',
                     'career' => 'briefcase',
+                    'premium' => 'crown',
                 ];
 
                 return [
