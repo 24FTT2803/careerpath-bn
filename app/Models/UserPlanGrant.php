@@ -15,6 +15,7 @@ class UserPlanGrant extends Model
         'starts_at',
         'ends_at',
         'is_active',
+        'expiry_notified_at',
     ];
 
     protected function casts(): array
@@ -22,6 +23,7 @@ class UserPlanGrant extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'expiry_notified_at' => 'datetime',
             'is_active' => 'boolean',
         ];
     }

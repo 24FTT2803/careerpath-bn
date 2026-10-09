@@ -218,6 +218,75 @@ class PremiumNotifier
     }
 
     /**
+     * A direct grant or trial reached its end date on its own.
+     */
+    public function notifyDirectExpired(UserPlanGrant $grant): void
+    {
+        $student = User::find($grant->user_id);
+
+        if ($student === null || ! $student->isStudent()) {
+            return;
+        }
+
+        $isTrial = $grant->source === 'trial';
+        $ended = $grant->ends_at ? ' on '.$this->day($grant->ends_at) : '';
+
+        $lead = $isTrial
+            ? "Your Premium trial ended{$ended}."
+            : "Your Premium access ended{$ended}.";
+
+        $access = $this->entitlements->accessFor($student);
+
+        if ($access['plan']?->code === 'premium') {
+            $through = $access['source'] === 'sponsored' && $access['grant']?->sponsor
+                ? ' through '.$access['grant']->sponsor->name
+                : '';
+
+            $this->send(
+                [$student->id],
+                'Premium access changed',
+                $lead." You still have Premium{$through}."
+            );
+
+            return;
+        }
+
+        $this->send(
+            [$student->id],
+            $isTrial ? 'Premium trial ended' : 'Premium ended',
+            $lead.' '.$this->nowOnPlan($access['plan']?->name)
+        );
+    }
+
+    /**
+     * A sponsorship reached its end date on its own.
+     *
+     * @param  array<int, int>  $userIds
+     */
+    public function notifySponsorshipExpired(
+        array $userIds,
+        BusinessSponsor $sponsor,
+        ?CarbonInterface $endsAt
+    ): int {
+        if ($userIds === []) {
+            return 0;
+        }
+
+        $free = Plan::query()
+            ->where('is_active', true)
+            ->where('is_default', true)
+            ->value('name');
+
+        $ended = $endsAt ? ' ended on '.$this->day($endsAt) : ' has ended';
+
+        return $this->send(
+            $userIds,
+            'Premium ended',
+            "{$sponsor->name}'s sponsorship of your Premium{$ended}. ".$this->nowOnPlan($free)
+        );
+    }
+
+    /**
      * Students a sponsor currently reaches, across all of its
      * active sponsorships.
      *
