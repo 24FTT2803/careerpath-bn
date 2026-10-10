@@ -52,6 +52,18 @@
             border-bottom: 1px solid var(--border);
         }
 
+        /*
+         * Written as a class rather than inline, because a media
+         * query cannot reach an inline style — which is why the
+         * logo stayed at its desktop height on a phone and took
+         * most of the band with it.
+         */
+        .auth-logo {
+            height: 44px;
+            width: auto;
+            display: block;
+        }
+
         .auth-header .container {
             display: flex;
             align-items: center;
@@ -319,7 +331,24 @@
             border: 1px solid #f5c6cb;
         }
 
+        /*
+         * A tablet-width step, which was missing entirely: below
+         * this the header band, the logo and the space around
+         * the card all kept their desktop sizing, so the page
+         * was mostly chrome before any of the form appeared.
+         */
+        @media (max-width: 768px) {
+            .auth-header { padding: 14px 0; }
+            .auth-logo { height: 34px; }
+            .auth-main { padding: 28px 0; }
+            .container { padding: 0 18px; }
+        }
+
         @media (max-width: 480px) {
+            .auth-header { padding: 10px 0; }
+            .auth-logo { height: 28px; }
+            .auth-main { padding: 18px 0; }
+            .container { padding: 0 14px; }
             .auth-card { padding: 28px 20px; }
             .auth-card h1 { font-size: 24px; }
             .form-options { flex-direction: column; gap: 12px; align-items: flex-start; }
@@ -335,7 +364,7 @@
     <img
         src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
-        style="height: 44px; width: auto; display: block;"
+        class="auth-logo"
     >
 </a>
         </div>
