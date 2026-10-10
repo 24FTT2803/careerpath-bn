@@ -96,6 +96,57 @@ class BiicfJobRole extends Model
     }
 
     /**
+     * The role's description, as the book writes it: a short
+     * list rather than a paragraph.
+     */
+    public function descriptionPoints(): HasMany
+    {
+        return $this->hasMany(
+            BiicfJobDescriptionPoint::class,
+            'job_role_id'
+        )->orderBy('sort_order');
+    }
+
+    /**
+     * Every duty recorded for this role, at both levels of
+     * nesting and of both kinds.
+     *
+     * Usually the wrong relation to read directly — see
+     * genericWorkFunctions and specificWorkFunctions, which
+     * return only the top level of each.
+     */
+    public function criticalWorkFunctions(): HasMany
+    {
+        return $this->hasMany(
+            BiicfCriticalWorkFunction::class,
+            'job_role_id'
+        )->orderBy('sort_order');
+    }
+
+    /**
+     * Duties the role performs however it is practised.
+     */
+    public function genericWorkFunctions(): HasMany
+    {
+        return $this->criticalWorkFunctions()
+            ->generic()
+            ->topLevel();
+    }
+
+    /**
+     * Duties belonging to one of the role's job families.
+     *
+     * Grouping these by family is what reproduces the book's
+     * layout, where each family heads its own list.
+     */
+    public function specificWorkFunctions(): HasMany
+    {
+        return $this->criticalWorkFunctions()
+            ->specific()
+            ->topLevel();
+    }
+
+    /**
      * The lowest tier of this role.
      *
      * Every role has at least one, so this is never null for

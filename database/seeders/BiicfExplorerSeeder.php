@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\BiicfCompetency;
+use App\Models\BiicfCriticalWorkFunction;
 use App\Models\BiicfEntryRequirement;
+use App\Models\BiicfJobDescriptionPoint;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
@@ -34,6 +36,65 @@ class BiicfExplorerSeeder extends Seeder
         $this->seedDataAi($subSectors['Data and Artificial Intelligence']);
 
         $this->ensureEveryRoleHasATier();
+        $this->ensureWorkFunctionRows();
+    }
+
+    /**
+     * Mirror the text columns into the structured tables.
+     *
+     * The backfill migration does this for roles that exist when
+     * it runs, which on a freshly migrated database is none —
+     * the roles arrive here afterwards. Same split as the
+     * migration: one generic function per line, one description
+     * point for the prose, nothing attributed to a family or
+     * nested, since the text records neither.
+     */
+    private function ensureWorkFunctionRows(): void
+    {
+        BiicfJobRole::query()
+            ->whereDoesntHave('criticalWorkFunctions')
+            ->get()
+            ->each(function (BiicfJobRole $role) {
+                $lines = preg_split(
+                    '/\R/',
+                    (string) $role->critical_work_function
+                ) ?: [];
+
+                $order = 0;
+
+                foreach ($lines as $line) {
+                    $line = trim($line);
+
+                    if ($line === '') {
+                        continue;
+                    }
+
+                    BiicfCriticalWorkFunction::create([
+                        'job_role_id' => $role->id,
+                        'kind' => BiicfCriticalWorkFunction::KIND_GENERIC,
+                        'text' => $line,
+                        'sort_order' => ++$order,
+                    ]);
+                }
+            });
+
+        BiicfJobRole::query()
+            ->whereDoesntHave('descriptionPoints')
+            ->whereNotNull('job_description')
+            ->get()
+            ->each(function (BiicfJobRole $role) {
+                $description = trim((string) $role->job_description);
+
+                if ($description === '') {
+                    return;
+                }
+
+                BiicfJobDescriptionPoint::create([
+                    'job_role_id' => $role->id,
+                    'text' => $description,
+                    'sort_order' => 1,
+                ]);
+            });
     }
 
     /**
