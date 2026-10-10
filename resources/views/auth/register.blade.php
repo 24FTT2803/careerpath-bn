@@ -358,8 +358,10 @@
         }
     </style>
     @include('partials.motion', ['reveal' => false])
+    @include('partials.auth-theme')
 </head>
 <body>
+    @include('partials.auth-backdrop')
 
     <header class="auth-header">
         <div class="container">
@@ -374,7 +376,7 @@
     </header>
 
     <main class="auth-main">
-        <div class="container">
+        <div class="auth-shell">
             <div class="auth-card">
                 <a href="{{ url('/') }}" class="back-link">
                     <i class="fas fa-arrow-left"></i> Back to Home
@@ -479,6 +481,8 @@
                     <p>Already have an account? <a href="{{ route('login') }}">Sign in</a></p>
                 </div>
             </div>
+
+            @include('partials.auth-visual', ['scene' => 'register'])
         </div>
     </main>
 

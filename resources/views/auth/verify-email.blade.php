@@ -192,8 +192,10 @@
             .auth-card h1 { font-size: 22px; }
         }
     </style>
+    @include('partials.auth-theme')
 </head>
 <body>
+    @include('partials.auth-backdrop')
 
     <header class="auth-header">
         <div class="container">
@@ -208,7 +210,7 @@
     </header>
 
     <main class="auth-main">
-        <div class="container">
+        <div class="auth-shell">
             <div class="auth-card">
 
                 <div class="verify-mark">
@@ -258,6 +260,8 @@
                 </p>
 
             </div>
+
+            @include('partials.auth-visual', ['scene' => 'verify'])
         </div>
     </main>
 
