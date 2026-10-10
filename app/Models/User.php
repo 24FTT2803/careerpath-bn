@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -13,9 +16,8 @@ use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Propaganistas\LaravelPhone\PhoneNumber;
 use Propaganistas\LaravelPhone\Rules\Phone;
-use App\Notifications\ResetPasswordNotification;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -63,7 +65,7 @@ class User extends Authenticatable
         ];
     }
 
-        /**
+    /**
      * Store the email in lowercase.
      *
      * Politeknik Brunei student emails use uppercase letters in
@@ -72,7 +74,6 @@ class User extends Authenticatable
      * so the same address is never two accounts and logins
      * match regardless of capitalisation.
      */
-
     public function setNameAttribute($value): void
     {
         /*
@@ -208,7 +209,6 @@ class User extends Authenticatable
     // ============================================
     // VALIDATION HELPERS
     // ============================================
-
 
     /**
      * Get the allowed domains for a specific role
@@ -384,12 +384,55 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Use the project's own confirmation mail rather than
+     * Laravel's plain one, for the same reason as the reset
+     * above: the link is built by the framework, only the
+     * wrapping changes.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(
+            new VerifyEmailNotification
+        );
+    }
+
+    /**
+     * Whether this account has to confirm its address.
+     *
+     * Verification was introduced partway through the project's
+     * life, so it applies from that point rather than to
+     * everyone: an account that predates it keeps working, and
+     * can still confirm from its settings if it wants to.
+     */
+    public function mustVerifyEmailAddress(): bool
+    {
+        $from = config('auth.verification.required_from');
+
+        if (! $from) {
+            return false;
+        }
+
+        /*
+         * Students only. They are the ones who sign themselves
+         * up and so receive the confirmation; staff accounts are
+         * created by an administrator and would otherwise be
+         * asked to confirm a message nothing ever sends.
+         */
+        if ($this->role !== 'student') {
+            return false;
+        }
+
+        return $this->created_at !== null
+            && $this->created_at->gte($from);
+    }
+
     public function unreadNotifications()
     {
         return $this->notifications()->where('is_read', false);
     }
 
-        /**
+    /**
      * Notifications shown on the user's own bell and page.
      *
      * Excludes administrator activity entries — registrations,
@@ -558,7 +601,7 @@ class User extends Authenticatable
         return $this->hasMany(GroupMembership::class);
     }
 
-        /**
+    /**
      * Classes this user teaches, when the user is a lecturer.
      *
      * Distinct from groupMemberships(), which is about
@@ -655,7 +698,7 @@ class User extends Authenticatable
         $profile = $this->profile;
         $aspiration = $this->aspirations;
 
-            $hasPersonalProfile = $profile && (
+        $hasPersonalProfile = $profile && (
             filled($profile->phone)
             || $profile->date_of_birth
             || filled($profile->nationality)

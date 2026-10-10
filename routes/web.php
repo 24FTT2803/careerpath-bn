@@ -1,27 +1,34 @@
 <?php
 
-use App\Http\Controllers\Student\DashboardController;
-use App\Http\Controllers\Student\HistoryController;
-use App\Http\Controllers\Student\ProfileController;
-use App\Http\Controllers\Student\MilestoneController;
-use App\Http\Controllers\Student\CareerRecommendationController;
-use App\Http\Controllers\Student\CareerAdviserController;
-use App\Http\Controllers\Student\BiicfExplorerController;
-use App\Http\Controllers\Student\InnovationLabController as StudentInnovationLabController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\StudentController as AdminStudentController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\CareerController as AdminCareerController;
-use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\AdvertisementController;
-use App\Http\Controllers\Admin\InnovationLabController;
+use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\BusinessPlanController;
+use App\Http\Controllers\Admin\CareerController as AdminCareerController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GroupMembershipController;
+use App\Http\Controllers\Admin\InnovationLabController;
 use App\Http\Controllers\Admin\OrganisationController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\SponsorshipController;
+use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserPlanGrantController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
+use App\Http\Controllers\Lecturer\SettingsController;
+use App\Http\Controllers\Lecturer\StudentController;
+use App\Http\Controllers\Staff\StudentIdVerificationController;
+use App\Http\Controllers\Student\BiicfExplorerController;
+use App\Http\Controllers\Student\CareerAdviserController;
+use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\HistoryController;
+use App\Http\Controllers\Student\InnovationLabController as StudentInnovationLabController;
+use App\Http\Controllers\Student\MilestoneController;
+use App\Http\Controllers\Student\ProfileController;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureEmailIsVerifiedSince;
+use App\Http\Middleware\LecturerMiddleware;
+use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
 
 // ============================================
@@ -67,9 +74,16 @@ require __DIR__.'/auth.php';
 // ============================================
 // STUDENT ROUTES
 // ============================================
+/*
+ * Students confirm their address before using the site. Only
+ * accounts created since the requirement began are asked — see
+ * EnsureEmailIsVerifiedSince — so nobody who signed up earlier
+ * is shut out of an account they already had.
+ */
 Route::middleware([
     'auth',
-    \App\Http\Middleware\RoleMiddleware::class . ':student',
+    RoleMiddleware::class.':student',
+    EnsureEmailIsVerifiedSince::class,
 ])
     ->prefix('student')
     ->name('student.')
@@ -227,8 +241,8 @@ Route::middleware([
         )->name('notifications.read-all');
 
         Route::get(
-        '/notifications/recent',
-        [ProfileController::class, 'recentNotifications']
+            '/notifications/recent',
+            [ProfileController::class, 'recentNotifications']
         )->name('notifications.recent');
 
         // BIICF Explorer
@@ -278,7 +292,7 @@ Route::middleware([
 // ============================================
 Route::middleware([
     'auth',
-    \App\Http\Middleware\LecturerMiddleware::class,
+    LecturerMiddleware::class,
 ])
     ->get(
         '/student/profile/export/{userId}/{generation?}',
@@ -291,19 +305,19 @@ Route::middleware([
 // ============================================
 Route::middleware([
     'auth',
-    \App\Http\Middleware\LecturerMiddleware::class,
+    LecturerMiddleware::class,
 ])
     ->prefix('staff/students/{student}/student-id')
     ->name('staff.student-id.')
     ->group(function () {
         Route::post(
             '/verify',
-            [\App\Http\Controllers\Staff\StudentIdVerificationController::class, 'verify']
+            [StudentIdVerificationController::class, 'verify']
         )->name('verify');
 
         Route::delete(
             '/verify',
-            [\App\Http\Controllers\Staff\StudentIdVerificationController::class, 'revoke']
+            [StudentIdVerificationController::class, 'revoke']
         )->name('revoke');
     });
 
@@ -321,10 +335,10 @@ Route::middleware(['auth'])
         )
             ->name('dashboard')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
-                /*
+        /*
          * Admin only. Lecturers have their own scoped page at
          * /lecturer/students; letting them reach this one would
          * show every student in the institution.
@@ -335,7 +349,7 @@ Route::middleware(['auth'])
         )
             ->name('students.index')
             ->middleware(
-                \App\Http\Middleware\AdminMiddleware::class
+                AdminMiddleware::class
             );
 
         Route::get(
@@ -344,7 +358,7 @@ Route::middleware(['auth'])
         )
             ->name('students.show')
             ->middleware(
-                \App\Http\Middleware\AdminMiddleware::class
+                AdminMiddleware::class
             );
 
         // CAREER ROUTES
@@ -354,7 +368,7 @@ Route::middleware(['auth'])
         )
             ->name('careers.index')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         Route::get(
@@ -363,23 +377,23 @@ Route::middleware(['auth'])
         )
             ->name('careers.show')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
-                /*
+        /*
          * Admin and lecturer. The controller checks that a
          * lecturer only views proofs belonging to students in
          * the classes they teach.
          */
         Route::get('/students/{studentId}/milestones/{milestoneId}/proof', [MilestoneController::class, 'viewProofAdmin'])
             ->name('milestones.proof')
-            ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+            ->middleware(LecturerMiddleware::class);
 
         // ============================================
         // BUSINESS MANAGEMENT (Admin ONLY)
         // ============================================
         Route::middleware(
-            \App\Http\Middleware\AdminMiddleware::class
+            AdminMiddleware::class
         )
             ->prefix('business')
             ->name('business.')
@@ -640,9 +654,9 @@ Route::middleware(['auth'])
         // ============================================
         // BIICF MANAGEMENT (Admin ONLY)
         // ============================================
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
-    
-            Route::get('/biicf', function() {
+        Route::middleware(AdminMiddleware::class)->group(function () {
+
+            Route::get('/biicf', function () {
                 return redirect()->route('admin.biicf.sub-sectors');
             })->name('biicf');
 
@@ -681,7 +695,7 @@ Route::middleware(['auth'])
         });
 
         // Admin ONLY routes - Users
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+        Route::middleware(AdminMiddleware::class)->group(function () {
             Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
             Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
@@ -694,7 +708,7 @@ Route::middleware(['auth'])
 // ============================================
 // LECTURER ROUTES
 // ============================================
-Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
+Route::middleware(['auth', LecturerMiddleware::class])
     ->prefix('lecturer')
     ->name('lecturer.')
     ->group(function () {
@@ -710,12 +724,12 @@ Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
          */
         Route::get(
             '/students',
-            [\App\Http\Controllers\Lecturer\StudentController::class, 'index']
+            [StudentController::class, 'index']
         )->name('students.index');
 
         Route::get(
             '/students/{student}',
-            [\App\Http\Controllers\Lecturer\StudentController::class, 'show']
+            [StudentController::class, 'show']
         )->name('students.show');
 
         /*
@@ -724,26 +738,26 @@ Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
          */
         Route::get(
             '/settings',
-            [\App\Http\Controllers\Lecturer\SettingsController::class, 'show']
+            [SettingsController::class, 'show']
         )->name('settings');
 
         Route::put(
             '/settings/profile',
-            [\App\Http\Controllers\Lecturer\SettingsController::class, 'updateProfile']
+            [SettingsController::class, 'updateProfile']
         )->name('settings.profile');
 
         Route::put(
-               '/settings/avatar',
-               [\App\Http\Controllers\Lecturer\SettingsController::class, 'updateAvatar']
-           )->name('settings.avatar');
-           
+            '/settings/avatar',
+            [SettingsController::class, 'updateAvatar']
+        )->name('settings.avatar');
+
         Route::put(
             '/settings/password',
-            [\App\Http\Controllers\Lecturer\SettingsController::class, 'updatePassword']
+            [SettingsController::class, 'updatePassword']
         )->name('settings.password');
 
         Route::delete(
             '/settings',
-            [\App\Http\Controllers\Lecturer\SettingsController::class, 'destroy']
+            [SettingsController::class, 'destroy']
         )->name('settings.destroy');
     });

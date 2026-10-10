@@ -114,4 +114,32 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Email Verification
+    |--------------------------------------------------------------------------
+    |
+    | Verification arrived partway through the project's life, so
+    | it is required from a date rather than of everyone. An
+    | account created before this keeps working unverified, and
+    | can still confirm from its settings; one created on or
+    | after it is asked to confirm before going further.
+    |
+    | Clearing the value switches the requirement off entirely
+    | without removing anything.
+    |
+    */
+
+    'verification' => [
+        'required_from' => env(
+            'AUTH_VERIFICATION_REQUIRED_FROM',
+            '2026-10-10'
+        ),
+
+        'expire' => (int) env(
+            'AUTH_VERIFICATION_EXPIRE',
+            60
+        ),
+    ],
+
 ];

@@ -678,6 +678,50 @@
                 </div>
                 @endif
 
+                {{--
+                    Only shown to an account that has not
+                    confirmed its address. Accounts from before
+                    verification existed are not made to, but
+                    nothing should stop one choosing to.
+                --}}
+                @unless(auth()->user()->hasVerifiedEmail())
+                    <div class="panel">
+                        <div class="panel-title">
+                            <i class="fas fa-envelope-open-text"></i>
+                            Email Address
+                        </div>
+
+                        @if(session('status') === 'verification-link-sent')
+                            <div class="alert alert-success">
+                                <i class="fas fa-circle-check"></i>
+                                A confirmation link is on its way
+                                to {{ auth()->user()->email }}.
+                            </div>
+                        @endif
+
+                        <p class="warning-text" style="color:var(--text-muted);">
+                            <i class="fas fa-circle-info"></i>
+                            Your address
+                            <strong>{{ auth()->user()->email }}</strong>
+                            has not been confirmed. Confirming it
+                            lets us reach you about your account
+                            and your career recommendations.
+                        </p>
+
+                        <form
+                            method="POST"
+                            action="{{ route('verification.send') }}"
+                        >
+                            @csrf
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Send confirmation link
+                            </button>
+                        </form>
+                    </div>
+                @endunless
+
                 <!-- Change Password -->
                 <div class="panel">
                     <div class="panel-title"><i class="fas fa-lock"></i> Change Password</div>
