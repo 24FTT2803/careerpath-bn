@@ -535,15 +535,25 @@
             margin-top: 4px;
         }
 
+        /*
+         * Text flows as one paragraph, with the icon in its own column.
+         * (As a flex row, a link or bold label inside the sentence became
+         * a separate column and squeezed the text, badly on phones.)
+         */
         .info-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px 18px;
+            position: relative;
+            display: block;
+            padding: 12px 18px 12px 44px;
             border-radius: 8px;
             font-size: 13px;
             margin-bottom: 16px;
             line-height: 1.5;
+        }
+
+        .info-banner > i:first-child {
+            position: absolute;
+            top: 15px;
+            left: 18px;
         }
 
         .info-banner-blue {
@@ -762,6 +772,14 @@
             border: 1px solid #f5c6cb;
         }
 
+        .sidebar-logo-badge {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.45);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .admin-sidebar {
@@ -801,8 +819,14 @@
                 max-width: 100%;
             }
             .sidebar-brand {
-                padding: 16px;
+                padding: 14px 6px !important;
                 justify-content: center;
+            }
+            .admin-sidebar .sidebar-logo-full {
+                display: none !important;
+            }
+            .admin-sidebar .sidebar-logo-badge {
+                display: block;
             }
             .sidebar-footer .nav-user {
                 padding: 6px !important;
@@ -1080,7 +1104,14 @@
     <img
         src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
+        class="sidebar-logo-full"
         style="height: 64px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+    >
+    {{-- On phones the sidebar is a narrow icon strip, so the round badge stands in for the logo. --}}
+    <img
+        src="{{ asset('images/careerpath-badge.png') }}"
+        alt="CareerPath BN"
+        class="sidebar-logo-badge"
     >
 </div>
 

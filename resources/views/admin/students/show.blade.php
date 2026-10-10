@@ -383,15 +383,21 @@
     }
 
     /* Info Banners */
+    /* One flowing paragraph with the icon on the left (see admin layout). */
     .info-banner {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 12px 18px;
+        position: relative;
+        display: block;
+        padding: 12px 18px 12px 44px;
         border-radius: 8px;
         font-size: 13px;
         margin-bottom: 16px;
         line-height: 1.5;
+    }
+
+    .info-banner > i:first-child {
+        position: absolute;
+        top: 15px;
+        left: 18px;
     }
 
     .info-banner-blue {

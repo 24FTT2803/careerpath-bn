@@ -1077,6 +1077,22 @@
             .hero-illustration .icon-grid { grid-template-columns: repeat(3, 1fr); }
         }
 
+        /* Phones: smaller logo, buttons kept on one line each. */
+        @media (max-width: 600px) {
+            .site-header .logo { gap: 8px !important; }
+            .site-header .logo img:first-child { height: 42px !important; width: 42px !important; }
+            .site-header .logo img + img { height: 38px !important; }
+            .nav-actions { gap: 8px; }
+            .nav-actions .btn-sm { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
+        }
+
+        @media (max-width: 380px) {
+            .site-header .logo img:first-child { height: 36px !important; width: 36px !important; }
+            .site-header .logo img + img { height: 32px !important; }
+            .nav-actions .btn-sm { padding: 7px 11px; }
+            .nav-actions .btn-sm i { display: none; }
+        }
+
         @media (max-width: 480px) {
             .hero { padding: 120px 0 60px; }
             .hero h1 { font-size: 28px; }
