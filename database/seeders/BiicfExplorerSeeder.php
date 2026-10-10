@@ -34,22 +34,28 @@ class BiicfExplorerSeeder extends Seeder
     }
 
     /**
-     * Real BIICF technical proficiency scale: Follow / Assist / Apply / Ensure / Strategise (1-5).
-     * Soft-skill proficiency (Basic/Intermediate/Advanced/Expert) is mapped onto the same 1-5
-     * scale (2/3/4/5) since this schema shares one scale across both competency types.
+     * Load the technical proficiency scale this seeder rates
+     * against.
+     *
+     * Both scales now live in BiicfReferenceDataSeeder, which is
+     * the one place the book's wording is kept. Keying on the
+     * level number alone would no longer be enough here: with
+     * the technical and soft scales sharing one table, numbers
+     * 1 to 4 each match two rows.
+     *
+     * The soft-skill competencies attached below are still given
+     * technical levels, which is wrong and is what the real
+     * framework data corrects when it replaces this seeder.
      */
     private function seedProficiencyLevels(): void
     {
-        $defs = [
-            ['level_number' => 1, 'name' => 'Follow', 'description' => 'Demonstrates introductory understanding and, with guidance, applies the competency in a few simple situations.'],
-            ['level_number' => 2, 'name' => 'Assist', 'description' => 'Demonstrates basic knowledge and, with guidance, applies the competency in common situations with limited difficulty. (Soft skill equivalent: Basic)'],
-            ['level_number' => 3, 'name' => 'Apply', 'description' => 'Demonstrates solid knowledge and applies the competency with minimal guidance in typical situations. (Soft skill equivalent: Intermediate)'],
-            ['level_number' => 4, 'name' => 'Ensure', 'description' => 'Demonstrates advanced knowledge and applies the competency in new or complex situations, guiding others. (Soft skill equivalent: Advanced)'],
-            ['level_number' => 5, 'name' => 'Strategise', 'description' => 'Demonstrates expert knowledge, develops new approaches and is recognised as an expert. (Soft skill equivalent: Expert)'],
-        ];
-        foreach ($defs as $d) {
-            $this->levels[$d['level_number']] = BiicfProficiencyLevel::updateOrCreate(['level_number' => $d['level_number']], $d);
-        }
+        $this->call(BiicfReferenceDataSeeder::class);
+
+        $this->levels = BiicfProficiencyLevel::query()
+            ->technical()
+            ->get()
+            ->keyBy('level_number')
+            ->all();
     }
 
     private function lvl(int $n): BiicfProficiencyLevel
