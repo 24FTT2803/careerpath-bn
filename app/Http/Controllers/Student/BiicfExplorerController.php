@@ -92,11 +92,30 @@ class BiicfExplorerController extends Controller
             },
             'progressesTo:id,title,slug',
             'progressesFrom:id,title,slug',
+            'descriptionPoints',
+            'genericWorkFunctions.children',
+            'specificWorkFunctions.jobFamily',
+            'specificWorkFunctions.children',
         ]);
+
+        /*
+         * Specific functions are grouped here rather than in the
+         * page, because the book prints them under their job
+         * family as a heading and rebuilding that grouping in
+         * the template would be more work than it is worth.
+         */
+        $specificByFamily = $jobRole->specificWorkFunctions
+            ->groupBy(fn ($function) => $function->jobFamily?->name ?? 'Other')
+            ->map(fn ($functions, $family) => [
+                'family' => $family,
+                'functions' => $functions->values(),
+            ])
+            ->values();
 
         return response()->json([
             'job_role' => $jobRole,
             'competencies_by_type' => $jobRole->competencies->groupBy('type'),
+            'specific_work_functions_by_family' => $specificByFamily,
         ]);
     }
 

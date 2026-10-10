@@ -57,23 +57,73 @@
         <div class="card">
             <div class="card-header">Job Description</div>
             <div class="card-body">
-                <p>{{ $jobRole->job_description ?? 'No description available.' }}</p>
+                @forelse($jobRole->descriptionPoints as $point)
+                    <div class="function-item">
+                        <i class="fas fa-angle-right"></i>
+                        {{ $point->text }}
+                    </div>
+                @empty
+                    <p>No description available.</p>
+                @endforelse
             </div>
         </div>
 
         <div class="card full-width">
             <div class="card-header">Critical Work Functions</div>
             <div class="card-body">
-                @if($jobRole->critical_work_function)
-                    @foreach(explode("\n", $jobRole->critical_work_function) as $function)
-                        @if(trim($function))
+                {{--
+                    The book splits these in two: duties the role
+                    performs however it is practised, and duties
+                    belonging to one of its job families. Only the
+                    generic ones can be typed into the form; the
+                    rest arrive with the reference book.
+                --}}
+                @if($jobRole->genericWorkFunctions->isNotEmpty())
+                    <h4 class="function-group-heading">Generic Functions</h4>
+
+                    @foreach($jobRole->genericWorkFunctions as $function)
+                        <div class="function-item">
+                            <i class="fas fa-check-circle"></i>
+                            {{ $function->text }}
+                        </div>
+
+                        @foreach($function->children as $child)
+                            <div class="function-item is-nested">
+                                <i class="fas fa-circle"></i>
+                                {{ $child->text }}
+                            </div>
+                        @endforeach
+                    @endforeach
+                @endif
+
+                @php
+                    $byFamily = $jobRole->specificWorkFunctions
+                        ->groupBy(fn ($function) => $function->jobFamily?->name ?? 'Unassigned');
+                @endphp
+
+                @if($byFamily->isNotEmpty())
+                    <h4 class="function-group-heading">Specific Functions</h4>
+
+                    @foreach($byFamily as $familyName => $functions)
+                        <h5 class="function-family-heading">{{ $familyName }}</h5>
+
+                        @foreach($functions as $function)
                             <div class="function-item">
                                 <i class="fas fa-check-circle"></i>
-                                {{ trim($function) }}
+                                {{ $function->text }}
                             </div>
-                        @endif
+
+                            @foreach($function->children as $child)
+                                <div class="function-item is-nested">
+                                    <i class="fas fa-circle"></i>
+                                    {{ $child->text }}
+                                </div>
+                            @endforeach
+                        @endforeach
                     @endforeach
-                @else
+                @endif
+
+                @if($jobRole->genericWorkFunctions->isEmpty() && $byFamily->isEmpty())
                     <p>No critical work functions defined.</p>
                 @endif
             </div>
@@ -182,6 +232,11 @@
     .function-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
     .function-item:last-child { border-bottom: none; }
     .function-item i { color: #c9a84c; }
+    .function-item.is-nested { padding-left: 26px; }
+    .function-item.is-nested i { font-size: 6px; color: #9ca3af; }
+    .function-group-heading { margin: 4px 0 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #1a3a5c; }
+    .function-group-heading:not(:first-child) { margin-top: 22px; }
+    .function-family-heading { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: #6b7280; }
     .competency-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
     .competency-item:last-child { border-bottom: none; }
     .comp-name { font-weight: 500; flex: 1; }

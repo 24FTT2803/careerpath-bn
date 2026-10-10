@@ -8,6 +8,7 @@ use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
+use App\Services\Biicf\JobRoleContentUpdater;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -213,6 +214,8 @@ class BiicfController extends Controller
             'box_colour' => $request->box_colour ?? 'primary',
         ]);
 
+        $this->writeStructuredContent($jobRole, $request);
+
         if ($request->has('competencies')) {
             foreach ($request->competencies as $comp) {
                 // The proficiency <select> always submits, even when the
@@ -237,9 +240,41 @@ class BiicfController extends Controller
             ->with('success', 'Job role created successfully.');
     }
 
+    /**
+     * Store the description and duties as rows.
+     *
+     * The textareas remain the way these are typed, but the rows
+     * are what every page now reads. The old columns are still
+     * written so the two cannot disagree; they go when the
+     * edition import replaces the seeder that still feeds them.
+     */
+    private function writeStructuredContent(BiicfJobRole $jobRole, Request $request): void
+    {
+        $updater = new JobRoleContentUpdater;
+
+        $updater->replaceDescription(
+            $jobRole,
+            $request->input('job_description')
+        );
+
+        $updater->replaceGenericWorkFunctions(
+            $jobRole,
+            $request->input('critical_work_function')
+        );
+    }
+
     public function jobRoleShow(BiicfJobRole $jobRole)
     {
-        $jobRole->load(['subSector', 'competencies', 'trainings', 'entryRequirement']);
+        $jobRole->load([
+            'subSector',
+            'competencies',
+            'trainings',
+            'entryRequirement',
+            'descriptionPoints',
+            'genericWorkFunctions',
+            'specificWorkFunctions.jobFamily',
+            'specificWorkFunctions.children',
+        ]);
 
         return view('admin.biicf.job-roles.show', compact('jobRole'));
     }
@@ -290,6 +325,8 @@ class BiicfController extends Controller
             'career_path_level' => $request->career_path_level ?? 0,
             'box_colour' => $request->box_colour ?? 'primary',
         ]);
+
+        $this->writeStructuredContent($jobRole, $request);
 
         $jobRole->competencies()->detach();
 

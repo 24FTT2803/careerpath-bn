@@ -839,15 +839,61 @@
                     <template x-if="selectedRole && !loadingRoleDetail">
                         <div>
                             <!-- Role Overview -->
-                            <div class="overview-card" x-show="selectedRole.job_description || selectedRole.critical_work_function">
+                            {{--
+                                The book writes a description as a
+                                list, and splits duties into generic
+                                ones and ones belonging to a job
+                                family, nesting a second level under
+                                some. All of that is now stored as
+                                rows rather than lines of text.
+                            --}}
+                            <div
+                                class="overview-card"
+                                x-show="(selectedRole.description_points || []).length
+                                    || (selectedRole.generic_work_functions || []).length
+                                    || roleSpecificFunctions.length"
+                            >
                                 <h4><i class="fas fa-info-circle"></i> Role Overview</h4>
-                                <p x-show="selectedRole.job_description" x-text="selectedRole.job_description"></p>
-                                <template x-if="selectedRole.critical_work_function">
+
+                                <template x-if="(selectedRole.description_points || []).length">
+                                    <ul>
+                                        <template x-for="point in selectedRole.description_points" :key="point.id">
+                                            <li x-text="point.text"></li>
+                                        </template>
+                                    </ul>
+                                </template>
+
+                                <template x-if="(selectedRole.generic_work_functions || []).length">
                                     <div>
                                         <h5>Key Responsibilities</h5>
                                         <ul>
-                                            <template x-for="(line, idx) in (selectedRole.critical_work_function || '').split('\n').filter(Boolean)" :key="idx">
-                                                <li x-text="line"></li>
+                                            <template x-for="fn in selectedRole.generic_work_functions" :key="fn.id">
+                                                <li>
+                                                    <span x-text="fn.text"></span>
+                                                    <ul x-show="(fn.children || []).length">
+                                                        <template x-for="child in (fn.children || [])" :key="child.id">
+                                                            <li x-text="child.text"></li>
+                                                        </template>
+                                                    </ul>
+                                                </li>
+                                            </template>
+                                        </ul>
+                                    </div>
+                                </template>
+
+                                <template x-for="group in roleSpecificFunctions" :key="group.family">
+                                    <div>
+                                        <h5 x-text="group.family"></h5>
+                                        <ul>
+                                            <template x-for="fn in group.functions" :key="fn.id">
+                                                <li>
+                                                    <span x-text="fn.text"></span>
+                                                    <ul x-show="(fn.children || []).length">
+                                                        <template x-for="child in (fn.children || [])" :key="child.id">
+                                                            <li x-text="child.text"></li>
+                                                        </template>
+                                                    </ul>
+                                                </li>
                                             </template>
                                         </ul>
                                     </div>
@@ -1095,6 +1141,7 @@ function biicfExplorer() {
         glossary: [],
         loadingRoles: false,
         loadingRoleDetail: false,
+        roleSpecificFunctions: [],
         loadingComparison: false,
         loadingGlossary: false,
 
@@ -1160,12 +1207,15 @@ function biicfExplorer() {
         async selectJobRole(slug) {
             this.selectedRole = null;
             this.comparison = null;
+            this.roleSpecificFunctions = [];
             this.loadingRoleDetail = true;
             this.activeSection = 'career-paths';
             try {
                 const res = await fetch(`/student/biicf-explorer/job-roles/${slug}`);
                 const data = await res.json();
                 this.selectedRole = data.job_role;
+                // Grouped by job family server-side, as the book prints them.
+                this.roleSpecificFunctions = data.specific_work_functions_by_family || [];
             } finally {
                 this.loadingRoleDetail = false;
             }
@@ -1174,6 +1224,7 @@ function biicfExplorer() {
         clearRole() {
             this.selectedRole = null;
             this.comparison = null;
+            this.roleSpecificFunctions = [];
             this.compSearch = '';
             this.activeSection = 'job-roles';
         },
