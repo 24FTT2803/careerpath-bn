@@ -1015,6 +1015,10 @@
                                     <i class="fas fa-compass"></i> BIICF Explorer
                                 </a>
 
+                                <a href="{{ route('student.innovation-lab') }}" class="dropdown-item">
+                                    <i class="fas fa-lightbulb"></i> Innovation Lab
+                                </a>
+
                                 <a href="{{ route('student.history') }}" class="dropdown-item">
                                     <i class="fas fa-clock-rotate-left"></i> History
                                     @if(($attention['history'] ?? 0) > 0)
