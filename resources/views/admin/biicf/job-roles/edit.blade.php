@@ -130,8 +130,13 @@
                                 <div class="comp-details" id="comp-details-{{ $comp->id }}" style="{{ $selected ? 'display:block' : 'display:none' }}">
                                     <div class="comp-row">
                                         <label>Proficiency Level</label>
+                                        {{--
+                                            Only this competency's own scale:
+                                            five levels for a technical
+                                            competency, four for a soft skill.
+                                        --}}
                                         <select name="competencies[{{ $comp->id }}][proficiency_level_id]" class="form-control-sm">
-                                            @foreach($proficiencyLevels as $level)
+                                            @foreach($proficiencyLevels->where('scale', $comp->scale()) as $level)
                                                 <option value="{{ $level->id }}" {{ $selected && $pivot && $pivot->proficiency_level_id == $level->id ? 'selected' : '' }}>
                                                     Level {{ $level->level_number }} - {{ $level->name }}
                                                 </option>

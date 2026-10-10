@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\BiicfCompetency;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
@@ -25,9 +24,27 @@ class BiicfExplorerController extends Controller
         $subSectors = BiicfSubSector::withCount('jobRoles')->orderBy('sort_order')->get();
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
 
+        /*
+         * Shown as two scales rather than one list. The framework
+         * rates technical skills over five levels and soft skills
+         * over four, so a single run of levels would restart its
+         * numbering halfway down with nothing to say why.
+         */
+        $proficiencyScales = [
+            'Technical skills' => $proficiencyLevels
+                ->where('scale', BiicfProficiencyLevel::SCALE_TECHNICAL)
+                ->sortBy('level_number')
+                ->values(),
+            'Soft skills' => $proficiencyLevels
+                ->where('scale', BiicfProficiencyLevel::SCALE_SOFT)
+                ->sortBy('level_number')
+                ->values(),
+        ];
+
         return view('biicf.explorer', [
             'subSectors' => $subSectors,
             'proficiencyLevels' => $proficiencyLevels,
+            'proficiencyScales' => $proficiencyScales,
             'competencyCount' => BiicfCompetency::count(),
             'jobRoleCount' => BiicfJobRole::count(),
             'trainingCount' => BiicfTraining::count(),

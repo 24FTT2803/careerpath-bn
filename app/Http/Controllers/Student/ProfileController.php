@@ -1438,6 +1438,22 @@ class ProfileController extends Controller
                 ]);
             }
 
+            /*
+             * The framework rates technical competencies over
+             * five levels and soft skills over four, so a level
+             * from the wrong scale is not a weaker answer but a
+             * meaningless one. The form only offers the right
+             * scale; this is what stops a submitted request
+             * getting around that.
+             */
+            if ($level->scale !== $competency->scale()) {
+                throw ValidationException::withMessages([
+                    "biicf_competencies.$competencyId.proficiency_level_id" => 'That proficiency level does not belong to the scale used for '
+                        .$competency->name
+                        .'.',
+                ]);
+            }
+
             $key =
                 $this->canonicalSkillKey(
                     $competency->name

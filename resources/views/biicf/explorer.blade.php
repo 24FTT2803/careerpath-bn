@@ -554,6 +554,29 @@
         margin-top: 4px;
     }
 
+    .prof-scale {
+        margin-bottom: 26px;
+    }
+
+    .prof-scale-heading {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        margin-bottom: 12px;
+    }
+
+    .prof-scale-heading h4 {
+        margin: 0;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--primary);
+    }
+
+    .prof-scale-heading .scale-note {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
     /* Compare Button */
     .compare-btn {
         display: inline-flex;
@@ -951,10 +974,31 @@
                 <!-- Proficiency Levels -->
                 <section x-show="activeSection === 'proficiency-levels'" x-cloak>
                     <div class="section-title"><i class="fas fa-level-up-alt"></i> Proficiency Levels</div>
-                    @foreach ($proficiencyLevels as $level)
-                        <div class="prof-level">
-                            <div class="level">{{ $level->level_number }}. {{ $level->name }}</div>
-                            <div class="desc">{{ $level->description }}</div>
+
+                    {{--
+                        Two scales, not one. Technical skills are
+                        rated over five levels and soft skills
+                        over four, so Advanced on a soft skill is
+                        not the same rung as level 3 on a
+                        technical one.
+                    --}}
+                    @foreach ($proficiencyScales ?? [] as $scaleName => $levels)
+                        @continue($levels->isEmpty())
+
+                        <div class="prof-scale">
+                            <div class="prof-scale-heading">
+                                <h4>{{ $scaleName }}</h4>
+                                <span class="scale-note">
+                                    {{ $levels->count() }} levels
+                                </span>
+                            </div>
+
+                            @foreach ($levels as $level)
+                                <div class="prof-level">
+                                    <div class="level">{{ $level->level_number }}. {{ $level->name }}</div>
+                                    <div class="desc">{{ $level->description }}</div>
+                                </div>
+                            @endforeach
                         </div>
                     @endforeach
                 </section>

@@ -1437,8 +1437,20 @@
                     $proficiencyLevels =
                         $proficiencyLevels ?? collect();
 
+                    /*
+                     * Options for skills a student types in
+                     * themselves, which carry no BIICF type and
+                     * so no scale of their own. The framework's
+                     * soft skills are a closed list of eleven
+                     * named ones, so anything written in here is
+                     * treated as technical.
+                     */
                     $proficiencyLevelOptions =
                         $proficiencyLevels
+                            ->where(
+                                'scale',
+                                \App\Models\BiicfProficiencyLevel::SCALE_TECHNICAL
+                            )
                             ->map(
                                 fn ($level) => [
                                     'id' => $level->id,
@@ -1730,7 +1742,7 @@
                                     </option>
 
                                     @foreach(
-                                        $proficiencyLevels
+                                        $proficiencyLevels->where('scale', $competency->scale())
                                             as $level
                                     )
                                         <option
@@ -1922,7 +1934,7 @@
                                     </option>
 
                                     @foreach(
-                                        $proficiencyLevels
+                                        $proficiencyLevels->where('scale', $competency->scale())
                                             as $level
                                     )
                                         <option
@@ -2052,7 +2064,7 @@
                                     </option>
 
                                     @foreach(
-                                        $proficiencyLevels
+                                        $proficiencyLevels->where('scale', \App\Models\BiicfProficiencyLevel::SCALE_TECHNICAL)
                                             as $level
                                     )
                                         <option

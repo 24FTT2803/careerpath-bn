@@ -3,15 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BiicfSubSector;
-use App\Models\BiicfJobRole;
 use App\Models\BiicfCompetency;
+use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
+use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
-use App\Models\BiicfEntryRequirement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BiicfController extends Controller
 {
@@ -23,6 +23,7 @@ class BiicfController extends Controller
         $subSectors = BiicfSubSector::withCount('jobRoles')
             ->orderBy('sort_order')
             ->paginate(15);
+
         return view('admin.biicf.sub-sectors.index', compact('subSectors'));
     }
 
@@ -85,6 +86,7 @@ class BiicfController extends Controller
                 ->with('error', 'Cannot delete sub-sector with associated job roles.');
         }
         $subSector->delete();
+
         return redirect()->route('admin.biicf.sub-sectors')
             ->with('success', 'Sub-sector deleted successfully.');
     }
@@ -95,22 +97,22 @@ class BiicfController extends Controller
     public function jobRoles(Request $request)
     {
         $query = BiicfJobRole::with('subSector');
-        
+
         if ($request->has('sub_sector') && $request->sub_sector) {
             $query->where('sub_sector_id', $request->sub_sector);
         }
-        
+
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('title', 'LIKE', "%{$search}%")
-                  ->orWhere('functional_group', 'LIKE', "%{$search}%");
+                    ->orWhere('functional_group', 'LIKE', "%{$search}%");
             });
         }
-        
+
         $jobRoles = $query->orderBy('title')->paginate(15);
         $subSectors = BiicfSubSector::orderBy('name')->get();
-        
+
         return view('admin.biicf.job-roles.index', compact('jobRoles', 'subSectors'));
     }
 
@@ -120,8 +122,60 @@ class BiicfController extends Controller
         $competencies = BiicfCompetency::orderBy('name')->get();
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
         $trainings = BiicfTraining::orderBy('name')->get();
-        
+
         return view('admin.biicf.job-roles.create', compact('subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
+    }
+
+    /**
+     * Check each selected competency against the scale it is
+     * actually rated on.
+     *
+     * The framework rates technical competencies over five
+     * levels and soft skills over four, so a level borrowed from
+     * the other scale is not a weaker answer but a meaningless
+     * one. The form only offers the matching scale; this is what
+     * holds when a request arrives without going through it.
+     *
+     * @param  array<int|string, mixed>  $selections
+     */
+    private function validateCompetencyScales(array $selections): void
+    {
+        $chosen = collect($selections)
+            ->filter(
+                fn ($selection) => is_array($selection)
+                    && isset($selection['id'])
+            );
+
+        if ($chosen->isEmpty()) {
+            return;
+        }
+
+        $competencies = BiicfCompetency::query()
+            ->whereIn('id', $chosen->pluck('id'))
+            ->get()
+            ->keyBy('id');
+
+        $levels = BiicfProficiencyLevel::all()->keyBy('id');
+
+        foreach ($chosen as $selection) {
+            $competency = $competencies->get((int) $selection['id']);
+
+            if (! $competency) {
+                continue;
+            }
+
+            $levelId = $selection['proficiency_level_id'] ?? null;
+            $level = $levelId === null
+                ? null
+                : $levels->get((int) $levelId);
+
+            if (! $level || $level->scale !== $competency->scale()) {
+                throw ValidationException::withMessages([
+                    'competencies' => $competency->name
+                        .' needs a proficiency level from its own scale.',
+                ]);
+            }
+        }
     }
 
     public function jobRoleStore(Request $request)
@@ -143,6 +197,10 @@ class BiicfController extends Controller
             'trainings.*' => 'exists:biicf_trainings,id',
         ]);
 
+        $this->validateCompetencyScales(
+            $request->input('competencies', [])
+        );
+
         $jobRole = BiicfJobRole::create([
             'sub_sector_id' => $request->sub_sector_id,
             'title' => $request->title,
@@ -156,20 +214,20 @@ class BiicfController extends Controller
         ]);
 
         if ($request->has('competencies')) {
-    foreach ($request->competencies as $comp) {
-        // The proficiency <select> always submits, even when the
-        // competency checkbox is unticked, so an entry can arrive
-        // without its 'id'. Skip those.
-        if (! is_array($comp) || ! isset($comp['id'])) {
-            continue;
-        }
+            foreach ($request->competencies as $comp) {
+                // The proficiency <select> always submits, even when the
+                // competency checkbox is unticked, so an entry can arrive
+                // without its 'id'. Skip those.
+                if (! is_array($comp) || ! isset($comp['id'])) {
+                    continue;
+                }
 
-        $jobRole->competencies()->attach($comp['id'], [
-            'proficiency_level_id' => $comp['proficiency_level_id'],
-            'is_core' => $comp['is_core'] ?? true,
-        ]);
-    }
-}
+                $jobRole->competencies()->attach($comp['id'], [
+                    'proficiency_level_id' => $comp['proficiency_level_id'],
+                    'is_core' => $comp['is_core'] ?? true,
+                ]);
+            }
+        }
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -182,6 +240,7 @@ class BiicfController extends Controller
     public function jobRoleShow(BiicfJobRole $jobRole)
     {
         $jobRole->load(['subSector', 'competencies', 'trainings', 'entryRequirement']);
+
         return view('admin.biicf.job-roles.show', compact('jobRole'));
     }
 
@@ -191,9 +250,9 @@ class BiicfController extends Controller
         $competencies = BiicfCompetency::orderBy('name')->get();
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
         $trainings = BiicfTraining::orderBy('name')->get();
-        
+
         $jobRole->load(['competencies', 'trainings']);
-        
+
         return view('admin.biicf.job-roles.edit', compact('jobRole', 'subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
     }
 
@@ -216,6 +275,10 @@ class BiicfController extends Controller
             'trainings.*' => 'exists:biicf_trainings,id',
         ]);
 
+        $this->validateCompetencyScales(
+            $request->input('competencies', [])
+        );
+
         $jobRole->update([
             'sub_sector_id' => $request->sub_sector_id,
             'title' => $request->title,
@@ -230,18 +293,18 @@ class BiicfController extends Controller
 
         $jobRole->competencies()->detach();
 
-if ($request->has('competencies')) {
-    foreach ($request->competencies as $comp) {
-        if (! is_array($comp) || ! isset($comp['id'])) {
-            continue;
-        }
+        if ($request->has('competencies')) {
+            foreach ($request->competencies as $comp) {
+                if (! is_array($comp) || ! isset($comp['id'])) {
+                    continue;
+                }
 
-        $jobRole->competencies()->attach($comp['id'], [
-            'proficiency_level_id' => $comp['proficiency_level_id'],
-            'is_core' => $comp['is_core'] ?? true,
-        ]);
-    }
-}
+                $jobRole->competencies()->attach($comp['id'], [
+                    'proficiency_level_id' => $comp['proficiency_level_id'],
+                    'is_core' => $comp['is_core'] ?? true,
+                ]);
+            }
+        }
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -258,7 +321,7 @@ if ($request->has('competencies')) {
         $jobRole->competencies()->detach();
         $jobRole->trainings()->detach();
         $jobRole->delete();
-        
+
         return redirect()->route('admin.biicf.job-roles')
             ->with('success', 'Job role deleted successfully.');
     }
@@ -269,18 +332,18 @@ if ($request->has('competencies')) {
     public function competencies(Request $request)
     {
         $query = BiicfCompetency::query();
-        
+
         if ($request->has('type') && $request->type) {
             $query->where('type', $request->type);
         }
-        
+
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%{$search}%");
         }
-        
+
         $competencies = $query->orderBy('name')->paginate(15);
-        
+
         return view('admin.biicf.competencies.index', compact('competencies'));
     }
 
@@ -335,10 +398,10 @@ if ($request->has('competencies')) {
     public function competencyDestroy(BiicfCompetency $competency)
     {
         $competency->delete();
+
         return redirect()->route('admin.biicf.competencies')
             ->with('success', 'Competency deleted successfully.');
     }
-
 
     // ============================================
     // TRAININGS
@@ -346,15 +409,15 @@ if ($request->has('competencies')) {
     public function trainings(Request $request)
     {
         $query = BiicfTraining::query();
-        
+
         if ($request->has('search') && $request->search) {
             $search = $request->search;
             $query->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('provider', 'LIKE', "%{$search}%");
+                ->orWhere('provider', 'LIKE', "%{$search}%");
         }
-        
+
         $trainings = $query->orderBy('name')->paginate(15);
-        
+
         return view('admin.biicf.trainings.index', compact('trainings'));
     }
 
@@ -403,6 +466,7 @@ if ($request->has('competencies')) {
     public function trainingDestroy(BiicfTraining $training)
     {
         $training->delete();
+
         return redirect()->route('admin.biicf.trainings')
             ->with('success', 'Training deleted successfully.');
     }
