@@ -1182,6 +1182,21 @@
                 var timer = null;
 
                 /*
+                 * A looping video never reports that it ended,
+                 * and the turn below waits for exactly that, so
+                 * a slot holding one stopped rotating for good.
+                 * Looping is for a slot showing a single
+                 * advertisement; here there is a queue.
+                 */
+                items.forEach(function (item) {
+                    var video = item.querySelector('video');
+
+                    if (video) {
+                        video.loop = false;
+                    }
+                });
+
+                /*
                  * Someone who has asked for less motion gets the
                  * first advertisement and nothing moving, rather
                  * than a slot that cycles regardless.
@@ -1229,6 +1244,13 @@
                      */
                     if (video) {
                         video.onended = advance;
+
+                        /*
+                         * A clip that cannot load would otherwise
+                         * hold the slot indefinitely, since it
+                         * never reaches an end to report.
+                         */
+                        video.onerror = advance;
 
                         return;
                     }

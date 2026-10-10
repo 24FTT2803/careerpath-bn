@@ -7,6 +7,24 @@
     $isEdit = $advertisement->exists;
 @endphp
 
+<style>
+    /*
+     * The frame showing what is already uploaded. Shared by the
+     * image and the video so both sit at the banner's shape
+     * rather than each carrying its own inline sizing.
+     */
+    .current-asset-preview {
+        display: block;
+        width: 100%;
+        max-width: 728px;
+        aspect-ratio: 6 / 1;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        background: #f9fafb;
+    }
+</style>
+
 <div>
     <div class="page-header">
         <div>
@@ -81,6 +99,7 @@
 
                 <select
                     name="type"
+                    id="typeSelect"
                     class="field-input"
                 >
                     @foreach([
@@ -97,28 +116,26 @@
                 </select>
             </div>
 
-            <div>
-                <label class="field-label">
-                    Placement
-                </label>
+            {{--
+                Only shown when there is a choice to make. Opened
+                from a placement, or editing one that already has
+                a placement, it cannot be changed here — so it was
+                a label and a greyed-out box saying what you
+                already knew. The value still travels with the
+                form, just without the furniture.
+            --}}
+            @if($lockedPosition !== null)
+                <input
+                    type="hidden"
+                    name="position"
+                    value="{{ $lockedPosition }}"
+                >
+            @else
+                <div>
+                    <label class="field-label">
+                        Placement
+                    </label>
 
-                @if($lockedPosition !== null)
-                    <input
-                        type="hidden"
-                        name="position"
-                        value="{{ $lockedPosition }}"
-                    >
-
-                    <p class="field-input" style="background:#f9fafb;">
-                        {{ $lockedPosition === 'one'
-                            ? 'Above the page'
-                            : 'Below the page' }}
-                    </p>
-
-                    <p class="field-hint">
-                        Set by the placement this was opened from.
-                    </p>
-                @else
                     <select
                         name="position"
                         class="field-input"
@@ -133,11 +150,18 @@
                             @selected(old('position', $advertisement->position) === 'two')
                         >Below the page</option>
                     </select>
-                @endif
-            </div>
+                </div>
+            @endif
         </div>
 
-        <div class="mb-4">
+        {{--
+            Which kinds of advertisement each field belongs to.
+            A hosted image has nothing to fetch from elsewhere,
+            and an embed has nothing to upload, so showing every
+            field for every type left most of the form to be
+            ignored.
+        --}}
+        <div class="mb-4" data-ad-field="image video">
             <label class="field-label">
                 Image
             </label>
@@ -146,11 +170,28 @@
                 <div class="mb-3">
                     <p class="text-xs text-gray-500 mb-1">Currently showing</p>
 
-                    <img
-                        src="{{ $advertisement->mediaUrl() }}"
-                        alt=""
-                        style="width:100%;max-width:728px;aspect-ratio:6/1;object-fit:cover;border-radius:6px;border:1px solid #e5e7eb"
-                    >
+                    {{--
+                        A clip has to be a video element. Pointed
+                        at an img it simply fails to load, so
+                        editing a video advertisement showed an
+                        empty frame and no sign of what was
+                        already there.
+                    --}}
+                    @if($advertisement->isVideo())
+                        <video
+                            src="{{ $advertisement->mediaUrl() }}"
+                            class="current-asset-preview"
+                            controls
+                            muted
+                            playsinline
+                        ></video>
+                    @else
+                        <img
+                            src="{{ $advertisement->mediaUrl() }}"
+                            alt=""
+                            class="current-asset-preview"
+                        >
+                    @endif
                 </div>
             @endif
 
@@ -244,7 +285,7 @@
 
         </div>
 
-        <div class="mb-4">
+        <div class="mb-4" data-ad-field="link network">
             <label class="field-label">
                 External address
             </label>
@@ -264,7 +305,17 @@
         </div>
 
         <div class="field-grid field-grid-2">
-            <div>
+            {{--
+                Also shown for an external link, despite the name
+                of the field above it: "External address" is
+                where the media is hosted, not where a click
+                goes. Without this, such an advertisement has
+                nothing to click through to.
+
+                An embed is excluded because the network handles
+                its own clicks inside the frame.
+            --}}
+            <div data-ad-field="image video link">
                 <label class="field-label">
                     Click destination
                 </label>
@@ -586,5 +637,40 @@
                 reader.readAsDataURL(file);
             });
         }
+    });
+</script>
+
+<script>
+    /*
+     * Show only the fields the chosen kind of advertisement
+     * actually uses. Hidden fields keep their values, so
+     * switching type to look and switching back does not quietly
+     * discard what was already filled in.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        var typeSelect = document.getElementById('typeSelect');
+
+        if (!typeSelect) {
+            return;
+        }
+
+        var blocks = document.querySelectorAll('[data-ad-field]');
+
+        function applyType() {
+            var current = typeSelect.value;
+
+            blocks.forEach(function (block) {
+                var types = block
+                    .getAttribute('data-ad-field')
+                    .split(' ');
+
+                block.style.display =
+                    types.indexOf(current) === -1 ? 'none' : '';
+            });
+        }
+
+        typeSelect.addEventListener('change', applyType);
+
+        applyType();
     });
 </script>

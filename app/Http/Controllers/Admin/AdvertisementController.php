@@ -20,24 +20,21 @@ use Illuminate\View\View;
 class AdvertisementController extends Controller
 {
     /**
-     * Uploaded clips are capped well below anything a student
-     * would wait for on a phone connection.
-     */
-    /**
-     * Generous enough that an animated GIF is usable.
+     * The largest advertisement file accepted, by kind.
      *
-     * Public because the form checks the same number in the
+     * The same 30 MB either way: thirty seconds of video does
+     * not fit in much less at any watchable quality, and an
+     * animated GIF can be surprisingly large for its size on
+     * screen. Whatever is set here is still bounded by what the
+     * server will accept — see uploadLimitKilobytes.
+     *
+     * Public because the form checks the same numbers in the
      * browser. Two copies of a limit drift apart, and the one
      * that drifts is always the friendlier one.
      */
-    public const MAX_IMAGE_KILOBYTES = 5120;
+    public const MAX_IMAGE_KILOBYTES = 30720;
 
-    /**
-     * Thirty seconds of video does not fit in ten megabytes at
-     * any reasonable quality, so this is sized for the limit
-     * rather than against it.
-     */
-    public const MAX_VIDEO_KILOBYTES = 25600;
+    public const MAX_VIDEO_KILOBYTES = 30720;
 
     /**
      * How long a video advertisement may run.
