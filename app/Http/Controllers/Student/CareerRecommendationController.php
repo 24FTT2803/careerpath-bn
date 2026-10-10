@@ -163,14 +163,18 @@ class CareerRecommendationController extends Controller
             $entryRequirement =
                 $jobRole->entryRequirement;
 
+            /*
+             * Already reads as "BDQF Level 3", or as the book's
+             * own wording where that names no single level, so it
+             * needs no label of its own.
+             */
+            $entryLevel = $entryRequirement?->level_label;
+
             $careerDetails = [
                 'entry_requirements' => array_values(
                     array_filter([
-                        filled(
-                            $entryRequirement?->bdqf_level
-                        )
-                            ? 'BDQF Level: '
-                                .$entryRequirement->bdqf_level
+                        filled($entryLevel)
+                            ? $entryLevel
                             : null,
 
                         filled(

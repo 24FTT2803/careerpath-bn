@@ -130,7 +130,7 @@
             <div class="card-body">
                 <div class="info-row">
                     <span class="label">BDQF Level</span>
-                    <span class="value">{{ $jobRole->entryRequirement->bdqf_level ?? '-' }}</span>
+                    <span class="value">{{ $jobRole->entryRequirement->level_label ?? '-' }}</span>
                 </div>
                 <div class="info-row">
                     <span class="label">Field of Study</span>

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class BiicfJobRole extends Model
 {
@@ -51,6 +52,16 @@ class BiicfJobRole extends Model
         )->withPivot('notes');
     }
 
+    /**
+     * Every competency this role requires, across all its tiers.
+     *
+     * The proficiency on the pivot belongs to a tier, so a role
+     * with more than one tier returns the same competency once
+     * per tier, at each tier's own level. That is faithful to the
+     * book's table but is rarely what a caller wants: for one
+     * column of it, read a tier's own competencies, and for the
+     * requirement to enter the role, read entryTier.
+     */
     public function competencies(): BelongsToMany
     {
         return $this->belongsToMany(
@@ -58,12 +69,44 @@ class BiicfJobRole extends Model
             'biicf_job_role_competency',
             'job_role_id',
             'competency_id'
-        )->withPivot('proficiency_level_id', 'is_core');
+        )->withPivot('proficiency_level_id', 'is_core', 'job_role_tier_id');
     }
 
-    public function entryRequirement(): HasOne
+    /**
+     * The requirement for entering this role at all.
+     *
+     * Requirements now belong to tiers, and a tier can list
+     * several alternatives, so this is the lowest tier's first
+     * alternative — the least that will get someone in. Anything
+     * showing the full picture should walk tiers and their
+     * entryRequirements instead.
+     */
+    public function entryRequirement(): HasOneThrough
     {
-        return $this->hasOne(BiicfEntryRequirement::class, 'job_role_id');
+        return $this->hasOneThrough(
+            BiicfEntryRequirement::class,
+            BiicfJobRoleTier::class,
+            'job_role_id',
+            'job_role_tier_id',
+            'id',
+            'id'
+        )
+            ->orderBy('biicf_job_role_tiers.sort_order')
+            ->orderBy('biicf_entry_requirements.alternative_number');
+    }
+
+    /**
+     * The lowest tier of this role.
+     *
+     * Every role has at least one, so this is never null for
+     * framework data.
+     */
+    public function entryTier(): HasOne
+    {
+        return $this->hasOne(
+            BiicfJobRoleTier::class,
+            'job_role_id'
+        )->ofMany('sort_order', 'min');
     }
 
     /**

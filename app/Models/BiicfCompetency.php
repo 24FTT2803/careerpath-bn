@@ -22,7 +22,7 @@ class BiicfCompetency extends Model
             'biicf_job_role_competency',
             'competency_id',
             'job_role_id'
-        )->withPivot('proficiency_level_id', 'is_core');
+        )->withPivot('proficiency_level_id', 'is_core', 'job_role_tier_id');
     }
 
     /**

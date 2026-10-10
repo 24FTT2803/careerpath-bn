@@ -1016,7 +1016,7 @@
                         <div>
                             <div class="req-item">
                                 <span class="label">Qualification Level</span>
-                                <span class="value" x-text="selectedRole.entry_requirement.bdqf_level || 'Not specified'"></span>
+                                <span class="value" x-text="selectedRole.entry_requirement.level_label || 'Not specified'"></span>
                             </div>
                             <div class="req-item">
                                 <span class="label">Field of Study</span>
