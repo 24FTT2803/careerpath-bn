@@ -19,10 +19,18 @@
         color: #9ca3af;
     }
 
+    /*
+     * Hiding the overflow meant a deep branch, already pushed
+     * right by its indentation, was simply cut off. It scrolls
+     * instead, so the tree stops condensing once there is no
+     * more room and nothing is lost.
+     */
     #groupTree {
         border: 1px solid #f0f1f3;
         border-radius: 10px;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
     }
 
     .group-row {
@@ -31,9 +39,22 @@
         justify-content: space-between;
         gap: 16px;
         min-height: 48px;
+
+        /*
+         * The floor below which rows stop compressing. Narrower
+         * than this and the tree scrolls rather than crushing
+         * names and actions into each other.
+         */
+        min-width: 720px;
+
         padding-top: 8px;
         padding-bottom: 8px;
-        padding-right: 12px;
+
+        /*
+         * Room at the end of the scroll, so the last control is
+         * not flush against the edge.
+         */
+        padding-right: 24px;
         border-bottom: 1px solid #f3f4f6;
         font-size: 14px;
         background: white;
@@ -49,8 +70,13 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        min-width: 0;
-        flex: 1;
+
+        /*
+         * Deliberately allowed to size to its content. With
+         * min-width: 0 it shrank below the name, which is what
+         * put the ellipsis there in the first place.
+         */
+        flex: 1 0 auto;
     }
 
     .group-toggle,
@@ -77,12 +103,14 @@
         transform: rotate(-90deg);
     }
 
+    /*
+     * Names are no longer truncated: the tree scrolls, so a long
+     * one widens its row instead of being cut to an ellipsis.
+     */
     .group-name {
         font-weight: 500;
         color: #111827;
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
 
     .group-row[data-depth="0"] .group-name {
@@ -276,14 +304,17 @@
     }
 
     @media (max-width: 900px) {
-        .group-row {
-            flex-wrap: wrap;
-        }
-
+        /*
+         * The actions used to wrap onto a second line here, which
+         * is what made a narrow tree feel cramped. The tree
+         * scrolls now instead, so they stay on the row.
+         *
+         * They are still revealed, because the hover that
+         * normally brings them up never happens on a touch
+         * screen.
+         */
         .group-actions {
             opacity: 1;
-            width: 100%;
-            flex-wrap: wrap;
         }
     }
 
