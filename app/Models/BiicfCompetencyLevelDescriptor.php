@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * What one competency means at one of its proficiency levels.
@@ -22,6 +23,7 @@ class BiicfCompetencyLevelDescriptor extends Model
         'competency_id',
         'proficiency_level_id',
         'statements',
+        'scope_label',
         'source_edition_id',
         'source_page',
     ];
@@ -31,6 +33,36 @@ class BiicfCompetencyLevelDescriptor extends Model
         return [
             'statements' => 'array',
         ];
+    }
+
+    /**
+     * Whether this descriptor applies only to particular roles.
+     *
+     * The book describes Infrastructure Management differently
+     * for an IT Technician than for a Systems Engineer, and
+     * does the same for three other competencies. An unscoped
+     * descriptor applies wherever its competency is required.
+     */
+    public function isScoped(): bool
+    {
+        return $this->scope_label !== '' && $this->scope_label !== null;
+    }
+
+    /**
+     * The roles a scoped descriptor covers.
+     *
+     * Resolved from the scope text once job roles are loaded, so
+     * an empty set alongside a scope label means the roles have
+     * not been matched up yet rather than that none apply.
+     */
+    public function jobRoles(): BelongsToMany
+    {
+        return $this->belongsToMany(
+            BiicfJobRole::class,
+            'biicf_competency_descriptor_job_role',
+            'descriptor_id',
+            'job_role_id'
+        );
     }
 
     public function competency(): BelongsTo

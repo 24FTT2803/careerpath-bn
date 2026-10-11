@@ -84,34 +84,34 @@ class CareerAdviserContextBuilder
                      */
                     'career' => $legacyCareer
                         ? [
-                        'job_title' => $legacyCareer->job_title,
+                            'job_title' => $legacyCareer->job_title,
 
-                        'subsector' => $legacyCareer->subsector,
+                            'subsector' => $legacyCareer->subsector,
 
-                        'technical_skills' => $this->normaliseArray(
-                            $legacyCareer->technical_skills
-                        ),
+                            'technical_skills' => $this->normaliseArray(
+                                $legacyCareer->technical_skills
+                            ),
 
-                        'soft_skills' => $this->normaliseArray(
-                            $legacyCareer->soft_skills
-                        ),
+                            'soft_skills' => $this->normaliseArray(
+                                $legacyCareer->soft_skills
+                            ),
 
-                        'entry_requirements' => $this->normaliseArray(
-                            $legacyCareer->entry_requirements
-                        ),
+                            'entry_requirements' => $this->normaliseArray(
+                                $legacyCareer->entry_requirements
+                            ),
 
-                        'recommended_training' => $this->normaliseArray(
-                            $legacyCareer->recommended_training
-                        ),
+                            'recommended_training' => $this->normaliseArray(
+                                $legacyCareer->recommended_training
+                            ),
 
-                        'certifications' => $this->normaliseArray(
-                            $legacyCareer->certifications
-                        ),
+                            'certifications' => $this->normaliseArray(
+                                $legacyCareer->certifications
+                            ),
 
-                        'job_description' => $legacyCareer->job_description,
+                            'job_description' => $legacyCareer->job_description,
 
-                        'demand_level' => $legacyCareer->demand_level,
-                    ]
+                            'demand_level' => $legacyCareer->demand_level,
+                        ]
                         : null,
 
                     /*
@@ -142,13 +142,12 @@ class CareerAdviserContextBuilder
          * the Career Adviser.
          */
         $jobRoles = BiicfJobRole::query()
-            ->with('subSector:id,name')
+            ->with(['subSector:id,name', 'descriptionPoints'])
             ->orderBy('title')
             ->get([
                 'id',
                 'sub_sector_id',
                 'title',
-                'job_description',
                 'career_path_level',
             ])
             ->map(fn ($role) => [
@@ -158,7 +157,17 @@ class CareerAdviserContextBuilder
 
                 'sub_sector' => $role->subSector?->name,
 
-                'job_description' => $role->job_description,
+                /*
+                 * Built from the description rows rather than the
+                 * old text column. The column is still written by
+                 * the seeder but stops being the truth once the
+                 * reference book is imported, and the adviser
+                 * going quietly description-less would be hard to
+                 * spot.
+                 */
+                'job_description' => $role->descriptionPoints
+                    ->pluck('text')
+                    ->implode(' '),
 
                 'career_path_level' => $role->career_path_level,
             ])

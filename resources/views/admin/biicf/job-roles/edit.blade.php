@@ -58,7 +58,7 @@
                 <div class="form-group">
                     <label>Job Description</label>
                     <textarea name="job_description" class="form-control @error('job_description') is-invalid @enderror" 
-                              rows="3">{{ old('job_description', $jobRole->job_description) }}</textarea>
+                              rows="3">{{ old('job_description', $jobRole->descriptionPoints->pluck('text')->implode("\n")) }}</textarea>
                     @error('job_description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -67,7 +67,7 @@
                 <div class="form-group">
                     <label>Critical Work Function</label>
                     <textarea name="critical_work_function" class="form-control @error('critical_work_function') is-invalid @enderror" 
-                              rows="3">{{ old('critical_work_function', $jobRole->critical_work_function) }}</textarea>
+                              rows="3">{{ old('critical_work_function', $jobRole->genericWorkFunctions->pluck('text')->implode("\n")) }}</textarea>
                     @error('critical_work_function')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -115,8 +115,17 @@
                     <div class="competency-grid">
                         @foreach($competencies as $comp)
                             @php
-                                $selected = $jobRole->competencies->contains($comp->id);
-                                $pivot = $selected ? $jobRole->competencies->find($comp->id)->pivot : null;
+                                /*
+                                 * The entry tier's column of the
+                                 * book's table. Reading the role's
+                                 * competencies would return one row
+                                 * per tier, so a role with three
+                                 * would offer three contradictory
+                                 * levels for the same competency.
+                                 */
+                                $tierCompetencies = $jobRole->tiers->first()?->competencies ?? collect();
+                                $selected = $tierCompetencies->contains($comp->id);
+                                $pivot = $selected ? $tierCompetencies->find($comp->id)->pivot : null;
                             @endphp
                             <div class="competency-item">
                                 <label class="checkbox-label">
@@ -228,11 +237,15 @@
     .training-name { font-weight: 500; }
     .training-provider { font-size: 11px; color: #6b7280; }
     .form-text { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    @media (max-width: 768px) {
-        .form-row { flex-direction: column; }
-        .competency-grid { grid-template-columns: 1fr; }
-        .training-grid { grid-template-columns: 1fr; }
-    }
+    /*
+     * Narrow screens scroll rather than compress. These columns
+     * used to collapse into one, which squeezed a label, a
+     * proficiency select and a checkbox into a phone's width
+     * and left the whole form unreadable. The form keeps a
+     * readable width and the card scrolls sideways instead.
+     */
+    .card-body { overflow-x: auto; }
+    .card-body form { min-width: 720px; }
 </style>
 
 <script>

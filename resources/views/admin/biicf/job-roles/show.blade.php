@@ -132,8 +132,27 @@
         <div class="card">
             <div class="card-header">Competencies</div>
             <div class="card-body">
-                @if($jobRole->competencies->count() > 0)
-                    @foreach($jobRole->competencies->groupBy('type') as $type => $competencies)
+                {{--
+                    Required proficiencies belong to a tier, one
+                    column of the book's table each, so reading
+                    the role's competencies directly would list
+                    each one once per tier. This is the lowest
+                    tier: what it takes to enter the role.
+                --}}
+                @php
+                    $entryTier = $jobRole->tiers->first();
+                    $entryCompetencies = $entryTier?->competencies ?? collect();
+                @endphp
+
+                @if($jobRole->tiers->count() > 1)
+                    <p class="tier-note">
+                        Showing <strong>{{ $entryTier->label }}</strong>.
+                        This role has {{ $jobRole->tiers->count() }} tiers.
+                    </p>
+                @endif
+
+                @if($entryCompetencies->count() > 0)
+                    @foreach($entryCompetencies->groupBy('type') as $type => $competencies)
                         <h4>{{ ucfirst(str_replace('_', ' ', $type)) }}</h4>
                         @foreach($competencies as $comp)
                             <div class="competency-item">
@@ -142,7 +161,7 @@
                                     {{ $comp->pivot->is_core ? 'Core' : 'Supporting' }}
                                 </span>
                                 <span class="badge badge-level">
-                                    Level {{ $comp->pivot->proficiencyLevel->level_number ?? '?' }}
+                                    Level {{ $levelNumbers[$comp->pivot->proficiency_level_id] ?? '?' }}
                                 </span>
                             </div>
                         @endforeach
@@ -232,6 +251,7 @@
     .function-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
     .function-item:last-child { border-bottom: none; }
     .function-item i { color: #c9a84c; }
+    .tier-note { margin: 0 0 14px; padding: 8px 12px; border-left: 3px solid #c9a84c; background: #fffbeb; font-size: 13px; color: #6b7280; }
     .function-item.is-nested { padding-left: 26px; }
     .function-item.is-nested i { font-size: 6px; color: #9ca3af; }
     .function-group-heading { margin: 4px 0 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #1a3a5c; }

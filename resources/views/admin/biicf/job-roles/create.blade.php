@@ -220,11 +220,15 @@
     .training-name { font-weight: 500; }
     .training-provider { font-size: 11px; color: #6b7280; }
     .form-text { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    @media (max-width: 768px) {
-        .form-row { flex-direction: column; }
-        .competency-grid { grid-template-columns: 1fr; }
-        .training-grid { grid-template-columns: 1fr; }
-    }
+    /*
+     * Narrow screens scroll rather than compress. These columns
+     * used to collapse into one, which squeezed a label, a
+     * proficiency select and a checkbox into a phone's width
+     * and left the whole form unreadable. The form keeps a
+     * readable width and the card scrolls sideways instead.
+     */
+    .card-body { overflow-x: auto; }
+    .card-body form { min-width: 720px; }
 </style>
 
 <script>

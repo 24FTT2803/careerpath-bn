@@ -1142,6 +1142,7 @@ function biicfExplorer() {
         loadingRoles: false,
         loadingRoleDetail: false,
         roleSpecificFunctions: [],
+        roleCompetenciesByType: {},
         loadingComparison: false,
         loadingGlossary: false,
 
@@ -1208,6 +1209,7 @@ function biicfExplorer() {
             this.selectedRole = null;
             this.comparison = null;
             this.roleSpecificFunctions = [];
+            this.roleCompetenciesByType = {};
             this.loadingRoleDetail = true;
             this.activeSection = 'career-paths';
             try {
@@ -1216,6 +1218,13 @@ function biicfExplorer() {
                 this.selectedRole = data.job_role;
                 // Grouped by job family server-side, as the book prints them.
                 this.roleSpecificFunctions = data.specific_work_functions_by_family || [];
+                /*
+                 * Required proficiencies belong to a tier, so the
+                 * role itself no longer carries a competencies
+                 * list — reading one would have returned every
+                 * competency once per tier.
+                 */
+                this.roleCompetenciesByType = data.competencies_by_type || {};
             } finally {
                 this.loadingRoleDetail = false;
             }
@@ -1225,6 +1234,7 @@ function biicfExplorer() {
             this.selectedRole = null;
             this.comparison = null;
             this.roleSpecificFunctions = [];
+            this.roleCompetenciesByType = {};
             this.compSearch = '';
             this.activeSection = 'job-roles';
         },
@@ -1251,7 +1261,7 @@ function biicfExplorer() {
         },
 
         filteredRoleCompetencies(type) {
-            const list = (this.selectedRole?.competencies || []).filter(c => c.type === type);
+            const list = this.roleCompetenciesByType[type] || [];
             if (!this.compSearch.trim()) return list;
             const q = this.compSearch.toLowerCase();
             return list.filter(c => c.name.toLowerCase().includes(q));

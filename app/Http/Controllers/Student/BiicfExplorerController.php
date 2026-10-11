@@ -87,7 +87,7 @@ class BiicfExplorerController extends Controller
             'subSector:id,name,slug',
             'entryRequirement',
             'trainings',
-            'competencies' => function ($q) {
+            'tiers.competencies' => function ($q) {
                 $q->orderBy('type');
             },
             'progressesTo:id,title,slug',
@@ -112,9 +112,20 @@ class BiicfExplorerController extends Controller
             ])
             ->values();
 
+        /*
+         * Required proficiencies belong to tiers, one column of
+         * the book's table each, so reading the role's
+         * competencies directly would list every competency once
+         * per tier. Shown here is the lowest tier: what it takes
+         * to enter the role. Browsing the higher tiers is still
+         * to come.
+         */
+        $entryCompetencies = $jobRole->tiers->first()?->competencies
+            ?? collect();
+
         return response()->json([
             'job_role' => $jobRole,
-            'competencies_by_type' => $jobRole->competencies->groupBy('type'),
+            'competencies_by_type' => $entryCompetencies->groupBy('type'),
             'specific_work_functions_by_family' => $specificByFamily,
         ]);
     }
@@ -146,7 +157,7 @@ class BiicfExplorerController extends Controller
      */
     public function compareToMe(BiicfJobRole $jobRole)
     {
-        $jobRole->load(['competencies' => fn ($q) => $q->orderBy('type')]);
+        $jobRole->load(['tiers.competencies' => fn ($q) => $q->orderBy('type')]);
 
         $levelMap = [
             'beginner' => 1,
@@ -160,7 +171,10 @@ class BiicfExplorerController extends Controller
 
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get()->keyBy('id');
 
-        $comparison = $jobRole->competencies->map(function ($competency) use ($studentSkills, $levelMap, $proficiencyLevels) {
+        $entryCompetencies = $jobRole->tiers->first()?->competencies
+            ?? collect();
+
+        $comparison = $entryCompetencies->map(function ($competency) use ($studentSkills, $levelMap, $proficiencyLevels) {
             $required = $proficiencyLevels->get($competency->pivot->proficiency_level_id);
             $match = $studentSkills->get(Str::slug($competency->name));
 

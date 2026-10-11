@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfJobRole;
+use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
@@ -216,21 +217,19 @@ class BiicfController extends Controller
 
         $this->writeStructuredContent($jobRole, $request);
 
-        if ($request->has('competencies')) {
-            foreach ($request->competencies as $comp) {
-                // The proficiency <select> always submits, even when the
-                // competency checkbox is unticked, so an entry can arrive
-                // without its 'id'. Skip those.
-                if (! is_array($comp) || ! isset($comp['id'])) {
-                    continue;
-                }
+        /*
+         * Entry requirements and required proficiencies hang off
+         * a tier, so a role without one cannot carry either.
+         * Roles from the reference book bring the book's own
+         * tiers; one added here gets a single tier covering it.
+         */
+        $tier = BiicfJobRoleTier::create([
+            'job_role_id' => $jobRole->id,
+            'label' => 'All levels',
+            'sort_order' => 1,
+        ]);
 
-                $jobRole->competencies()->attach($comp['id'], [
-                    'proficiency_level_id' => $comp['proficiency_level_id'],
-                    'is_core' => $comp['is_core'] ?? true,
-                ]);
-            }
-        }
+        $this->syncTierCompetencies($tier, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -263,20 +262,61 @@ class BiicfController extends Controller
         );
     }
 
+    /**
+     * Replace one tier's column of required proficiencies.
+     *
+     * Competencies belong to a tier, not to the role, so
+     * attaching through the role would leave rows with no tier
+     * and they would show up nowhere. Only this tier's column is
+     * replaced: a role carrying the book's several tiers must
+     * not lose the others because one was edited here.
+     */
+    private function syncTierCompetencies(
+        BiicfJobRoleTier $tier,
+        Request $request
+    ): void {
+        $tier->competencies()->detach();
+
+        foreach ($request->input('competencies', []) as $selection) {
+            /*
+             * The proficiency select always submits, even when
+             * the competency checkbox is unticked, so an entry
+             * can arrive without its id.
+             */
+            if (! is_array($selection) || ! isset($selection['id'])) {
+                continue;
+            }
+
+            $tier->competencies()->attach($selection['id'], [
+                'proficiency_level_id' => $selection['proficiency_level_id'],
+                'is_core' => $selection['is_core'] ?? true,
+            ]);
+        }
+    }
+
     public function jobRoleShow(BiicfJobRole $jobRole)
     {
         $jobRole->load([
             'subSector',
-            'competencies',
             'trainings',
             'entryRequirement',
             'descriptionPoints',
-            'genericWorkFunctions',
+            'genericWorkFunctions.children',
             'specificWorkFunctions.jobFamily',
             'specificWorkFunctions.children',
+            'tiers.competencies',
         ]);
 
-        return view('admin.biicf.job-roles.show', compact('jobRole'));
+        /*
+         * The pivot carries a proficiency level id and there is
+         * no pivot class to resolve it, which is why this badge
+         * used to read "Level ?". A lookup is cheaper than a
+         * custom pivot for one label.
+         */
+        $levelNumbers = BiicfProficiencyLevel::query()
+            ->pluck('level_number', 'id');
+
+        return view('admin.biicf.job-roles.show', compact('jobRole', 'levelNumbers'));
     }
 
     public function jobRoleEdit(BiicfJobRole $jobRole)
@@ -286,7 +326,18 @@ class BiicfController extends Controller
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
         $trainings = BiicfTraining::orderBy('name')->get();
 
-        $jobRole->load(['competencies', 'trainings']);
+        /*
+         * The form's two textareas are prefilled from the
+         * description and duty rows, not the old text columns, so
+         * editing a role whose content came from the reference
+         * book shows what is actually stored.
+         */
+        $jobRole->load([
+            'trainings',
+            'descriptionPoints',
+            'genericWorkFunctions',
+            'tiers.competencies',
+        ]);
 
         return view('admin.biicf.job-roles.edit', compact('jobRole', 'subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
     }
@@ -328,20 +379,14 @@ class BiicfController extends Controller
 
         $this->writeStructuredContent($jobRole, $request);
 
-        $jobRole->competencies()->detach();
+        $tier = $jobRole->tiers()->first()
+            ?? BiicfJobRoleTier::create([
+                'job_role_id' => $jobRole->id,
+                'label' => 'All levels',
+                'sort_order' => 1,
+            ]);
 
-        if ($request->has('competencies')) {
-            foreach ($request->competencies as $comp) {
-                if (! is_array($comp) || ! isset($comp['id'])) {
-                    continue;
-                }
-
-                $jobRole->competencies()->attach($comp['id'], [
-                    'proficiency_level_id' => $comp['proficiency_level_id'],
-                    'is_core' => $comp['is_core'] ?? true,
-                ]);
-            }
-        }
+        $this->syncTierCompetencies($tier, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);

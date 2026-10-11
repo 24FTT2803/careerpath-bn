@@ -81,21 +81,29 @@ class BiicfJobRoleTier extends Model
      */
     public function competencies(): BelongsToMany
     {
-        return $this->belongsToMany(
+        $relation = $this->belongsToMany(
             BiicfCompetency::class,
             'biicf_job_role_competency',
             'job_role_tier_id',
             'competency_id'
-        )
-            ->withPivot('proficiency_level_id', 'is_core')
-            /*
-             * The pivot also carries the role, which is
-             * derivable from the tier but kept so the role's own
-             * competencies relation still works. Filling it here
-             * means a caller attaching through a tier cannot
-             * forget it.
-             */
-            ->withPivotValue('job_role_id', $this->job_role_id);
+        )->withPivot('proficiency_level_id', 'is_core');
+
+        /*
+         * The pivot also carries the role. It is derivable from
+         * the tier, but kept so the role's own competencies
+         * relation still works, and filled in here so a caller
+         * attaching through a tier cannot forget it.
+         *
+         * Only when this instance actually knows its role.
+         * Eager loading builds the query from a blank model, and
+         * withPivotValue rejects a null — which is how this
+         * broke every eager load of tiers.competencies.
+         */
+        if ($this->job_role_id !== null) {
+            $relation->withPivotValue('job_role_id', $this->job_role_id);
+        }
+
+        return $relation;
     }
 
     /**

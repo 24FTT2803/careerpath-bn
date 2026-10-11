@@ -2,17 +2,18 @@
 
 namespace App\Services\AI;
 
+use App\Models\BiicfCompetency;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use RuntimeException;
 
 class CareerRecommendationContextBuilder
 {
     public function __construct(
         private CareerAiPayloadBuilder $profileBuilder
-    ) {
-    }
+    ) {}
 
     /**
      * Build a compact student and BIICF context for
@@ -33,12 +34,18 @@ class CareerRecommendationContextBuilder
             ])
             ->keyBy('id');
 
+        /*
+         * Required proficiencies hang off a role's tiers, one
+         * column of the book's table each. The lowest tier is
+         * what a student is matched against, being the least
+         * that gets them into the role.
+         */
         $roles = BiicfJobRole::query()
             ->whereHas('competencies')
             ->with([
                 'subSector:id,name',
 
-                'competencies:id,name,type',
+                'tiers.competencies:id,name,type',
             ])
             ->orderBy('id')
             ->get([
@@ -63,7 +70,7 @@ class CareerRecommendationContextBuilder
          */
         $competencyCatalogue = $roles
             ->flatMap(
-                fn ($role) => $role->competencies
+                fn ($role) => $this->entryCompetencies($role)
             )
             ->unique('id')
             ->sortBy('id')
@@ -85,7 +92,7 @@ class CareerRecommendationContextBuilder
          */
         $eligibleRoles = $roles
             ->map(function ($role) use ($proficiencyLevels) {
-                $requirements = $role->competencies
+                $requirements = $this->entryCompetencies($role)
                     ->map(function ($competency) use (
                         $proficiencyLevels,
                         $role
@@ -97,7 +104,7 @@ class CareerRecommendationContextBuilder
                         if (! $level) {
                             throw new RuntimeException(
                                 "BIICF job role {$role->id} references "
-                                . 'an unknown proficiency level.'
+                                .'an unknown proficiency level.'
                             );
                         }
 
@@ -110,20 +117,15 @@ class CareerRecommendationContextBuilder
                     ->all();
 
                 return [
-                    'id' =>
-                        $role->id,
+                    'id' => $role->id,
 
-                    'title' =>
-                        $role->title,
+                    'title' => $role->title,
 
-                    'sub_sector' =>
-                        $role->subSector?->name,
+                    'sub_sector' => $role->subSector?->name,
 
-                    'career_path_level' =>
-                        (int) $role->career_path_level,
+                    'career_path_level' => (int) $role->career_path_level,
 
-                    'requirements' =>
-                        $requirements,
+                    'requirements' => $requirements,
                 ];
             })
             ->values()
@@ -132,30 +134,40 @@ class CareerRecommendationContextBuilder
         return [
             'schema_version' => '2.0',
 
-            'student_profile' =>
-                $profilePayload['student_profile'] ?? [],
+            'student_profile' => $profilePayload['student_profile'] ?? [],
 
-            'eligible_roles' =>
-                $eligibleRoles,
+            'eligible_roles' => $eligibleRoles,
 
             'reference' => [
-                'eligible_role_count' =>
-                    count($eligibleRoles),
+                'eligible_role_count' => count($eligibleRoles),
 
-                'competency_catalogue' =>
-                    $competencyCatalogue,
+                'competency_catalogue' => $competencyCatalogue,
 
-                'proficiency_scale' =>
-                    $proficiencyLevels
-                        ->values()
-                        ->mapWithKeys(
-                            fn ($level) => [
-                                (string) $level->level_number =>
-                                    $level->name,
-                            ]
-                        )
-                        ->all(),
+                'proficiency_scale' => $proficiencyLevels
+                    ->values()
+                    ->mapWithKeys(
+                        fn ($level) => [
+                            (string) $level->level_number => $level->name,
+                        ]
+                    )
+                    ->all(),
             ],
         ];
+    }
+
+    /**
+     * The competencies required to enter a role.
+     *
+     * A role's tiers each carry their own column of required
+     * proficiencies, so reading the role's competencies directly
+     * would return one row per tier per competency. The lowest
+     * tier is the requirement for entering the role at all,
+     * which is what a recommendation is about.
+     *
+     * @return Collection<int, BiicfCompetency>
+     */
+    private function entryCompetencies(BiicfJobRole $role): Collection
+    {
+        return $role->tiers->first()?->competencies ?? collect();
     }
 }

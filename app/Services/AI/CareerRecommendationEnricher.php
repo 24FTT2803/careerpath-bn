@@ -3,6 +3,7 @@
 namespace App\Services\AI;
 
 use App\Models\BiicfJobRole;
+use App\Models\BiicfProficiencyLevel;
 use App\Models\User;
 use UnexpectedValueException;
 
@@ -42,8 +43,14 @@ class CareerRecommendationEnricher
             );
         }
 
+        /*
+         * A role's required proficiencies belong to its tiers,
+         * one column of the book's table per tier. What a student
+         * is measured against is the lowest tier: the least that
+         * gets them into the role at all.
+         */
         $role = BiicfJobRole::query()
-            ->with('competencies:id,name,type')
+            ->with(['tiers.competencies:id,name,type'])
             ->find($roleId);
 
         if (! $role) {
@@ -60,9 +67,21 @@ class CareerRecommendationEnricher
                 'proficiency_level',
             ])
             ->keyBy(
-                fn ($competency) =>
-                    $this->normaliseName($competency->skill_name)
+                fn ($competency) => $this->normaliseName($competency->skill_name)
             );
+
+        /*
+         * proficiency_level_id is a key, not a level. The two
+         * happened to agree while there was a single five-rung
+         * scale and nothing else in the table; with the soft
+         * skill scale alongside it they do not, so the level has
+         * to be looked up rather than assumed.
+         */
+        $levelNumbers = BiicfProficiencyLevel::query()
+            ->pluck('level_number', 'id');
+
+        $entryCompetencies = $role->tiers->first()?->competencies
+            ?? collect();
 
         $matchedSkills = [];
         $skillGaps = [];
@@ -70,9 +89,11 @@ class CareerRecommendationEnricher
         $attainmentTotal = 0.0;
         $requirementCount = 0;
 
-        foreach ($role->competencies as $competency) {
-            $requiredLevel =
-                (int) $competency->pivot->proficiency_level_id;
+        foreach ($entryCompetencies as $competency) {
+            $requiredLevel = (int) (
+                $levelNumbers[$competency->pivot->proficiency_level_id]
+                ?? 0
+            );
 
             if (
                 $requiredLevel < 1
@@ -105,36 +126,27 @@ class CareerRecommendationEnricher
 
             if ($gap > 0) {
                 $skillGaps[] = [
-                    'skill_name' =>
-                        $competency->name,
+                    'skill_name' => $competency->name,
 
-                    'skill_type' =>
-                        $competency->type === 'soft_skill'
+                    'skill_type' => $competency->type === 'soft_skill'
                             ? 'soft'
                             : 'technical',
 
-                    'current_level' =>
-                        $currentLevel > 0
+                    'current_level' => $currentLevel > 0
                             ? self::PROFICIENCY_LABELS[$currentLevel]
                             : 'Not recorded',
 
-                    'current_level_value' =>
-                        $currentLevel,
+                    'current_level_value' => $currentLevel,
 
-                    'recommended_level' =>
-                        self::PROFICIENCY_LABELS[$requiredLevel],
+                    'recommended_level' => self::PROFICIENCY_LABELS[$requiredLevel],
 
-                    'required_level' =>
-                        $requiredLevel,
+                    'required_level' => $requiredLevel,
 
-                    'required_label' =>
-                        self::PROFICIENCY_LABELS[$requiredLevel],
+                    'required_label' => self::PROFICIENCY_LABELS[$requiredLevel],
 
-                    'gap' =>
-                        $gap,
+                    'gap' => $gap,
 
-                    'is_core' =>
-                        (bool) $competency->pivot->is_core,
+                    'is_core' => (bool) $competency->pivot->is_core,
                 ];
             }
 
@@ -190,16 +202,13 @@ class CareerRecommendationEnricher
         return [
             ...$recommendation,
 
-            'matched_skills' =>
-                array_values(
-                    array_unique($matchedSkills)
-                ),
+            'matched_skills' => array_values(
+                array_unique($matchedSkills)
+            ),
 
-            'skill_gaps' =>
-                $skillGaps,
+            'skill_gaps' => $skillGaps,
 
-            'career_readiness_score' =>
-                $readinessScore,
+            'career_readiness_score' => $readinessScore,
         ];
     }
 
