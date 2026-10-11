@@ -195,6 +195,11 @@
         color: #0d1f33;
     }
 
+    .notif-item .top .type.innovation {
+        background: rgba(201, 168, 76, 0.14);
+        color: #8a6d22;
+    }
+
     .notif-item .message {
         font-size: 13px;
         color: var(--text-muted);

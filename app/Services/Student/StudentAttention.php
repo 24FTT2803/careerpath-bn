@@ -2,6 +2,7 @@
 
 namespace App\Services\Student;
 
+use App\Models\InnovationLabNote;
 use App\Models\RecommendationGeneration;
 use App\Models\User;
 use App\Models\UserSectionView;
@@ -19,6 +20,8 @@ class StudentAttention
 {
     public const HISTORY = 'history';
 
+    public const INNOVATION = 'innovation-lab';
+
     /** @var array<int, array<string, mixed>> */
     private array $cache = [];
 
@@ -31,6 +34,7 @@ class StudentAttention
      * @return array{
      *     recommendations: ?string,
      *     history: int,
+     *     innovation: int,
      *     profile: bool,
      *     any: bool
      * }
@@ -41,7 +45,7 @@ class StudentAttention
             return $this->cache[$student->id];
         }
 
-        $empty = ['recommendations' => null, 'history' => 0, 'profile' => false, 'any' => false];
+        $empty = ['recommendations' => null, 'history' => 0, 'innovation' => 0, 'profile' => false, 'any' => false];
 
         if (! $student->isStudent()) {
             return $this->cache[$student->id] = $empty;
@@ -50,12 +54,14 @@ class StudentAttention
         $profileComplete = $this->profileIsComplete($student);
         $recommendations = $this->recommendationState($student, $profileComplete);
         $history = $this->newHistoryCount($student);
+        $innovation = $this->newInnovationCount($student);
 
         return $this->cache[$student->id] = [
             'recommendations' => $recommendations,
             'history' => $history,
+            'innovation' => $innovation,
             'profile' => ! $profileComplete,
-            'any' => $recommendations !== null || $history > 0,
+            'any' => $recommendations !== null || $history > 0 || $innovation > 0,
         ];
     }
 
@@ -65,6 +71,35 @@ class StudentAttention
     protected function profileIsComplete(User $student): bool
     {
         return (int) $student->profile_completion >= 100;
+    }
+
+    /**
+     * When the user last opened a section, or null if never.
+     */
+    public function seenAt(User $user, string $section): ?Carbon
+    {
+        $seenAt = UserSectionView::query()
+            ->where('user_id', $user->id)
+            ->where('section', $section)
+            ->value('seen_at');
+
+        return $seenAt ? Carbon::parse($seenAt) : null;
+    }
+
+    /**
+     * Innovation Lab posts published since the student last opened
+     * the page. Posts from before the account existed never count,
+     * so a new student is not greeted with a pile of old posts.
+     */
+    public function newInnovationCount(User $student): int
+    {
+        $since = $this->seenAt($student, self::INNOVATION) ?? $student->created_at;
+
+        return InnovationLabNote::query()
+            ->where('is_published', true)
+            ->whereNotNull('published_at')
+            ->when($since, fn ($query) => $query->where('published_at', '>', $since))
+            ->count();
     }
 
     /**
@@ -129,12 +164,7 @@ class StudentAttention
      */
     private function newHistoryCount(User $student): int
     {
-        $seenAt = UserSectionView::query()
-            ->where('user_id', $student->id)
-            ->where('section', self::HISTORY)
-            ->value('seen_at');
-
-        $seenAt = $seenAt ? Carbon::parse($seenAt) : null;
+        $seenAt = $this->seenAt($student, self::HISTORY);
 
         $count = 0;
 

@@ -977,10 +977,17 @@
 
             <a
                 href="{{ route('student.innovation-lab') }}"
-                class="btn btn-outline"
+                class="btn btn-outline attn-anchor"
             >
                 <i class="fas fa-lightbulb"></i>
                 Innovation Lab
+                @if($attention['innovation'] > 0)
+                    <span class="attn-dot" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="innovation-{{ $attention['innovation'] }}-{{ now()->toDateString() }}">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>{{ $attention['innovation'] === 1 ? 'There is a new post' : 'There are '.$attention['innovation'].' new posts' }} in the Innovation Lab. Take a look!</span>
+                    </span>
+                @endif
             </a>
 
         </div>

@@ -105,6 +105,12 @@
                     >
                     Published (visible to students)
                 </label>
+                @if(! $note->published_at)
+                    <p style="margin:6px 0 0 24px;font-size:12px;color:var(--text-muted);">
+                        <i class="fas fa-bell" style="color:var(--accent);"></i>
+                        When this is first published, every student gets a notification and a "new" dot on the Innovation Lab.
+                    </p>
+                @endif
             </div>
 
             <div style="display:flex;justify-content:flex-end;gap:10px;">

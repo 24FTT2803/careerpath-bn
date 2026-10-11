@@ -430,6 +430,11 @@
     color: #0d1f33;
 }
 
+.notif-popup-icon.innovation {
+    background: rgba(201, 168, 76, 0.14);
+    color: #8a6d22;
+}
+
 .notif-popup-text {
     flex: 1;
     min-width: 0;
@@ -1017,6 +1022,9 @@
 
                                 <a href="{{ route('student.innovation-lab') }}" class="dropdown-item">
                                     <i class="fas fa-lightbulb"></i> Innovation Lab
+                                    @if(($attention['innovation'] ?? 0) > 0)
+                                        <span class="attn-pill" title="New posts since you last looked">{{ $attention['innovation'] > 9 ? '9+' : $attention['innovation'] }} new</span>
+                                    @endif
                                 </a>
 
                                 <a href="{{ route('student.history') }}" class="dropdown-item">
@@ -1294,6 +1302,7 @@
         career: 'fa-briefcase',
         system: 'fa-bell',
         premium: 'fa-crown',
+        innovation: 'fa-lightbulb',
     }[type] || 'fa-bell');
 
     const escapeHtml = (value) => {

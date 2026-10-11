@@ -483,7 +483,16 @@
                     return;
                 }
 
-                /* Leave anything that already animates itself alone. */
+                /*
+                 * Leave anything that already animates itself alone, or
+                 * that asks to be left out with data-motion-skip (such as
+                 * the ID badges, whose own drop-in would otherwise play
+                 * twice and flash).
+                 */
+                if (element.hasAttribute('data-motion-skip')) {
+                    return;
+                }
+
                 if (getComputedStyle(element).animationName !== 'none') {
                     return;
                 }

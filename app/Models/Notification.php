@@ -54,6 +54,7 @@ class Notification extends Model
                     'profile' => 'user-edit',
                     'career' => 'briefcase',
                     'premium' => 'crown',
+                    'innovation' => 'lightbulb',
                 ];
 
                 return [

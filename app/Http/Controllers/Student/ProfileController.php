@@ -1111,7 +1111,7 @@ class ProfileController extends Controller
         )
             ->whereIn(
                 'type',
-                ['milestone', 'recommendation', 'system', 'reminder', 'premium']
+                ['milestone', 'recommendation', 'system', 'reminder', 'premium', 'innovation']
             )
             ->findOrFail($id);
 
@@ -1139,7 +1139,7 @@ class ProfileController extends Controller
         )
             ->whereIn(
                 'type',
-                ['milestone', 'recommendation', 'system', 'reminder', 'premium']
+                ['milestone', 'recommendation', 'system', 'reminder', 'premium', 'innovation']
             )
             ->where(
                 'is_read',

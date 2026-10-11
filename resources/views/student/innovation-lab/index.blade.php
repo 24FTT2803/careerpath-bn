@@ -101,6 +101,17 @@
         padding: 48px 0;
         font-size: 14px;
     }
+
+    /* Posts added since the student's last visit */
+    .lab-note.is-new {
+        border-color: rgba(201, 168, 76, 0.55);
+        box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.12);
+    }
+
+    .lab-note .lab-new-pill {
+        margin-left: 8px;
+        vertical-align: middle;
+    }
 </style>
 
 <div class="lab-page">
@@ -114,10 +125,19 @@
     </div>
 
     @forelse($notes as $note)
-        <article class="lab-note">
-            <h2>{{ $note->title }}</h2>
+        @php
+            $postedAt = $note->published_at ?? $note->created_at;
+            $isNew = $note->published_at && (! $newSince || $note->published_at->gt($newSince));
+        @endphp
+        <article class="lab-note {{ $isNew ? 'is-new' : '' }}">
+            <h2>
+                {{ $note->title }}
+                @if($isNew)
+                    <span class="attn-pill lab-new-pill" title="Posted since your last visit">New</span>
+                @endif
+            </h2>
             <div class="lab-meta">
-                {{ $note->created_at->format('d M Y') }}
+                {{ $postedAt->format('d M Y') }}
             </div>
             @if($note->imageUrl())
                 <div class="lab-image-frame">
