@@ -159,10 +159,31 @@ describe('job levels', function () {
         )->toBe([
             'Entrant',
             'Specialist',
+            'Specialist/Manager',
+            'Manager',
             'Expert/Management',
             'Senior Management',
             'C-Suite',
         ]);
+    });
+
+    test('every level a role page uses is seeded', function () {
+        /*
+         * The role pages name seven levels between them; the
+         * framework's structure table names four. A level missing
+         * here would be created by the role loader instead, with
+         * a guessed position at the end of the list.
+         */
+        $this->seed(BiicfReferenceDataSeeder::class);
+
+        $used = collect(json_decode(
+            (string) file_get_contents(database_path('data/biicf-job-roles.json')),
+            true
+        ))->pluck('job_levels')->flatten()->unique();
+
+        expect(
+            $used->diff(BiicfJobLevel::pluck('name'))->all()
+        )->toBe([]);
     });
 
     test('a name containing a slash still slugs readably', function () {
@@ -438,7 +459,7 @@ describe('existing seeding', function () {
 
         expect(BiicfProficiencyLevel::count())->toBe(9)
             ->and(BiicfBdqfLevel::count())->toBe(8)
-            ->and(BiicfJobLevel::count())->toBe(5);
+            ->and(BiicfJobLevel::count())->toBe(7);
     });
 
     test('the explorer seeder still works alongside both scales', function () {

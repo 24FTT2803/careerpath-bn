@@ -104,10 +104,17 @@ class BiicfReferenceDataSeeder extends Seeder
     /**
      * The job levels used across the role pages.
      *
-     * The framework's own list names four. C-Suite is included
-     * because role pages use it — Chief Information Officer is
-     * marked that way — and omitting it would leave those roles
-     * with no level at all.
+     * The framework's own structure table names four: Entrant,
+     * Specialist, Expert/Management and Senior Management. The
+     * other three are taken from the role pages, which mark
+     * roles C-Suite, Manager or Specialist/Manager without the
+     * structure table listing those words. Omitting them would
+     * leave those roles with no level at all.
+     *
+     * Ordered as a progression so the explorer can sort by it.
+     * The book states no ordering for the three it only uses on
+     * role pages, so their position here is a reading of the
+     * seniority they imply rather than something it says.
      *
      * Left without descriptions on purpose: the book does not
      * define these, and inventing wording would misrepresent it.
@@ -117,6 +124,8 @@ class BiicfReferenceDataSeeder extends Seeder
         $levels = [
             'Entrant',
             'Specialist',
+            'Specialist/Manager',
+            'Manager',
             'Expert/Management',
             'Senior Management',
             'C-Suite',

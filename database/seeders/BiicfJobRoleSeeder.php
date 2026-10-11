@@ -1,0 +1,508 @@
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\BiicfCriticalWorkFunction;
+use App\Models\BiicfEntryRequirement;
+use App\Models\BiicfJobDescriptionPoint;
+use App\Models\BiicfJobFamily;
+use App\Models\BiicfJobLevel;
+use App\Models\BiicfJobRole;
+use App\Models\BiicfJobRoleTier;
+use App\Models\BiicfSubSector;
+use App\Models\BiicfTraining;
+use App\Models\CareerRecommendation;
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use RuntimeException;
+
+/**
+ * Load the job roles as the reference book states them.
+ *
+ * Extracted from the second edition: 38 roles over 39 listings,
+ * since Chief Technology Officer is printed under two
+ * sub-sectors. Every role's description, duties, trainings,
+ * alternate titles, functional groups, job families, job levels
+ * and tiers come from the book.
+ *
+ * Two things this does not load. The per-tier competency tables
+ * are a separate pass — the pages interleave four columns and
+ * reading those tables reliably needed the page images rather
+ * than a parser. And entry requirements arrive as the book's own
+ * wording rather than split per tier, which is why the model
+ * carries raw_text: a requirement that cannot be reduced to a
+ * level is shown as written and reported as undetermined.
+ *
+ * Existing roles are matched by title so the recommendations and
+ * competency requirements already pointing at them survive.
+ *
+ * Safe to re-run. It must not be called from a seeder using
+ * WithoutModelEvents, including DatabaseSeeder: a removed tier is
+ * cleared by a model hook rather than a database cascade, and an
+ * entry requirement takes its role from the tier the same way.
+ */
+class BiicfJobRoleSeeder extends Seeder
+{
+    /**
+     * The label every role's tier was given when requirements
+     * and proficiencies moved onto tiers, before the book's own
+     * columns were available to name them.
+     */
+    private const PLACEHOLDER_TIER_LABEL = 'All levels';
+
+    public function run(): void
+    {
+        $this->call(BiicfReferenceDataSeeder::class);
+
+        foreach ($this->load() as $entry) {
+            $role = $this->upsertRole($entry);
+            $isNew = $role->wasRecentlyCreated;
+
+            $this->syncFunctionalGrouping($role, $entry, $isNew);
+            $this->syncTiers($role, $entry);
+            $this->syncContent($role, $entry);
+            $this->syncTrainings($role, $entry);
+        }
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function load(): array
+    {
+        $path = database_path('data/biicf-job-roles.json');
+
+        if (! is_file($path)) {
+            throw new RuntimeException("The job role data file is missing: {$path}");
+        }
+
+        $decoded = json_decode(
+            (string) file_get_contents($path),
+            true,
+            flags: JSON_THROW_ON_ERROR
+        );
+
+        if (! is_array($decoded) || $decoded === []) {
+            throw new RuntimeException('The job role data file holds no roles.');
+        }
+
+        $this->check($decoded);
+
+        return $decoded;
+    }
+
+    /**
+     * Refuse data that reads like a mis-parsed page.
+     *
+     * A training course name is a short phrase. One running to
+     * hundreds of characters means the extraction has taken in
+     * the column beside it, which is how a duty sentence came to
+     * be filed as a course. The database would otherwise report
+     * only that a string was too long for a column, naming no
+     * role, which is a poor thing to debug an edition import by.
+     *
+     * @param  array<int, array<string, mixed>>  $roles
+     */
+    private function check(array $roles): void
+    {
+        $limit = 255;
+
+        foreach ($roles as $role) {
+            foreach ($role['trainings'] as $training) {
+                if (mb_strlen($training) <= $limit) {
+                    continue;
+                }
+
+                throw new RuntimeException(
+                    "{$role['title']}: a training course name runs to "
+                    .mb_strlen($training)." characters, over the {$limit} a "
+                    .'name can hold. The extraction has most likely taken in '
+                    .'the column beside it: '.mb_substr($training, 0, 80).'…'
+                );
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function upsertRole(array $entry): BiicfJobRole
+    {
+        $subSector = BiicfSubSector::firstOrCreate(
+            ['slug' => $this->slug($entry['sub_sector'])],
+            ['name' => $entry['sub_sector']]
+        );
+
+        /*
+         * Matched on the title rather than the slug: the earlier
+         * seeder slugged "IT Administrator/Manager" with the
+         * slash dropped, so the slugs do not agree even where the
+         * roles do. Matching by title keeps the recommendations
+         * and competency requirements attached.
+         */
+        $role = $this->existingRole($entry['title'], $subSector->id)
+            ?? new BiicfJobRole;
+
+        $role->fill([
+            'sub_sector_id' => $subSector->id,
+            'title' => $entry['title'],
+            'slug' => $this->slug($entry['title']),
+            /*
+             * A role can sit in several functional groups — the
+             * book prints three for IT Technician. This is a
+             * single column, so they are joined; the job families
+             * beside them are a relation and keep their shape.
+             */
+            'functional_group' => implode(' / ', $entry['functional_groups']) ?: null,
+            'alternative_titles' => $entry['alternate_titles'],
+        ]);
+
+        $role->save();
+
+        return $role;
+    }
+
+    /**
+     * The row to update for a title, merging away any others.
+     *
+     * The earlier seeder created a row per listing, so Chief
+     * Technology Officer and Business Intelligence Director each
+     * exist twice. The book states one role each — Chief
+     * Technology Officer is simply printed under two sub-sectors
+     * — so the extras are merged rather than left behind to show
+     * up in the explorer as hollow copies with no tiers.
+     *
+     * The row kept is the one already filed under the sub-sector
+     * the book prints it in, and otherwise the oldest, which is
+     * the one most likely to be referenced.
+     */
+    private function existingRole(string $title, int $subSectorId): ?BiicfJobRole
+    {
+        $rows = BiicfJobRole::where('title', $title)->orderBy('id')->get();
+
+        if ($rows->isEmpty()) {
+            return null;
+        }
+
+        $keeper = $rows->firstWhere('sub_sector_id', $subSectorId) ?? $rows->first();
+
+        foreach ($rows->reject(fn (BiicfJobRole $row) => $row->is($keeper)) as $duplicate) {
+            $this->repoint($duplicate, $keeper);
+
+            /*
+             * Tiers go through the model so the hook clearing
+             * their requirements and competency rows runs. Those
+             * rows carry no foreign key to the tier, so nothing
+             * else would clear them.
+             */
+            $duplicate->tiers->each->delete();
+            $duplicate->delete();
+        }
+
+        return $keeper;
+    }
+
+    /**
+     * Move what points at a duplicate role onto the kept one.
+     *
+     * Both references cascade on delete, so skipping this would
+     * take a student's saved recommendation with the duplicate.
+     */
+    private function repoint(BiicfJobRole $from, BiicfJobRole $to): void
+    {
+        CareerRecommendation::where('biicf_job_role_id', $from->id)
+            ->update(['biicf_job_role_id' => $to->id]);
+
+        foreach ([
+            'from_job_role_id' => 'to_job_role_id',
+            'to_job_role_id' => 'from_job_role_id',
+        ] as $column => $other) {
+            foreach (
+                DB::table('biicf_career_path_edges')->where($column, $from->id)->get() as $edge
+            ) {
+                /*
+                 * Moving the edge would either duplicate one the
+                 * kept role already has — the pair is unique — or
+                 * point the role at itself. Either way it is
+                 * dropped rather than moved.
+                 */
+                $clashes = (int) $edge->{$other} === $to->id
+                    || DB::table('biicf_career_path_edges')
+                        ->where($column, $to->id)
+                        ->where($other, $edge->{$other})
+                        ->exists();
+
+                $edges = DB::table('biicf_career_path_edges')->where('id', $edge->id);
+
+                if ($clashes) {
+                    $edges->delete();
+                } else {
+                    $edges->update([$column => $to->id]);
+                }
+            }
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function syncFunctionalGrouping(
+        BiicfJobRole $role,
+        array $entry,
+        bool $isNew
+    ): void {
+        $families = collect($entry['job_families'])
+            ->map(fn (string $name) => BiicfJobFamily::firstOrCreate(
+                ['slug' => $this->slug($name)],
+                ['name' => $name]
+            ))
+            ->values();
+
+        $role->jobFamilies()->sync(
+            $families
+                ->mapWithKeys(fn ($family, $index) => [
+                    $family->id => ['sort_order' => $index + 1],
+                ])
+                ->all()
+        );
+
+        $levels = collect($entry['job_levels'])
+            ->map(fn (string $name) => BiicfJobLevel::firstOrCreate(
+                ['name' => $name],
+                [
+                    'slug' => $this->slug($name),
+                    /*
+                     * Every level the book's role pages use is
+                     * seeded ahead of this, with a position. This
+                     * is the safety net for a later edition
+                     * naming one more: it lands at the end rather
+                     * than being silently dropped.
+                     */
+                    'sort_order' => 90,
+                ]
+            ));
+
+        $role->jobLevels()->sync($levels->pluck('id')->all());
+
+        /*
+         * career_path_level positions a role vertically on the
+         * explorer's map. The book gives no such number — it
+         * draws the progression as a diagram — so a role arriving
+         * for the first time is placed by the seniority of its
+         * job level, which is the closest thing the book states.
+         *
+         * Only a new role. A role already in the database keeps
+         * its position, including zero, which the earlier seeder
+         * uses for an entry-level role rather than as "unset";
+         * renumbering those would redraw maps that already read
+         * correctly.
+         */
+        if ($isNew) {
+            $role->update([
+                'career_path_level' => (int) $levels->max('sort_order'),
+            ]);
+        }
+    }
+
+    /**
+     * Replace a role's tiers and the entry requirement on each.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function syncTiers(BiicfJobRole $role, array $entry): void
+    {
+        $this->adoptPlaceholderTier($role, $entry['tiers'][0]);
+
+        $keep = [];
+
+        foreach ($entry['tiers'] as $index => $label) {
+            $tier = BiicfJobRoleTier::updateOrCreate(
+                ['job_role_id' => $role->id, 'label' => $label],
+                [
+                    'sort_order' => $index + 1,
+                    'job_level_id' => BiicfJobLevel::where('name', $label)->value('id'),
+                ]
+            );
+
+            $keep[] = $tier->id;
+        }
+
+        /*
+         * Through the model, so the hook clearing a tier's
+         * requirements and competency rows runs.
+         */
+        $role->tiers()
+            ->whereNotIn('id', $keep ?: [0])
+            ->get()
+            ->each
+            ->delete();
+
+        if (blank($entry['entry_requirements_raw'])) {
+            return;
+        }
+
+        $first = $role->tiers()->first();
+
+        /*
+         * The book's wording, unsplit, replacing whatever the
+         * earlier approximation recorded. The structured columns
+         * are cleared rather than kept: they held a level and a
+         * field of study nobody read out of the book, and leaving
+         * them beside the real sentence would present a guess as
+         * the book's own requirement.
+         *
+         * bdqf_level stays null until the wording is split per
+         * tier and per alternative, so a qualification match
+         * reports that it cannot be determined rather than
+         * picking one number out of prose that names several.
+         */
+        BiicfEntryRequirement::updateOrCreate(
+            ['job_role_tier_id' => $first->id, 'alternative_number' => 1],
+            [
+                'raw_text' => $entry['entry_requirements_raw'],
+                'bdqf_level' => null,
+                'field_of_study' => null,
+                'years_experience' => null,
+                'alternative_pathway' => null,
+                'requires_industry_certification' => false,
+                'requires_industry_experience' => false,
+            ]
+        );
+    }
+
+    /**
+     * Rename a role's placeholder tier to the book's first one.
+     *
+     * Every role was given a tier labelled "All levels" when
+     * requirements and competency proficiencies moved onto tiers,
+     * and those rows hang off it. Creating the book's tiers
+     * alongside it and then deleting it would take the role's
+     * competency requirements with it — the only ones in the
+     * database until the book's own tables are read — so the
+     * placeholder becomes the first real tier instead, keeping
+     * what is attached to it.
+     */
+    private function adoptPlaceholderTier(BiicfJobRole $role, string $firstLabel): void
+    {
+        $placeholder = $role->tiers()
+            ->where('label', self::PLACEHOLDER_TIER_LABEL)
+            ->first();
+
+        if ($placeholder === null) {
+            return;
+        }
+
+        $first = $role->tiers()->where('label', $firstLabel)->first();
+
+        /*
+         * On a re-run the book's own tier is already there, so
+         * the placeholder cannot simply take its name. What hangs
+         * off it moves across instead, and the cleanup that
+         * follows can then have the empty tier.
+         */
+        if ($first !== null) {
+            $this->moveTierContents($placeholder, $first);
+
+            return;
+        }
+
+        $placeholder->update(['label' => $firstLabel]);
+    }
+
+    /**
+     * Move a tier's requirements and proficiencies onto another.
+     *
+     * Where the destination already records something for the
+     * same competency, or already has a requirement, the row
+     * being moved is dropped: the destination is the tier the
+     * book names, so what it holds wins.
+     */
+    private function moveTierContents(
+        BiicfJobRoleTier $from,
+        BiicfJobRoleTier $to
+    ): void {
+        foreach (
+            DB::table('biicf_job_role_competency')
+                ->where('job_role_tier_id', $from->id)
+                ->get() as $row
+        ) {
+            $rows = DB::table('biicf_job_role_competency')->where('id', $row->id);
+
+            $taken = DB::table('biicf_job_role_competency')
+                ->where('job_role_tier_id', $to->id)
+                ->where('competency_id', $row->competency_id)
+                ->exists();
+
+            if ($taken) {
+                $rows->delete();
+            } else {
+                $rows->update(['job_role_tier_id' => $to->id]);
+            }
+        }
+
+        $from->entryRequirements()->get()->each(function (BiicfEntryRequirement $requirement) use ($to): void {
+            $taken = $to->entryRequirements()
+                ->where('alternative_number', $requirement->alternative_number)
+                ->exists();
+
+            if ($taken) {
+                $requirement->delete();
+            } else {
+                $requirement->update(['job_role_tier_id' => $to->id]);
+            }
+        });
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function syncContent(BiicfJobRole $role, array $entry): void
+    {
+        $role->descriptionPoints()->delete();
+
+        foreach ($entry['description'] as $index => $text) {
+            BiicfJobDescriptionPoint::create([
+                'job_role_id' => $role->id,
+                'text' => $text,
+                'sort_order' => $index + 1,
+            ]);
+        }
+
+        $role->criticalWorkFunctions()->delete();
+
+        foreach ($entry['critical_work_functions'] as $index => $text) {
+            BiicfCriticalWorkFunction::create([
+                'job_role_id' => $role->id,
+                'kind' => BiicfCriticalWorkFunction::KIND_GENERIC,
+                'text' => $text,
+                'sort_order' => $index + 1,
+            ]);
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $entry
+     */
+    private function syncTrainings(BiicfJobRole $role, array $entry): void
+    {
+        $trainings = collect($entry['trainings'])
+            ->map(fn (string $name) => BiicfTraining::firstOrCreate(['name' => $name]))
+            ->pluck('id')
+            ->all();
+
+        $role->trainings()->sync($trainings);
+    }
+
+    /**
+     * Slug a name that may contain a slash or an ampersand.
+     *
+     * Str::slug drops both rather than treating them as word
+     * breaks, which would turn "IT Administrator/Manager" into
+     * one run of letters.
+     */
+    private function slug(string $name): string
+    {
+        return Str::slug(str_replace(['/', '&'], '-', $name));
+    }
+}
