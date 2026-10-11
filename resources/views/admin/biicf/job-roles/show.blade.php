@@ -171,7 +171,7 @@
                                     {{ $comp->pivot->is_core ? 'Core' : 'Supporting' }}
                                 </span>
                                 <span class="badge badge-level">
-                                    Level {{ $levelNumbers[$comp->pivot->proficiency_level_id] ?? '?' }}
+                                    {{ $levelLabels[$comp->pivot->proficiency_level_id] ?? '?' }}
                                 </span>
                             </div>
                         @endforeach

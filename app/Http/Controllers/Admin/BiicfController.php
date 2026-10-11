@@ -312,11 +312,19 @@ class BiicfController extends Controller
          * no pivot class to resolve it, which is why this badge
          * used to read "Level ?". A lookup is cheaper than a
          * custom pivot for one label.
+         *
+         * The label is the level's own name rather than its
+         * number: the two scales number their rungs separately,
+         * so a soft skill shown as "Level 3" would read as a
+         * technical rung. The book calls it Advanced.
          */
-        $levelNumbers = BiicfProficiencyLevel::query()
-            ->pluck('level_number', 'id');
+        $levelLabels = BiicfProficiencyLevel::query()
+            ->get()
+            ->mapWithKeys(fn (BiicfProficiencyLevel $level) => [
+                $level->id => $level->level_number.' · '.$level->name,
+            ]);
 
-        return view('admin.biicf.job-roles.show', compact('jobRole', 'levelNumbers'));
+        return view('admin.biicf.job-roles.show', compact('jobRole', 'levelLabels'));
     }
 
     public function jobRoleEdit(BiicfJobRole $jobRole)

@@ -7,6 +7,7 @@ use App\Models\BiicfCompetencyLevelDescriptor;
 use App\Models\BiicfProficiencyLevel;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
 
@@ -106,10 +107,60 @@ class BiicfCompetencySeeder extends Seeder
     private function applyRenames(): void
     {
         foreach (self::RENAMED as $from => $to) {
-            BiicfCompetency::query()
-                ->where('slug', $from)
-                ->update(['slug' => $to]);
+            foreach (BiicfCompetency::where('slug', $from)->get() as $old) {
+                $existing = BiicfCompetency::where('slug', $to)
+                    ->where('type', $old->type)
+                    ->first();
+
+                /*
+                 * The name under the book's spelling can already
+                 * be there — the earlier seeder uses both, and
+                 * this seeder creates it on every run — and slug
+                 * and type are unique together, so renaming onto
+                 * it would fail. What points at the old entry
+                 * moves across and the old entry goes.
+                 */
+                if ($existing === null) {
+                    $old->update(['slug' => $to]);
+
+                    continue;
+                }
+
+                $this->absorb($old, $existing);
+            }
         }
+    }
+
+    /**
+     * Fold one competency into another.
+     *
+     * The proficiencies roles require of it move across, except
+     * where the tier already records one for the destination:
+     * the pair is unique, and the destination is the entry the
+     * book names, so what it already holds wins.
+     */
+    private function absorb(BiicfCompetency $old, BiicfCompetency $keep): void
+    {
+        foreach (
+            DB::table('biicf_job_role_competency')
+                ->where('competency_id', $old->id)
+                ->get() as $row
+        ) {
+            $rows = DB::table('biicf_job_role_competency')->where('id', $row->id);
+
+            $taken = DB::table('biicf_job_role_competency')
+                ->where('competency_id', $keep->id)
+                ->where('job_role_tier_id', $row->job_role_tier_id)
+                ->exists();
+
+            if ($taken) {
+                $rows->delete();
+            } else {
+                $rows->update(['competency_id' => $keep->id]);
+            }
+        }
+
+        $old->delete();
     }
 
     /**

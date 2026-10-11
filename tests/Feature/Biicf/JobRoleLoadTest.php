@@ -1,15 +1,18 @@
 <?php
 
+use App\Models\BiicfCompetency;
 use App\Models\BiicfCriticalWorkFunction;
 use App\Models\BiicfEntryRequirement;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
+use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
 use App\Models\CareerRecommendation;
 use App\Models\User;
 use Database\Seeders\BiicfExplorerSeeder;
 use Database\Seeders\BiicfJobRoleSeeder;
+use Illuminate\Support\Facades\DB;
 
 /*
  * Loading the job roles as the reference book states them.
@@ -222,6 +225,132 @@ describe('tiers', function () {
     });
 });
 
+describe('the competency tables', function () {
+    test('every name in the tables is a competency in the library', function () {
+        /*
+         * Name and type together: the two lists are separate in
+         * the book and the type is half the key. Writing the soft
+         * skills' type as "soft" where the library says
+         * "soft_skill" made every one of them unresolvable, and
+         * the failure named only the first.
+         */
+        $library = BiicfCompetency::all()
+            ->map(fn (BiicfCompetency $competency) => $competency->name.'|'.$competency->type);
+
+        $rows = collect(json_decode(
+            (string) file_get_contents(database_path('data/biicf-job-roles.json')),
+            true
+        ))
+            ->pluck('competencies')
+            ->flatten(1)
+            ->map(fn (array $row) => $row['name'].'|'.$row['type'])
+            ->unique();
+
+        expect($rows->diff($library)->values()->all())->toBe([]);
+    });
+
+    test('every role carries both tables', function () {
+        $thin = BiicfJobRole::all()
+            ->filter(function (BiicfJobRole $role) {
+                $types = $role->entryTier->competencies->pluck('type')->unique();
+
+                return $types->count() < 2;
+            })
+            ->pluck('title')
+            ->all();
+
+        expect($thin)->toBe([]);
+    });
+
+    test('the soft skills are the book\'s eleven', function () {
+        /*
+         * The same eleven are printed for every role in the book,
+         * at whatever proficiency the role calls for. A role
+         * showing fewer means a table that continues in a second
+         * column on the page was read only as far as its first.
+         */
+        $role = BiicfJobRole::where('title', 'Marketing Manager')->sole();
+
+        expect(
+            $role->entryTier->competencies->where('type', '!=', 'technical')
+        )->toHaveCount(11);
+    });
+
+    test('a tier gets its own column of the table', function () {
+        /*
+         * IT Technician's Application Development runs 1, 2, 2
+         * across its three levels. A single proficiency per role
+         * could not have held that.
+         */
+        $role = BiicfJobRole::where('title', 'IT Technician')->sole();
+
+        $numbers = $role->tiers->map(
+            fn ($tier) => BiicfProficiencyLevel::find(
+                $tier->competencies
+                    ->firstWhere('name', 'Application Development')
+                    ->pivot
+                    ->proficiency_level_id
+            )->level_number
+        )->all();
+
+        expect($numbers)->toBe([1, 2, 2]);
+    });
+
+    test('each scale is rated on its own levels', function () {
+        /*
+         * The technical scale has five rungs and the soft four,
+         * and they share a table. A soft skill pointed at a
+         * technical level would read as the wrong word entirely.
+         */
+        $tier = BiicfJobRole::where('title', 'Data Scientist')->sole()->entryTier;
+
+        $scales = $tier->competencies->map(fn ($competency) => [
+            $competency->type === 'technical',
+            BiicfProficiencyLevel::find($competency->pivot->proficiency_level_id)->scale
+                === BiicfProficiencyLevel::SCALE_TECHNICAL,
+        ]);
+
+        expect($scales->filter(fn ($pair) => $pair[0] !== $pair[1]))->toBeEmpty();
+    });
+
+    test('a name the table spells differently still finds the glossary entry', function () {
+        /*
+         * Sixteen role tables print "Creativity & Innovation" and
+         * twenty-three "Creativity and Innovation". The glossary
+         * lists one competency, and both are it.
+         */
+        expect(BiicfCompetency::where('name', 'like', 'Creativity%')->count())
+            ->toBe(1)
+            ->and(
+                BiicfCompetency::where('name', 'Creativity and Innovation')
+                    ->sole()
+                    ->jobRoles()
+                    ->count()
+            )->toBeGreaterThan(30);
+    });
+
+    test('re-running does not double the table', function () {
+        $before = DB::table('biicf_job_role_competency')->count();
+
+        $this->seed(BiicfJobRoleSeeder::class);
+
+        expect(DB::table('biicf_job_role_competency')->count())->toBe($before);
+    });
+
+    test('every proficiency belongs to a tier', function () {
+        /*
+         * A row written against the role but no tier is invisible
+         * to every page that reads a tier's column, which is all
+         * of them.
+         */
+        expect(
+            DB::table('biicf_job_role_competency')
+                ->whereNull('job_role_tier_id')
+                ->count()
+        )->toBe(0);
+    });
+});
+
 describe('entry requirements', function () {
     test('the book\'s wording is kept as written', function () {
         $role = BiicfJobRole::where('title', 'Chief Technology Officer')->sole();
@@ -309,47 +438,29 @@ describe('re-running the load', function () {
         /*
          * On a re-run the book's tier already exists, so the
          * placeholder cannot take its name and what hangs off it
-         * has to move across instead. Without that, the cleanup
-         * would delete the placeholder and the competency rows
-         * with it.
+         * has to move across instead. The competency rows are
+         * replaced by the book's own table either way, but a
+         * role's entry requirement is not, so that is what would
+         * be lost with the tier.
          */
         $this->seed(BiicfExplorerSeeder::class);
 
         $role = BiicfJobRole::where('title', 'IT Technician')->sole();
         $placeholder = $role->tiers()->where('label', 'All levels')->sole();
-        $moving = $placeholder->competencies()->count();
+
+        $placeholder->entryRequirements()->delete();
+        BiicfEntryRequirement::create([
+            'job_role_tier_id' => $placeholder->id,
+            'alternative_number' => 2,
+            'raw_text' => 'An alternative an administrator added.',
+        ]);
 
         $this->seed(BiicfJobRoleSeeder::class);
 
-        expect($moving)->toBeGreaterThan(0)
-            ->and($role->fresh()->entryTier->competencies()->count())
-            ->toBe($moving);
-    });
-
-    test('it keeps the competencies already recorded for a role', function () {
-        /*
-         * Every role carries a tier labelled "All levels" from
-         * when requirements moved onto tiers, and the competency
-         * requirements hang off it. Creating the book's tiers and
-         * deleting that one would empty the explorer of the only
-         * competency data in the database until the book's own
-         * tables are read.
-         */
-        $this->seed(BiicfExplorerSeeder::class);
-
-        $role = BiicfJobRole::where('title', 'IT Technician')->sole();
-        $before = $role->tiers()->first()->competencies()->count();
-
-        $this->seed(BiicfJobRoleSeeder::class);
-
-        expect($before)->toBeGreaterThan(0)
-            ->and(
-                BiicfJobRole::where('title', 'IT Technician')
-                    ->sole()
-                    ->entryTier
-                    ->competencies()
-                    ->count()
-            )->toBe($before);
+        expect(
+            BiicfEntryRequirement::where('raw_text', 'An alternative an administrator added.')
+                ->first()?->tier?->label
+        )->toBe('Level 1');
     });
 
     test('the placeholder tier becomes the book\'s first tier', function () {
@@ -377,6 +488,24 @@ describe('re-running the load', function () {
         expect($requirement->raw_text)->toContain('IT Technician Level 1')
             ->and($requirement->bdqf_level)->toBeNull()
             ->and($requirement->field_of_study)->toBeNull();
+    });
+
+    test('a competency the earlier seeder spelled differently is folded in', function () {
+        /*
+         * The earlier seeder writes "Application Integration"
+         * where the book writes "Applications Integration". The
+         * book's entry is created on every load, so by the second
+         * one both exist, and slug and type are unique together:
+         * renaming the old onto the new has to merge rather than
+         * collide.
+         */
+        $this->seed(BiicfExplorerSeeder::class);
+        $this->seed(BiicfJobRoleSeeder::class);
+
+        expect(BiicfCompetency::where('slug', 'application-integration')->count())
+            ->toBe(0)
+            ->and(BiicfCompetency::where('slug', 'applications-integration')->count())
+            ->toBe(1);
     });
 
     test('a role the book prints once is not left as two rows', function () {

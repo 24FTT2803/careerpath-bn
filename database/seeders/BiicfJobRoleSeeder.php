@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BiicfCompetency;
 use App\Models\BiicfCriticalWorkFunction;
 use App\Models\BiicfEntryRequirement;
 use App\Models\BiicfJobDescriptionPoint;
@@ -9,10 +10,12 @@ use App\Models\BiicfJobFamily;
 use App\Models\BiicfJobLevel;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
+use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
 use App\Models\CareerRecommendation;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -26,13 +29,18 @@ use RuntimeException;
  * alternate titles, functional groups, job families, job levels
  * and tiers come from the book.
  *
- * Two things this does not load. The per-tier competency tables
- * are a separate pass — the pages interleave four columns and
- * reading those tables reliably needed the page images rather
- * than a parser. And entry requirements arrive as the book's own
- * wording rather than split per tier, which is why the model
- * carries raw_text: a requirement that cannot be reduced to a
- * level is shown as written and reported as undetermined.
+ * The competency tables come with it: one column per tier, so a
+ * competency can be required at a different proficiency at each
+ * tier of the role. Where the book's table spells a competency
+ * differently from its own glossary — "Creativity & Innovation"
+ * against "Creativity and Innovation" — the glossary entry is
+ * what the proficiency is recorded against, since the glossary
+ * is the list of competencies.
+ *
+ * Entry requirements arrive as the book's own wording rather
+ * than split per tier, which is why the model carries raw_text:
+ * a requirement that cannot be reduced to a level is shown as
+ * written and reported as undetermined.
  *
  * Existing roles are matched by title so the recommendations and
  * competency requirements already pointing at them survive.
@@ -51,9 +59,20 @@ class BiicfJobRoleSeeder extends Seeder
      */
     private const PLACEHOLDER_TIER_LABEL = 'All levels';
 
+    /** @var Collection<string, BiicfCompetency>|null */
+    private $competencies = null;
+
+    /** @var Collection<string, BiicfProficiencyLevel>|null */
+    private $levels = null;
+
     public function run(): void
     {
         $this->call(BiicfReferenceDataSeeder::class);
+        /*
+         * The competency tables name the book's glossary entries,
+         * so the glossary has to be in place before they are read.
+         */
+        $this->call(BiicfCompetencySeeder::class);
 
         foreach ($this->load() as $entry) {
             $role = $this->upsertRole($entry);
@@ -63,6 +82,7 @@ class BiicfJobRoleSeeder extends Seeder
             $this->syncTiers($role, $entry);
             $this->syncContent($role, $entry);
             $this->syncTrainings($role, $entry);
+            $this->syncCompetencies($role, $entry);
         }
     }
 
@@ -109,6 +129,26 @@ class BiicfJobRoleSeeder extends Seeder
         $limit = 255;
 
         foreach ($roles as $role) {
+            /*
+             * Every competency carries a proficiency for every
+             * tier. A gap means a column of the table went
+             * unread, which would show as a role simply not
+             * needing that competency at that tier.
+             */
+            foreach ($role['competencies'] as $competency) {
+                $missing = array_diff(
+                    $role['tiers'],
+                    array_keys($competency['levels'])
+                );
+
+                if ($missing !== []) {
+                    throw new RuntimeException(
+                        "{$role['title']}: {$competency['name']} has no "
+                        .'proficiency for '.implode(', ', $missing).'.'
+                    );
+                }
+            }
+
             foreach ($role['trainings'] as $training) {
                 if (mb_strlen($training) <= $limit) {
                     continue;
@@ -492,6 +532,97 @@ class BiicfJobRoleSeeder extends Seeder
             ->all();
 
         $role->trainings()->sync($trainings);
+    }
+
+    /**
+     * Write each tier's column of the role's competency table.
+     *
+     * The book prints one column per tier, so a competency can be
+     * required at different proficiencies at different tiers —
+     * Application Development at 1, 2 and 2 across IT
+     * Technician's three levels. The proficiency is on the pivot,
+     * which is why it hangs off the tier rather than the role.
+     *
+     * Everything the book lists for a role is marked core: the
+     * table is the role's requirement and draws no distinction
+     * between core and supporting. That column kept the earlier
+     * seeder's invented split, which said nothing the book says.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function syncCompetencies(BiicfJobRole $role, array $entry): void
+    {
+        $tiers = $role->tiers()->get()->keyBy('label');
+        $columns = [];
+
+        foreach ($entry['competencies'] as $row) {
+            $competency = $this->competency($row['name'], $row['type']);
+
+            foreach ($row['levels'] as $label => $number) {
+                $tier = $tiers->get($label);
+
+                if ($tier === null) {
+                    throw new RuntimeException(
+                        "{$role->title}: the competency table names a tier "
+                        ."\"{$label}\" the role does not have."
+                    );
+                }
+
+                $columns[$label][$competency->id] = [
+                    'proficiency_level_id' => $this->proficiency(
+                        $row['type'] === 'technical'
+                            ? BiicfProficiencyLevel::SCALE_TECHNICAL
+                            : BiicfProficiencyLevel::SCALE_SOFT,
+                        $number
+                    )->id,
+                    'is_core' => true,
+                ];
+            }
+        }
+
+        foreach ($columns as $label => $rows) {
+            $tiers->get($label)->competencies()->sync($rows);
+        }
+    }
+
+    /**
+     * A competency by the name the glossary gives it.
+     *
+     * Matched on name and type together: the two lists are
+     * separate in the book and a name can sit in either.
+     */
+    private function competency(string $name, string $type): BiicfCompetency
+    {
+        $this->competencies ??= BiicfCompetency::all()
+            ->keyBy(fn (BiicfCompetency $competency) => $competency->name.'|'.$competency->type);
+
+        $competency = $this->competencies->get($name.'|'.$type);
+
+        if ($competency === null) {
+            throw new RuntimeException(
+                "The competency library has no {$type} competency "
+                ."called \"{$name}\". Load it first: the competency "
+                .'seeder is what puts the book\'s glossary in place.'
+            );
+        }
+
+        return $competency;
+    }
+
+    private function proficiency(string $scale, int $number): BiicfProficiencyLevel
+    {
+        $this->levels ??= BiicfProficiencyLevel::all()
+            ->keyBy(fn (BiicfProficiencyLevel $level) => $level->scale.'|'.$level->level_number);
+
+        $level = $this->levels->get($scale.'|'.$number);
+
+        if ($level === null) {
+            throw new RuntimeException(
+                "The {$scale} scale has no level {$number}."
+            );
+        }
+
+        return $level;
     }
 
     /**
