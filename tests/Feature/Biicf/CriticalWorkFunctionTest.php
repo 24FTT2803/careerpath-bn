@@ -41,6 +41,14 @@ function workFamily(string $name): BiicfJobFamily
 }
 
 describe('generic and specific functions', function () {
+    /*
+     * Worth recording how rare this is: the book prints the
+     * Generic and Specific headings on one role page out of
+     * thirty-nine, and nests sub-duties on two. The distinction
+     * is real and these tests cover it, but a flat list is the
+     * normal case, which is why the headings only appear when a
+     * role actually has both kinds.
+     */
     test('they are kept apart', function () {
         $role = workFunctionRole();
         $family = workFamily('Desktop and Application Support');

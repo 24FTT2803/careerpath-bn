@@ -865,6 +865,14 @@
 
                                 <template x-if="(selectedRole.generic_work_functions || []).length">
                                     <div>
+                                        {{--
+                                            "Key Responsibilities" rather
+                                            than "Generic Functions": only
+                                            one role in the book draws that
+                                            distinction, and naming it on
+                                            every role would imply a
+                                            counterpart that is not there.
+                                        --}}
                                         <h5>Key Responsibilities</h5>
                                         <ul>
                                             <template x-for="fn in selectedRole.generic_work_functions" :key="fn.id">

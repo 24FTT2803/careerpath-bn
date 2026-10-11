@@ -130,7 +130,6 @@ describe('the admin form and show page agree', function () {
             ->assertSuccessful()
             ->assertSee('Designs systems.')
             ->assertSee('Supports deployments.')
-            ->assertSee('Generic Functions')
             ->assertSee('Plan capacity.')
             ->assertSee('Patch servers.');
     });

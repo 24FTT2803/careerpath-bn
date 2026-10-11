@@ -78,8 +78,23 @@
                     generic ones can be typed into the form; the
                     rest arrive with the reference book.
                 --}}
+                @php
+                    $byFamily = $jobRole->specificWorkFunctions
+                        ->groupBy(fn ($function) => $function->jobFamily?->name ?? 'Unassigned');
+                @endphp
+
                 @if($jobRole->genericWorkFunctions->isNotEmpty())
-                    <h4 class="function-group-heading">Generic Functions</h4>
+                    {{--
+                        The heading only earns its place when the
+                        role actually draws the distinction. One
+                        role in the book does; the rest print a
+                        single flat list, and labelling that
+                        "Generic" would imply a counterpart that
+                        does not exist.
+                    --}}
+                    @if($byFamily->isNotEmpty())
+                        <h4 class="function-group-heading">Generic Functions</h4>
+                    @endif
 
                     @foreach($jobRole->genericWorkFunctions as $function)
                         <div class="function-item">
@@ -95,11 +110,6 @@
                         @endforeach
                     @endforeach
                 @endif
-
-                @php
-                    $byFamily = $jobRole->specificWorkFunctions
-                        ->groupBy(fn ($function) => $function->jobFamily?->name ?? 'Unassigned');
-                @endphp
 
                 @if($byFamily->isNotEmpty())
                     <h4 class="function-group-heading">Specific Functions</h4>
