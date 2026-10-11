@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
+use App\Models\BiicfBdqfLevel;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\Notification;
@@ -185,6 +186,15 @@ class ProfileController extends Controller
         $interestOptions = self::PREDEFINED_INTERESTS;
         $interestAliasGroups = self::INTEREST_ALIAS_GROUPS;
 
+        /*
+         * The framework's own qualification ladder, highest
+         * first, so a student can say which rung an award sits
+         * on rather than the app guessing from its name.
+         */
+        $bdqfLevels = BiicfBdqfLevel::query()
+            ->orderByDesc('level')
+            ->get();
+
         return view(
             'student.profile.edit',
             compact(
@@ -195,7 +205,8 @@ class ProfileController extends Controller
                 'biicfCompetencies',
                 'proficiencyLevels',
                 'interestOptions',
-                'interestAliasGroups'
+                'interestAliasGroups',
+                'bdqfLevels'
             )
         );
     }
@@ -380,6 +391,78 @@ class ProfileController extends Controller
                 'nullable',
                 'string',
                 'max:500',
+            ],
+
+            /*
+             * A student can hold several qualifications, and
+             * each one's BDQF level is what a role's entry
+             * requirement is matched against. The level is
+             * optional: not knowing which rung an award sits on
+             * is reported as undetermined rather than guessed.
+             */
+            'qualifications' => ['nullable', 'array'],
+
+            'qualifications.*.id' => [
+                'nullable',
+                'integer',
+                'distinct',
+            ],
+
+            'qualifications.*.institution_name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'qualifications.*.programme_name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'qualifications.*.level' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'qualifications.*.bdqf_level' => [
+                'nullable',
+                'integer',
+                'exists:biicf_bdqf_levels,level',
+            ],
+
+            'qualifications.*.field_of_study' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
+
+            'qualifications.*.start_date' => [
+                'required',
+                'date',
+                'before_or_equal:today',
+            ],
+
+            'qualifications.*.end_date' => [
+                'nullable',
+                'date',
+                'after:qualifications.*.start_date',
+            ],
+
+            'qualifications.*.is_current' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'removed_qualification_ids' => [
+                'nullable',
+                'array',
+            ],
+
+            'removed_qualification_ids.*' => [
+                'integer',
+                'distinct',
             ],
 
             'certifications' => ['nullable', 'array'],
@@ -623,6 +706,12 @@ class ProfileController extends Controller
         } else {
             $user->projects()->delete();
         }
+
+        // Process Qualifications
+        $this->syncQualifications(
+            $user,
+            $request
+        );
 
         // Process Certifications
         $this->syncCertifications(
@@ -2064,6 +2153,63 @@ class ProfileController extends Controller
     /**
      * Sync the student's certifications and uploaded evidence.
      */
+    /**
+     * Write the student's qualifications.
+     *
+     * Each one carries the rung of the BDQF ladder it sits on,
+     * which is what a role's entry requirement is stated in. A
+     * qualification still being studied is kept apart from one
+     * already awarded: it is not something a role can be entered
+     * with, but it is what the student will hold on finishing.
+     *
+     * Removal is explicit, as it is for certifications: a row
+     * missing from the submitted list is not enough to delete a
+     * record a student entered.
+     */
+    private function syncQualifications(
+        User $user,
+        Request $request
+    ): void {
+        foreach ($request->input('qualifications', []) as $data) {
+            $values = [
+                'institution_name' => $data['institution_name'],
+                'programme_name' => $data['programme_name'],
+                'level' => $data['level'],
+                'bdqf_level' => $data['bdqf_level'] ?? null,
+                'field_of_study' => $data['field_of_study'] ?? null,
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'] ?? null,
+                'is_current' => (bool) ($data['is_current'] ?? false),
+            ];
+
+            if (! empty($data['id'])) {
+                $user->academicRecords()
+                    ->whereKey($data['id'])
+                    ->firstOrFail()
+                    ->update($values);
+
+                continue;
+            }
+
+            $user->academicRecords()->create($values);
+        }
+
+        $removedIds = array_values(
+            array_unique(
+                array_map(
+                    'intval',
+                    $request->input('removed_qualification_ids', [])
+                )
+            )
+        );
+
+        if ($removedIds !== []) {
+            $user->academicRecords()
+                ->whereIn('id', $removedIds)
+                ->delete();
+        }
+    }
+
     private function syncCertifications(
         User $user,
         Request $request

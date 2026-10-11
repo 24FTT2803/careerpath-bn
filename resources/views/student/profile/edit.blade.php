@@ -287,6 +287,63 @@
         color: var(--gold);
     }
 
+    /*
+     * A checkbox inside a field inherits the full-width text
+     * input styling above — 100% wide, 10px of padding, a 2px
+     * border — which squeezes the native tick out of sight, so
+     * there was no telling whether the box was ticked.
+     */
+    .edit-profile .cpbn-field label.cpbn-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 24px 0 0;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-field .cpbn-check input[type="checkbox"] {
+        appearance: auto;
+        -webkit-appearance: checkbox;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        padding: 0;
+        border: none;
+        background: none;
+        accent-color: var(--gold);
+    }
+
+    /*
+     * And the state in words beside it, since a tick says what
+     * the box is but not what it means for the qualification.
+     */
+    .edit-profile .cpbn-check-state {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: rgba(45, 143, 92, 0.12);
+        color: var(--green);
+        white-space: nowrap;
+    }
+
+    .edit-profile .cpbn-check-state::after {
+        content: 'Completed';
+    }
+
+    .edit-profile .cpbn-check input[type="checkbox"]:checked ~ .cpbn-check-state {
+        background: var(--gold-wash);
+        color: #8a6420;
+    }
+
+    .edit-profile .cpbn-check input[type="checkbox"]:checked ~ .cpbn-check-state::after {
+        content: 'Still studying';
+    }
+
     .edit-profile .cpbn-check-note {
         font-size: 11px;
         color: var(--ink-dim);
@@ -680,6 +737,7 @@
 
     /* Remove Buttons */
     .edit-profile .cpbn-remove-project,
+    .edit-profile .cpbn-remove-qualification,
     .edit-profile .cpbn-remove-certification {
         background: var(--rose-wash);
         color: var(--rose);
@@ -697,6 +755,7 @@
     }
 
     .edit-profile .cpbn-remove-project:hover,
+    .edit-profile .cpbn-remove-qualification:hover,
     .edit-profile .cpbn-remove-certification:hover {
         background: var(--rose);
         color: white;
@@ -704,6 +763,7 @@
 
     /* Add Buttons */
     .edit-profile .cpbn-add-project,
+    .edit-profile .cpbn-add-btn,
     .edit-profile .cpbn-add-certification {
         background: var(--gold-wash);
         color: #8a6420;
@@ -723,6 +783,7 @@
     }
 
     .edit-profile .cpbn-add-project:hover,
+    .edit-profile .cpbn-add-btn:hover,
     .edit-profile .cpbn-add-certification:hover {
         background: var(--gold);
         color: var(--ink);
@@ -1400,6 +1461,206 @@
                         @enderror
                     </div>
                 </div>
+            </div>
+
+            <!-- SECTION 2b: Qualifications -->
+            <div class="section">
+                <div class="title">
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
+
+                    Qualifications
+                </div>
+
+                <p class="desc">
+                    Every qualification you hold or are working towards. Job roles state
+                    what they need as a BDQF level, so saying which level an award sits on
+                    is what lets the explorer tell you how you compare.
+                </p>
+
+                @php
+                    $qualificationRows = old('qualifications');
+
+                    if ($qualificationRows === null) {
+                        $qualificationRows = $user->academicRecords
+                            ->map(fn ($record) => [
+                                'id' => $record->id,
+                                'institution_name' => $record->institution_name,
+                                'programme_name' => $record->programme_name,
+                                'level' => $record->level,
+                                'bdqf_level' => $record->bdqf_level,
+                                'field_of_study' => $record->field_of_study,
+                                'start_date' => $record->start_date?->format('Y-m-d'),
+                                'end_date' => $record->end_date?->format('Y-m-d'),
+                                'is_current' => $record->is_current,
+                            ])
+                            ->values()
+                            ->all();
+                    }
+
+                    $nextQualificationIndex = empty($qualificationRows)
+                        ? 0
+                        : max(array_map('intval', array_keys($qualificationRows))) + 1;
+
+                    $bdqfOptions = ($bdqfLevels ?? collect())
+                        ->map(fn ($level) => [
+                            'level' => $level->level,
+                            'label' => 'Level '.$level->level
+                                .' — '.implode(', ', array_slice($level->qualifications(), 0, 3)),
+                        ])
+                        ->all();
+                @endphp
+
+                <div id="removed-qualification-fields">
+                    @foreach(old('removed_qualification_ids', []) as $removedQualificationId)
+                        <input
+                            type="hidden"
+                            name="removed_qualification_ids[]"
+                            value="{{ $removedQualificationId }}"
+                        >
+                    @endforeach
+                </div>
+
+                <div
+                    id="qualification-list"
+                    data-next-index="{{ $nextQualificationIndex }}"
+                    data-bdqf-options="{{ json_encode($bdqfOptions) }}"
+                >
+                    @foreach($qualificationRows as $index => $qualification)
+                        <div class="cpbn-certification-card">
+                            @if(! empty($qualification['id']))
+                                <input
+                                    type="hidden"
+                                    name="qualifications[{{ $index }}][id]"
+                                    value="{{ $qualification['id'] }}"
+                                >
+                            @endif
+
+                            <div class="cpbn-fgrid">
+                                <div class="cpbn-field">
+                                    <label>Institution <span class="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][institution_name]"
+                                        value="{{ $qualification['institution_name'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="Politeknik Brunei"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Programme <span class="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][programme_name]"
+                                        value="{{ $qualification['programme_name'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="Diploma in Information Technology"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Award <span class="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][level]"
+                                        value="{{ $qualification['level'] ?? '' }}"
+                                        maxlength="100"
+                                        placeholder="Diploma"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>BDQF Level</label>
+                                    <select name="qualifications[{{ $index }}][bdqf_level]">
+                                        <option value="">Not sure</option>
+                                        @foreach($bdqfOptions as $option)
+                                            <option
+                                                value="{{ $option['level'] }}"
+                                                @selected((string) ($qualification['bdqf_level'] ?? '') === (string) $option['level'])
+                                            >{{ $option['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="cpbn-file-note">
+                                        Leave as "Not sure" rather than guessing — the explorer
+                                        will say it cannot tell instead of comparing you wrongly.
+                                    </small>
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Field of Study</label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][field_of_study]"
+                                        value="{{ $qualification['field_of_study'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="Information Technology"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Started <span class="req">*</span></label>
+                                    <input
+                                        type="date"
+                                        name="qualifications[{{ $index }}][start_date]"
+                                        value="{{ $qualification['start_date'] ?? '' }}"
+                                        max="{{ now()->format('Y-m-d') }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Finished</label>
+                                    <input
+                                        type="date"
+                                        name="qualifications[{{ $index }}][end_date]"
+                                        value="{{ $qualification['end_date'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label class="cpbn-check">
+                                        <input
+                                            type="hidden"
+                                            name="qualifications[{{ $index }}][is_current]"
+                                            value="0"
+                                        >
+                                        <input
+                                            type="checkbox"
+                                            name="qualifications[{{ $index }}][is_current]"
+                                            value="1"
+                                            @checked($qualification['is_current'] ?? false)
+                                        >
+                                        <span>Still studying this</span>
+                                        <span class="cpbn-check-state"></span>
+                                    </label>
+                                    <small class="cpbn-file-note">
+                                        A programme you are still on counts towards what you
+                                        will hold, not what you hold now.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <button type="button" class="cpbn-remove-qualification">
+                                Remove
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+
+                <button type="button" id="add-qualification" class="cpbn-add-btn">
+                    + Add qualification
+                </button>
             </div>
 
             <!-- SECTION 3: Skills -->

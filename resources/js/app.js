@@ -1780,6 +1780,257 @@ document.addEventListener(
         }
 
         // ============================================
+        // DYNAMIC QUALIFICATIONS
+        // ============================================
+
+        const qualificationList =
+            document.getElementById(
+                'qualification-list'
+            );
+
+        if (qualificationList) {
+            let qualificationIndex =
+                Number(
+                    qualificationList
+                        .dataset
+                        .nextIndex
+                ) || 0;
+
+            /*
+             * The BDQF ladder, rendered server-side into the
+             * list so a row added here offers the same levels
+             * as one that came with the page.
+             */
+            let bdqfOptions = [];
+
+            try {
+                bdqfOptions = JSON.parse(
+                    qualificationList
+                        .dataset
+                        .bdqfOptions
+                    || '[]'
+                );
+            } catch (error) {
+                bdqfOptions = [];
+            }
+
+            const bdqfOptionMarkup = bdqfOptions
+                .map(
+                    option =>
+                        `<option value="${option.level}">${option.label}</option>`
+                )
+                .join('');
+
+            const addQualificationButton =
+                document.getElementById(
+                    'add-qualification'
+                );
+
+            if (addQualificationButton) {
+                addQualificationButton
+                    .addEventListener(
+                        'click',
+                        function() {
+                            const today =
+                                new Date()
+                                    .toISOString()
+                                    .split('T')[0];
+
+                            const card =
+                                document.createElement(
+                                    'div'
+                                );
+
+                            card.className =
+                                'cpbn-certification-card';
+
+                            card.innerHTML = `
+                                <div class="cpbn-fgrid">
+                                    <div class="cpbn-field">
+                                        <label>Institution <span class="req">*</span></label>
+                                        <input
+                                            type="text"
+                                            name="qualifications[${qualificationIndex}][institution_name]"
+                                            maxlength="150"
+                                            placeholder="Politeknik Brunei"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label>Programme <span class="req">*</span></label>
+                                        <input
+                                            type="text"
+                                            name="qualifications[${qualificationIndex}][programme_name]"
+                                            maxlength="150"
+                                            placeholder="Diploma in Information Technology"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label>Award <span class="req">*</span></label>
+                                        <input
+                                            type="text"
+                                            name="qualifications[${qualificationIndex}][level]"
+                                            maxlength="100"
+                                            placeholder="Diploma"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label>BDQF Level</label>
+                                        <select name="qualifications[${qualificationIndex}][bdqf_level]">
+                                            <option value="">Not sure</option>
+                                            ${bdqfOptionMarkup}
+                                        </select>
+                                        <small class="cpbn-file-note">
+                                            Leave as "Not sure" rather than guessing.
+                                        </small>
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label>Field of Study</label>
+                                        <input
+                                            type="text"
+                                            name="qualifications[${qualificationIndex}][field_of_study]"
+                                            maxlength="150"
+                                            placeholder="Information Technology"
+                                        >
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label>Started <span class="req">*</span></label>
+                                        <input
+                                            type="date"
+                                            name="qualifications[${qualificationIndex}][start_date]"
+                                            max="${today}"
+                                            required
+                                        >
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label>Finished</label>
+                                        <input
+                                            type="date"
+                                            name="qualifications[${qualificationIndex}][end_date]"
+                                        >
+                                    </div>
+
+                                    <div class="cpbn-field">
+                                        <label class="cpbn-check">
+                                            <input
+                                                type="hidden"
+                                                name="qualifications[${qualificationIndex}][is_current]"
+                                                value="0"
+                                            >
+                                            <input
+                                                type="checkbox"
+                                                name="qualifications[${qualificationIndex}][is_current]"
+                                                value="1"
+                                            >
+                                            <span>Still studying this</span>
+                                            <span class="cpbn-check-state"></span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <button type="button" class="cpbn-remove-qualification">
+                                    Remove
+                                </button>
+                            `;
+
+                            qualificationList
+                                .appendChild(card);
+
+                            qualificationIndex += 1;
+
+                            if (
+                                typeof window
+                                    .setFormChanged
+                                === 'function'
+                            ) {
+                                window.setFormChanged(
+                                    true
+                                );
+                            }
+                        }
+                    );
+            }
+
+            /*
+             * Removal is explicit: an existing record's id is
+             * submitted for deletion rather than the server
+             * inferring it from a row that is simply absent.
+             */
+            qualificationList
+                .addEventListener(
+                    'click',
+                    function(event) {
+                        const button =
+                            event.target.closest(
+                                '.cpbn-remove-qualification'
+                            );
+
+                        if (! button) {
+                            return;
+                        }
+
+                        const card =
+                            button.closest(
+                                '.cpbn-certification-card'
+                            );
+
+                        if (! card) {
+                            return;
+                        }
+
+                        const idField =
+                            card.querySelector(
+                                'input[name$="[id]"]'
+                            );
+
+                        if (idField && idField.value) {
+                            const removed =
+                                document.getElementById(
+                                    'removed-qualification-fields'
+                                );
+
+                            if (removed) {
+                                const hidden =
+                                    document.createElement(
+                                        'input'
+                                    );
+
+                                hidden.type = 'hidden';
+                                hidden.name =
+                                    'removed_qualification_ids[]';
+                                hidden.value =
+                                    idField.value;
+
+                                removed.appendChild(
+                                    hidden
+                                );
+                            }
+                        }
+
+                        card.remove();
+
+                        if (
+                            typeof window
+                                .setFormChanged
+                            === 'function'
+                        ) {
+                            window.setFormChanged(
+                                true
+                            );
+                        }
+                    }
+                );
+        }
+
+        // ============================================
         // DYNAMIC CERTIFICATIONS
         // ============================================
 

@@ -436,6 +436,45 @@
         gap: 12px;
     }
 
+    .qualification-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 0;
+        border-bottom: 1px solid var(--line, #e5e7eb);
+    }
+
+    .qualification-row:last-child {
+        border-bottom: none;
+    }
+
+    .qualification-name {
+        display: block;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .qualification-where {
+        display: block;
+        font-size: 12px;
+        color: #6b7280;
+        margin-top: 2px;
+    }
+
+    .qualification-marks {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .qualification-empty {
+        margin-top: 14px;
+        font-size: 13px;
+        color: #6b7280;
+    }
+
     .fact-tile {
         display: grid;
         grid-template-columns: auto 1fr;
@@ -1047,6 +1086,44 @@
                                 </div>
                             @endif
                         </div>
+
+                        {{--
+                            Qualifications, with the rung of the
+                            framework's ladder each sits on: that
+                            is what job roles state their entry
+                            requirements in, and what the
+                            explorer compares a student against.
+                        --}}
+                        @forelse($user->academicRecords as $record)
+                            <div class="qualification-row">
+                                <div>
+                                    <span class="qualification-name">{{ $record->programme_name }}</span>
+                                    <span class="qualification-where">
+                                        {{ $record->institution_name }}
+                                        @if($record->field_of_study)
+                                            · {{ $record->field_of_study }}
+                                        @endif
+                                    </span>
+                                </div>
+
+                                <div class="qualification-marks">
+                                    @if($record->bdqf_level)
+                                        <span class="tag tag-blue">BDQF Level {{ $record->bdqf_level }}</span>
+                                    @else
+                                        <span class="tag">Level not set</span>
+                                    @endif
+
+                                    @if($record->is_current)
+                                        <span class="tag">Studying</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @empty
+                            <p class="qualification-empty">
+                                No qualifications recorded yet. Adding them lets the BIICF
+                                Explorer tell you which roles you already meet.
+                            </p>
+                        @endforelse
                     </div>
 
                     <!-- Skills -->
