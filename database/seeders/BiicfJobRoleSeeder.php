@@ -149,6 +149,17 @@ class BiicfJobRoleSeeder extends Seeder
                 }
             }
 
+            foreach ($role['critical_work_functions'] as $function) {
+                if (! array_key_exists('children', $function)) {
+                    throw new RuntimeException(
+                        "{$role['title']}: a duty is recorded without its "
+                        .'nesting. The data file predates the columns being '
+                        .'read apart, and reading it flat is what filed one '
+                        ."role's duties under another."
+                    );
+                }
+            }
+
             foreach ($role['trainings'] as $training) {
                 if (mb_strlen($training) <= $limit) {
                     continue;
@@ -511,13 +522,36 @@ class BiicfJobRoleSeeder extends Seeder
 
         $role->criticalWorkFunctions()->delete();
 
-        foreach ($entry['critical_work_functions'] as $index => $text) {
-            BiicfCriticalWorkFunction::create([
+        $this->writeWorkFunctions($role, $entry['critical_work_functions']);
+    }
+
+    /**
+     * Write a role's duties, keeping the book's nesting.
+     *
+     * Most roles group their duties under headings of their own
+     * — "Website Design", "Research and Insight" — and two roles
+     * nest a third level under a duty. A flat list would read as
+     * though a heading were itself something the role does.
+     *
+     * @param  array<int, array<string, mixed>>  $functions
+     */
+    private function writeWorkFunctions(
+        BiicfJobRole $role,
+        array $functions,
+        ?int $parentId = null
+    ): void {
+        foreach ($functions as $index => $function) {
+            $row = BiicfCriticalWorkFunction::create([
                 'job_role_id' => $role->id,
                 'kind' => BiicfCriticalWorkFunction::KIND_GENERIC,
-                'text' => $text,
+                'parent_id' => $parentId,
+                'text' => $function['text'],
                 'sort_order' => $index + 1,
             ]);
+
+            if ($function['children'] !== []) {
+                $this->writeWorkFunctions($role, $function['children'], $row->id);
+            }
         }
     }
 

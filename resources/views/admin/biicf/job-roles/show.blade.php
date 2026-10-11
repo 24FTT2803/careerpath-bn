@@ -102,11 +102,24 @@
                             {{ $function->text }}
                         </div>
 
+                        {{--
+                            The book groups duties under headings
+                            of its own and nests a third level
+                            under some of them, which is as deep
+                            as it goes.
+                        --}}
                         @foreach($function->children as $child)
                             <div class="function-item is-nested">
                                 <i class="fas fa-circle"></i>
                                 {{ $child->text }}
                             </div>
+
+                            @foreach($child->children as $leaf)
+                                <div class="function-item is-nested-twice">
+                                    <i class="fas fa-circle"></i>
+                                    {{ $leaf->text }}
+                                </div>
+                            @endforeach
                         @endforeach
                     @endforeach
                 @endif
@@ -128,6 +141,13 @@
                                     <i class="fas fa-circle"></i>
                                     {{ $child->text }}
                                 </div>
+
+                                @foreach($child->children as $leaf)
+                                    <div class="function-item is-nested-twice">
+                                        <i class="fas fa-circle"></i>
+                                        {{ $leaf->text }}
+                                    </div>
+                                @endforeach
                             @endforeach
                         @endforeach
                     @endforeach
@@ -264,6 +284,8 @@
     .tier-note { margin: 0 0 14px; padding: 8px 12px; border-left: 3px solid #c9a84c; background: #fffbeb; font-size: 13px; color: #6b7280; }
     .function-item.is-nested { padding-left: 26px; }
     .function-item.is-nested i { font-size: 6px; color: #9ca3af; }
+    .function-item.is-nested-twice { padding-left: 46px; }
+    .function-item.is-nested-twice i { font-size: 5px; color: #c7cbd1; }
     .function-group-heading { margin: 4px 0 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #1a3a5c; }
     .function-group-heading:not(:first-child) { margin-top: 22px; }
     .function-family-heading { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: #6b7280; }

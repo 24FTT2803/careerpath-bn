@@ -227,16 +227,43 @@
         margin-bottom: 6px;
     }
 
-    .overview-card ul {
+    /*
+     * Every list in the explorer is marked the same way: a gold
+     * disc at the top level and a hollow one for anything nested
+     * under it. The role overview was the only section drawing
+     * markers at all, which made every other list read as
+     * though its lines had been run together.
+     */
+    .overview-card ul,
+    .level-statements,
+    .req-list {
         margin: 0;
-        padding-left: 18px;
+        padding-left: 20px;
+        list-style: disc;
+    }
+
+    .overview-card ul ul,
+    .overview-card ul ul ul {
+        margin: 4px 0 8px;
+        list-style: circle;
+    }
+
+    .overview-card li,
+    .level-statements li,
+    .req-list li {
+        font-size: 13px;
+        margin-bottom: 4px;
+        line-height: 1.5;
     }
 
     .overview-card li {
-        font-size: 13px;
         color: var(--primary);
-        margin-bottom: 4px;
-        line-height: 1.5;
+    }
+
+    .overview-card li::marker,
+    .level-statements li::marker,
+    .req-list li::marker {
+        color: var(--accent);
     }
 
     /* Search + Filters */
@@ -492,6 +519,135 @@
     .comp-item .status.core {
         background: rgba(26, 58, 92, 0.06);
         color: var(--primary);
+    }
+
+    .comp-item .status.level {
+        background: rgba(122, 94, 168, 0.1);
+        color: #6b4ea0;
+        margin-left: 6px;
+    }
+
+    /* A competency opens in Proficiency Levels. */
+    .comp-item.is-clickable {
+        cursor: pointer;
+        transition: border-color 0.15s ease, background 0.15s ease;
+    }
+
+    .comp-item.is-clickable:hover {
+        border-color: var(--accent);
+        background: var(--bg);
+    }
+
+    .comp-item .comp-go {
+        font-size: 12px;
+        color: var(--text-muted);
+        margin-left: 10px;
+    }
+
+    .comp-item.is-clickable:hover .comp-go {
+        color: var(--accent);
+    }
+
+    /* What the framework asks at one rung of one competency. */
+    .prof-level .required-flag {
+        font-size: 10px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: var(--accent);
+        color: #0d1f33;
+        text-transform: none;
+        letter-spacing: 0;
+    }
+
+    .prof-level .level {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .prof-level.required {
+        border-left: 3px solid var(--accent);
+        background: rgba(201, 168, 76, 0.07);
+    }
+
+    .prof-level.absent {
+        opacity: 0.65;
+    }
+
+    .level-statements {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 13px;
+        line-height: 1.55;
+        color: var(--text);
+    }
+
+    .level-statements li {
+        margin-bottom: 5px;
+    }
+
+    .comp-level-none {
+        margin: 6px 0 0;
+        font-size: 13px;
+        color: var(--text-muted);
+        font-style: italic;
+    }
+
+    .section-note {
+        margin-top: 18px;
+        padding: 12px 16px;
+        border: 1px dashed var(--border);
+        border-radius: 8px;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .section-note i {
+        color: var(--accent);
+        margin-right: 6px;
+    }
+
+    .req-tier {
+        margin-bottom: 18px;
+    }
+
+    .req-tier h4 {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin: 0 0 8px;
+    }
+
+    .req-text {
+        margin: 0 0 8px;
+        padding: 12px 16px;
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--accent);
+        border-radius: 6px;
+        line-height: 1.6;
+        font-size: 14px;
+    }
+
+    /* Which tier of a role's table is being shown. */
+    .tier-pills {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .tier-pills-label {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
     }
 
     /* Entry Requirements */
@@ -878,9 +1034,23 @@
                                             <template x-for="fn in selectedRole.generic_work_functions" :key="fn.id">
                                                 <li>
                                                     <span x-text="fn.text"></span>
+                                                    {{--
+                                                        The book groups duties under
+                                                        headings of their own and nests
+                                                        a third level under some of
+                                                        them, which is as deep as it
+                                                        goes.
+                                                    --}}
                                                     <ul x-show="(fn.children || []).length">
                                                         <template x-for="child in (fn.children || [])" :key="child.id">
-                                                            <li x-text="child.text"></li>
+                                                            <li>
+                                                                <span x-text="child.text"></span>
+                                                                <ul x-show="(child.children || []).length">
+                                                                    <template x-for="leaf in (child.children || [])" :key="leaf.id">
+                                                                        <li x-text="leaf.text"></li>
+                                                                    </template>
+                                                                </ul>
+                                                            </li>
                                                         </template>
                                                     </ul>
                                                 </li>
@@ -977,15 +1147,45 @@
                     <!-- Role-specific competencies -->
                     <template x-if="selectedRole">
                         <div>
+                            {{--
+                                The book gives a role one column
+                                of proficiencies per tier, so the
+                                same competency can be wanted at
+                                a different level further up the
+                                role. Only worth showing when the
+                                role actually has more than one.
+                            --}}
+                            <div class="tier-pills" x-show="roleTiers.length > 1">
+                                <span class="tier-pills-label">Required at</span>
+                                <template x-for="tier in roleTiers" :key="tier.id">
+                                    <button class="filter-pill"
+                                            :class="{ active: activeTierId === tier.id }"
+                                            @click="activeTierId = tier.id">
+                                        <span x-text="tier.label"></span>
+                                    </button>
+                                </template>
+                            </div>
+
                             <template x-for="type in ['technical', 'soft_skill']" :key="type">
                                 <div class="comp-group" x-show="filteredRoleCompetencies(type).length">
                                     <h4 x-text="type === 'technical' ? 'Technical Competencies' : 'Soft Skill Competencies'"></h4>
+                                    {{--
+                                        Opens the competency in
+                                        Proficiency Levels, where
+                                        the levels and what they
+                                        mean already live, rather
+                                        than unfolding a second
+                                        copy of them here.
+                                    --}}
                                     <template x-for="comp in filteredRoleCompetencies(type)" :key="comp.id">
-                                        <div class="comp-item">
+                                        <div class="comp-item is-clickable" @click="openCompetency(comp.id, comp.level)">
                                             <span class="name" x-text="comp.name"></span>
                                             <div>
                                                 <span class="status" :class="statusClass(comp.id)" x-text="statusLabel(comp.id)"></span>
-                                                <span class="status core" x-show="comp.pivot?.is_core">Core</span>
+                                                <span class="status core" x-show="comp.is_core">Core</span>
+                                                <span class="status level" x-show="comp.level"
+                                                      x-text="comp.level ? comp.level.number + ' · ' + comp.level.name : ''"></span>
+                                                <i class="fas fa-angle-right comp-go"></i>
                                             </div>
                                         </div>
                                     </template>
@@ -1010,8 +1210,9 @@
                                 <div class="comp-group" x-show="filteredGlossary(type).length">
                                     <h4 x-text="type === 'technical' ? 'Technical Competencies' : 'Soft Skill Competencies'"></h4>
                                     <template x-for="comp in filteredGlossary(type)" :key="comp.id">
-                                        <div class="comp-item">
+                                        <div class="comp-item is-clickable" @click="openCompetency(comp.id, null)">
                                             <span class="name" x-text="comp.name"></span>
+                                            <i class="fas fa-angle-right comp-go"></i>
                                         </div>
                                     </template>
                                 </div>
@@ -1028,6 +1229,80 @@
                 <!-- Proficiency Levels -->
                 <section x-show="activeSection === 'proficiency-levels'" x-cloak>
                     <div class="section-title"><i class="fas fa-level-up-alt"></i> Proficiency Levels</div>
+
+                    {{--
+                        A competency opened from the Competencies
+                        tab is shown here: the scale means little
+                        on its own, and what a student needs is
+                        what the book asks of them at each rung of
+                        the competency in front of them.
+                    --}}
+                    <div x-show="competencyDetail || loadingCompetency" x-cloak>
+                        <div class="selected-filter">
+                            <span>
+                                <i class="fas fa-tools"></i>
+                                Showing
+                                <strong x-text="competencyDetail?.competency?.name || '…'"></strong>
+                            </span>
+                            <span class="remove" @click="clearCompetency()">
+                                <i class="fas fa-times"></i> Show the scales instead
+                            </span>
+                        </div>
+
+                        <div class="spinner-wrap" x-show="loadingCompetency">
+                            <div class="spinner"></div>
+                            <p>Loading competency…</p>
+                        </div>
+
+                        <template x-if="competencyDetail && !loadingCompetency">
+                            <div>
+                                <div class="overview-card">
+                                    <h4><i class="fas fa-info-circle"></i> <span x-text="competencyDetail.competency.name"></span></h4>
+                                    <p x-text="competencyDetail.competency.description"></p>
+                                </div>
+
+                                <template x-for="(set, index) in competencyDetail.sets" :key="index">
+                                    <div class="prof-scale">
+                                        <div class="prof-scale-heading">
+                                            <h4 x-text="set.scope ? set.scope : 'Proficiency levels'"></h4>
+                                            <span class="scale-note" x-text="set.levels.length + ' levels'"></span>
+                                        </div>
+
+                                        <template x-for="level in set.levels" :key="level.number">
+                                            <div class="prof-level"
+                                                 :class="{ required: requiredLevelNumber === level.number, absent: !level.described }">
+                                                <div class="level">
+                                                    <span x-text="level.number + '. ' + level.name"></span>
+                                                    <span class="required-flag" x-show="requiredLevelNumber === level.number">
+                                                        Required for <span x-text="selectedRole?.title"></span>
+                                                    </span>
+                                                </div>
+
+                                                <div class="desc" x-text="level.summary"></div>
+
+                                                <ul class="level-statements" x-show="level.statements.length">
+                                                    <template x-for="(statement, i) in level.statements" :key="i">
+                                                        <li x-text="statement"></li>
+                                                    </template>
+                                                </ul>
+
+                                                {{--
+                                                    The book prints nothing at this
+                                                    rung, which it means: the
+                                                    competency does not reach it.
+                                                --}}
+                                                <p class="comp-level-none" x-show="!level.described">
+                                                    The framework does not describe this competency at this level.
+                                                </p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+
+                    <div x-show="!competencyDetail && !loadingCompetency">
 
                     {{--
                         Two scales, not one. Technical skills are
@@ -1055,6 +1330,13 @@
                             @endforeach
                         </div>
                     @endforeach
+
+                        <p class="section-note">
+                            <i class="fas fa-lightbulb"></i>
+                            Pick a competency under <strong>Competencies</strong> to see what the
+                            framework asks of you at each of its levels.
+                        </p>
+                    </div>
                 </section>
 
                 <!-- Entry Requirements -->
@@ -1066,28 +1348,36 @@
                         <p>Loading role details…</p>
                     </div>
 
-                    <template x-if="selectedRole?.entry_requirement && !loadingRoleDetail">
+                    {{--
+                        Shown as the book writes it. A requirement
+                        often names two ways in, each with its own
+                        qualification level and years of
+                        experience, so reducing it to a single
+                        level and field of study would have to
+                        pick one and drop the other.
+                    --}}
+                    <template x-if="selectedRole && !loadingRoleDetail">
                         <div>
-                            <div class="req-item">
-                                <span class="label">Qualification Level</span>
-                                <span class="value" x-text="selectedRole.entry_requirement.level_label || 'Not specified'"></span>
-                            </div>
-                            <div class="req-item">
-                                <span class="label">Field of Study</span>
-                                <span class="value" x-text="selectedRole.entry_requirement.field_of_study || 'Not specified'"></span>
-                            </div>
-                            <div class="req-item" x-show="selectedRole.entry_requirement.years_experience">
-                                <span class="label">Years of Experience</span>
-                                <span class="value" x-text="selectedRole.entry_requirement.years_experience"></span>
-                            </div>
-                            <div class="req-item" x-show="selectedRole.entry_requirement.alternative_pathway">
-                                <span class="label">Alternative Pathway</span>
-                                <span class="value" x-text="selectedRole.entry_requirement.alternative_pathway"></span>
+                            <template x-for="tier in roleTiers" :key="tier.id">
+                                <div class="req-tier" x-show="tier.entry_requirements.length">
+                                    <h4 x-show="roleTiers.length > 1" x-text="tier.label"></h4>
+
+                                    <template x-for="req in tier.entry_requirements" :key="req.alternative_number">
+                                        <p class="req-text" x-text="req.text"></p>
+                                    </template>
+                                </div>
+                            </template>
+
+                            <div x-show="!roleTiers.some(t => t.entry_requirements.length)"
+                                 class="empty-state" style="padding:30px;">
+                                <i class="fas fa-info-circle"></i>
+                                <h4>No entry requirement published</h4>
+                                <p>The framework does not state one for this role.</p>
                             </div>
                         </div>
                     </template>
 
-                    <div x-show="!selectedRole?.entry_requirement && !loadingRoleDetail" class="empty-state" style="padding:40px;">
+                    <div x-show="!selectedRole && !loadingRoleDetail" class="empty-state" style="padding:40px;">
                         <i class="fas fa-hand-point-up"></i>
                         <h4>Select a job role first</h4>
                         <p>Go to "Job Roles" to see entry requirements for a specific role.</p>
@@ -1151,6 +1441,12 @@ function biicfExplorer() {
         loadingRoleDetail: false,
         roleSpecificFunctions: [],
         roleCompetenciesByType: {},
+        roleTiers: [],
+        activeTierId: null,
+        openCompetencyId: null,
+        competencyDetail: null,
+        requiredLevelNumber: null,
+        loadingCompetency: false,
         loadingComparison: false,
         loadingGlossary: false,
 
@@ -1218,6 +1514,11 @@ function biicfExplorer() {
             this.comparison = null;
             this.roleSpecificFunctions = [];
             this.roleCompetenciesByType = {};
+            this.roleTiers = [];
+            this.activeTierId = null;
+            this.openCompetencyId = null;
+            this.competencyDetail = null;
+            this.requiredLevelNumber = null;
             this.loadingRoleDetail = true;
             this.activeSection = 'career-paths';
             try {
@@ -1230,8 +1531,12 @@ function biicfExplorer() {
                  * Required proficiencies belong to a tier, so the
                  * role itself no longer carries a competencies
                  * list — reading one would have returned every
-                 * competency once per tier.
+                 * competency once per tier. The tiers come with
+                 * their own columns and the lowest is shown
+                 * first: what it takes to enter the role.
                  */
+                this.roleTiers = data.tiers || [];
+                this.activeTierId = this.roleTiers[0]?.id ?? null;
                 this.roleCompetenciesByType = data.competencies_by_type || {};
             } finally {
                 this.loadingRoleDetail = false;
@@ -1243,6 +1548,11 @@ function biicfExplorer() {
             this.comparison = null;
             this.roleSpecificFunctions = [];
             this.roleCompetenciesByType = {};
+            this.roleTiers = [];
+            this.activeTierId = null;
+            this.openCompetencyId = null;
+            this.competencyDetail = null;
+            this.requiredLevelNumber = null;
             this.compSearch = '';
             this.activeSection = 'job-roles';
         },
@@ -1268,11 +1578,49 @@ function biicfExplorer() {
             }
         },
 
+        get activeTier() {
+            return this.roleTiers.find(t => t.id === this.activeTierId) || null;
+        },
+
         filteredRoleCompetencies(type) {
-            const list = this.roleCompetenciesByType[type] || [];
+            /*
+             * From the tier being viewed, falling back to what
+             * the role came with so a role whose tiers have not
+             * been loaded still lists something.
+             */
+            const list = this.activeTier
+                ? (this.activeTier.competencies_by_type[type] || [])
+                : (this.roleCompetenciesByType[type] || []);
+
             if (!this.compSearch.trim()) return list;
             const q = this.compSearch.toLowerCase();
             return list.filter(c => c.name.toLowerCase().includes(q));
+        },
+
+        /*
+         * Opens a competency where the levels already live
+         * rather than unfolding a second copy of them in the
+         * list. The level the role requires is carried along so
+         * that rung can be marked once it is shown.
+         */
+        async openCompetency(id, requiredLevel) {
+            this.openCompetencyId = id;
+            this.requiredLevelNumber = requiredLevel?.number ?? null;
+            this.competencyDetail = null;
+            this.loadingCompetency = true;
+            this.activeSection = 'proficiency-levels';
+            try {
+                const res = await fetch(`/student/biicf-explorer/competencies/${id}`);
+                this.competencyDetail = await res.json();
+            } finally {
+                this.loadingCompetency = false;
+            }
+        },
+
+        clearCompetency() {
+            this.openCompetencyId = null;
+            this.competencyDetail = null;
+            this.requiredLevelNumber = null;
         },
 
         filteredGlossary(type) {

@@ -110,17 +110,82 @@ describe('the roles themselves', function () {
 
 describe('the content on a role page', function () {
     test('the description is the book\'s list, not one sentence', function () {
+        /*
+         * The first bullet the page prints, which is the first
+         * of the left column. The text this asserted before was
+         * another role's, read when the columns were still being
+         * interleaved.
+         */
         $role = BiicfJobRole::where('title', 'Application System Engineer')->sole();
 
         expect($role->descriptionPoints->count())->toBeGreaterThan(3)
             ->and($role->descriptionPoints->first()->text)
-            ->toStartWith('Analyse, design and develop roadmaps');
+            ->toStartWith('Plan, install, configure, test, and maintain system hardware');
+    });
+
+    test('a role\'s duties start where the book starts them', function () {
+        /*
+         * Application System Engineer's duties run over two
+         * columns of a three-column page, opening with System
+         * Implementation. Reading the columns in the wrong order
+         * would put a later group first.
+         */
+        $role = BiicfJobRole::where('title', 'Application System Engineer')->sole();
+
+        expect($role->genericWorkFunctions->first()->text)
+            ->toBe('System Implementation');
     });
 
     test('the duties come through as rows', function () {
         $role = BiicfJobRole::where('title', 'IT Technician')->sole();
 
         expect($role->criticalWorkFunctions->count())->toBeGreaterThan(5);
+    });
+
+    test('a role\'s duties are its own', function () {
+        /*
+         * The pages set the description and the duties in two
+         * text columns, and reading them from flattened text
+         * interleaved the columns: Business Development Manager
+         * came out holding Digital Marketing Executive's duties
+         * and then its training courses. Nothing in the duties
+         * of one role should be the training list of another.
+         */
+        $duties = BiicfCriticalWorkFunction::pluck('text');
+        $trainings = BiicfTraining::pluck('name');
+
+        expect($duties->intersect($trainings)->values()->all())->toBe([]);
+    });
+
+    test('the book\'s duty groupings survive', function () {
+        /*
+         * Most roles print their duties under headings of their
+         * own — "Website Design", "Research and Insight" — and a
+         * flat list reads as though a heading were itself a duty.
+         */
+        $role = BiicfJobRole::where('title', 'Business Development Manager')->sole();
+
+        $groups = $role->genericWorkFunctions()->has('children')->get();
+
+        expect($groups)->not->toBeEmpty()
+            ->and($groups->first()->children)->not->toBeEmpty();
+    });
+
+    test('a duty nested twice keeps both levels', function () {
+        /*
+         * IT Technician is one of two roles where the book goes
+         * three deep: a group, a duty under it, and its own
+         * sub-duties.
+         */
+        $role = BiicfJobRole::where('title', 'IT Technician')->sole();
+
+        $deep = $role->genericWorkFunctions()
+            ->with('children.children')
+            ->get()
+            ->flatMap(fn ($function) => $function->children)
+            ->filter(fn ($child) => $child->children->isNotEmpty());
+
+        expect($deep)->not->toBeEmpty();
     });
 
     test('loaded duties are generic until a family is named', function () {

@@ -280,6 +280,15 @@ Route::middleware([
                     [BiicfExplorerController::class, 'compareToMe']
                 )->name('job-role.compare');
 
+                /*
+                 * Before the listing, so "competencies/12" is
+                 * not read as a filter on the list.
+                 */
+                Route::get(
+                    '/competencies/{competency}',
+                    [BiicfExplorerController::class, 'competency']
+                )->name('competency.show');
+
                 Route::get(
                     '/competencies',
                     [BiicfExplorerController::class, 'competencies']

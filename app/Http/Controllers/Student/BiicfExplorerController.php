@@ -11,6 +11,7 @@ use App\Models\BiicfTraining;
 use App\Models\StudentCompetency;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -88,14 +89,21 @@ class BiicfExplorerController extends Controller
             'entryRequirement',
             'trainings',
             'tiers.competencies' => function ($q) {
-                $q->orderBy('type');
+                $q->orderBy('type')->orderBy('name');
             },
+            'tiers.jobLevel:id,name',
+            'tiers.entryRequirements',
             'progressesTo:id,title,slug',
             'progressesFrom:id,title,slug',
             'descriptionPoints',
-            'genericWorkFunctions.children',
+            /*
+             * Three levels deep: the book groups duties under
+             * headings of its own and nests a further level
+             * under some of them.
+             */
+            'genericWorkFunctions.children.children',
             'specificWorkFunctions.jobFamily',
-            'specificWorkFunctions.children',
+            'specificWorkFunctions.children.children',
         ]);
 
         /*
@@ -113,20 +121,135 @@ class BiicfExplorerController extends Controller
             ->values();
 
         /*
-         * Required proficiencies belong to tiers, one column of
-         * the book's table each, so reading the role's
-         * competencies directly would list every competency once
-         * per tier. Shown here is the lowest tier: what it takes
-         * to enter the role. Browsing the higher tiers is still
-         * to come.
+         * One tier per column of the book's table, each with its
+         * own proficiencies: Application Development is wanted at
+         * 1, 2 and 2 across IT Technician's three levels. The
+         * page lets a student switch between them.
+         */
+        $levels = BiicfProficiencyLevel::all()->keyBy('id');
+
+        $tiers = $jobRole->tiers->map(fn ($tier) => [
+            'id' => $tier->id,
+            'label' => $tier->label,
+            'job_level' => $tier->jobLevel?->name,
+            'entry_requirements' => $tier->entryRequirements
+                ->map(fn ($requirement) => [
+                    'alternative_number' => $requirement->alternative_number,
+                    'text' => $requirement->level_label,
+                    'measurable' => $requirement->isMeasurable(),
+                ])
+                ->values(),
+            'competencies_by_type' => $this->competenciesByType($tier, $levels),
+        ])->values();
+
+        /*
+         * The entry tier stays at the top level: it is what it
+         * takes to enter the role, and it is what the page shows
+         * before anyone picks a tier.
          */
         $entryCompetencies = $jobRole->tiers->first()?->competencies
             ?? collect();
 
         return response()->json([
             'job_role' => $jobRole,
+            'tiers' => $tiers,
             'competencies_by_type' => $entryCompetencies->groupBy('type'),
             'specific_work_functions_by_family' => $specificByFamily,
+        ]);
+    }
+
+    /**
+     * One tier's competencies, grouped as the book groups them.
+     *
+     * The proficiency is resolved here rather than in the page:
+     * the pivot carries an id, and the two scales number their
+     * rungs separately, so "3" means Apply on a technical
+     * competency and Advanced on a soft skill.
+     *
+     * @param  Collection<int, BiicfProficiencyLevel>  $levels
+     */
+    private function competenciesByType($tier, $levels)
+    {
+        return $tier->competencies
+            ->groupBy('type')
+            ->map(fn ($group) => $group->map(function ($competency) use ($levels) {
+                $level = $levels->get($competency->pivot->proficiency_level_id);
+
+                return [
+                    'id' => $competency->id,
+                    'name' => $competency->name,
+                    'type' => $competency->type,
+                    'is_core' => (bool) $competency->pivot->is_core,
+                    'level' => $level ? [
+                        'number' => $level->level_number,
+                        'name' => $level->name,
+                    ] : null,
+                ];
+            })->values());
+    }
+
+    /**
+     * One competency: what it is, and what each of its levels
+     * asks of someone.
+     *
+     * The book defines every competency once and then describes
+     * it rung by rung, which is the part a student actually
+     * needs — "Apply" alone says nothing about what applying
+     * Cloud Computing looks like.
+     *
+     * Four competencies are described differently depending on
+     * the role, so the descriptions come back as sets: the
+     * general one first, then any that name the roles they
+     * cover.
+     */
+    public function competency(BiicfCompetency $competency)
+    {
+        $competency->load('levelDescriptors.jobRoles:id,title,slug');
+
+        $scale = BiicfProficiencyLevel::where('scale', $competency->scale())
+            ->orderBy('level_number')
+            ->get();
+
+        $sets = $competency->levelDescriptors
+            ->groupBy(fn ($descriptor) => $descriptor->scope_label ?? '')
+            ->sortKeys()
+            ->map(fn ($descriptors, $scope) => [
+                'scope' => $scope ?: null,
+                'job_roles' => $descriptors->first()?->jobRoles
+                    ->pluck('title')
+                    ->values() ?? collect(),
+                'levels' => $scale->map(function ($level) use ($descriptors) {
+                    $descriptor = $descriptors->firstWhere(
+                        'proficiency_level_id',
+                        $level->id
+                    );
+
+                    return [
+                        'number' => $level->level_number,
+                        'name' => $level->name,
+                        'summary' => $level->description,
+                        'statements' => $descriptor->statements ?? [],
+                        /*
+                         * A level the book leaves out is not the
+                         * same as one it leaves empty: the
+                         * competency does not reach that rung at
+                         * all.
+                         */
+                        'described' => $descriptor !== null,
+                    ];
+                })->values(),
+            ])
+            ->values();
+
+        return response()->json([
+            'competency' => [
+                'id' => $competency->id,
+                'name' => $competency->name,
+                'type' => $competency->type,
+                'description' => $competency->description,
+                'scale' => $competency->scale(),
+            ],
+            'sets' => $sets,
         ]);
     }
 
