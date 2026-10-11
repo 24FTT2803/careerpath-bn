@@ -241,6 +241,19 @@ describe('the content on a role page', function () {
             ->toBeEmpty();
     });
 
+    test('a course name that wraps is one course', function () {
+        /*
+         * A wrapped line is indented past the bullet its entry
+         * started on, which is how it is told from a new course.
+         * Read by wording instead, "Visualization: Flare, …
+         * Google" and "Visualization API, and Raphael.js" came
+         * out as two.
+         */
+        expect(
+            BiicfTraining::where('name', 'like', 'Visualization:%')->value('name')
+        )->toEndWith('Raphael.js');
+    });
+
     test('the running footer is not a training course', function () {
         expect(
             BiicfTraining::where('name', 'like', '%Table of Contents%')

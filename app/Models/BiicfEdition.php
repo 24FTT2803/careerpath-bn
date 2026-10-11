@@ -83,4 +83,25 @@ class BiicfEdition extends Model
             'retired_in_edition_id'
         );
     }
+
+    /**
+     * What this edition proposes to change, awaiting review.
+     */
+    public function changes(): HasMany
+    {
+        return $this->hasMany(
+            BiicfEditionChange::class,
+            'edition_id'
+        );
+    }
+
+    /**
+     * Whether every difference has been decided one way or the
+     * other, which is what an edition needs before it can be
+     * applied.
+     */
+    public function isReviewed(): bool
+    {
+        return $this->changes()->pending()->doesntExist();
+    }
 }
