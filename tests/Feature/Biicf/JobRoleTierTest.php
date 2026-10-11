@@ -226,16 +226,35 @@ describe('tiered entry requirements', function () {
             ->toBeFalse();
     });
 
-    test('a requirement resting on experience cannot be measured', function () {
+    test('a requirement resting on experience says what else it wants', function () {
         /*
-         * Nothing in the system records work experience, so a
-         * requirement needing it is reported as undetermined
-         * rather than passed or failed.
+         * Nothing in the system records work experience or
+         * verifies a certification, so these are reported as
+         * what the role asks for beyond the qualification rather
+         * than passing or failing a student on something unseen.
+         * The level itself can still be checked.
          */
         $requirement = BiicfEntryRequirement::create([
             'job_role_tier_id' => tier(tieredRole(), 'Level 2', 2)->id,
             'bdqf_level' => 3,
             'requires_industry_experience' => true,
+        ]);
+
+        expect($requirement->isMeasurable())->toBeTrue()
+            ->and($requirement->hasConditionsBeyondQualification())->toBeTrue()
+            ->and($requirement->conditions())->toBe(['relevant industry experience']);
+    });
+
+    test('a requirement with nothing to compare cannot be measured', function () {
+        /*
+         * One alternative in the book names no level at all:
+         * "any relevant Project Management Certification with
+         * experience".
+         */
+        $requirement = BiicfEntryRequirement::create([
+            'job_role_tier_id' => tier(tieredRole(), 'Level 3', 3)->id,
+            'raw_text' => 'Any relevant Project Management Certification with experience',
+            'requires_industry_certification' => true,
         ]);
 
         expect($requirement->isMeasurable())->toBeFalse();

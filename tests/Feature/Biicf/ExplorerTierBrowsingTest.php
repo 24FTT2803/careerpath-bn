@@ -69,10 +69,21 @@ describe('a role carries every tier', function () {
         $response = $this->actingAs(explorerStudent())
             ->getJson(route('student.biicf-explorer.job-role.show', $role));
 
-        expect($response->json('tiers.0.entry_requirements.0.text'))
+        /*
+         * Two ways in, each with its own level and its own years,
+         * and the level is what a qualification is checked
+         * against. What the app cannot verify comes through
+         * beside it rather than as a verdict.
+         */
+        expect($response->json('tiers.0.entry_requirements'))->toHaveCount(2)
+            ->and($response->json('tiers.0.entry_requirements.0.text'))
             ->toContain('BDQF Level 6')
+            ->and($response->json('tiers.0.entry_requirements.0.bdqf_level'))
+            ->toBe(6)
             ->and($response->json('tiers.0.entry_requirements.0.measurable'))
-            ->toBeFalse();
+            ->toBeTrue()
+            ->and($response->json('tiers.0.entry_requirements.0.conditions'))
+            ->toContain('a related industry certification');
     });
 
     test('the entry tier is still at the top level', function () {

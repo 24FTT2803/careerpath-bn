@@ -361,7 +361,8 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {}
  },
  {
   "title": "Applications Developer",
@@ -874,7 +875,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science or related field with 3 years experience in related fields",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science or related field",
+     "years_experience": 3,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science or related field with 5 years of relevant industry experience or possess relevant portfolio/experience",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science or related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Artificial Intelligence Engineer",
@@ -1249,7 +1270,27 @@
      "Specialist": 4
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Artificial Intelligence, Computer Science, or any related field, with related industry certification, and a minimum of 5 years related working experience",
+     "bdqf_level": 6,
+     "field_of_study": "Artificial Intelligence, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Artificial Intelligence, Computer Science, Information Systems, or any related field, with relevant industry certification or portfolio, and a minimum of 8 years related working experience",
+     "bdqf_level": 5,
+     "field_of_study": "Artificial Intelligence, Computer Science, Information Systems, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Associate Security Analyst",
@@ -1620,7 +1661,27 @@
      "Entrant": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science or related field",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 4 in Information Systems, Computer Science or related field with 5 years relevant industry experience or possess relevant portfolio/ experience",
+     "bdqf_level": 4,
+     "field_of_study": "Information Systems, Computer Science or related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Business Development Manager",
@@ -1953,7 +2014,35 @@
      "Manager": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Manager": [
+    {
+     "raw_text": "BDQF Level 6 in Marketing, Business Administration, Creative Multimedia, or any related field with a minimum of 5 years of experience",
+     "bdqf_level": 6,
+     "field_of_study": "Marketing, Business Administration, Creative Multimedia, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, or any related field, with related Marketing or Creative Multimedia certification or possesses relevant portfolio/experience in Marketing with a minimum of 5 years of experience",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Marketing, Business Administration, Creative Multimedia, or any related field, with related industry certification or possesses relevant portfolio/ experience with a minimum of 8 years of experience",
+     "bdqf_level": 5,
+     "field_of_study": "Marketing, Business Administration, Creative Multimedia, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Business Intelligence Director",
@@ -2292,7 +2381,27 @@
      "C-Suite": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "C-Suite": [
+    {
+     "raw_text": "BDQF Level 6 in Business information systems, Information Technology, or related fields IT or related field, with related industry certification and minimum of 10 years’ experience at senior level",
+     "bdqf_level": 6,
+     "field_of_study": "Business information systems, Information Technology, or related fields IT or related field",
+     "years_experience": 10,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Business information systems, Information Technology, or related fields, with related industry certification and minimum of 12 years’ experience at senior level",
+     "bdqf_level": 5,
+     "field_of_study": "Business information systems, Information Technology, or related fields",
+     "years_experience": 12,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Chief Information Officer",
@@ -2694,7 +2803,27 @@
      "C-Suite": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "C-Suite": [
+    {
+     "raw_text": "BDQF Level 6 in IT or related field, with related industry certification and minimum of 10 years’ experience at senior level",
+     "bdqf_level": 6,
+     "field_of_study": "IT or related field",
+     "years_experience": 10,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in IT or related field, with related industry certification and minimum of 12 years’ experience at senior level",
+     "bdqf_level": 5,
+     "field_of_study": "IT or related field",
+     "years_experience": 12,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Chief Information Security Officer",
@@ -2993,7 +3122,27 @@
      "C-Suite": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "C-Suite": [
+    {
+     "raw_text": "BDQF Level 6 in IT Security, Information Systems, Computer Science or any related field, with related industry certification and minimum of 10 years’ experience at senior level",
+     "bdqf_level": 6,
+     "field_of_study": "IT Security, Information Systems, Computer Science or any related field",
+     "years_experience": 10,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science or any related field, with related industry certification and minimum of 12 years’ experience at senior level",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science or any related field",
+     "years_experience": 12,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Chief Marketing Officer",
@@ -3413,7 +3562,27 @@
      "C-Suite": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "C-Suite": [
+    {
+     "raw_text": "BDQF Level 6 in Business Administration (Marketing), Computer Science, Information Systems, Digital Marketing, Brand Strategy, Marketing and Development, Customer Experience or related field, with related industry certification and minimum of 10 years’ experience at senior level",
+     "bdqf_level": 6,
+     "field_of_study": "Business Administration (Marketing), Computer Science, Information Systems, Digital Marketing, Brand Strategy, Marketing and Development, Customer Experience or related field",
+     "years_experience": 10,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Business Administration (Marketing), Computer Science, Information Systems, Digital Marketing, Brand Strategy, Marketing and Development, Customer Experience or related field, with related industry certification and minimum of 12 years’ experience at senior level",
+     "bdqf_level": 5,
+     "field_of_study": "Business Administration (Marketing), Computer Science, Information Systems, Digital Marketing, Brand Strategy, Marketing and Development, Customer Experience or related field",
+     "years_experience": 12,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Chief Technology Officer",
@@ -3774,7 +3943,27 @@
      "C-Suite": 4
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "C-Suite": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, or any related field, with related industry certification and minimum of 10 years’ experience at managerial level",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 10,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, or any related field, with related industry certification and minimum of 12 years’ experience at senior level",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 12,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Customer Experience Manager",
@@ -4051,7 +4240,35 @@
      "Manager": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Manager": [
+    {
+     "raw_text": "BDQF Level 6 in Marketing, Business Administration, Creative Multimedia, or any related field, and minimum experience of 5 years",
+     "bdqf_level": 6,
+     "field_of_study": "Marketing, Business Administration, Creative Multimedia, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science or any related field, with related Marketing or Creative Multimedia certification or possesses relevant portfolio/experience in Marketing, and minimum experience of 5 years",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Marketing, Business Administration, Creative Multimedia, or any related field, with related industry certification or possesses relevant portfolio/ experience minimum of experience of 8 years",
+     "bdqf_level": 5,
+     "field_of_study": "Marketing, Business Administration, Creative Multimedia, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Cyber Risk Analyst",
@@ -4354,7 +4571,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science or related field with 4 years experience in relevant roles",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science or related field",
+     "years_experience": 4,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Cyber Risk Manager",
@@ -4660,7 +4897,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Cybersecurity, Computer Science, or any related field, with related industry certification, and minimum of 5 years of relevant working experience in cybersecurity or related domains",
+     "bdqf_level": 6,
+     "field_of_study": "Cybersecurity, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, or any related field, with related industry certification or possesses relevant portfolio/experience and a minimum of 8 years in cybersecurity, risk management or compliance",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Data Analyst",
@@ -5031,7 +5288,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field with relevant industry experience or possess relevant portfolio/experience",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Data Architect",
@@ -5330,7 +5607,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, or any related field, with related industry certification, and a minimum of 5 years of relevant experience",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, or any related field, with related industry certification or possesses relevant portfolio/ experience for at least 8 years",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Data Engineer",
@@ -5768,7 +6065,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 6 in Computer Science, Information Systems, Software Engineering or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Computer Science, Information Systems, Software Engineering or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Computer Science, Information Systems, Software Engineering or related field with minimum 5 years relevant experience and certification",
+     "bdqf_level": 5,
+     "field_of_study": "Computer Science, Information Systems, Software Engineering or related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Data Entry",
@@ -5985,7 +6302,19 @@
      "Entrant": 1
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 4 in Data Analytics, IT, Information Systems or related field",
+     "bdqf_level": 4,
+     "field_of_study": "Data Analytics, IT, Information Systems or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    }
+   ]
+  }
  },
  {
   "title": "Data Manager",
@@ -6247,7 +6576,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field with at least 3 years experience as a Data Analyst or similar role",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field",
+     "years_experience": 3,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field with relevant industry experience or possess relevant portfolio/experience with at least 3 years experience as a Data Analyst or similar role",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, Statistics, Mathematics, Actuarial Science or related field",
+     "years_experience": 3,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Data Scientist",
@@ -6610,7 +6959,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in IT, Computer Science, Mathematics, Statistics, Management Information Systems, Software Engineering or related field with minimum 6 years experience in related field",
+     "bdqf_level": 6,
+     "field_of_study": "IT, Computer Science, Mathematics, Statistics, Management Information Systems, Software Engineering or related field",
+     "years_experience": 6,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in IT, Computer Science, Mathematics, Statistics, Management Information Systems, Software Engineering or related field with 10 years relevant industry experience in data science field and certification",
+     "bdqf_level": 5,
+     "field_of_study": "IT, Computer Science, Mathematics, Statistics, Management Information Systems, Software Engineering or related field",
+     "years_experience": 10,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Digital Marketing Executive",
@@ -7077,7 +7446,19 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 5 in Marketing, Communications, Economics or related field with 5 years of experience in the field",
+     "bdqf_level": 5,
+     "field_of_study": "Marketing, Communications, Economics or related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "IT Administrator/Manager",
@@ -7411,7 +7792,27 @@
      "Expert/Management": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 6 in IT, Information Systems, Computer Science or related field",
+     "bdqf_level": 6,
+     "field_of_study": "IT, Information Systems, Computer Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in IT, Information Systems, Computer Science or related field with relevant industry experience or possess relevant portfolio/experience",
+     "bdqf_level": 5,
+     "field_of_study": "IT, Information Systems, Computer Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "IT Operations Manager",
@@ -7766,7 +8167,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, or any related field, with related industry certification, at least 5 years of relevant working experience",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, or any related field, with related industry certification or possesses relevant portfolio/experience at least 8 years of relevant working experience",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "IT Technician",
@@ -8180,7 +8601,47 @@
      "Level 3": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Level 1": [
+    {
+     "raw_text": "BDQF Level 2 in IT or related field with relevant industry experience",
+     "bdqf_level": 2,
+     "field_of_study": "IT or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ],
+   "Level 2": [
+    {
+     "raw_text": "BDQF Level 3 in IT or related field",
+     "bdqf_level": 3,
+     "field_of_study": "IT or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    }
+   ],
+   "Level 3": [
+    {
+     "raw_text": "BDQF Level 4 in IT or related field",
+     "bdqf_level": 4,
+     "field_of_study": "IT or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 3 in IT or related field with relevant industry certification",
+     "bdqf_level": 3,
+     "field_of_study": "IT or related field",
+     "years_experience": null,
+     "requires_industry_certification": true,
+     "requires_industry_experience": false
+    }
+   ]
+  }
  },
  {
   "title": "Infrastructure Engineer",
@@ -8535,7 +8996,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, or any related field, with related industry certification, and a minimum of 5 years of relevant experience",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, or any related field, with related industry certification or possesses relevant portfolio/experience and a minimum of 8 years of relevant experience",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Infrastructure Manager",
@@ -8837,7 +9318,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "Brunei Darussalam Qualification Framework (BDQF) Level 6 in Information Systems, Computer Science, or any related field, with related industry certification, and a minimum of 5 years of relevant experience",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "Brunei Darussalam Qualification Framework (BDQF) Level 5 in Information Systems, Computer Science, or any related field, with related industry certification or possesses relevant portfolio/experience and a minimum of 8 years of relevant experience",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Junior Programmer",
@@ -9165,7 +9666,8 @@
      "Entrant": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {}
  },
  {
   "title": "Market Analyst",
@@ -9493,7 +9995,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 5 in Marketing, Communications, Economics or related field with 5 years of experience in the field",
+     "bdqf_level": 5,
+     "field_of_study": "Marketing, Communications, Economics or related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 4 in Marketing, Communications, Economics or related field with 3 years of experience",
+     "bdqf_level": 4,
+     "field_of_study": "Marketing, Communications, Economics or related field",
+     "years_experience": 3,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Marketing Manager",
@@ -9886,7 +10408,35 @@
      "Specialist/Manager": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist/Manager": [
+    {
+     "raw_text": "BDQF Level 6 in Marketing, Business Administration, Creative Multimedia or any related field, or experience in Digital Marketing, Brand Strategy, Marketing and Development, Customer Experience with a minimum of 5 years of experience",
+     "bdqf_level": 6,
+     "field_of_study": "Marketing, Business Administration, Creative Multimedia or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science or any related field, with related Marketing or Creative Multimedia certification or possesses relevant portfolio/experience in Marketing, with a minimum of 5 years of experience",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science or any related field",
+     "years_experience": 5,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 5 in Marketing, Business Administration, Creative Multimedia or any related field, with related industry certification or possesses relevant portfolio/ experience in Digital Marketing, Brand Strategy, Marketing and Development, Customer Experience with a minimum of 8 years of experience",
+     "bdqf_level": 5,
+     "field_of_study": "Marketing, Business Administration, Creative Multimedia or any related field",
+     "years_experience": 8,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Network Engineer",
@@ -10324,7 +10874,29 @@
      "Expert/Management": 4
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 5 in IT, Telecommunications or related field",
+     "bdqf_level": 5,
+     "field_of_study": "IT, Telecommunications or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    }
+   ],
+   "Expert/Management": [
+    {
+     "raw_text": "BDQF Level 5 in IT, Telecommunications or related field and 3 years experience",
+     "bdqf_level": 5,
+     "field_of_study": "IT, Telecommunications or related field",
+     "years_experience": 3,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Network Team Lead",
@@ -10609,7 +11181,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Information Systems, Computer Science, or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Information Systems, Computer Science, or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Information Systems, Computer Science, or related field with relevant industry experience or possess relevant portfolio/experience",
+     "bdqf_level": 5,
+     "field_of_study": "Information Systems, Computer Science, or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Network Technician",
@@ -10848,7 +11440,27 @@
      "Entrant": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 4 in IT, Telecommunications Network or related field",
+     "bdqf_level": 4,
+     "field_of_study": "IT, Telecommunications Network or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 3 in IT, Telecommunications Network or related field with relevant industry certification",
+     "bdqf_level": 3,
+     "field_of_study": "IT, Telecommunications Network or related field",
+     "years_experience": null,
+     "requires_industry_certification": true,
+     "requires_industry_experience": false
+    }
+   ]
+  }
  },
  {
   "title": "Project Coordinator",
@@ -11098,7 +11710,27 @@
      "Entrant": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant": [
+    {
+     "raw_text": "BDQF Level 5 in IT-related field",
+     "bdqf_level": 5,
+     "field_of_study": "IT-related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "Any relevant Project Management Certification with experience",
+     "bdqf_level": null,
+     "field_of_study": null,
+     "years_experience": null,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Project Manager",
@@ -11366,7 +11998,27 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Business IT, Information Systems or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Business IT, Information Systems or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Business IT, Information Systems or related field with Project Management Certification and few years of experience",
+     "bdqf_level": 5,
+     "field_of_study": "Business IT, Information Systems or related field",
+     "years_experience": null,
+     "requires_industry_certification": true,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Security Engineer",
@@ -11693,7 +12345,35 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Cyber Security, IT Security Management, Information Security, Computer/System/Network Information Systems, Computer Science or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Cyber Security, IT Security Management, Information Security, Computer/System/Network Information Systems, Computer Science or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Cyber Security, IT Security Management, Information Security, Computer/System/Network Information Systems, Computer Science or related field with 4 to 6 years of experience",
+     "bdqf_level": 5,
+     "field_of_study": "Cyber Security, IT Security Management, Information Security, Computer/System/Network Information Systems, Computer Science or related field",
+     "years_experience": 6,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    },
+    {
+     "raw_text": "BDQF Level 4 in Cyber Security, IT Security Management, Information Security, Computer/System/Network Information Systems, Computer Science or related field with 6 to 8 years of relevant industry experience as a Security Analyst or similar role, or possess relevant portfolio/experience",
+     "bdqf_level": 4,
+     "field_of_study": "Cyber Security, IT Security Management, Information Security, Computer/System/Network Information Systems, Computer Science or related field",
+     "years_experience": 8,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Software Architect",
@@ -12048,7 +12728,8 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {}
  },
  {
   "title": "Software Development Manager",
@@ -12429,7 +13110,8 @@
      "Specialist": 3
     }
    }
-  ]
+  ],
+  "entry_requirements": {}
  },
  {
   "title": "Solutions Architect",
@@ -12794,7 +13476,27 @@
      "Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in Computer Science, IT, Software Engineering or related field",
+     "bdqf_level": 6,
+     "field_of_study": "Computer Science, IT, Software Engineering or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in Computer Science, IT, Software Engineering or related field with 6 years relevant industry experience",
+     "bdqf_level": 5,
+     "field_of_study": "Computer Science, IT, Software Engineering or related field",
+     "years_experience": 6,
+     "requires_industry_certification": false,
+     "requires_industry_experience": true
+    }
+   ]
+  }
  },
  {
   "title": "Systems Engineer",
@@ -13150,6 +13852,26 @@
      "Entrant or Specialist": 2
     }
    }
-  ]
+  ],
+  "entry_requirements": {
+   "Entrant or Specialist": [
+    {
+     "raw_text": "BDQF Level 6 in IT, Computer Science, Software Engineering, or related field",
+     "bdqf_level": 6,
+     "field_of_study": "IT, Computer Science, Software Engineering, or related field",
+     "years_experience": null,
+     "requires_industry_certification": false,
+     "requires_industry_experience": false
+    },
+    {
+     "raw_text": "BDQF Level 5 in IT, Computer Science, Software Engineering or related field with relevant industry certification",
+     "bdqf_level": 5,
+     "field_of_study": "IT, Computer Science, Software Engineering or related field",
+     "years_experience": null,
+     "requires_industry_certification": true,
+     "requires_industry_experience": false
+    }
+   ]
+  }
  }
 ]

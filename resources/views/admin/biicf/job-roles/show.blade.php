@@ -223,29 +223,45 @@
             </div>
         </div>
 
-        @if($jobRole->entryRequirement)
         <div class="card full-width">
             <div class="card-header">Entry Requirements</div>
             <div class="card-body">
-                <div class="info-row">
-                    <span class="label">BDQF Level</span>
-                    <span class="value">{{ $jobRole->entryRequirement->level_label ?? '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Field of Study</span>
-                    <span class="value">{{ $jobRole->entryRequirement->field_of_study ?? '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Years Experience</span>
-                    <span class="value">{{ $jobRole->entryRequirement->years_experience ?? '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Alternative Pathway</span>
-                    <span class="value">{{ $jobRole->entryRequirement->alternative_pathway ?? '-' }}</span>
-                </div>
+                {{--
+                    A tier can be entered more than one way, and
+                    meeting any one of them is enough. Each keeps
+                    the book's own sentence beside the level that
+                    a qualification is matched against.
+                --}}
+                @php
+                    $tiersWithRequirements = $jobRole->tiers
+                        ->filter(fn ($tier) => $tier->entryRequirements->isNotEmpty());
+                @endphp
+
+                @forelse($tiersWithRequirements as $tier)
+                    @if($jobRole->tiers->count() > 1)
+                        <h4>{{ $tier->label }}</h4>
+                    @endif
+
+                    @foreach($tier->entryRequirements as $requirement)
+                        <div class="req-alternative">
+                            <div class="req-alternative-head">
+                                <span class="badge badge-primary">
+                                    {{ $requirement->bdqf_level
+                                        ? 'BDQF Level '.$requirement->bdqf_level
+                                        : 'No level stated' }}
+                                </span>
+                                @foreach($requirement->conditions() as $condition)
+                                    <span class="badge badge-supporting">{{ $condition }}</span>
+                                @endforeach
+                            </div>
+                            <p>{{ $requirement->raw_text }}</p>
+                        </div>
+                    @endforeach
+                @empty
+                    <p>The framework states no entry requirement for this role.</p>
+                @endforelse
             </div>
         </div>
-        @endif
     </div>
 </div>
 
@@ -282,6 +298,10 @@
     .function-item:last-child { border-bottom: none; }
     .function-item i { color: #c9a84c; }
     .tier-note { margin: 0 0 14px; padding: 8px 12px; border-left: 3px solid #c9a84c; background: #fffbeb; font-size: 13px; color: #6b7280; }
+    .req-alternative { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .req-alternative:last-child { border-bottom: none; }
+    .req-alternative-head { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .req-alternative p { margin: 0; font-size: 14px; line-height: 1.6; color: #1a1a2e; }
     .function-item.is-nested { padding-left: 26px; }
     .function-item.is-nested i { font-size: 6px; color: #9ca3af; }
     .function-item.is-nested-twice { padding-left: 46px; }

@@ -299,12 +299,17 @@ class BiicfController extends Controller
         $jobRole->load([
             'subSector',
             'trainings',
-            'entryRequirement',
             'descriptionPoints',
-            'genericWorkFunctions.children',
+            /*
+             * Three levels deep: the book groups duties under
+             * headings of its own and nests a further level
+             * under some of them.
+             */
+            'genericWorkFunctions.children.children',
             'specificWorkFunctions.jobFamily',
-            'specificWorkFunctions.children',
+            'specificWorkFunctions.children.children',
             'tiers.competencies',
+            'tiers.entryRequirements',
         ]);
 
         /*

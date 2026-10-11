@@ -106,16 +106,69 @@ class BiicfEntryRequirement extends Model
     }
 
     /**
-     * Whether this alternative can be checked against a
-     * student's qualifications at all.
+     * Whether a qualification can be checked against this at all.
      *
-     * A requirement phrased as a range, or carrying an
-     * experience condition we hold no record of, is reported as
-     * undetermined rather than passed or failed.
+     * One alternative in the book names no level — "any relevant
+     * Project Management Certification with experience" — and
+     * there is nothing there to compare a qualification with.
      */
     public function isMeasurable(): bool
     {
-        return $this->bdqf_level !== null
-            && ! $this->requires_industry_experience;
+        return $this->bdqf_level !== null;
+    }
+
+    /**
+     * The years of experience asked for, as a number.
+     *
+     * The column is free text, and was filled with sentences by
+     * the seeder that preceded the book — "Level 2 requires
+     * relevant industry experience alongside BDQF Level 2". The
+     * book states a number, so that is what comes back here, and
+     * null where there is only prose to read.
+     */
+    public function getMinimumYearsAttribute(): ?int
+    {
+        return is_numeric($this->years_experience)
+            ? (int) $this->years_experience
+            : null;
+    }
+
+    /**
+     * Whether meeting the level is the whole of it.
+     *
+     * Most alternatives also want years in the field, or an
+     * industry certification. The app holds no verified record
+     * of either, so a student who clears the level is told they
+     * meet the qualification and what else the role asks for,
+     * rather than being passed or failed on something unseen.
+     */
+    public function hasConditionsBeyondQualification(): bool
+    {
+        return $this->requires_industry_certification
+            || $this->requires_industry_experience
+            || $this->years_experience !== null;
+    }
+
+    /**
+     * What the alternative asks for besides the qualification,
+     * in the words a student would use.
+     *
+     * @return array<int, string>
+     */
+    public function conditions(): array
+    {
+        $out = [];
+
+        if ($this->minimum_years !== null) {
+            $out[] = $this->minimum_years.' years of experience';
+        } elseif ($this->requires_industry_experience) {
+            $out[] = 'relevant industry experience';
+        }
+
+        if ($this->requires_industry_certification) {
+            $out[] = 'a related industry certification';
+        }
+
+        return $out;
     }
 }

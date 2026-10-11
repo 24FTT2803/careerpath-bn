@@ -389,37 +389,62 @@ class BiicfJobRoleSeeder extends Seeder
             ->each
             ->delete();
 
-        if (blank($entry['entry_requirements_raw'])) {
+        $this->syncEntryRequirements($role, $entry);
+    }
+
+    /**
+     * Write each tier's ways in, as the book separates them.
+     *
+     * A requirement is one paragraph on the page but a structure
+     * underneath: the ways in are separated by OR, each opening
+     * with a qualification level and the fields it accepts, then
+     * saying what else it wants. Two roles write a requirement
+     * per tier into that one paragraph, naming the tier in front
+     * of each.
+     *
+     * Each alternative keeps its own sentence, so a student
+     * reads the book's wording and a match can still be computed
+     * against the level.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function syncEntryRequirements(BiicfJobRole $role, array $entry): void
+    {
+        if ($entry['entry_requirements'] === []) {
             return;
         }
 
-        $first = $role->tiers()->first();
+        $tiers = $role->tiers()->get()->keyBy('label');
 
-        /*
-         * The book's wording, unsplit, replacing whatever the
-         * earlier approximation recorded. The structured columns
-         * are cleared rather than kept: they held a level and a
-         * field of study nobody read out of the book, and leaving
-         * them beside the real sentence would present a guess as
-         * the book's own requirement.
-         *
-         * bdqf_level stays null until the wording is split per
-         * tier and per alternative, so a qualification match
-         * reports that it cannot be determined rather than
-         * picking one number out of prose that names several.
-         */
-        BiicfEntryRequirement::updateOrCreate(
-            ['job_role_tier_id' => $first->id, 'alternative_number' => 1],
-            [
-                'raw_text' => $entry['entry_requirements_raw'],
-                'bdqf_level' => null,
-                'field_of_study' => null,
-                'years_experience' => null,
-                'alternative_pathway' => null,
-                'requires_industry_certification' => false,
-                'requires_industry_experience' => false,
-            ]
-        );
+        foreach ($entry['entry_requirements'] as $label => $alternatives) {
+            $tier = $tiers->get($label);
+
+            if ($tier === null) {
+                throw new RuntimeException(
+                    "{$role->title}: an entry requirement names a tier "
+                    ."\"{$label}\" the role does not have."
+                );
+            }
+
+            /*
+             * Only the alternatives the book supplies. An
+             * administrator can add a way in the framework does
+             * not list, and it takes the next number along;
+             * clearing the tier outright would delete it on
+             * every reload.
+             */
+            $tier->entryRequirements()
+                ->where('alternative_number', '<=', count($alternatives))
+                ->delete();
+
+            foreach ($alternatives as $index => $alternative) {
+                BiicfEntryRequirement::create([
+                    'job_role_tier_id' => $tier->id,
+                    'alternative_number' => $index + 1,
+                    ...$alternative,
+                ]);
+            }
+        }
     }
 
     /**

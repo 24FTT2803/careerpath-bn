@@ -633,6 +633,53 @@
         font-size: 14px;
     }
 
+    .req-text p {
+        margin: 0;
+    }
+
+    .req-head {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 6px;
+    }
+
+    .req-level {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: rgba(26, 58, 92, 0.08);
+        color: var(--primary);
+    }
+
+    .req-field {
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .req-conditions {
+        margin-top: 8px;
+        font-size: 12px;
+        color: var(--text-muted);
+    }
+
+    .req-conditions i {
+        color: var(--accent);
+        margin-right: 4px;
+    }
+
+    /* Either way in will do, which the wording alone can hide. */
+    .req-or {
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--text-muted);
+        margin: 2px 0 8px 4px;
+    }
+
     /* Which tier of a role's table is being shown. */
     .tier-pills {
         display: flex;
@@ -1362,8 +1409,31 @@
                                 <div class="req-tier" x-show="tier.entry_requirements.length">
                                     <h4 x-show="roleTiers.length > 1" x-text="tier.label"></h4>
 
-                                    <template x-for="req in tier.entry_requirements" :key="req.alternative_number">
-                                        <p class="req-text" x-text="req.text"></p>
+                                    {{--
+                                        The book usually gives two ways
+                                        in, and meeting either one is
+                                        enough. Numbered only when there
+                                        is a choice to make.
+                                    --}}
+                                    <template x-for="(req, index) in tier.entry_requirements" :key="req.alternative_number">
+                                        <div>
+                                            <div class="req-or" x-show="index > 0">or</div>
+
+                                            <div class="req-text">
+                                                <div class="req-head" x-show="req.bdqf_level">
+                                                    <span class="req-level" x-text="'BDQF Level ' + req.bdqf_level"></span>
+                                                    <span class="req-field" x-text="req.field_of_study"></span>
+                                                </div>
+
+                                                <p x-text="req.text"></p>
+
+                                                <div class="req-conditions" x-show="req.conditions.length">
+                                                    <i class="fas fa-plus-circle"></i>
+                                                    Also asks for
+                                                    <span x-text="req.conditions.join(' and ')"></span>.
+                                                </div>
+                                            </div>
+                                        </div>
                                     </template>
                                 </div>
                             </template>

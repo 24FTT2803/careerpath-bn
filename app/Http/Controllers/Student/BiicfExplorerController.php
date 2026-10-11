@@ -135,7 +135,10 @@ class BiicfExplorerController extends Controller
             'entry_requirements' => $tier->entryRequirements
                 ->map(fn ($requirement) => [
                     'alternative_number' => $requirement->alternative_number,
-                    'text' => $requirement->level_label,
+                    'text' => $requirement->raw_text,
+                    'bdqf_level' => $requirement->bdqf_level,
+                    'field_of_study' => $requirement->field_of_study,
+                    'conditions' => $requirement->conditions(),
                     'measurable' => $requirement->isMeasurable(),
                 ])
                 ->values(),

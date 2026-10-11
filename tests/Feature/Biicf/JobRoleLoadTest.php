@@ -425,16 +425,69 @@ describe('entry requirements', function () {
             ->toContain('10 years');
     });
 
-    test('a requirement naming several levels is not reduced to one', function () {
+    test('a requirement naming several ways in keeps them all', function () {
         /*
          * Chief Technology Officer accepts BDQF 6 with ten years
-         * or BDQF 5 with twelve. Picking a number out of that
-         * would make the match wrong rather than undetermined.
+         * or BDQF 5 with twelve. Reducing that to one row had to
+         * drop one of them; they are two alternatives, and
+         * meeting either is enough.
          */
-        $role = BiicfJobRole::where('title', 'Chief Technology Officer')->sole();
+        $tier = BiicfJobRole::where('title', 'Chief Technology Officer')
+            ->sole()
+            ->entryTier;
 
-        expect($role->entryRequirement->bdqf_level)->toBeNull()
-            ->and($role->entryRequirement->isMeasurable())->toBeFalse();
+        expect($tier->entryRequirements->pluck('bdqf_level')->all())->toBe([6, 5])
+            ->and($tier->entryRequirements->first()->minimum_years)->toBe(10)
+            ->and($tier->entryRequirements->last()->minimum_years)->toBe(12);
+    });
+
+    test('what a role asks for beyond the qualification is kept apart', function () {
+        /*
+         * The app holds no verified record of industry
+         * certifications or years served, so these are shown as
+         * what else the role asks for rather than being matched.
+         */
+        $requirement = BiicfJobRole::where('title', 'Chief Technology Officer')
+            ->sole()
+            ->entryTier
+            ->entryRequirements
+            ->first();
+
+        expect($requirement->isMeasurable())->toBeTrue()
+            ->and($requirement->hasConditionsBeyondQualification())->toBeTrue()
+            ->and($requirement->conditions())
+            ->toContain('a related industry certification');
+    });
+
+    test('an alternative naming no level says so', function () {
+        /*
+         * Project Coordinator accepts "any relevant Project
+         * Management Certification with experience", which has no
+         * level in it to compare a qualification with.
+         */
+        $alternatives = BiicfJobRole::where('title', 'Project Coordinator')
+            ->sole()
+            ->entryTier
+            ->entryRequirements;
+
+        expect($alternatives->where('bdqf_level', null)->count())->toBe(1)
+            ->and($alternatives->firstWhere('bdqf_level', null)->isMeasurable())
+            ->toBeFalse();
+    });
+
+    test('a requirement written per tier lands on its own tier', function () {
+        /*
+         * IT Technician writes three requirements into one
+         * paragraph, naming the tier in front of each, and
+         * Network Engineer two.
+         */
+        $role = BiicfJobRole::where('title', 'IT Technician')->sole();
+
+        $levels = $role->tiers->map(
+            fn ($tier) => $tier->entryRequirements->pluck('bdqf_level')->all()
+        );
+
+        expect($levels->all())->toBe([[2], [3], [4, 3]]);
     });
 
     test('an unmeasurable requirement still prints', function () {
@@ -550,9 +603,15 @@ describe('re-running the load', function () {
             ->sole()
             ->entryRequirement;
 
-        expect($requirement->raw_text)->toContain('IT Technician Level 1')
-            ->and($requirement->bdqf_level)->toBeNull()
-            ->and($requirement->field_of_study)->toBeNull();
+        /*
+         * The entry tier's own way in, with the tier's name
+         * stripped from the front of it: the paragraph names
+         * three tiers, and each one's sentence belongs to its
+         * own tier rather than to the first.
+         */
+        expect($requirement->raw_text)->toContain('BDQF Level 2 in IT')
+            ->and($requirement->raw_text)->not->toContain('IT Technician Level 2')
+            ->and($requirement->bdqf_level)->toBe(2);
     });
 
     test('a competency the earlier seeder spelled differently is folded in', function () {
