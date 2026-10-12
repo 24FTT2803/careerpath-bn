@@ -46,6 +46,9 @@ class EditionComparer
     /** @var array<int, array<string, mixed>> */
     private array $changes = [];
 
+    /** @var array<int, string> */
+    private array $skipped = [];
+
     /**
      * @param  array<string, mixed>  $payload  the extracted edition
      */
@@ -55,8 +58,47 @@ class EditionComparer
         string $strategy = self::STRATEGY_CHANGED
     ): int {
         $this->changes = [];
+        $this->skipped = [];
+
+        $seen = [];
 
         foreach ($payload['job_roles'] ?? [] as $role) {
+            $title = $role['title'] ?? null;
+
+            if ($title === null) {
+                continue;
+            }
+
+            /*
+             * The book prints Chief Technology Officer twice,
+             * once under Telecommunications and Network and
+             * again under Applications and Solutions Development,
+             * with different duties under each. The framework
+             * holds one role per title, so the second printing
+             * has nowhere to go: compared as well, it collides
+             * with the first on every field it touches.
+             *
+             * The first is compared and the second is reported
+             * rather than dropped quietly, because an edition
+             * that silently ignores a page of the book is worse
+             * than one that says it could not use it.
+             */
+            if (isset($seen[$title])) {
+                $this->skipped[] = sprintf(
+                    'The book prints %s twice — under %s and again under %s. The '
+                    .'framework holds one role per title, so only the first was '
+                    .'compared. Enter the second by hand if it should be a role '
+                    .'of its own.',
+                    $title,
+                    $seen[$title],
+                    $role['sub_sector'] ?? 'another sub-sector'
+                );
+
+                continue;
+            }
+
+            $seen[$title] = $role['sub_sector'] ?? 'an unnamed sub-sector';
+
             $this->compareRole($role, $strategy);
         }
 
@@ -67,6 +109,16 @@ class EditionComparer
         $this->flagRemovedRoles($payload['job_roles'] ?? [], $strategy);
 
         return $this->write($edition);
+    }
+
+    /**
+     * What the edition held that the framework had no place for.
+     *
+     * @return array<int, string>
+     */
+    public function skipped(): array
+    {
+        return $this->skipped;
     }
 
     /**
@@ -100,15 +152,36 @@ class EditionComparer
             return;
         }
 
-        $this->field($subject, 'sub_sector', $existing->subSector?->name, $role['sub_sector'], $strategy);
-        $this->field($subject, 'alternative_titles', $existing->alternative_titles ?? [], $role['alternate_titles'], $strategy);
-        $this->field(
-            $subject,
-            'description',
-            $existing->descriptionPoints->pluck('text')->all(),
-            $role['description'],
-            $strategy
-        );
+        /*
+         * Only the fields the edition actually states.
+         *
+         * A reader that could not make sense of something leaves
+         * it out rather than proposing a guess, and the book
+         * itself leaves fields empty — IT Technician is printed
+         * with no recommended courses at all. A field that is not
+         * there is not a field saying "nothing": treated as one,
+         * it proposes emptying what the framework holds, and an
+         * administrator working down a long list could approve
+         * that without ever seeing what it really was.
+         */
+        if (array_key_exists('sub_sector', $role)) {
+            $this->field($subject, 'sub_sector', $existing->subSector?->name, $role['sub_sector'], $strategy);
+        }
+
+        if (array_key_exists('alternate_titles', $role)) {
+            $this->field($subject, 'alternative_titles', $existing->alternative_titles ?? [], $role['alternate_titles'], $strategy);
+        }
+
+        if (array_key_exists('description', $role)) {
+            $this->field(
+                $subject,
+                'description',
+                $existing->descriptionPoints->pluck('text')->all(),
+                $role['description'],
+                $strategy
+            );
+        }
+
         /*
          * As a set, which is what a role's courses are: the
          * pivot cannot hold one twice, and the book repeats a
@@ -116,23 +189,33 @@ class EditionComparer
          * order courses are listed in is not something the
          * framework states.
          */
-        $this->field(
-            $subject,
-            'trainings',
-            $existing->trainings->pluck('name')->unique()->sort()->values()->all(),
-            collect($role['trainings'])->unique()->sort()->values()->all(),
-            $strategy
-        );
-        $this->field(
-            $subject,
-            'tiers',
-            $existing->tiers->pluck('label')->all(),
-            $role['tiers'],
-            $strategy
-        );
+        if (array_key_exists('trainings', $role)) {
+            $this->field(
+                $subject,
+                'trainings',
+                $existing->trainings->pluck('name')->unique()->sort()->values()->all(),
+                collect($role['trainings'])->unique()->sort()->values()->all(),
+                $strategy
+            );
+        }
 
-        $this->compareRequirements($subject, $existing, $role, $strategy);
-        $this->compareTable($subject, $existing, $role, $strategy);
+        if (array_key_exists('tiers', $role)) {
+            $this->field(
+                $subject,
+                'tiers',
+                $existing->tiers->pluck('label')->all(),
+                $role['tiers'],
+                $strategy
+            );
+        }
+
+        if (array_key_exists('entry_requirements', $role)) {
+            $this->compareRequirements($subject, $existing, $role, $strategy);
+        }
+
+        if (array_key_exists('competencies', $role)) {
+            $this->compareTable($subject, $existing, $role, $strategy);
+        }
     }
 
     /**
@@ -181,20 +264,52 @@ class EditionComparer
         $levels = BiicfProficiencyLevel::all()->keyBy('id');
 
         $current = [];
+
+        /*
+         * Indexed by what two spellings of a name have in
+         * common, so that the book's spelling finds the
+         * framework's.
+         *
+         * They differ constantly: "Creativity & Innovation" for
+         * "Creativity and Innovation", "Systems Integration" for
+         * "System Integration", "Decision-making/ Judgement" for
+         * "Decision-Making". Matched literally, each is a
+         * competency added and another removed — two entries to
+         * think about, over an ampersand — and where the two
+         * differ only in case, which the table's unique index
+         * does not, the pair collide on insert and the whole
+         * edition fails.
+         *
+         * {@see CompetencyName} decides what counts as the same.
+         */
+        $named = [];
+
         foreach ($existing->tiers as $tier) {
             foreach ($tier->competencies as $competency) {
                 $level = $levels->get($competency->pivot->proficiency_level_id);
 
                 $current[$competency->name][$tier->label] = $level?->level_number;
+                $named[CompetencyName::key($competency->name)] = $competency->name;
             }
         }
 
+        $matched = [];
+
         foreach ($role['competencies'] ?? [] as $row) {
+            /*
+             * Named as the framework names it where it knows it,
+             * so the field a difference is recorded against stays
+             * the same between editions.
+             */
+            $name = $named[CompetencyName::key($row['name'])] ?? $row['name'];
+
+            $matched[$name] = true;
+
             foreach ($row['levels'] as $label => $number) {
                 $this->field(
                     $subject,
-                    "competencies.{$row['name']}.{$label}",
-                    $current[$row['name']][$label] ?? null,
+                    "competencies.{$name}.{$label}",
+                    $current[$name][$label] ?? null,
                     $number,
                     $strategy
                 );
@@ -207,10 +322,8 @@ class EditionComparer
          * dropping a requirement is a change a student should
          * see, once an administrator agrees it.
          */
-        $proposed = collect($role['competencies'] ?? [])->pluck('name')->all();
-
         foreach ($current as $name => $byTier) {
-            if (in_array($name, $proposed, true)) {
+            if (isset($matched[$name])) {
                 continue;
             }
 
@@ -401,12 +514,45 @@ class EditionComparer
 
         $edition->changes()->pending()->delete();
 
+        /*
+         * Two differences that the database would consider one.
+         *
+         * A change is identified by its subject and field, and
+         * the index enforcing that does not distinguish case. So
+         * two fields differing only in a capital letter are one
+         * row as far as the table is concerned, and writing both
+         * fails the whole edition rather than the one row.
+         *
+         * The first is kept and the second reported. It is a
+         * difference going unreviewed either way; this way it
+         * is one somebody has been told about.
+         */
+        $written = [];
+
         foreach ($this->changes as $change) {
             $key = $change['subject_type'].'|'.$change['subject_key'].'|'.$change['field'];
 
             if ($decided->has($key)) {
                 continue;
             }
+
+            $folded = mb_strtolower($key);
+
+            if (isset($written[$folded])) {
+                if ($written[$folded] !== $change['field']) {
+                    $this->skipped[] = sprintf(
+                        '%s has two differences the review cannot tell apart — "%s" '
+                        .'and "%s" differ only in case. The first was kept.',
+                        $change['subject_label'] ?? $change['subject_key'],
+                        $written[$folded],
+                        $change['field']
+                    );
+                }
+
+                continue;
+            }
+
+            $written[$folded] = $change['field'];
 
             $edition->changes()->create($change);
         }

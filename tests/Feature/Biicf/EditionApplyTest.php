@@ -4,6 +4,7 @@ use App\Models\BiicfEdition;
 use App\Models\BiicfEditionChange;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
+use App\Models\BiicfSubSector;
 use App\Models\User;
 use App\Services\Biicf\EditionApplier;
 use App\Services\Biicf\EditionComparer;
@@ -210,6 +211,58 @@ describe('carrying out a decision', function () {
         expect($role->exists)->toBeTrue()
             ->and($role->retired_in_edition_id)->toBe($this->edition->id)
             ->and($role->isRetired())->toBeTrue();
+    });
+
+    test('a sub-sector spelled differently is the same sub-sector', function () {
+        /*
+         * The book prints "Telecommunications and Network" on
+         * four pages and "Telecommunications and Networks" on
+         * two. Matched exactly, the plural made a seventh
+         * sub-sector and moved two roles into it, splitting a
+         * part of the framework in half — and a sub-sector takes
+         * its roles with it when deleted, so tidying that up by
+         * hand is one click from losing them.
+         */
+        $before = BiicfSubSector::count();
+
+        $role = BiicfJobRole::where('title', 'Data Entry')->sole();
+
+        stagedChange($this->edition, [
+            'subject_key' => 'Data Entry',
+            'subject_label' => 'Data Entry',
+            'field' => 'sub_sector',
+            'kind' => BiicfEditionChange::KIND_CHANGED,
+            'current_value' => $role->subSector->name,
+            'proposed_value' => $role->subSector->name.'s',
+        ]);
+
+        (new EditionApplier)->apply($this->edition);
+
+        expect(BiicfSubSector::count())->toBe($before)
+            ->and($role->fresh()->sub_sector_id)->toBe($role->sub_sector_id);
+    });
+
+    test('a sub-sector the framework really lacks is added at the end', function () {
+        /*
+         * Not at nought, which is where the first one already
+         * sits.
+         */
+        stagedChange($this->edition, [
+            'subject_key' => 'Data Entry',
+            'subject_label' => 'Data Entry',
+            'field' => 'sub_sector',
+            'kind' => BiicfEditionChange::KIND_CHANGED,
+            'current_value' => 'Data and Artificial Intelligence',
+            'proposed_value' => 'Quantum Computing',
+        ]);
+
+        $highest = (int) BiicfSubSector::max('sort_order');
+
+        (new EditionApplier)->apply($this->edition);
+
+        $added = BiicfSubSector::where('name', 'Quantum Computing')->sole();
+
+        expect($added->sort_order)->toBe($highest + 1);
     });
 
     test('a role the edition adds is created whole', function () {

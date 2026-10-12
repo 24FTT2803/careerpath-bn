@@ -9,22 +9,6 @@ use UnexpectedValueException;
 
 class CareerRecommendationEnricher
 {
-    private const PROFICIENCY_LEVELS = [
-        'follow' => 1,
-        'assist' => 2,
-        'apply' => 3,
-        'ensure' => 4,
-        'strategise' => 5,
-    ];
-
-    private const PROFICIENCY_LABELS = [
-        1 => 'Follow',
-        2 => 'Assist',
-        3 => 'Apply',
-        4 => 'Ensure',
-        5 => 'Strategise',
-    ];
-
     /**
      * Add deterministic BIICF competency analysis to one
      * AI-selected recommendation.
@@ -67,7 +51,8 @@ class CareerRecommendationEnricher
                 'proficiency_level',
             ])
             ->keyBy(
-                fn ($competency) => $this->normaliseName($competency->skill_name)
+                fn ($competency) =>
+                    $this->normaliseName($competency->skill_name)
             );
 
         /*
@@ -76,9 +61,29 @@ class CareerRecommendationEnricher
          * scale and nothing else in the table; with the soft
          * skill scale alongside it they do not, so the level has
          * to be looked up rather than assumed.
+         *
+         * The scale is looked up with it, because a number means
+         * nothing on its own here. Advanced is the third of a
+         * soft skill's four rungs and Apply is the third of a
+         * technical competency's five, and they are not the same
+         * requirement — nor is either the same fraction of what
+         * the job asks for.
          */
-        $levelNumbers = BiicfProficiencyLevel::query()
-            ->pluck('level_number', 'id');
+        $levels = BiicfProficiencyLevel::all();
+
+        $rungs = $levels->keyBy('id');
+
+        /* What each rung is called, within its own scale. */
+        $named = $levels
+            ->groupBy('scale')
+            ->map(fn ($scale) => $scale->pluck('name', 'level_number'));
+
+        /* And the way back, for reading what a student recorded. */
+        $numbered = $named->map(
+            fn ($byNumber) => $byNumber->mapWithKeys(
+                fn (string $name, int $number) => [mb_strtolower(trim($name)) => $number]
+            )
+        );
 
         $entryCompetencies = $role->tiers->first()?->competencies
             ?? collect();
@@ -90,27 +95,40 @@ class CareerRecommendationEnricher
         $requirementCount = 0;
 
         foreach ($entryCompetencies as $competency) {
-            $requiredLevel = (int) (
-                $levelNumbers[$competency->pivot->proficiency_level_id]
-                ?? 0
-            );
+            $rung = $rungs->get($competency->pivot->proficiency_level_id);
 
-            if (
-                $requiredLevel < 1
-                || $requiredLevel > 5
-            ) {
+            $requiredLevel = (int) ($rung?->level_number ?? 0);
+
+            /*
+             * Checked against the length of its own scale. The
+             * old ceiling of five was the technical scale's, and
+             * a soft skill can only reach four — so nothing a
+             * soft skill could get wrong was ever caught by it.
+             */
+            if ($rung === null || $requiredLevel < 1 || $requiredLevel > $rung->scaleLength()) {
                 throw new UnexpectedValueException(
                     "BIICF competency {$competency->id} has an invalid required proficiency level."
                 );
             }
 
+            $scale = $rung->scale;
+
             $studentCompetency = $studentCompetencies->get(
                 $this->normaliseName($competency->name)
             );
 
+            /*
+             * Read on the scale the competency is rated on. A
+             * student who recorded a soft skill as "Advanced"
+             * used to come out at nothing at all, because the
+             * only words this knew were the technical ones —
+             * so every soft skill they had was reported as a
+             * gap they did not have.
+             */
             $currentLevel = $studentCompetency
                 ? $this->proficiencyValue(
-                    $studentCompetency->proficiency_level
+                    $studentCompetency->proficiency_level,
+                    $numbered->get($scale)?->all() ?? []
                 )
                 : 0;
 
@@ -126,27 +144,36 @@ class CareerRecommendationEnricher
 
             if ($gap > 0) {
                 $skillGaps[] = [
-                    'skill_name' => $competency->name,
+                    'skill_name' =>
+                        $competency->name,
 
-                    'skill_type' => $competency->type === 'soft_skill'
+                    'skill_type' =>
+                        $competency->type === 'soft_skill'
                             ? 'soft'
                             : 'technical',
 
-                    'current_level' => $currentLevel > 0
-                            ? self::PROFICIENCY_LABELS[$currentLevel]
+                    'current_level' =>
+                        $currentLevel > 0
+                            ? ($named->get($scale)[$currentLevel] ?? (string) $currentLevel)
                             : 'Not recorded',
 
-                    'current_level_value' => $currentLevel,
+                    'current_level_value' =>
+                        $currentLevel,
 
-                    'recommended_level' => self::PROFICIENCY_LABELS[$requiredLevel],
+                    'recommended_level' =>
+                        $named->get($scale)[$requiredLevel] ?? (string) $requiredLevel,
 
-                    'required_level' => $requiredLevel,
+                    'required_level' =>
+                        $requiredLevel,
 
-                    'required_label' => self::PROFICIENCY_LABELS[$requiredLevel],
+                    'required_label' =>
+                        $named->get($scale)[$requiredLevel] ?? (string) $requiredLevel,
 
-                    'gap' => $gap,
+                    'gap' =>
+                        $gap,
 
-                    'is_core' => (bool) $competency->pivot->is_core,
+                    'is_core' =>
+                        (bool) $competency->pivot->is_core,
                 ];
             }
 
@@ -202,26 +229,38 @@ class CareerRecommendationEnricher
         return [
             ...$recommendation,
 
-            'matched_skills' => array_values(
-                array_unique($matchedSkills)
-            ),
+            'matched_skills' =>
+                array_values(
+                    array_unique($matchedSkills)
+                ),
 
-            'skill_gaps' => $skillGaps,
+            'skill_gaps' =>
+                $skillGaps,
 
-            'career_readiness_score' => $readinessScore,
+            'career_readiness_score' =>
+                $readinessScore,
         ];
     }
 
+    /**
+     * What a recorded label is worth, on one named scale.
+     *
+     * A label only means something within its own scale, so the
+     * scale is passed in rather than assumed: "Advanced" is a
+     * soft skill's third rung and means nothing at all against
+     * the technical one.
+     *
+     * @param  array<string, int>  $scale
+     */
     private function proficiencyValue(
-        ?string $label
+        ?string $label,
+        array $scale
     ): int {
         if (! $label) {
             return 0;
         }
 
-        return self::PROFICIENCY_LEVELS[
-            strtolower(trim($label))
-        ] ?? 0;
+        return $scale[mb_strtolower(trim($label))] ?? 0;
     }
 
     private function normaliseName(

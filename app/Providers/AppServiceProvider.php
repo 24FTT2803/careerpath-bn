@@ -14,6 +14,10 @@ use App\Services\AI\MockCareerAdviserClient;
 use App\Services\AI\MockCareerAiClient;
 use App\Services\AI\OpenAiCompatibleClient;
 use App\Services\AI\OpenRouterClient;
+use App\Services\Biicf\EditionExtractor;
+use App\Services\Biicf\EditionExtractors;
+use App\Services\Biicf\JsonEditionExtractor;
+use App\Services\Biicf\PdfEditionExtractor;
 use App\Services\Business\AdvertisementService;
 use App\Services\Student\StudentAttention;
 use Illuminate\Support\Facades\Auth;
@@ -29,6 +33,20 @@ class AppServiceProvider extends ServiceProvider
          * the same "new" badge checks instead of repeating them.
          */
         $this->app->scoped(StudentAttention::class);
+
+        /*
+         * How an uploaded edition is read. Bound separately from
+         * everything that uses what comes out, so a reader tuned
+         * to one printing of the book can be replaced without
+         * touching the comparison or the review queue.
+         */
+        $this->app->bind(
+            EditionExtractor::class,
+            fn () => new EditionExtractors(
+                new PdfEditionExtractor,
+                new JsonEditionExtractor,
+            )
+        );
 
         /*
          * Which service runs the model. Bound separately from the

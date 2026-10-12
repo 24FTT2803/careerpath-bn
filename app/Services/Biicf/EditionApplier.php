@@ -7,7 +7,6 @@ use App\Models\BiicfEdition;
 use App\Models\BiicfEditionChange;
 use App\Models\BiicfEntryRequirement;
 use App\Models\BiicfJobDescriptionPoint;
-use App\Models\BiicfJobLevel;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
@@ -228,12 +227,61 @@ class EditionApplier
             return;
         }
 
-        $subSector = BiicfSubSector::firstOrCreate(
-            ['slug' => Str::slug(str_replace(['/', '&'], '-', $name))],
-            ['name' => $name]
-        );
+        /*
+         * An existing sub-sector first, matched loosely.
+         *
+         * The framework has six, and the book spells two of them
+         * more than one way: "Telecommunications and Network" on
+         * four pages and "Telecommunications and Networks" on two.
+         * Matched exactly, the second spelling made a seventh
+         * sub-sector and moved two roles into it, splitting a
+         * part of the framework in half over a plural — and a
+         * sub-sector deletes its roles with it, so tidying that
+         * up by hand is one click away from losing them.
+         */
+        $loose = self::looseName($name);
+
+        $subSector = BiicfSubSector::all()
+            ->first(fn (BiicfSubSector $sector) => self::looseName($sector->name) === $loose);
+
+        if ($subSector === null) {
+            $subSector = BiicfSubSector::create([
+                'name' => $name,
+                'slug' => Str::slug(str_replace(['/', '&'], '-', $name)),
+                /*
+                 * At the end, rather than at nought alongside
+                 * whatever already sits there.
+                 */
+                'sort_order' => (int) BiicfSubSector::max('sort_order') + 1,
+            ]);
+        }
 
         $role->update(['sub_sector_id' => $subSector->id]);
+    }
+
+    /**
+     * A sub-sector's name reduced to what its spellings share.
+     *
+     * The same idea as {@see CompetencyName}, kept separate
+     * because that one carries a list of competency pairs no
+     * rule would find, and none of it applies here: there are
+     * six sub-sectors and the only way the book varies them is
+     * a plural and a capital letter.
+     */
+    private static function looseName(string $name): string
+    {
+        $name = str_replace('&', ' and ', mb_strtolower(trim($name)));
+        $name = (string) preg_replace('/[^a-z ]/u', ' ', $name);
+
+        $words = [];
+
+        foreach (preg_split('/\s+/u', trim($name)) ?: [] as $word) {
+            if ($word !== '') {
+                $words[] = rtrim($word, 's');
+            }
+        }
+
+        return implode('', $words);
     }
 
     /**
@@ -277,7 +325,7 @@ class EditionApplier
                 ['job_role_id' => $role->id, 'label' => $label],
                 [
                     'sort_order' => $index + 1,
-                    'job_level_id' => BiicfJobLevel::where('name', $label)->value('id'),
+                    'job_level_id' => \App\Models\BiicfJobLevel::where('name', $label)->value('id'),
                 ]
             )->id;
         }

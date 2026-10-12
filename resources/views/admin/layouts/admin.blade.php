@@ -1214,6 +1214,27 @@
                     <i class="fas fa-graduation-cap"></i>
                     <span>Trainings <span class="badge attn-count">{{ $biicfCounts['trainings'] }}</span></span>
                 </a>
+                {{--
+                    Where a new edition of the reference book is
+                    loaded, reviewed and applied. The count is
+                    what is still waiting on a decision, since an
+                    edition part way through a review is the one
+                    thing here that needs attention.
+                --}}
+                @php
+                    $editionsPending = \App\Models\BiicfEditionChange::query()
+                        ->where('decision', 'pending')
+                        ->count();
+                @endphp
+                <a href="{{ route('admin.biicf.editions.index') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.editions*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $editionsPending === 0 ? 'No uploaded edition is waiting on a decision.' : $editionsPending.' differences from an uploaded edition are waiting on a decision.' }}">
+                    <i class="fas fa-book"></i>
+                    <span>Editions
+                        @if($editionsPending > 0)
+                            <span class="badge attn-count">{{ $editionsPending }}</span>
+                        @endif
+                    </span>
+                </a>
             @endif
             @if(auth()->user()->role === 'admin')
                 <div

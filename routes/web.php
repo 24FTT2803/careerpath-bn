@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\BiicfController;
+use App\Http\Controllers\Admin\BiicfEditionController;
 use App\Http\Controllers\Admin\BusinessPlanController;
 use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
@@ -693,6 +694,19 @@ Route::middleware(['auth'])
             Route::get('/biicf/competencies/{competency}/edit', [BiicfController::class, 'competencyEdit'])->name('biicf.competencies.edit');
             Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
             Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');
+
+            /*
+             * Editions — uploading a new reference book, deciding
+             * what it changes, and applying those decisions.
+             */
+            Route::get('/biicf/editions', [BiicfEditionController::class, 'index'])->name('biicf.editions.index');
+            Route::post('/biicf/editions', [BiicfEditionController::class, 'store'])->name('biicf.editions.store');
+            Route::get('/biicf/editions/{edition}', [BiicfEditionController::class, 'show'])->name('biicf.editions.show');
+            Route::patch('/biicf/editions/{edition}/changes/{change}', [BiicfEditionController::class, 'decide'])->name('biicf.editions.decide');
+            Route::patch('/biicf/editions/{edition}/changes', [BiicfEditionController::class, 'decideAll'])->name('biicf.editions.decide-all');
+            Route::post('/biicf/editions/{edition}/apply', [BiicfEditionController::class, 'apply'])->name('biicf.editions.apply');
+            Route::get('/biicf/editions/{edition}/source', [BiicfEditionController::class, 'source'])->name('biicf.editions.source');
+            Route::delete('/biicf/editions/{edition}', [BiicfEditionController::class, 'destroy'])->name('biicf.editions.destroy');
 
             // Trainings - Use 'biicf.' NOT 'admin.biicf.'
             Route::get('/biicf/trainings', [BiicfController::class, 'trainings'])->name('biicf.trainings');
