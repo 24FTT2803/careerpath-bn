@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-
 use App\Models\BiicfCompetency;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
@@ -105,30 +104,33 @@ class BiicfExplorerController extends Controller
      * Compare the logged-in student's own competencies (student_competencies table)
      * against what this job role requires, matching by skill/competency name.
      *
-     * student_competencies.proficiency_level is a free-text string (beginner/intermediate/
-     * advanced/expert); we map it onto BIICF's numeric level_number scale to compare.
+     * Students pick BIICF levels on their profile (Follow, Assist, Apply, Ensure,
+     * Strategise), so those names are read first. Older free-text levels
+     * (beginner/intermediate/advanced/expert) are still understood.
      */
     public function compareToMe(BiicfJobRole $jobRole)
     {
         $jobRole->load(['competencies' => fn ($q) => $q->orderBy('type')]);
 
-        $levelMap = [
-            'beginner' => 1,
-            'intermediate' => 2,
-            'advanced' => 3,
-            'expert' => 4,
-        ];
+        $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get()->keyBy('id');
+
+        $levelMap = $proficiencyLevels
+            ->mapWithKeys(fn ($level) => [strtolower($level->name) => (int) $level->level_number])
+            ->all() + [
+                'beginner' => 1,
+                'intermediate' => 2,
+                'advanced' => 3,
+                'expert' => 4,
+            ];
 
         $studentSkills = StudentCompetency::where('user_id', auth()->id())->get()
             ->keyBy(fn ($s) => Str::slug($s->skill_name));
-
-        $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get()->keyBy('id');
 
         $comparison = $jobRole->competencies->map(function ($competency) use ($studentSkills, $levelMap, $proficiencyLevels) {
             $required = $proficiencyLevels->get($competency->pivot->proficiency_level_id);
             $match = $studentSkills->get(Str::slug($competency->name));
 
-            $studentLevelNumber = $match ? ($levelMap[strtolower($match->proficiency_level)] ?? null) : null;
+            $studentLevelNumber = $match ? ($levelMap[strtolower(trim((string) $match->proficiency_level))] ?? null) : null;
 
             return [
                 'competency' => Arr::only($competency->toArray(), ['id', 'name', 'type']),
@@ -147,6 +149,10 @@ class BiicfExplorerController extends Controller
             'summary' => [
                 'total' => $comparison->count(),
                 'met' => $comparison->where('meets_requirement', true)->count(),
+                'below' => $comparison
+                    ->where('student_has_skill', true)
+                    ->where('meets_requirement', false)
+                    ->count(),
                 'missing' => $comparison->where('student_has_skill', false)->count(),
             ],
         ]);

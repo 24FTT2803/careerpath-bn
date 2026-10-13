@@ -1440,5 +1440,6 @@
 })();
 </script> 
 <x-cookie-banner />   
+    @include('partials.long-text')
 </body>
 </html>
