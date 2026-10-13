@@ -53,53 +53,54 @@ test('the job level filter offers the framework\'s own levels', function () {
         ->assertDontSee('Level 0');
 });
 
-/**
- * The rows a listing handed its table, read back out of the page.
- *
- * @return array<int, array<string, mixed>>
+/*
+ * Read through the view's own data rather than the page source.
+ * The rows reach the table through @js, which hex-escapes its
+ * quotes and slashes inside a JSON.parse call, so picking them
+ * back out of the HTML tests the escaping rather than the
+ * listing.
  */
-function listingRows(string $html): array
-{
-    preg_match('/adminTable\((\[.*?\]),\s*\{/s', $html, $found);
 
-    return json_decode(
-        html_entity_decode($found[1] ?? '[]', ENT_QUOTES),
-        true
-    ) ?? [];
-}
-
-test('a role carrying two job levels says both', function () {
+test('a role carrying two job levels brings both to the page', function () {
     /*
      * IT Administrator/Manager is entered at Entrant and held at
      * Expert/Management, so a single-valued level column could
-     * never have shown it properly.
+     * never have shown it properly — and the levels have to be
+     * loaded with the roles or the table filters on nothing.
      */
-    $content = $this->actingAs($this->admin)
+    $roles = $this->actingAs($this->admin)
         ->get(route('admin.biicf.job-roles'))
         ->assertOk()
-        ->getContent();
+        ->viewData('jobRoles');
 
-    $role = collect(listingRows($content))
-        ->firstWhere('title', 'IT Administrator/Manager');
+    $role = $roles->firstWhere('title', 'IT Administrator/Manager');
 
-    expect($role)->not->toBeNull()
-        ->and($role['levels'])->toContain('Entrant')
-        ->and($role['levels'])->toContain('Expert/Management');
+    expect($role)->not->toBeNull();
+
+    $levels = $role->tiers
+        ->map(fn ($tier) => $tier->jobLevel->name ?? $tier->label)
+        ->all();
+
+    expect($levels)->toContain('Entrant')
+        ->and($levels)->toContain('Expert/Management');
 });
 
-test('the rows carry what the table sorts and filters on', function () {
-    $content = $this->actingAs($this->admin)
+test('the listing hands over every role and the levels to filter them by', function () {
+    $response = $this->actingAs($this->admin)
         ->get(route('admin.biicf.job-roles'))
-        ->assertOk()
-        ->getContent();
+        ->assertOk();
 
-    $rows = listingRows($content);
+    expect($response->viewData('jobRoles'))->toHaveCount(BiicfJobRole::count())
+        ->and($response->viewData('jobLevels')->pluck('name')->all())
+        ->toContain('Entrant', 'Specialist', 'C-Suite');
 
-    expect($rows)->toHaveCount(BiicfJobRole::count())
-        ->and($rows[0])->toHaveKeys([
-            'id', 'title', 'sub_sector', 'sub_sector_id', 'levels',
-            'functional_group', 'show_url', 'edit_url', 'destroy_url',
-        ]);
+    /*
+     * Loaded up front: a listing that lazy-loads each role's
+     * tiers is thirty-eight extra queries, and this one builds
+     * every row before the page is sent.
+     */
+    expect($response->viewData('jobRoles')->first()->relationLoaded('tiers'))->toBeTrue()
+        ->and($response->viewData('jobRoles')->first()->relationLoaded('subSector'))->toBeTrue();
 });
 
 test('every listing renders and carries its rows', function (string $route, string $needle) {
