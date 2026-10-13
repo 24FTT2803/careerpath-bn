@@ -9,7 +9,6 @@ use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
 use App\Models\StudentCompetency;
-use App\Services\Biicf\QualificationMatcher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
@@ -83,7 +82,7 @@ class BiicfExplorerController extends Controller
      * Full detail for a single job role: description, competencies (grouped by type),
      * proficiency levels, entry requirements, and recommended trainings.
      */
-    public function jobRole(Request $request, BiicfJobRole $jobRole)
+    public function jobRole(BiicfJobRole $jobRole)
     {
         $jobRole->load([
             'subSector:id,name,slug',
@@ -129,8 +128,6 @@ class BiicfExplorerController extends Controller
          * page lets a student switch between them.
          */
         $levels = BiicfProficiencyLevel::all()->keyBy('id');
-        $match = new QualificationMatcher;
-        $student = $request->user();
 
         $tiers = $jobRole->tiers->map(fn ($tier) => [
             'id' => $tier->id,
@@ -147,11 +144,17 @@ class BiicfExplorerController extends Controller
                 ])
                 ->values(),
             /*
-             * How the student reading the page stands against
-             * this tier, which is the question the panel is
-             * there to answer.
+             * The requirement, and no verdict on it. The page
+             * used to say where the student stood against each
+             * tier, which went wrong in both directions: a
+             * student part way through a diploma was told their
+             * profile could not be checked, and a way in reading
+             * "BDQF Level 2 in IT or related field with relevant
+             * industry experience" was announced as asking for
+             * experience rather than a qualification. The book's
+             * own sentence says it plainly, and a student can
+             * read it.
              */
-            'qualification_match' => $match->forTier($student, $tier),
             'competencies_by_type' => $this->competenciesByType($tier, $levels),
         ])->values();
 

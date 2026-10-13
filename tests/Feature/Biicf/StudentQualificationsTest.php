@@ -243,7 +243,21 @@ describe('changing one', function () {
 });
 
 describe('what the explorer then says', function () {
-    test('a recorded qualification is compared against a role', function () {
+    test('the qualification is recorded, and the role still states its own requirement', function () {
+        /*
+         * This used to check that the explorer compared the
+         * qualification against the role and said "met". It no
+         * longer compares: a requirement reading "BDQF Level 2 in
+         * IT or related field with relevant industry experience"
+         * says what it wants plainly, and the app's reading of it
+         * was wrong often enough to be worth less than the
+         * sentence.
+         *
+         * What is still worth pinning is the half this test was
+         * really about — that saving a qualification stores its
+         * level — and that the role's own requirement survives to
+         * the page.
+         */
         $this->seed(BiicfJobRoleSeeder::class);
 
         $student = qualificationStudent();
@@ -251,16 +265,15 @@ describe('what the explorer then says', function () {
         $this->actingAs($student)
             ->put(route('student.profile.update'), qualificationPayload($student));
 
+        expect($student->academicRecords()->value('bdqf_level'))->toBe(5);
+
         $role = BiicfJobRole::where('title', 'Data Entry')->sole();
 
-        /*
-         * Data Entry asks for BDQF Level 4, and the diploma
-         * recorded above sits at 5.
-         */
-        $this->actingAs($student)
+        $response = $this->actingAs($student)
             ->getJson(route('student.biicf-explorer.job-role.show', $role))
-            ->assertSuccessful()
-            ->assertJsonPath('tiers.0.qualification_match.outcome', 'met')
-            ->assertJsonPath('tiers.0.qualification_match.held_level', 5);
+            ->assertSuccessful();
+
+        expect($response->json('tiers.0.entry_requirements'))->not->toBeEmpty()
+            ->and($response->json('tiers.0'))->not->toHaveKey('qualification_match');
     });
 });

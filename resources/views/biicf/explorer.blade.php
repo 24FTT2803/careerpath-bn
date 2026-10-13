@@ -670,61 +670,12 @@
         margin-right: 4px;
     }
 
-    /* Where the student stands against a tier. */
-    .match-banner {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 10px 14px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-        margin-bottom: 12px;
-        border: 1px solid var(--border);
-    }
-
-    .match-banner.met {
-        background: rgba(45, 143, 92, 0.1);
-        border-color: rgba(45, 143, 92, 0.35);
-        color: var(--success);
-    }
-
-    .match-banner.not_met {
-        background: rgba(192, 57, 43, 0.07);
-        border-color: rgba(192, 57, 43, 0.3);
-        color: var(--danger);
-    }
-
-    .match-banner.undetermined {
-        background: var(--bg);
-        color: var(--text-muted);
-    }
-
-    .match-detail {
-        font-weight: 400;
-        color: var(--text-muted);
-    }
-
-    .req-text.met {
-        border-left-color: var(--success);
-    }
-
-    .req-verdict {
-        font-size: 10px;
-        font-weight: 600;
-        padding: 2px 10px;
-        border-radius: 100px;
-    }
-
-    .req-verdict.met {
-        background: rgba(45, 143, 92, 0.12);
-        color: var(--success);
-    }
-
-    .req-verdict.soon {
-        background: rgba(201, 168, 76, 0.18);
-        color: #8a6420;
+    .filter-pill .pill-level {
+        margin-left: 6px;
+        padding-left: 6px;
+        border-left: 1px solid currentColor;
+        opacity: .7;
+        font-size: 11px;
     }
 
     /* Either way in will do, which the wording alone can hide. */
@@ -1489,49 +1440,30 @@
                     --}}
                     <template x-if="selectedRole && !loadingRoleDetail">
                         <div>
+                            {{--
+                                The same pills the competencies use, and
+                                for the same reason: a role entered at
+                                three levels asks something different at
+                                each, and stacking all three down the
+                                page made the student find their own.
+                            --}}
+                            <div class="tier-pills" x-show="roleTiers.length > 1">
+                                <span class="tier-pills-label">Entering at</span>
+                                <template x-for="tier in roleTiers" :key="tier.id">
+                                    <button class="filter-pill"
+                                            :class="{ active: activeTierId === tier.id }"
+                                            @click="activeTierId = tier.id">
+                                        <span x-text="tier.label"></span>
+                                        <span class="pill-level" x-show="tier.job_level && tier.job_level !== tier.label"
+                                              x-text="tier.job_level"></span>
+                                    </button>
+                                </template>
+                            </div>
+
                             <template x-for="tier in roleTiers" :key="tier.id">
-                                <div class="req-tier" x-show="tier.entry_requirements.length">
-                                    <h4 x-show="roleTiers.length > 1" x-text="tier.label"></h4>
-
-                                    {{--
-                                        Where the student stands against
-                                        this tier. Three answers, never
-                                        two: the framework asks for
-                                        things the app holds no record
-                                        of, and a verdict on those would
-                                        be invented.
-                                    --}}
-                                    <div class="match-banner"
-                                         :class="tier.qualification_match.outcome"
-                                         x-show="tier.qualification_match">
-                                        <i class="fas"
-                                           :class="{
-                                               'fa-check-circle': tier.qualification_match.outcome === 'met',
-                                               'fa-circle-half-stroke': tier.qualification_match.outcome === 'undetermined',
-                                               'fa-circle-exclamation': tier.qualification_match.outcome === 'not_met'
-                                           }"></i>
-
-                                        <span x-show="tier.qualification_match.outcome === 'met'">
-                                            Your qualifications meet this tier.
-                                        </span>
-                                        <span x-show="tier.qualification_match.outcome === 'not_met'">
-                                            Your qualifications do not reach this tier yet.
-                                        </span>
-                                        <span x-show="tier.qualification_match.outcome === 'undetermined'">
-                                            This cannot be checked against your profile yet.
-                                        </span>
-
-                                        <span class="match-detail" x-show="tier.qualification_match.held_level">
-                                            You hold BDQF Level <span x-text="tier.qualification_match.held_level"></span>.
-                                        </span>
-                                        <span class="match-detail" x-show="!tier.qualification_match.held_level && tier.qualification_match.studying_level">
-                                            You are studying towards BDQF Level
-                                            <span x-text="tier.qualification_match.studying_level"></span>.
-                                        </span>
-                                        <span class="match-detail" x-show="!tier.qualification_match.held_level && !tier.qualification_match.studying_level">
-                                            Add a qualification to your profile to see how you compare.
-                                        </span>
-                                    </div>
+                                <div class="req-tier"
+                                     x-show="tier.entry_requirements.length
+                                             && (roleTiers.length === 1 || activeTierId === tier.id)">
 
                                     {{--
                                         The book usually gives two ways
@@ -1543,26 +1475,10 @@
                                         <div>
                                             <div class="req-or" x-show="index > 0">or</div>
 
-                                            @php
-                                                /*
-                                                 * The alternative's own verdict sits
-                                                 * beside it, matched up by number.
-                                                 */
-                                            @endphp
-                                            <div class="req-text"
-                                                 :class="matchFor(tier, req)?.outcome">
+                                            <div class="req-text">
                                                 <div class="req-head" x-show="req.bdqf_level">
                                                     <span class="req-level" x-text="'BDQF Level ' + req.bdqf_level"></span>
                                                     <span class="req-field" x-text="req.field_of_study"></span>
-
-                                                    <span class="req-verdict met"
-                                                          x-show="matchFor(tier, req)?.outcome === 'met'">
-                                                        You meet this
-                                                    </span>
-                                                    <span class="req-verdict soon"
-                                                          x-show="matchFor(tier, req)?.met_on_finishing">
-                                                        You will on finishing
-                                                    </span>
                                                 </div>
 
                                                 <p x-text="req.text"></p>
@@ -1570,8 +1486,7 @@
                                                 <div class="req-conditions" x-show="req.conditions.length">
                                                     <i class="fas fa-plus-circle"></i>
                                                     Also asks for
-                                                    <span x-text="req.conditions.join(' and ')"></span>,
-                                                    which the framework states but your profile does not record.
+                                                    <span x-text="req.conditions.join(' and ')"></span>.
                                                 </div>
                                             </div>
                                         </div>
@@ -1810,15 +1725,6 @@ function biicfExplorer() {
 
         get activeTier() {
             return this.roleTiers.find(t => t.id === this.activeTierId) || null;
-        },
-
-        /*
-         * How the student stands against one way in, matched up
-         * by the number the book's alternatives are kept in.
-         */
-        matchFor(tier, req) {
-            return (tier.qualification_match?.alternatives || [])
-                .find(a => a.alternative_number === req.alternative_number) || null;
         },
 
         filteredRoleCompetencies(type) {

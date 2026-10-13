@@ -62,9 +62,18 @@ class AuditWorkFunctions extends Command
             $held = $duties->count();
             $says = $expected[$role->title] ?? null;
 
-            $wrong = $repeats->isNotEmpty()
-                || $orphans->isNotEmpty()
-                || ($says !== null && $says !== $held);
+            /*
+             * A repeat is only a fault when it is a copy nobody
+             * asked for. Where the count matches the data file,
+             * the book itself says the duty twice — Digital
+             * Marketing Executive repeats three of its own under
+             * different headings — and calling that a
+             * disagreement sends the reader looking for a problem
+             * that is not there.
+             */
+            $wrong = $orphans->isNotEmpty()
+                || ($says !== null && $says !== $held)
+                || ($says === null && $repeats->isNotEmpty());
 
             if ($wrong) {
                 $problems++;

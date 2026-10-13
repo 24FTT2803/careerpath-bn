@@ -10,6 +10,18 @@ use Illuminate\Support\Collection;
 /**
  * Whether a student's qualifications open a tier of a role.
  *
+ * Nothing calls this at present. The explorer used to put its
+ * verdict beside every entry requirement and no longer does: the
+ * book's own sentence — "BDQF Level 2 in IT or related field
+ * with relevant industry experience" — says plainly what is
+ * wanted, and a student can read it without being told what it
+ * means. Where the app's reading differed from the sentence, it
+ * was the app that was wrong.
+ *
+ * Kept because the comparison itself is sound and tested, and a
+ * page that matches roles to a profile is a thing this project
+ * may yet want. It is not kept because anything needs it today.
+ *
  * The framework states entry as a BDQF level and a field of
  * study, usually two ways in, and meeting any one of them is
  * enough. What it also asks for — years in the field, an

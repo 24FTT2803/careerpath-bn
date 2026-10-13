@@ -233,7 +233,17 @@ describe('a qualification still being studied', function () {
 });
 
 describe('the explorer', function () {
-    test('a role carries the match for each tier', function () {
+    /*
+     * These two used to pin that a role's tiers carried a
+     * verdict: met where the student's level cleared the tier,
+     * not met where it did not. The page no longer says anything
+     * of the kind, so what they pinned is gone — the book's own
+     * sentence says what is wanted, and a student reads it.
+     *
+     * What is worth holding is that the panel keeps the
+     * requirement itself, and keeps no opinion about it.
+     */
+    test('a role carries each tier\'s requirements and no verdict on them', function () {
         $this->seed(BiicfJobRoleSeeder::class);
 
         $student = matchStudent();
@@ -242,29 +252,23 @@ describe('the explorer', function () {
         $role = BiicfJobRole::where('title', 'IT Technician')->sole();
 
         $response = $this->actingAs($student)
-            ->getJson(route('student.biicf-explorer.job-role.show', $role));
-
-        $response->assertSuccessful()
-            /*
-             * IT Technician wants BDQF 2 at Level 1 and 4 at
-             * Level 3, so a student holding 4 clears both.
-             */
-            ->assertJsonPath('tiers.0.qualification_match.outcome', 'met')
-            ->assertJsonPath('tiers.2.qualification_match.outcome', 'met')
-            ->assertJsonPath('tiers.0.qualification_match.held_level', 4);
-    });
-
-    test('a role beyond the student reads as not met', function () {
-        $this->seed(BiicfJobRoleSeeder::class);
-
-        $student = matchStudent();
-        qualification($student, 4);
-
-        $role = BiicfJobRole::where('title', 'Chief Information Officer')->sole();
-
-        $this->actingAs($student)
             ->getJson(route('student.biicf-explorer.job-role.show', $role))
-            ->assertSuccessful()
-            ->assertJsonPath('tiers.0.qualification_match.outcome', 'not_met');
+            ->assertSuccessful();
+
+        $tiers = $response->json('tiers');
+
+        expect($tiers)->toHaveCount(3);
+
+        foreach ($tiers as $tier) {
+            expect($tier)->not->toHaveKey('qualification_match')
+                ->and($tier['entry_requirements'])->not->toBeEmpty();
+        }
+
+        /*
+         * The book's wording, whole, which is the thing the
+         * student is there to read.
+         */
+        expect($tiers[0]['entry_requirements'][0]['text'])
+            ->toContain('BDQF Level');
     });
 });
