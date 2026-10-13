@@ -12,7 +12,7 @@ class BiicfSubSector extends Model
 
     protected $table = 'biicf_sub_sectors';
 
-    protected $fillable = ['name', 'slug', 'description', 'lead_organisation', 'sort_order'];
+    protected $fillable = ['name', 'slug', 'description', 'sort_order'];
 
     public function jobRoles(): HasMany
     {

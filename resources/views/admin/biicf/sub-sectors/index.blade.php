@@ -23,7 +23,6 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Slug</th>
-                            <th>Lead Organisation</th>
                             <th>Job Roles</th>
                             <th>Sort Order</th>
                             <th>Actions</th>
@@ -35,7 +34,6 @@
                                 <td>{{ $subSector->id }}</td>
                                 <td><strong>{{ $subSector->name }}</strong></td>
                                 <td><code>{{ $subSector->slug }}</code></td>
-                                <td>{{ $subSector->lead_organisation ?? '-' }}</td>
                                 <td><span class="badge badge-primary">{{ $subSector->job_roles_count }}</span></td>
                                 <td>{{ $subSector->sort_order }}</td>
                                 <td>
@@ -53,7 +51,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">No sub-sectors found.</td>
+                                <td colspan="6" class="text-center">No sub-sectors found.</td>
                             </tr>
                         @endforelse
                     </tbody>

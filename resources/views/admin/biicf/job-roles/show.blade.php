@@ -44,10 +44,6 @@
                     <span class="value"><span class="badge badge-primary">Level {{ $jobRole->career_path_level }}</span></span>
                 </div>
                 <div class="info-row">
-                    <span class="label">Box Colour</span>
-                    <span class="value"><span class="color-box" style="background:{{ $jobRole->box_colour }};color:white;padding:4px 12px;border-radius:4px;">{{ $jobRole->box_colour }}</span></span>
-                </div>
-                <div class="info-row">
                     <span class="label">Alternative Titles</span>
                     <span class="value">{{ $jobRole->alternative_titles ? implode(', ', $jobRole->alternative_titles) : '-' }}</span>
                 </div>
@@ -209,12 +205,6 @@
                     @foreach($jobRole->trainings as $training)
                         <div class="training-item">
                             <span class="training-name">{{ $training->name }}</span>
-                            @if($training->provider)
-                                <span class="training-provider">{{ $training->provider }}</span>
-                            @endif
-                            @if($training->certification_body)
-                                <span class="badge badge-cert">Cert: {{ $training->certification_body }}</span>
-                            @endif
                         </div>
                     @endforeach
                 @else
@@ -264,11 +254,19 @@
                     @foreach($tier->entryRequirements as $requirement)
                         <div class="req-alternative">
                             <div class="req-alternative-head">
-                                <span class="badge badge-primary">
-                                    {{ $requirement->bdqf_level
-                                        ? 'BDQF Level '.$requirement->bdqf_level
-                                        : 'No level stated' }}
-                                </span>
+                                {{--
+                                    Only when the book names a level. Most
+                                    alternatives do; the few that do not say
+                                    so in their own sentence below, and a
+                                    badge reading "No level stated" on every
+                                    one of them was noise standing in for
+                                    nothing.
+                                --}}
+                                @if($requirement->bdqf_level)
+                                    <span class="badge badge-primary">
+                                        BDQF Level {{ $requirement->bdqf_level }}
+                                    </span>
+                                @endif
                                 @foreach($requirement->conditions() as $condition)
                                     <span class="badge badge-supporting">{{ $condition }}</span>
                                 @endforeach
@@ -312,7 +310,6 @@
     .badge-core { background: #e9f3ee; color: #2d8f5c; }
     .badge-supporting { background: #fbf1de; color: #8a6420; }
     .badge-level { background: #f1ecf7; color: #7a5ea8; }
-    .badge-cert { background: #fbeceb; color: #c65b4e; }
     .function-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
     .function-item:last-child { border-bottom: none; }
     .function-item i { color: #c9a84c; }
@@ -336,7 +333,6 @@
     .training-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
     .training-item:last-child { border-bottom: none; }
     .training-name { font-weight: 500; }
-    .training-provider { color: #6b7280; font-size: 13px; }
     .color-box { display: inline-block; padding: 4px 12px; border-radius: 4px; text-transform: capitalize; }
     @media (max-width: 768px) {
         .card-grid { grid-template-columns: 1fr; }

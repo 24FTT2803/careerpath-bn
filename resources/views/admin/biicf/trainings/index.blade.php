@@ -32,8 +32,6 @@
                         <tr>
                             <th>ID</th>
                             <th>Name</th>
-                            <th>Provider</th>
-                            <th>Certification Body</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -42,8 +40,6 @@
                             <tr>
                                 <td>{{ $training->id }}</td>
                                 <td><strong>{{ $training->name }}</strong></td>
-                                <td>{{ $training->provider ?? '-' }}</td>
-                                <td>{{ $training->certification_body ?? '-' }}</td>
                                 <td>
                                     <a href="{{ route('admin.biicf.trainings.edit', $training) }}" class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i>
@@ -59,7 +55,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center">No trainings found.</td>
+                                <td colspan="3" class="text-center">No trainings found.</td>
                             </tr>
                         @endforelse
                     </tbody>

@@ -789,11 +789,6 @@
         color: var(--primary);
     }
 
-    .training-item .provider {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
-
     /* Programming languages */
     .language-note {
         margin: -6px 0 12px;
@@ -1604,8 +1599,7 @@
                             <template x-for="t in (selectedRole.trainings || [])" :key="t.id">
                                 <div class="training-item">
                                     <div class="name" x-text="t.name"></div>
-                                    <div class="provider" x-text="[t.provider, t.certification_body].filter(Boolean).join(' · ')"></div>
-                                </div>
+                                    </div>
                             </template>
 
                             <div x-show="!(selectedRole.trainings || []).length" class="empty-state" style="padding:20px;">

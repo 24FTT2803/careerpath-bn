@@ -39,7 +39,6 @@ class BiicfController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:biicf_sub_sectors',
             'description' => 'nullable|string',
-            'lead_organisation' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -47,7 +46,6 @@ class BiicfController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
-            'lead_organisation' => $request->lead_organisation,
             'sort_order' => $request->sort_order ?? 0,
         ]);
 
@@ -65,7 +63,6 @@ class BiicfController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('biicf_sub_sectors')->ignore($subSector->id)],
             'description' => 'nullable|string',
-            'lead_organisation' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -73,7 +70,6 @@ class BiicfController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
-            'lead_organisation' => $request->lead_organisation,
             'sort_order' => $request->sort_order ?? 0,
         ]);
 
@@ -191,7 +187,6 @@ class BiicfController extends Controller
             'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
-            'box_colour' => 'nullable|string|max:20',
             'competencies' => 'nullable|array',
             'competencies.*.id' => 'exists:biicf_competencies,id',
             'competencies.*.proficiency_level_id' => 'exists:biicf_proficiency_levels,id',
@@ -213,7 +208,6 @@ class BiicfController extends Controller
             'critical_work_function' => $request->critical_work_function,
             'alternative_titles' => $request->alternative_titles ?? [],
             'career_path_level' => $request->career_path_level ?? 0,
-            'box_colour' => $request->box_colour ?? 'primary',
         ]);
 
         $this->writeStructuredContent($jobRole, $request);
@@ -374,7 +368,6 @@ class BiicfController extends Controller
             'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
-            'box_colour' => 'nullable|string|max:20',
             'competencies' => 'nullable|array',
             'competencies.*.id' => 'exists:biicf_competencies,id',
             'competencies.*.proficiency_level_id' => 'exists:biicf_proficiency_levels,id',
@@ -396,7 +389,6 @@ class BiicfController extends Controller
             'critical_work_function' => $request->critical_work_function,
             'alternative_titles' => $request->alternative_titles ?? [],
             'career_path_level' => $request->career_path_level ?? 0,
-            'box_colour' => $request->box_colour ?? 'primary',
         ]);
 
         $this->writeStructuredContent($jobRole, $request);
@@ -516,8 +508,7 @@ class BiicfController extends Controller
 
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%")
-                ->orWhere('provider', 'LIKE', "%{$search}%");
+            $query->where('name', 'LIKE', "%{$search}%");
         }
 
         $trainings = $query->orderBy('name')->paginate(15);
@@ -534,8 +525,6 @@ class BiicfController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'provider' => 'nullable|string|max:255',
-            'certification_body' => 'nullable|string|max:255',
             'url' => 'nullable|url|max:255',
             'description' => 'nullable|string',
         ]);
@@ -555,8 +544,6 @@ class BiicfController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'provider' => 'nullable|string|max:255',
-            'certification_body' => 'nullable|string|max:255',
             'url' => 'nullable|url|max:255',
             'description' => 'nullable|string',
         ]);

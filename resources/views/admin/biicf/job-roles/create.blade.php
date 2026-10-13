@@ -57,7 +57,7 @@
                 <div class="form-group">
                     <label>Job Description</label>
                     <textarea name="job_description" class="form-control @error('job_description') is-invalid @enderror" 
-                              rows="3">{{ old('job_description') }}</textarea>
+                              rows="12">{{ old('job_description') }}</textarea>
                     @error('job_description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -66,7 +66,7 @@
                 <div class="form-group">
                     <label>Critical Work Function</label>
                     <textarea name="critical_work_function" class="form-control @error('critical_work_function') is-invalid @enderror" 
-                              rows="3">{{ old('critical_work_function') }}</textarea>
+                              rows="14">{{ old('critical_work_function') }}</textarea>
                     @error('critical_work_function')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -75,7 +75,7 @@
                 <div class="form-group">
                     <label>Programming Languages</label>
                     <textarea name="programming_languages" class="form-control @error('programming_languages') is-invalid @enderror"
-                              rows="3" placeholder="One per line">{{ old('programming_languages') }}</textarea>
+                              rows="8" placeholder="One per line">{{ old('programming_languages') }}</textarea>
                     <small class="form-text">One per line. The framework lists these as a section of their own, not as recommended courses.</small>
                     @error('programming_languages')
                         <div class="invalid-feedback">{{ $message }}</div>
@@ -88,22 +88,6 @@
                         <input type="number" name="career_path_level" class="form-control @error('career_path_level') is-invalid @enderror" 
                                value="{{ old('career_path_level', 0) }}" min="0">
                         @error('career_path_level')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="form-group half">
-                        <label>Box Colour</label>
-                        <select name="box_colour" class="form-control @error('box_colour') is-invalid @enderror">
-                            <option value="primary" {{ old('box_colour') == 'primary' ? 'selected' : '' }}>Primary (Blue)</option>
-                            <option value="secondary" {{ old('box_colour') == 'secondary' ? 'selected' : '' }}>Secondary (Grey)</option>
-                            <option value="success" {{ old('box_colour') == 'success' ? 'selected' : '' }}>Success (Green)</option>
-                            <option value="danger" {{ old('box_colour') == 'danger' ? 'selected' : '' }}>Danger (Red)</option>
-                            <option value="warning" {{ old('box_colour') == 'warning' ? 'selected' : '' }}>Warning (Yellow)</option>
-                            <option value="info" {{ old('box_colour') == 'info' ? 'selected' : '' }}>Info (Light Blue)</option>
-                            <option value="light-blue" {{ old('box_colour') == 'light-blue' ? 'selected' : '' }}>Light Blue</option>
-                        </select>
-                        @error('box_colour')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -171,9 +155,6 @@
                             <label class="checkbox-label">
                                 <input type="checkbox" name="trainings[]" value="{{ $training->id }}">
                                 <span class="training-name">{{ $training->name }}</span>
-                                @if($training->provider)
-                                    <span class="training-provider">{{ $training->provider }}</span>
-                                @endif
                             </label>
                         @endforeach
                     </div>
@@ -228,8 +209,8 @@
     .comp-details .comp-row label { font-weight: 500; font-size: 13px; margin: 0; min-width: 120px; }
     .training-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-name { font-weight: 500; }
-    .training-provider { font-size: 11px; color: #6b7280; }
     .form-text { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    textarea.form-control { line-height: 1.7; resize: vertical; min-height: 120px; }
     /*
      * Narrow screens scroll rather than compress. These columns
      * used to collapse into one, which squeezed a label, a

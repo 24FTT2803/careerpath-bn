@@ -12,7 +12,7 @@ class BiicfTraining extends Model
 
     protected $table = 'biicf_trainings';
 
-    protected $fillable = ['name', 'provider', 'certification_body', 'url', 'description'];
+    protected $fillable = ['name', 'url', 'description'];
 
     public function jobRoles(): BelongsToMany
     {
