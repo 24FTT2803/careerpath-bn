@@ -316,7 +316,7 @@ class BookReader
         }
 
         if (isset($sections['entry_requirements'])) {
-            $role['entry_requirements'] = $this->entryRequirements($sections['entry_requirements'], $tiers);
+            $role['entry_requirements'] = $this->entryRequirements($sections['entry_requirements'], $tiers, $title);
         }
 
         if ($tables['rows'] !== []) {
@@ -1212,7 +1212,7 @@ class BookReader
      * @param  array<int, string>  $tiers
      * @return array<string, array<int, array<string, string>>>
      */
-    private function entryRequirements(array $lines, array $tiers): array
+    private function entryRequirements(array $lines, array $tiers, string $title): array
     {
         /*
          * Every line, flush left or not. The ways in are set as
@@ -1222,23 +1222,108 @@ class BookReader
          * would, and dropping it on that basis leaves the role
          * with no way in at all.
          */
+        $open = null;
         $prose = [];
+        $shared = [];
 
         foreach ($lines as $line) {
-            $prose[] = $line->text;
+            /*
+             * A line naming one of the role's levels opens that
+             * level's block. Some roles are entered the same way
+             * at every level and the book says so once; others
+             * print each level's requirements under its own
+             * heading, and giving every level all of them — as
+             * this used to — tells a student at Specialist that
+             * they need the three years Expert asks for.
+             *
+             * The book writes the heading as the level alone
+             * ("Specialist") or as the role and the level
+             * together ("IT Technician Level 1").
+             */
+            $named = $this->tierNamed($line->text, $tiers, $title);
+
+            if ($named !== null) {
+                $open = $named;
+                $prose[$open] ??= [];
+
+                continue;
+            }
+
+            if ($open === null) {
+                $shared[] = $line->text;
+
+                continue;
+            }
+
+            $prose[$open][] = $line->text;
         }
 
-        $whole = $this->tidy(implode(' ', $prose));
+        if ($prose === []) {
+            /*
+             * Nothing named a level, so the one statement is the
+             * way in at every level.
+             */
+            $ways = $this->waysIn(implode(' ', $shared));
+
+            return $ways === [] ? [] : array_fill_keys($tiers, $ways);
+        }
+
+        $requirements = [];
+
+        foreach ($tiers as $tier) {
+            /*
+             * Anything printed before the first heading applies
+             * to all of them — it is said once, above the lot.
+             */
+            $ways = $this->waysIn(implode(' ', array_merge($shared, $prose[$tier] ?? [])));
+
+            if ($ways !== []) {
+                $requirements[$tier] = $ways;
+            }
+        }
+
+        return $requirements;
+    }
+
+    /**
+     * Which of the role's levels a line names, if it names one.
+     */
+    private function tierNamed(string $text, array $tiers, string $title): ?string
+    {
+        $line = $this->normalise($text);
+
+        foreach ($tiers as $tier) {
+            $named = $this->normalise($tier);
+
+            if ($line === $named || $line === $this->normalise($title).$named) {
+                return $tier;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * The separate ways in that one statement describes.
+     *
+     * Always a capital OR. The book uses it as the divider
+     * between alternatives throughout, and lower-case "or"
+     * appears inside them constantly — "Computer Science or any
+     * related field" is one way in, not two.
+     *
+     * @return array<int, array<string, string>>
+     */
+    private function waysIn(string $whole): array
+    {
+        $whole = $this->tidy($whole);
 
         if ($whole === '') {
             return [];
         }
 
-        $alternatives = preg_split('/\s+OR\s+/u', $whole) ?: [$whole];
-
         $ways = [];
 
-        foreach ($alternatives as $alternative) {
+        foreach (preg_split('/\s+OR\s+/u', $whole) ?: [$whole] as $alternative) {
             $alternative = $this->tidy(rtrim(trim($alternative), ','));
 
             if ($alternative !== '') {
@@ -1246,12 +1331,7 @@ class BookReader
             }
         }
 
-        /*
-         * The book sets one set of requirements against the role,
-         * not against each of its levels, so every tier is
-         * entered the same way.
-         */
-        return array_fill_keys($tiers, $ways);
+        return $ways;
     }
 
     /**

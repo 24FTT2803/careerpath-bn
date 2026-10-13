@@ -45,11 +45,29 @@ class Proficiency
     }
 
     /**
-     * The runs that are figures in a table rather than text.
+     * How far above a column its heading sits, and how far to
+     * either side.
+     *
+     * The figures are centred and their heading is not, so it
+     * lands a little to the left of them.
+     */
+    private const HEADING_WITHIN = 30.0;
+
+    /**
+     * The runs that are figures in a table rather than text —
+     * and the words heading those figures.
      *
      * A figure only counts as one when another lines up beneath
      * it. A lone "5" in a sentence is part of the sentence, and
      * dropping it would quietly reword the book.
+     *
+     * The headings go with them. "Level 1", "Level 2", "Level 3"
+     * and "Proficiency Level" are as much a part of the table as
+     * the figures under them, and they sit between the text
+     * columns in the same way: on IT Technician's page they
+     * bridge the gap to the entry requirements beside, and the
+     * role comes out wanting "Proficiency Level Level 1 Level 2
+     * Level 3 BDQF Level 2 in IT".
      *
      * @param  array<int, TextRun>  $runs
      * @return array<string, true> keyed by the run's position
@@ -66,13 +84,34 @@ class Proficiency
         $found = [];
         $group = [];
 
-        $close = function (array $group) use (&$found) {
+        $close = function (array $group) use (&$found, $runs) {
             if (count($group) < 2) {
                 return;
             }
 
+            $top = null;
+
             foreach ($group as $run) {
                 $found[round($run->x, 1).':'.round($run->y, 1)] = true;
+
+                if ($top === null || $run->y < $top->y) {
+                    $top = $run;
+                }
+            }
+
+            /* And whatever heads the column. */
+            foreach ($runs as $run) {
+                if (self::written($run->text)) {
+                    continue;
+                }
+
+                if ($run->y >= $top->y || $top->y - $run->y > self::HEADING_WITHIN) {
+                    continue;
+                }
+
+                if (abs($run->x - $top->x) <= self::HEADING_WITHIN) {
+                    $found[round($run->x, 1).':'.round($run->y, 1)] = true;
+                }
             }
         };
 

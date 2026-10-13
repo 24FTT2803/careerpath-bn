@@ -28,6 +28,10 @@ use App\Models\BiicfProficiencyLevel;
  *  - gaps: propose only where the database holds nothing, so an
  *    edition can fill in what was never recorded without
  *    touching anything an administrator has written.
+ *  - keep: propose nothing at all. The book is recorded and can
+ *    be opened and cited, and the framework is left exactly as
+ *    it is — for putting the source document in place on a
+ *    machine whose data already came from it.
  */
 class EditionComparer
 {
@@ -37,10 +41,14 @@ class EditionComparer
 
     public const STRATEGY_GAPS = 'gaps';
 
+    /** Record the book, compare nothing. */
+    public const STRATEGY_KEEP = 'keep';
+
     public const STRATEGIES = [
         self::STRATEGY_EVERYTHING,
         self::STRATEGY_CHANGED,
         self::STRATEGY_GAPS,
+        self::STRATEGY_KEEP,
     ];
 
     /** @var array<int, array<string, mixed>> */
@@ -59,6 +67,15 @@ class EditionComparer
     ): int {
         $this->changes = [];
         $this->skipped = [];
+
+        /*
+         * Nothing to compare. The edition exists so the book can
+         * be opened and cited; the framework already says what
+         * it says.
+         */
+        if ($strategy === self::STRATEGY_KEEP) {
+            return $this->write($edition);
+        }
 
         $seen = [];
 

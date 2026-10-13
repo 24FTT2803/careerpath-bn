@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\BiicfCompetency;
-use App\Models\BiicfCriticalWorkFunction;
 use App\Models\BiicfEntryRequirement;
 use App\Models\BiicfJobDescriptionPoint;
 use App\Models\BiicfJobFamily;
@@ -14,6 +13,8 @@ use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
 use App\Models\CareerRecommendation;
+use App\Services\Biicf\EntryRequirementWriter;
+use App\Services\Biicf\WorkFunctionWriter;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -410,41 +411,7 @@ class BiicfJobRoleSeeder extends Seeder
      */
     private function syncEntryRequirements(BiicfJobRole $role, array $entry): void
     {
-        if ($entry['entry_requirements'] === []) {
-            return;
-        }
-
-        $tiers = $role->tiers()->get()->keyBy('label');
-
-        foreach ($entry['entry_requirements'] as $label => $alternatives) {
-            $tier = $tiers->get($label);
-
-            if ($tier === null) {
-                throw new RuntimeException(
-                    "{$role->title}: an entry requirement names a tier "
-                    ."\"{$label}\" the role does not have."
-                );
-            }
-
-            /*
-             * Only the alternatives the book supplies. An
-             * administrator can add a way in the framework does
-             * not list, and it takes the next number along;
-             * clearing the tier outright would delete it on
-             * every reload.
-             */
-            $tier->entryRequirements()
-                ->where('alternative_number', '<=', count($alternatives))
-                ->delete();
-
-            foreach ($alternatives as $index => $alternative) {
-                BiicfEntryRequirement::create([
-                    'job_role_tier_id' => $tier->id,
-                    'alternative_number' => $index + 1,
-                    ...$alternative,
-                ]);
-            }
-        }
+        (new EntryRequirementWriter)->write($role, $entry['entry_requirements'] ?? []);
     }
 
     /**
@@ -545,39 +512,7 @@ class BiicfJobRoleSeeder extends Seeder
             ]);
         }
 
-        $role->criticalWorkFunctions()->delete();
-
-        $this->writeWorkFunctions($role, $entry['critical_work_functions']);
-    }
-
-    /**
-     * Write a role's duties, keeping the book's nesting.
-     *
-     * Most roles group their duties under headings of their own
-     * — "Website Design", "Research and Insight" — and two roles
-     * nest a third level under a duty. A flat list would read as
-     * though a heading were itself something the role does.
-     *
-     * @param  array<int, array<string, mixed>>  $functions
-     */
-    private function writeWorkFunctions(
-        BiicfJobRole $role,
-        array $functions,
-        ?int $parentId = null
-    ): void {
-        foreach ($functions as $index => $function) {
-            $row = BiicfCriticalWorkFunction::create([
-                'job_role_id' => $role->id,
-                'kind' => BiicfCriticalWorkFunction::KIND_GENERIC,
-                'parent_id' => $parentId,
-                'text' => $function['text'],
-                'sort_order' => $index + 1,
-            ]);
-
-            if ($function['children'] !== []) {
-                $this->writeWorkFunctions($role, $function['children'], $row->id);
-            }
-        }
+        (new WorkFunctionWriter)->write($role, $entry['critical_work_functions']);
     }
 
     /**

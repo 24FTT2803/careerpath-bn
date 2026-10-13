@@ -191,6 +191,19 @@ describe('entry requirements', function () {
             ->and($ways[0]['raw_text'])->toStartWith('Brunei Darussalam Qualification Framework (BDQF) Level 6')
             ->and($ways[1]['raw_text'])->toStartWith('Brunei Darussalam Qualification Framework (BDQF) Level 5');
     });
+
+    test('a lower-case or does not divide one way in from another', function () {
+        /*
+         * The divider is always a capital OR. Lower-case "or"
+         * runs through the middle of almost every alternative —
+         * "Computer Science or any related field" is one way in,
+         * not two — and splitting on it would multiply every
+         * role's entry requirements into nonsense.
+         */
+        foreach (readBook()['job_roles'][0]['entry_requirements']['Specialist'] as $way) {
+            expect($way['raw_text'])->toContain(' or ');
+        }
+    });
 });
 
 describe('refusing what it cannot read', function () {

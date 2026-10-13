@@ -28,3 +28,5 @@ Thumbs.db
 
 # Patch archives applied during development
 *.zip
+
+edition.json

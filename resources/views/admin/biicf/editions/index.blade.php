@@ -99,6 +99,16 @@
                             For loading a framework from scratch.
                         </span>
                     </label>
+
+                    <label class="strategy">
+                        <input type="radio" name="strategy" value="keep">
+                        <span>
+                            <strong>Just keep the book</strong>
+                            Record it as the source and compare nothing. The framework is
+                            left exactly as it is, and the book can be opened and cited
+                            from here — for a machine whose data already came from it.
+                        </span>
+                    </label>
                 </fieldset>
 
                 <button type="submit" class="btn btn-primary">

@@ -231,6 +231,46 @@ describe('uploading', function () {
             ->toBe(BiicfEditionChange::KIND_CHANGED);
     });
 
+    test('the book can be put on record without comparing anything', function () {
+        /*
+         * A machine whose framework already came from this book
+         * still wants the book itself: openable, citable, on
+         * record as what the data is a reading of. Comparing it
+         * would raise a hundred differences nobody needs to
+         * decide twice.
+         */
+        $before = BiicfJobRole::where('title', 'Data Entry')
+            ->sole()
+            ->descriptionPoints
+            ->pluck('text')
+            ->all();
+
+        postEdition(
+            ['Data Entry' => ['description' => ['Something else entirely.']]],
+            strategy: 'keep'
+        )->assertRedirect();
+
+        $edition = BiicfEdition::sole();
+
+        expect($edition->changes()->count())->toBe(0)
+            ->and($edition->source_file_path)->not->toBeNull()
+            ->and(
+                BiicfJobRole::where('title', 'Data Entry')->sole()->descriptionPoints->pluck('text')->all()
+            )->toBe($before);
+    });
+
+    test('a book put on record can still become the edition in use', function () {
+        postEdition(strategy: 'keep');
+
+        $edition = BiicfEdition::sole();
+
+        $this->actingAs(editionAdmin())
+            ->post(route('admin.biicf.editions.apply', $edition))
+            ->assertRedirect(route('admin.biicf.editions.index'));
+
+        expect($edition->fresh()->is_current)->toBeTrue();
+    });
+
     test('a file that is not an edition is refused', function () {
         /*
          * And the edition goes with it: a half-made edition in

@@ -172,9 +172,12 @@ class BiicfEditionController extends Controller
             );
         }
 
-        $message = $count === 0
-            ? 'That edition says nothing this framework does not already say.'
-            : "{$count} differences are waiting for a decision.";
+        $message = match (true) {
+            $request->string('strategy')->toString() === EditionComparer::STRATEGY_KEEP => 'The book is on record and can be opened from here. Nothing was compared, '
+                    .'and the framework is unchanged. Apply it to mark it as the edition in use.',
+            $count === 0 => 'That edition says nothing this framework does not already say.',
+            default => "{$count} differences are waiting for a decision.",
+        };
 
         /*
          * What the reader could not make sense of, said out
