@@ -73,6 +73,74 @@ class JobRoleContentUpdater
     }
 
     /**
+     * Replace a role's duties with the tree the form drew.
+     *
+     * The whole tree, generic and family-specific, at every level
+     * of nesting — which is the point. The textarea it replaces
+     * could only see the generic ones, so deleting a duplicate
+     * there left its copies standing wherever they were nested,
+     * and the data said one thing while the form said another.
+     *
+     * The legacy column is written alongside it, flattened, so
+     * nothing still reading that column disagrees with the rows.
+     *
+     * @param  array<int, array<string, mixed>>  $tree
+     */
+    public function replaceWorkFunctions(BiicfJobRole $role, array $tree): void
+    {
+        $tree = $this->pruned($tree);
+
+        (new WorkFunctionWriter)->write($role, $tree);
+
+        $role->update([
+            'critical_work_function' => collect($tree)
+                ->pluck('text')
+                ->implode("\n"),
+        ]);
+    }
+
+    /**
+     * The tree with its empty nodes dropped and its depth
+     * capped.
+     *
+     * A node with nothing typed in it is a row the form left
+     * open, not a duty, and it takes its children with it when
+     * it goes — an orphaned sub-duty reads as a duty of the
+     * role.
+     *
+     * Three levels, because that is as deep as the book goes: a
+     * heading, its duties, and sub-duties under some of them.
+     *
+     * @param  array<int, array<string, mixed>>  $tree
+     * @return array<int, array<string, mixed>>
+     */
+    private function pruned(array $tree, int $depth = 1): array
+    {
+        $kept = [];
+
+        foreach ($tree as $node) {
+            $text = trim((string) ($node['text'] ?? ''));
+
+            if ($text === '') {
+                continue;
+            }
+
+            $children = $depth < 3
+                ? $this->pruned($node['children'] ?? [], $depth + 1)
+                : [];
+
+            $kept[] = [
+                'text' => $text,
+                'kind' => $node['kind'] ?? BiicfCriticalWorkFunction::KIND_GENERIC,
+                'job_family_id' => $node['job_family_id'] ?? null,
+                'children' => $children,
+            ];
+        }
+
+        return $kept;
+    }
+
+    /**
      * The non-empty lines of a textarea's value.
      *
      * @return array<int, string>

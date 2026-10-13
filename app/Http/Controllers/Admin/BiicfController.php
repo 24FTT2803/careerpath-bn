@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BiicfCompetency;
+use App\Models\BiicfCriticalWorkFunction;
 use App\Models\BiicfJobLevel;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
@@ -191,6 +192,7 @@ class BiicfController extends Controller
             'functional_group' => 'nullable|string|max:255',
             'job_description' => 'nullable|string',
             'critical_work_function' => 'nullable|string',
+            'work_functions' => 'nullable|json',
             'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
@@ -258,10 +260,24 @@ class BiicfController extends Controller
             $request->input('job_description')
         );
 
-        $updater->replaceGenericWorkFunctions(
-            $jobRole,
-            $request->input('critical_work_function')
-        );
+        /*
+         * The tree if the form drew one, the old textarea
+         * otherwise. The two cannot both be sent: the tree holds
+         * every duty the role has, and the textarea only the
+         * generic ones, so running both would write the role's
+         * duties twice over from two different readings.
+         */
+        if ($request->filled('work_functions')) {
+            $updater->replaceWorkFunctions(
+                $jobRole,
+                json_decode($request->input('work_functions'), true) ?: []
+            );
+        } elseif ($request->has('critical_work_function')) {
+            $updater->replaceGenericWorkFunctions(
+                $jobRole,
+                $request->input('critical_work_function')
+            );
+        }
 
         if ($request->has('programming_languages')) {
             $updater->replaceProgrammingLanguages(
@@ -357,11 +373,79 @@ class BiicfController extends Controller
         $jobRole->load([
             'trainings',
             'descriptionPoints',
-            'genericWorkFunctions',
+            'programmingLanguages',
+            /*
+             * Every duty, nested as it is stored, and both kinds
+             * of it. The form used to be given the generic ones
+             * alone, which is why deleting a duplicate there left
+             * its copies standing: they were nested, or they
+             * belonged to a job family, and either way the form
+             * could not see them.
+             */
+            'criticalWorkFunctions.children.children',
             'tiers.competencies',
         ]);
 
-        return view('admin.biicf.job-roles.edit', compact('jobRole', 'subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
+        /*
+         * The role's own families, since a family-specific duty
+         * belongs to one of them. Offering every family in the
+         * framework would invite filing a duty under a family the
+         * role is not practised in.
+         */
+        $jobFamilies = $jobRole->jobFamilies;
+
+        $workFunctionTree = $this->workFunctionTree($jobRole);
+
+        return view('admin.biicf.job-roles.edit', compact(
+            'jobRole',
+            'subSectors',
+            'competencies',
+            'proficiencyLevels',
+            'trainings',
+            'jobFamilies',
+            'workFunctionTree'
+        ));
+    }
+
+    /**
+     * A role's duties as a tree, for the form to draw.
+     *
+     * Starting from the rows that sit at the top of a list and
+     * going down through their children, rather than handing over
+     * a flat collection: the nesting is the thing being edited.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function workFunctionTree(BiicfJobRole $jobRole): array
+    {
+        return $this->workFunctionBranch(
+            $jobRole->criticalWorkFunctions->whereNull('parent_id')
+        );
+    }
+
+    /**
+     * @param  Collection<int, BiicfCriticalWorkFunction>  $functions
+     * @return array<int, array<string, mixed>>
+     */
+    private function workFunctionBranch($functions): array
+    {
+        return $functions
+            ->map(fn ($function) => [
+                'text' => $function->text,
+                'kind' => $function->kind,
+                'job_family_id' => $function->job_family_id,
+                /*
+                 * Only as deep as was loaded. The framework goes
+                 * three levels and the form writes three, so a
+                 * fourth would be something this page cannot show
+                 * — better that it is not quietly half-read.
+                 */
+                'children' => $function->relationLoaded('children')
+                    ? $this->workFunctionBranch($function->children)
+                    : [],
+            ])
+            ->values()
+            ->all();
     }
 
     public function jobRoleUpdate(Request $request, BiicfJobRole $jobRole)
@@ -372,6 +456,7 @@ class BiicfController extends Controller
             'functional_group' => 'nullable|string|max:255',
             'job_description' => 'nullable|string',
             'critical_work_function' => 'nullable|string',
+            'work_functions' => 'nullable|json',
             'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',

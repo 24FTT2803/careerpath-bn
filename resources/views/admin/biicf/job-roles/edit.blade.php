@@ -64,14 +64,10 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label>Critical Work Function</label>
-                    <textarea name="critical_work_function" class="form-control @error('critical_work_function') is-invalid @enderror" 
-                              rows="14">{{ old('critical_work_function', $jobRole->genericWorkFunctions->pluck('text')->implode("\n")) }}</textarea>
-                    @error('critical_work_function')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                @include('admin.biicf.partials.work-function-tree', [
+                    'tree' => $workFunctionTree,
+                    'jobFamilies' => $jobFamilies,
+                ])
 
                 <div class="form-group">
                     <label>Programming Languages</label>

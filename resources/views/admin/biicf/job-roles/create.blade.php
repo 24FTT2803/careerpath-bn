@@ -63,14 +63,17 @@
                     @enderror
                 </div>
 
-                <div class="form-group">
-                    <label>Critical Work Function</label>
-                    <textarea name="critical_work_function" class="form-control @error('critical_work_function') is-invalid @enderror" 
-                              rows="14">{{ old('critical_work_function') }}</textarea>
-                    @error('critical_work_function')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
+                {{--
+                    A role being created has no job families yet —
+                    those are recorded with its content — so every
+                    duty typed here applies however the role is
+                    practised. The family-specific ones can be
+                    filed once the role exists.
+                --}}
+                @include('admin.biicf.partials.work-function-tree', [
+                    'tree' => [],
+                    'jobFamilies' => collect(),
+                ])
 
                 <div class="form-group">
                     <label>Programming Languages</label>
