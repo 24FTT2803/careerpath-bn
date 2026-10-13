@@ -86,3 +86,55 @@ test('pretending writes nothing', function () {
 
     expect(BiicfCriticalWorkFunction::where('text', 'Spurious')->exists())->toBeTrue();
 });
+
+test('a rewrite leaves nothing from the reading before it, however deep', function () {
+    /*
+     * One DELETE for the whole role is what this used to do, and
+     * it does not work on MySQL: parent_id is a foreign key onto
+     * the same table with ON DELETE CASCADE, and InnoDB does not
+     * apply that cascade reliably when parent and child are both
+     * within reach of one multi-row statement. Three readings of
+     * the book survived three rewrites that way — every row at
+     * sort_order 1 went with its sub-duties, and the rest stayed.
+     *
+     * The writer clears the leaves first now, so no delete ever
+     * cascades. SQLite does the right thing either way, which is
+     * why this stayed green while the real database drifted; what
+     * this pins is that the clearing happens at all.
+     */
+    $role = BiicfJobRole::where('title', 'Data Entry')->sole();
+
+    $deep = [[
+        'text' => 'A group',
+        'children' => [[
+            'text' => 'A duty',
+            'children' => [
+                ['text' => 'A sub-duty', 'children' => []],
+                ['text' => 'Another sub-duty', 'children' => []],
+            ],
+        ]],
+    ]];
+
+    $writer = new WorkFunctionWriter;
+
+    expect($writer->write($role, $deep))->toBe(4);
+
+    expect($writer->write($role, [['text' => 'Something else', 'children' => []]]))->toBe(1)
+        ->and($role->criticalWorkFunctions()->count())->toBe(1)
+        ->and(BiicfCriticalWorkFunction::where('job_role_id', $role->id)->pluck('text')->all())
+        ->toBe(['Something else']);
+});
+
+test('forgetting a role\'s duties clears every level of them', function () {
+    $role = BiicfJobRole::where('title', 'Data Entry')->sole();
+
+    (new WorkFunctionWriter)->write($role, [[
+        'text' => 'A group',
+        'children' => [['text' => 'A duty', 'children' => [
+            ['text' => 'A sub-duty', 'children' => []],
+        ]]],
+    ]]);
+
+    expect((new WorkFunctionWriter)->forget($role))->toBe(3)
+        ->and(BiicfCriticalWorkFunction::where('job_role_id', $role->id)->count())->toBe(0);
+});

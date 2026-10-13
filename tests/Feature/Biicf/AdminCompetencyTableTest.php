@@ -23,13 +23,13 @@ beforeEach(function () {
     $this->admin = User::factory()->create(['role' => 'admin']);
 });
 
-function tieredRole(): BiicfJobRole
+function roleWithThreeTiers(): BiicfJobRole
 {
     return BiicfJobRole::where('title', 'IT Technician')->sole();
 }
 
 test('the detail page carries every tier, not just the first', function () {
-    $role = tieredRole();
+    $role = roleWithThreeTiers();
 
     expect($role->tiers)->toHaveCount(3);
 
@@ -48,7 +48,7 @@ test('the detail page carries every tier, not just the first', function () {
 });
 
 test('the form offers a level for each tier', function () {
-    $role = tieredRole();
+    $role = roleWithThreeTiers();
 
     $response = $this->actingAs($this->admin)
         ->get(route('admin.biicf.job-roles.edit', $role))
@@ -62,7 +62,7 @@ test('the form offers a level for each tier', function () {
 });
 
 test('a competency can be saved at a different level per tier', function () {
-    $role = tieredRole();
+    $role = roleWithThreeTiers();
 
     $competency = BiicfCompetency::where('type', 'technical')->orderBy('name')->first();
 
@@ -100,7 +100,7 @@ test('a tier left at not required gets no row', function () {
      * framework asks for nothing there, so storing a level would
      * invent a requirement.
      */
-    $role = tieredRole();
+    $role = roleWithThreeTiers();
     $competency = BiicfCompetency::where('type', 'technical')->orderBy('name')->first();
 
     $first = $role->tiers->first();
@@ -135,7 +135,7 @@ test('a save that says nothing about competencies leaves the whole table alone',
      * silence as an empty one would strip the role of every
      * proficiency it has.
      */
-    $role = tieredRole();
+    $role = roleWithThreeTiers();
 
     $was = $role->tiers->map(fn ($tier) => $tier->competencies->count())->all();
 
@@ -179,4 +179,52 @@ test('a role created with one level still gets its proficiency', function () {
 
     expect($tier->competencies->pluck('id')->all())->toBe([$competency->id])
         ->and($tier->competencies->first()->pivot->proficiency_level_id)->toBe($level);
+});
+
+test('a competency ticked at no level at all is refused, not silently dropped', function () {
+    /*
+     * Ticking a competency and choosing nothing is a half-filled
+     * form, not a statement that the role needs it nowhere.
+     */
+    $role = roleWithThreeTiers();
+    $competency = BiicfCompetency::where('type', 'technical')->orderBy('name')->first();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.biicf.job-roles.update', $role), [
+            'sub_sector_id' => $role->sub_sector_id,
+            'title' => $role->title,
+            'competencies' => [
+                $competency->id => [
+                    'id' => $competency->id,
+                    'levels' => $role->tiers->mapWithKeys(fn ($tier) => [$tier->id => ''])->all(),
+                ],
+            ],
+        ])
+        ->assertSessionHasErrors('competencies');
+});
+
+test('a soft skill cannot be given a technical rung', function () {
+    /*
+     * The two scales number their rungs separately, so a soft
+     * skill handed a technical level would read as a rung it does
+     * not have.
+     */
+    $role = roleWithThreeTiers();
+    $competency = BiicfCompetency::where('type', 'soft_skill')->orderBy('name')->first();
+
+    $this->actingAs($this->admin)
+        ->put(route('admin.biicf.job-roles.update', $role), [
+            'sub_sector_id' => $role->sub_sector_id,
+            'title' => $role->title,
+            'competencies' => [
+                $competency->id => [
+                    'id' => $competency->id,
+                    'levels' => [
+                        $role->tiers->first()->id => BiicfProficiencyLevel::technical()
+                            ->where('level_number', 5)->value('id'),
+                    ],
+                ],
+            ],
+        ])
+        ->assertSessionHasErrors('competencies');
 });

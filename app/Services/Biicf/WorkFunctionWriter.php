@@ -33,9 +33,68 @@ class WorkFunctionWriter
      */
     public function write(BiicfJobRole $role, array $functions): int
     {
-        $role->criticalWorkFunctions()->delete();
+        $this->forget($role);
 
         return $this->put($role, $functions);
+    }
+
+    /**
+     * Clear a role's duties, deepest first.
+     *
+     * One statement would be simpler and is what this used to do.
+     * It does not work: parent_id is a foreign key onto this same
+     * table with ON DELETE CASCADE, and InnoDB does not apply a
+     * cascade reliably when the parent and the child are both in
+     * the reach of one multi-row DELETE. Some rows go, some stay.
+     *
+     * That is how three old readings of the book survived three
+     * rewrites — every row at sort_order 1 and its sub-duties
+     * went, and everything else was left behind, which is a
+     * database that disagrees with itself in a way nothing on
+     * screen can explain.
+     *
+     * SQLite cascades it properly, so the tests were green
+     * throughout.
+     *
+     * Deleting the leaves first means no delete ever cascades:
+     * by the time a parent goes, it has no children left to take
+     * with it.
+     *
+     * @param  string|null  $kind  only duties of this kind, or all of them
+     * @return int how many rows were cleared
+     */
+    public function forget(BiicfJobRole $role, ?string $kind = null): int
+    {
+        $gone = 0;
+
+        while (true) {
+            $rows = BiicfCriticalWorkFunction::query()
+                ->where('job_role_id', $role->id)
+                ->when($kind !== null, fn ($query) => $query->where('kind', $kind))
+                ->get(['id', 'parent_id']);
+
+            if ($rows->isEmpty()) {
+                return $gone;
+            }
+
+            $parents = $rows->pluck('parent_id')->filter()->unique()->all();
+
+            $leaves = $rows
+                ->reject(fn ($row) => in_array($row->id, $parents, true))
+                ->pluck('id');
+
+            /*
+             * Every remaining row is some other row's parent,
+             * which a tree cannot be. Rather than loop for ever,
+             * take what is left in one go — the cascade can do no
+             * harm once nothing else is waiting to be deleted.
+             */
+            if ($leaves->isEmpty()) {
+                return $gone + BiicfCriticalWorkFunction::whereIn('id', $rows->pluck('id'))->delete();
+            }
+
+            $gone += BiicfCriticalWorkFunction::whereIn('id', $leaves)->delete();
+        }
     }
 
     /**

@@ -170,15 +170,45 @@ class BiicfController extends Controller
                 continue;
             }
 
-            $levelId = $selection['proficiency_level_id'] ?? null;
-            $level = $levelId === null
-                ? null
-                : $levels->get((int) $levelId);
+            /*
+             * A level per tier, since the book gives a role one
+             * column per tier. The create form has no tiers to
+             * name yet and sends a single level instead.
+             *
+             * A tier left empty is "not required there", which is
+             * what an empty cell in the book's table says — so it
+             * is skipped rather than refused. What is refused is a
+             * level from the wrong ladder: Advanced is the third
+             * of a soft skill's four rungs and means nothing on a
+             * technical competency's five.
+             */
+            $wanted = array_key_exists('levels', $selection)
+                ? (array) $selection['levels']
+                : [$selection['proficiency_level_id'] ?? null];
 
-            if (! $level || $level->scale !== $competency->scale()) {
+            $given = 0;
+
+            foreach ($wanted as $levelId) {
+                if (blank($levelId)) {
+                    continue;
+                }
+
+                $level = $levels->get((int) $levelId);
+
+                if (! $level || $level->scale !== $competency->scale()) {
+                    throw ValidationException::withMessages([
+                        'competencies' => $competency->name
+                            .' needs a proficiency level from its own scale.',
+                    ]);
+                }
+
+                $given++;
+            }
+
+            if ($given === 0) {
                 throw ValidationException::withMessages([
                     'competencies' => $competency->name
-                        .' needs a proficiency level from its own scale.',
+                        .' is ticked but asked for at no level. Choose one, or untick it.',
                 ]);
             }
         }

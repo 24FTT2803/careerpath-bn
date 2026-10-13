@@ -58,9 +58,16 @@ class JobRoleContentUpdater
      */
     public function replaceGenericWorkFunctions(BiicfJobRole $role, ?string $text): void
     {
-        $role->criticalWorkFunctions()
-            ->generic()
-            ->delete();
+        /*
+         * Through the writer, which clears the deepest duties
+         * first. A plain delete leaves rows behind: parent_id is
+         * a foreign key onto the same table, and InnoDB does not
+         * apply its cascade reliably within one multi-row DELETE.
+         */
+        (new WorkFunctionWriter)->forget(
+            $role,
+            BiicfCriticalWorkFunction::KIND_GENERIC
+        );
 
         foreach ($this->lines($text) as $index => $line) {
             BiicfCriticalWorkFunction::create([
