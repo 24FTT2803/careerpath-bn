@@ -76,11 +76,19 @@ describe('saving competencies', function () {
         expect($role->entryTier->competencies)->toHaveCount(1);
     });
 
-    test('editing one tier leaves the others alone', function () {
+    test('the form writes every tier it was given, and only those', function () {
         /*
-         * A blanket detach on the role would take every column of
-         * the book's table with it, not just the one being
-         * edited.
+         * This used to say "editing one tier leaves the others
+         * alone", because the form could only see the entry tier
+         * and a blanket detach would have taken the book's other
+         * columns with it. The form now carries a level for every
+         * tier, so what it sends is the whole table: a tier named
+         * with no level is not required there, and a tier the
+         * payload never mentions is one this role does not have.
+         *
+         * A request with no competencies field at all still
+         * leaves the table untouched — that is in
+         * AdminCompetencyTableTest.
          */
         $this->seed(BiicfReferenceDataSeeder::class);
 
@@ -111,18 +119,30 @@ describe('saving competencies', function () {
             ]);
         }
 
+        $tiers = $role->fresh()->tiers;
+
         $this->actingAs(formAdmin())
             ->put(route('admin.biicf.job-roles.update', $role), [
                 'sub_sector_id' => $role->sub_sector_id,
                 'title' => 'IT Technician',
-                'competencies' => [],
+                'competencies' => [
+                    $competency->id => [
+                        'id' => $competency->id,
+                        'levels' => [
+                            $tiers->first()->id => '',
+                            $tiers->last()->id => $level->id,
+                        ],
+                    ],
+                ],
             ])
             ->assertSessionHasNoErrors();
 
         $tiers = $role->fresh()->tiers;
 
         expect($tiers->first()->competencies)->toHaveCount(0)
-            ->and($tiers->last()->competencies)->toHaveCount(1);
+            ->and($tiers->last()->competencies)->toHaveCount(1)
+            ->and($tiers->last()->competencies->first()->pivot->proficiency_level_id)
+            ->toBe($level->id);
     });
 });
 

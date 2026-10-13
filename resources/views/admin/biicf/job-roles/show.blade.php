@@ -155,44 +155,54 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" x-data="{ tier: {{ $jobRole->tiers->first()?->id ?? 0 }} }">
             <div class="card-header">Competencies</div>
             <div class="card-body">
                 {{--
-                    Required proficiencies belong to a tier, one
-                    column of the book's table each, so reading
-                    the role's competencies directly would list
-                    each one once per tier. This is the lowest
-                    tier: what it takes to enter the role.
+                    A required proficiency belongs to a tier — one
+                    column of the book's table each — so a role
+                    with three tiers has three columns, and the
+                    same competency can be wanted at a different
+                    level in each. This showed the lowest tier and
+                    said so, which answered the question for one
+                    column out of three.
                 --}}
-                @php
-                    $entryTier = $jobRole->tiers->first();
-                    $entryCompetencies = $entryTier?->competencies ?? collect();
-                @endphp
-
                 @if($jobRole->tiers->count() > 1)
-                    <p class="tier-note">
-                        Showing <strong>{{ $entryTier->label }}</strong>.
-                        This role has {{ $jobRole->tiers->count() }} tiers.
-                    </p>
+                    <div class="tier-buttons">
+                        @foreach($jobRole->tiers as $tier)
+                            <button type="button"
+                                    :class="{ 'is-on': tier === {{ $tier->id }} }"
+                                    @click="tier = {{ $tier->id }}">
+                                {{ $tier->label }}
+                            </button>
+                        @endforeach
+                    </div>
                 @endif
 
-                @if($entryCompetencies->count() > 0)
-                    @foreach($entryCompetencies->groupBy('type') as $type => $competencies)
-                        <h4>{{ ucfirst(str_replace('_', ' ', $type)) }}</h4>
-                        @foreach($competencies as $comp)
-                            <div class="competency-item">
-                                <span class="comp-name">{{ $comp->name }}</span>
-                                <span class="badge {{ $comp->pivot->is_core ? 'badge-core' : 'badge-supporting' }}">
-                                    {{ $comp->pivot->is_core ? 'Core' : 'Supporting' }}
-                                </span>
-                                <span class="badge badge-level">
-                                    {{ $levelLabels[$comp->pivot->proficiency_level_id] ?? '?' }}
-                                </span>
-                            </div>
-                        @endforeach
-                    @endforeach
-                @else
+                @foreach($jobRole->tiers as $tier)
+                    <div x-show="tier === {{ $tier->id }}">
+                        @if($tier->competencies->count() > 0)
+                            @foreach($tier->competencies->groupBy('type') as $type => $competencies)
+                                <h4>{{ ucfirst(str_replace('_', ' ', $type)) }}</h4>
+                                @foreach($competencies as $comp)
+                                    <div class="competency-item">
+                                        <span class="comp-name">{{ $comp->name }}</span>
+                                        <span class="badge {{ $comp->pivot->is_core ? 'badge-core' : 'badge-supporting' }}">
+                                            {{ $comp->pivot->is_core ? 'Core' : 'Supporting' }}
+                                        </span>
+                                        <span class="badge badge-level">
+                                            {{ $levelLabels[$comp->pivot->proficiency_level_id] ?? '?' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @endforeach
+                        @else
+                            <p>No competencies recorded at {{ $tier->label }}.</p>
+                        @endif
+                    </div>
+                @endforeach
+
+                @if($jobRole->tiers->isEmpty())
                     <p>No competencies assigned.</p>
                 @endif
             </div>
@@ -313,7 +323,10 @@
     .function-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
     .function-item:last-child { border-bottom: none; }
     .function-item i { color: #c9a84c; }
-    .tier-note { margin: 0 0 14px; padding: 8px 12px; border-left: 3px solid #c9a84c; background: #fffbeb; font-size: 13px; color: #6b7280; }
+    .tier-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .tier-buttons button { padding: 6px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 999px; font-size: 13px; font-weight: 500; color: #1a1a2e; cursor: pointer; }
+    .tier-buttons button:hover { border-color: #c9a84c; }
+    .tier-buttons button.is-on { background: #1a3a5c; border-color: #1a3a5c; color: white; }
     .req-alternative { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
     .req-alternative:last-child { border-bottom: none; }
     .req-alternative-head { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }

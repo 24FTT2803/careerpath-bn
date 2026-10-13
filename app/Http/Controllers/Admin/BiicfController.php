@@ -198,7 +198,9 @@ class BiicfController extends Controller
             'career_path_level' => 'nullable|integer|min:0',
             'competencies' => 'nullable|array',
             'competencies.*.id' => 'exists:biicf_competencies,id',
-            'competencies.*.proficiency_level_id' => 'exists:biicf_proficiency_levels,id',
+            'competencies.*.proficiency_level_id' => 'nullable|exists:biicf_proficiency_levels,id',
+            'competencies.*.levels' => 'nullable|array',
+            'competencies.*.levels.*' => 'nullable|exists:biicf_proficiency_levels,id',
             'competencies.*.is_core' => 'boolean',
             'trainings' => 'nullable|array',
             'trainings.*' => 'exists:biicf_trainings,id',
@@ -227,13 +229,13 @@ class BiicfController extends Controller
          * Roles from the reference book bring the book's own
          * tiers; one added here gets a single tier covering it.
          */
-        $tier = BiicfJobRoleTier::create([
+        BiicfJobRoleTier::create([
             'job_role_id' => $jobRole->id,
             'label' => 'All levels',
             'sort_order' => 1,
         ]);
 
-        $this->syncTierCompetencies($tier, $request);
+        $this->syncCompetencyTable($jobRole, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -288,34 +290,65 @@ class BiicfController extends Controller
     }
 
     /**
-     * Replace one tier's column of required proficiencies.
+     * Write the role's competency table, a column per tier.
      *
-     * Competencies belong to a tier, not to the role, so
-     * attaching through the role would leave rows with no tier
-     * and they would show up nowhere. Only this tier's column is
-     * replaced: a role carrying the book's several tiers must
-     * not lose the others because one was edited here.
+     * The book prints one column for each of a role's tiers, and
+     * the same competency can be wanted at a different level in
+     * each — Application Development at 1, 2 and 2 across IT
+     * Technician's three levels. The form used to offer the entry
+     * tier alone, so the other columns could be read on the
+     * role's page and corrected nowhere.
+     *
+     * A tier left at "not required" gets no row, which is what an
+     * empty cell in the book's table says.
      */
-    private function syncTierCompetencies(
-        BiicfJobRoleTier $tier,
-        Request $request
-    ): void {
-        $tier->competencies()->detach();
+    private function syncCompetencyTable(BiicfJobRole $jobRole, Request $request): void
+    {
+        /*
+         * Only when the form carries it. A request that says
+         * nothing about competencies is editing something else,
+         * and reading silence as an empty table would strip the
+         * role of every proficiency the book gives it.
+         */
+        if (! $request->has('competencies')) {
+            return;
+        }
+
+        $tiers = $jobRole->tiers()->get()->keyBy('id');
+
+        if ($tiers->isEmpty()) {
+            return;
+        }
+
+        foreach ($tiers as $tier) {
+            $tier->competencies()->detach();
+        }
 
         foreach ($request->input('competencies', []) as $selection) {
-            /*
-             * The proficiency select always submits, even when
-             * the competency checkbox is unticked, so an entry
-             * can arrive without its id.
-             */
             if (! is_array($selection) || ! isset($selection['id'])) {
                 continue;
             }
 
-            $tier->competencies()->attach($selection['id'], [
-                'proficiency_level_id' => $selection['proficiency_level_id'],
-                'is_core' => $selection['is_core'] ?? true,
-            ]);
+            $core = (bool) ($selection['is_core'] ?? true);
+
+            /*
+             * A form with no tier columns — the create page,
+             * where the role's single tier does not exist yet —
+             * sends one level for the role instead.
+             */
+            $levels = $selection['levels']
+                ?? [$tiers->keys()->first() => $selection['proficiency_level_id'] ?? null];
+
+            foreach ($levels as $tierId => $levelId) {
+                if (blank($levelId) || ! $tiers->has((int) $tierId)) {
+                    continue;
+                }
+
+                $tiers->get((int) $tierId)->competencies()->attach($selection['id'], [
+                    'proficiency_level_id' => $levelId,
+                    'is_core' => $core,
+                ]);
+            }
         }
     }
 
@@ -462,7 +495,9 @@ class BiicfController extends Controller
             'career_path_level' => 'nullable|integer|min:0',
             'competencies' => 'nullable|array',
             'competencies.*.id' => 'exists:biicf_competencies,id',
-            'competencies.*.proficiency_level_id' => 'exists:biicf_proficiency_levels,id',
+            'competencies.*.proficiency_level_id' => 'nullable|exists:biicf_proficiency_levels,id',
+            'competencies.*.levels' => 'nullable|array',
+            'competencies.*.levels.*' => 'nullable|exists:biicf_proficiency_levels,id',
             'competencies.*.is_core' => 'boolean',
             'trainings' => 'nullable|array',
             'trainings.*' => 'exists:biicf_trainings,id',
@@ -485,14 +520,20 @@ class BiicfController extends Controller
 
         $this->writeStructuredContent($jobRole, $request);
 
-        $tier = $jobRole->tiers()->first()
-            ?? BiicfJobRoleTier::create([
+        /*
+         * A role has to have a tier: entry requirements and
+         * required proficiencies hang off one. A role from the
+         * book brings its own.
+         */
+        if ($jobRole->tiers()->doesntExist()) {
+            BiicfJobRoleTier::create([
                 'job_role_id' => $jobRole->id,
                 'label' => 'All levels',
                 'sort_order' => 1,
             ]);
+        }
 
-        $this->syncTierCompetencies($tier, $request);
+        $this->syncCompetencyTable($jobRole, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);

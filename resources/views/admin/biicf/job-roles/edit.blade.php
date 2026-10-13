@@ -100,52 +100,75 @@
 
                 <div class="form-divider">Competencies</div>
 
+                @php
+                    /*
+                     * The book prints a role's competencies as a
+                     * table with a column per tier, and the same
+                     * competency can be wanted at a different
+                     * level in each — Application Development at
+                     * 1, 2 and 2 across IT Technician's three.
+                     *
+                     * This form offered one level for the entry
+                     * tier alone, so the other columns could be
+                     * read on this page and edited nowhere.
+                     */
+                    $tiers = $jobRole->tiers;
+                    $heldAt = $tiers->mapWithKeys(fn ($tier) => [
+                        $tier->id => $tier->competencies->keyBy('id'),
+                    ]);
+                @endphp
+
                 <div class="form-group">
                     <label>Select Competencies</label>
+                    <small class="form-text">
+                        A competency is wanted at a level per tier. Leave a tier at
+                        &ldquo;not required&rdquo; where the framework asks for nothing
+                        — that is what an empty cell in the book's table means.
+                    </small>
+
                     <div class="competency-grid">
                         @foreach($competencies as $comp)
                             @php
-                                /*
-                                 * The entry tier's column of the
-                                 * book's table. Reading the role's
-                                 * competencies would return one row
-                                 * per tier, so a role with three
-                                 * would offer three contradictory
-                                 * levels for the same competency.
-                                 */
-                                $tierCompetencies = $jobRole->tiers->first()?->competencies ?? collect();
-                                $selected = $tierCompetencies->contains($comp->id);
-                                $pivot = $selected ? $tierCompetencies->find($comp->id)->pivot : null;
+                                $pivots = $tiers->mapWithKeys(fn ($tier) => [
+                                    $tier->id => $heldAt[$tier->id]->get($comp->id)?->pivot,
+                                ]);
+                                $selected = $pivots->filter()->isNotEmpty();
+                                $core = $pivots->filter()->first()?->is_core ?? true;
                             @endphp
                             <div class="competency-item">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="competencies[{{ $comp->id }}][id]" 
-                                           value="{{ $comp->id }}" 
+                                    <input type="checkbox" name="competencies[{{ $comp->id }}][id]"
+                                           value="{{ $comp->id }}"
                                            {{ $selected ? 'checked' : '' }}
                                            onchange="toggleCompetency(this, {{ $comp->id }})">
                                     <span class="comp-name">{{ $comp->name }}</span>
                                     <span class="comp-type {{ $comp->type }}">{{ $comp->type == 'technical' ? 'Tech' : 'Soft' }}</span>
                                 </label>
                                 <div class="comp-details" id="comp-details-{{ $comp->id }}" style="{{ $selected ? 'display:block' : 'display:none' }}">
-                                    <div class="comp-row">
-                                        <label>Proficiency Level</label>
-                                        {{--
-                                            Only this competency's own scale:
-                                            five levels for a technical
-                                            competency, four for a soft skill.
-                                        --}}
-                                        <select name="competencies[{{ $comp->id }}][proficiency_level_id]" class="form-control-sm">
-                                            @foreach($proficiencyLevels->where('scale', $comp->scale()) as $level)
-                                                <option value="{{ $level->id }}" {{ $selected && $pivot && $pivot->proficiency_level_id == $level->id ? 'selected' : '' }}>
-                                                    Level {{ $level->level_number }} - {{ $level->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    @foreach($tiers as $tier)
+                                        <div class="comp-row">
+                                            <label>{{ $tier->label }}</label>
+                                            {{--
+                                                Only this competency's own scale:
+                                                five levels for a technical
+                                                competency, four for a soft skill.
+                                            --}}
+                                            <select name="competencies[{{ $comp->id }}][levels][{{ $tier->id }}]" class="form-control-sm">
+                                                <option value="">Not required</option>
+                                                @foreach($proficiencyLevels->where('scale', $comp->scale()) as $level)
+                                                    <option value="{{ $level->id }}"
+                                                        {{ $pivots[$tier->id]?->proficiency_level_id == $level->id ? 'selected' : '' }}>
+                                                        Level {{ $level->level_number }} - {{ $level->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endforeach
+
                                     <div class="comp-row">
                                         <label>
-                                            <input type="checkbox" name="competencies[{{ $comp->id }}][is_core]" value="1" 
-                                                   {{ $selected && $pivot && $pivot->is_core ? 'checked' : '' }}>
+                                            <input type="checkbox" name="competencies[{{ $comp->id }}][is_core]" value="1"
+                                                   {{ $core ? 'checked' : '' }}>
                                             Is Core Competency
                                         </label>
                                     </div>
