@@ -41,9 +41,25 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Description</label>
+                    <label>In one sentence</label>
+                    <input type="text" name="short_definition" maxlength="255"
+                           class="form-control @error('short_definition') is-invalid @enderror"
+                           value="{{ old('short_definition') }}"
+                           placeholder="What this competency is, in a line.">
+                    <small class="form-text">Shown in the competency list, where the full definition does not fit.</small>
+                    @error('short_definition')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label>Definition</label>
                     <textarea name="description" class="form-control @error('description') is-invalid @enderror" 
                               rows="8" placeholder="Describe this competency...">{{ old('description') }}</textarea>
+                    <small class="form-text">
+                        What it means at each proficiency level can be written once the
+                        competency exists, on its own page.
+                    </small>
                     @error('description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -77,6 +93,7 @@
     .form-control:focus { border-color: #c9a84c; outline: none; box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.15); }
     .is-invalid { border-color: #c0392b; }
     .invalid-feedback { color: #c0392b; font-size: 12px; margin-top: 4px; }
+    .form-text { display: block; font-size: 12px; color: #6b7280; margin-top: 4px; }
     .form-actions { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
 </style>
 @endsection

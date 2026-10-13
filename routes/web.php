@@ -691,6 +691,7 @@ Route::middleware(['auth'])
             Route::get('/biicf/competencies', [BiicfController::class, 'competencies'])->name('biicf.competencies');
             Route::get('/biicf/competencies/create', [BiicfController::class, 'competencyCreate'])->name('biicf.competencies.create');
             Route::post('/biicf/competencies', [BiicfController::class, 'competencyStore'])->name('biicf.competencies.store');
+            Route::get('/biicf/competencies/{competency}', [BiicfController::class, 'competencyShow'])->name('biicf.competencies.show');
             Route::get('/biicf/competencies/{competency}/edit', [BiicfController::class, 'competencyEdit'])->name('biicf.competencies.edit');
             Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
             Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');

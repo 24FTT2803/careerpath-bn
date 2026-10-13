@@ -40,7 +40,7 @@
                             <th>ID</th>
                             <th>Name</th>
                             <th>Type</th>
-                            <th>Description</th>
+                            <th>In one sentence</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -54,8 +54,24 @@
                                         {{ $competency->type == 'technical' ? 'Technical' : 'Soft Skill' }}
                                     </span>
                                 </td>
-                                <td>{{ Str::limit($competency->description, 50) ?? '-' }}</td>
+                                {{--
+                                    The written short form, or nothing. The
+                                    book's definition is a paragraph, and cut
+                                    at fifty characters it read as a broken
+                                    sentence that said less than the name
+                                    beside it.
+                                --}}
+                                <td class="essence">
+                                    @if($competency->inEssence())
+                                        {{ $competency->inEssence() }}
+                                    @else
+                                        <span class="not-written">not written yet</span>
+                                    @endif
+                                </td>
                                 <td>
+                                    <a href="{{ route('admin.biicf.competencies.show', $competency) }}" class="btn btn-sm btn-info" title="View">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
                                     <a href="{{ route('admin.biicf.competencies.edit', $competency) }}" class="btn btn-sm btn-warning">
                                         <i class="fas fa-edit"></i>
                                     </a>
@@ -90,6 +106,8 @@
     .btn-primary { background: #c9a84c; color: #0d1f33; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; }
     .btn-primary:hover { background: #e8d4a0; transform: translateY(-2px); }
     .btn-sm { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+    .btn-info { background: #eaf0f7; color: #1a3a5c; border: none; }
+    .btn-info:hover { background: #1a3a5c; color: white; }
     .btn-warning { background: #fbf1de; color: #8a6420; border: none; }
     .btn-warning:hover { background: #e8d4a0; }
     .btn-danger { background: #fbeceb; color: #c65b4e; border: none; }
@@ -100,6 +118,8 @@
     .table { width: 100%; border-collapse: collapse; }
     .table th { text-align: left; padding: 12px 16px; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; }
     .table td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+    .essence { max-width: 420px; font-size: 13px; color: #1a1a2e; line-height: 1.6; }
+    .not-written { color: #9ca3af; font-style: italic; }
     .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
     .badge-blue { background: #e8f0fe; color: #2a5a8c; }
     .badge-green { background: #e9f3ee; color: #2d8f5c; }

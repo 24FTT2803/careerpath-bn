@@ -1399,7 +1399,17 @@
                                                     </span>
                                                 </div>
 
-                                                <div class="desc" x-text="level.summary"></div>
+                                                {{--
+                                                    The generic meaning of the rung —
+                                                    what "Assist" means anywhere —
+                                                    and only where the framework
+                                                    actually takes this competency to
+                                                    that rung. Shown at a level the
+                                                    book marks N/A, it reads as a
+                                                    description of this competency
+                                                    that the book never wrote.
+                                                --}}
+                                                <div class="desc" x-show="level.described" x-text="level.summary"></div>
 
                                                 <ul class="level-statements" x-show="level.statements.length">
                                                     <template x-for="(statement, i) in level.statements" :key="i">

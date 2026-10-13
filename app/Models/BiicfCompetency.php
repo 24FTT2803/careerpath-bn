@@ -13,7 +13,20 @@ class BiicfCompetency extends Model
 
     protected $table = 'biicf_competencies';
 
-    protected $fillable = ['name', 'slug', 'type', 'description'];
+    protected $fillable = ['name', 'slug', 'type', 'description', 'short_definition'];
+
+    /**
+     * The competency in a sentence, for a listing.
+     *
+     * The written short form when there is one. Otherwise
+     * nothing: the book's definition cut off mid-clause reads as
+     * a broken record rather than a summary, and the name is
+     * already in the column beside it.
+     */
+    public function inEssence(): ?string
+    {
+        return $this->short_definition ?: null;
+    }
 
     public function jobRoles(): BelongsToMany
     {
