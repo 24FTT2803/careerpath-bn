@@ -188,6 +188,7 @@ class BiicfController extends Controller
             'functional_group' => 'nullable|string|max:255',
             'job_description' => 'nullable|string',
             'critical_work_function' => 'nullable|string',
+            'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
             'box_colour' => 'nullable|string|max:20',
@@ -260,6 +261,13 @@ class BiicfController extends Controller
             $jobRole,
             $request->input('critical_work_function')
         );
+
+        if ($request->has('programming_languages')) {
+            $updater->replaceProgrammingLanguages(
+                $jobRole,
+                $request->input('programming_languages')
+            );
+        }
     }
 
     /**
@@ -363,6 +371,7 @@ class BiicfController extends Controller
             'functional_group' => 'nullable|string|max:255',
             'job_description' => 'nullable|string',
             'critical_work_function' => 'nullable|string',
+            'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
             'box_colour' => 'nullable|string|max:20',

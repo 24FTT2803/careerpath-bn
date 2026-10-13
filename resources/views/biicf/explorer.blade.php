@@ -794,6 +794,28 @@
         color: var(--text-muted);
     }
 
+    /* Programming languages */
+    .language-note {
+        margin: -6px 0 12px;
+        font-size: 13px;
+        color: var(--text-muted);
+    }
+
+    .language-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .language {
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--primary);
+    }
+
     /* Proficiency Levels */
     .prof-level {
         padding: 14px 18px;
@@ -1590,6 +1612,26 @@
                                 <i class="fas fa-info-circle"></i>
                                 <h4>No training data</h4>
                                 <p>This role doesn't have recommended training yet.</p>
+                            </div>
+
+                            <!--
+                                The framework gives these a heading of
+                                their own rather than listing them as
+                                courses: nothing trains or certifies a
+                                language, the role is expected to know
+                                it. Only shown for the roles the book
+                                names them for.
+                            -->
+                            <div x-show="(selectedRole.programming_languages || []).length" style="margin-top:26px;">
+                                <div class="section-title" style="font-size:16px;">
+                                    <i class="fas fa-code"></i> Programming Languages
+                                </div>
+                                <p class="language-note">Languages in demand for this role.</p>
+                                <div class="language-list">
+                                    <template x-for="l in (selectedRole.programming_languages || [])" :key="l.id">
+                                        <span class="language" x-text="l.name"></span>
+                                    </template>
+                                </div>
                             </div>
                         </div>
                     </template>

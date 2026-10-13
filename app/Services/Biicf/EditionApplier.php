@@ -7,6 +7,7 @@ use App\Models\BiicfEdition;
 use App\Models\BiicfEditionChange;
 use App\Models\BiicfEntryRequirement;
 use App\Models\BiicfJobDescriptionPoint;
+use App\Models\BiicfJobLevel;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
@@ -136,6 +137,8 @@ class EditionApplier
             $field === 'alternative_titles' => $role->update(['alternative_titles' => $value]),
             $field === 'description' => $this->setDescription($role, $value ?? []),
             $field === 'trainings' => $this->setTrainings($role, $value ?? []),
+            $field === 'programming_languages' => (new ProgrammingLanguageWriter)
+                ->write($role, $value ?? []),
             $field === 'tiers' => $this->setTiers($role, $value ?? []),
             str_starts_with($field, 'entry_requirements.') => $this->setRequirements(
                 $role,
@@ -186,6 +189,7 @@ class EditionApplier
         $this->setTiers($role, $payload['tiers'] ?? ['Entrant']);
         $this->setDescription($role, $payload['description'] ?? []);
         $this->setTrainings($role, $payload['trainings'] ?? []);
+        (new ProgrammingLanguageWriter)->write($role, $payload['programming_languages'] ?? []);
 
         foreach ($payload['entry_requirements'] ?? [] as $label => $alternatives) {
             $this->setRequirements(
@@ -325,7 +329,7 @@ class EditionApplier
                 ['job_role_id' => $role->id, 'label' => $label],
                 [
                     'sort_order' => $index + 1,
-                    'job_level_id' => \App\Models\BiicfJobLevel::where('name', $label)->value('id'),
+                    'job_level_id' => BiicfJobLevel::where('name', $label)->value('id'),
                 ]
             )->id;
         }

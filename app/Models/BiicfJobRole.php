@@ -108,6 +108,20 @@ class BiicfJobRole extends Model
     }
 
     /**
+     * The languages the role is expected to know.
+     *
+     * A section of the book in its own right, and not a list of
+     * courses: the framework names no training for them.
+     */
+    public function programmingLanguages(): HasMany
+    {
+        return $this->hasMany(
+            BiicfJobProgrammingLanguage::class,
+            'job_role_id'
+        )->orderBy('sort_order');
+    }
+
+    /**
      * Every duty recorded for this role, at both levels of
      * nesting and of both kinds.
      *

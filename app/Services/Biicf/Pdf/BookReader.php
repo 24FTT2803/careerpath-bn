@@ -54,6 +54,7 @@ class BookReader
         'recommendedtechnicaltrainingcourses' => 'trainings',
         'recommendedsoftskillstrainingcourses' => 'trainings',
         'recommendedtrainingcourses' => 'trainings',
+        'programminglanguages' => 'programming_languages',
     ];
 
     /**
@@ -309,6 +310,12 @@ class BookReader
 
         if (isset($sections['trainings'])) {
             $role['trainings'] = $this->trainings($sections['trainings'], $title);
+        }
+
+        if (isset($sections['programming_languages'])) {
+            $role['programming_languages'] = $this->programmingLanguages(
+                $sections['programming_languages']
+            );
         }
 
         if (isset($sections['work_functions'])) {
@@ -1169,6 +1176,52 @@ class BookReader
         $flush();
 
         return $groups;
+    }
+
+    /**
+     * The languages a role is expected to know.
+     *
+     * Their own section, printed between the courses and the
+     * competency tables, and read as two more courses until the
+     * heading joined the vocabulary — one called "Programming
+     * Languages" and one naming sixteen languages at once, cut
+     * off where the line wrapped.
+     *
+     * The section is set as prose with no bullet in it — a
+     * sentence with the list in brackets after it, wrapping
+     * mid-list — so every line is read, flush left or not, and
+     * the brackets are the list. What is outside them restates
+     * the heading.
+     *
+     * A later edition setting the languages as bullets instead
+     * would have no brackets to read, so that is kept as the
+     * fallback, and prose with neither is kept whole rather than
+     * dropped.
+     *
+     * @param  array<int, PageLine>  $lines
+     * @return array<int, string>
+     */
+    private function programmingLanguages(array $lines): array
+    {
+        $whole = '';
+
+        foreach ($lines as $line) {
+            $whole = $whole === '' ? $line->text : $this->join($whole, $line->text);
+        }
+
+        $whole = $this->tidy($whole);
+
+        if ($whole === '') {
+            return [];
+        }
+
+        if (preg_match('/\(([^)]*)\)/u', $whole, $listed) === 1) {
+            return $this->commaList($listed[1]);
+        }
+
+        $written = $this->bullets($lines);
+
+        return $written === [] ? [$whole] : $written;
     }
 
     /**

@@ -223,6 +223,25 @@
             </div>
         </div>
 
+        @if($jobRole->programmingLanguages->isNotEmpty())
+            {{--
+                The framework gives these a section of their own
+                rather than listing them as courses, and a role
+                either has the section or does not — so an empty
+                card here would say something the book does not.
+            --}}
+            <div class="card">
+                <div class="card-header">Programming Languages</div>
+                <div class="card-body">
+                    <div class="language-list">
+                        @foreach($jobRole->programmingLanguages as $language)
+                            <span class="language">{{ $language->name }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="card full-width">
             <div class="card-header">Entry Requirements</div>
             <div class="card-body">
@@ -312,6 +331,8 @@
     .competency-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
     .competency-item:last-child { border-bottom: none; }
     .comp-name { font-weight: 500; flex: 1; }
+    .language-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .language { padding: 5px 12px; border: 1px solid #e5e7eb; border-radius: 999px; background: #faf8f2; font-size: 13px; font-weight: 500; color: #1a3a5c; }
     .training-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
     .training-item:last-child { border-bottom: none; }
     .training-name { font-weight: 500; }

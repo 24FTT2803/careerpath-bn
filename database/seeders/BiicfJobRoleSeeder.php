@@ -14,6 +14,7 @@ use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
 use App\Models\CareerRecommendation;
 use App\Services\Biicf\EntryRequirementWriter;
+use App\Services\Biicf\ProgrammingLanguageWriter;
 use App\Services\Biicf\WorkFunctionWriter;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Collection;
@@ -513,6 +514,11 @@ class BiicfJobRoleSeeder extends Seeder
         }
 
         (new WorkFunctionWriter)->write($role, $entry['critical_work_functions']);
+
+        (new ProgrammingLanguageWriter)->write(
+            $role,
+            $entry['programming_languages'] ?? []
+        );
     }
 
     /**

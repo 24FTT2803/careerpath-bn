@@ -72,6 +72,16 @@
                     @enderror
                 </div>
 
+                <div class="form-group">
+                    <label>Programming Languages</label>
+                    <textarea name="programming_languages" class="form-control @error('programming_languages') is-invalid @enderror"
+                              rows="3" placeholder="One per line">{{ old('programming_languages') }}</textarea>
+                    <small class="form-text">One per line. The framework lists these as a section of their own, not as recommended courses.</small>
+                    @error('programming_languages')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+
                 <div class="form-row">
                     <div class="form-group half">
                         <label>Career Path Level</label>

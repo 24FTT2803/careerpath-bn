@@ -35,6 +35,20 @@ class JobRoleContentUpdater
     }
 
     /**
+     * Replace the languages a role is expected to know, one per
+     * line.
+     *
+     * A section of the book in its own right, kept apart from
+     * the recommended courses because it is not one: the
+     * framework names no training for a language, it expects the
+     * role to have it.
+     */
+    public function replaceProgrammingLanguages(BiicfJobRole $role, ?string $text): void
+    {
+        (new ProgrammingLanguageWriter)->write($role, $this->lines($text));
+    }
+
+    /**
      * Replace a role's generic duties with one per line.
      *
      * Only the generic ones. A role's family-specific duties

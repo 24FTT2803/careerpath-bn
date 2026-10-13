@@ -216,6 +216,21 @@ class EditionComparer
             );
         }
 
+        /*
+         * In the book's order, which this one time is worth
+         * keeping: the framework lists them by how much they are
+         * in demand, so sorting them would throw that away.
+         */
+        if (array_key_exists('programming_languages', $role)) {
+            $this->field(
+                $subject,
+                'programming_languages',
+                $existing->programmingLanguages->pluck('name')->all(),
+                $role['programming_languages'],
+                $strategy
+            );
+        }
+
         if (array_key_exists('tiers', $role)) {
             $this->field(
                 $subject,

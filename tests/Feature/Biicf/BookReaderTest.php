@@ -183,6 +183,30 @@ describe('the competency tables', function () {
     });
 });
 
+describe('programming languages', function () {
+    test('the section is read as a list of languages, not as courses', function () {
+        /*
+         * The book heads them like any other section and sets
+         * them as prose with the list in brackets, wrapping
+         * mid-list. A reader that did not know the heading
+         * carried on from the courses above and filed three more
+         * of them: the heading, the list as far as the wrap, and
+         * the rest.
+         */
+        $role = readBook()['job_roles'][0];
+
+        expect($role['programming_languages'])->toBe([
+            'JavaScript', 'Python', 'HTML', 'CSS', 'Java', 'SQL', 'NoSQL',
+            'C#', 'C++', 'Rust', 'Perl', 'Go', 'PHP', 'R', 'Ruby', 'Swift',
+        ]);
+
+        foreach ($role['trainings'] as $course) {
+            expect($course)->not->toContain('Programming Languages')
+                ->not->toContain('Ruby, Swift');
+        }
+    });
+});
+
 describe('entry requirements', function () {
     test('each way in is read as its own alternative', function () {
         $ways = readBook()['job_roles'][0]['entry_requirements']['Specialist'];

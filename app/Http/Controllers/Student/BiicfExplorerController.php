@@ -97,6 +97,7 @@ class BiicfExplorerController extends Controller
             'progressesTo:id,title,slug',
             'progressesFrom:id,title,slug',
             'descriptionPoints',
+            'programmingLanguages',
             /*
              * Three levels deep: the book groups duties under
              * headings of its own and nests a further level

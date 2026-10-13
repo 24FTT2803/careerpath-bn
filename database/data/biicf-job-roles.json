@@ -677,10 +677,25 @@
    "SAP Certified Development Associate – ABAP",
    "ITIL Foundation",
    "Scrum Developer",
-   "Node.js",
-   "Programming Languages",
-   "Programming Languages in Demand (JavaScript, Python, HTML, CSS, Java, SQL,",
-   "NoSQL, C#, C++, Rust, Perl, Go, PHP, R, Ruby, Swift)"
+   "Node.js"
+  ],
+  "programming_languages": [
+   "JavaScript",
+   "Python",
+   "HTML",
+   "CSS",
+   "Java",
+   "SQL",
+   "NoSQL",
+   "C#",
+   "C++",
+   "Rust",
+   "Perl",
+   "Go",
+   "PHP",
+   "R",
+   "Ruby",
+   "Swift"
   ],
   "entry_requirements_raw": "BDQF Level 6 in Information Systems, Computer Science or related field with 3 years experience in related fields OR BDQF Level 5 in Information Systems, Computer Science or related field with 5 years of relevant industry experience or possess relevant portfolio/experience.",
   "competencies": [
