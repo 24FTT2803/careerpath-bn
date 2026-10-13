@@ -3,6 +3,34 @@
 @section('title', 'Manage Job Roles')
 
 @section('content')
+@php
+    /*
+     * The rows as the table needs them: what is shown, what is
+     * sorted on, what is filtered by, and where each action
+     * goes. Job levels are a list, because a role can be held
+     * at more than one — IT Administrator/Manager is Entrant and
+     * Expert/Management both.
+     */
+    $rows = $jobRoles->map(fn ($role) => [
+        'id' => $role->id,
+        'title' => $role->title,
+        'sub_sector' => $role->subSector->name ?? '',
+        'sub_sector_id' => $role->sub_sector_id,
+        'levels' => $role->tiers
+            ->map(fn ($tier) => $tier->jobLevel->name ?? $tier->label)
+            ->filter()
+            ->unique()
+            ->values()
+            ->all(),
+        'functional_group' => $role->functional_group ?? '',
+        'show_url' => route('admin.biicf.job-roles.show', $role),
+        'edit_url' => route('admin.biicf.job-roles.edit', $role),
+        'destroy_url' => route('admin.biicf.job-roles.destroy', $role),
+    ])->values();
+@endphp
+
+@include('admin.biicf.partials.table')
+
 <div class="biicf-page">
     <div class="page-header">
         <div>
@@ -14,73 +42,112 @@
         </a>
     </div>
 
-    <div class="card">
+    <div class="card" x-data="adminTable(@js($rows), {
+        sort: 'title',
+        searchable: ['title', 'sub_sector', 'functional_group'],
+        filters: { sub_sector_id: '', levels: '' }
+    })">
         <div class="card-body">
+            {{--
+                The job levels as buttons, the way the explorer
+                offers them for competencies. A role sits at one
+                or more of them, and which ones is the question
+                an administrator is usually asking.
+            --}}
+            <div class="filter-buttons">
+                <button type="button" :class="{ 'is-on': filters.levels === '' }"
+                        @click="filters.levels = ''; page = 1">
+                    All levels
+                </button>
+                @foreach($jobLevels as $level)
+                    <button type="button"
+                            :class="{ 'is-on': filters.levels === @js($level->name) }"
+                            @click="filters.levels = @js($level->name); page = 1">
+                        {{ $level->name }}
+                    </button>
+                @endforeach
+            </div>
+
             <div class="filter-bar mb-3">
-                <form method="GET" class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <div class="filter-field">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search job roles..." class="form-control">
+                        <input type="text" x-model="query" @input="page = 1"
+                               placeholder="Search job roles..." class="form-control">
                     </div>
                     <div class="filter-field">
-                        <select name="sub_sector" class="form-control">
+                        <select x-model="filters.sub_sector_id" @change="page = 1" class="form-control">
                             <option value="">All Sub-Sectors</option>
                             @foreach($subSectors as $sector)
-                                <option value="{{ $sector->id }}" {{ request('sub_sector') == $sector->id ? 'selected' : '' }}>
-                                    {{ $sector->name }}
-                                </option>
+                                <option value="{{ $sector->id }}">{{ $sector->name }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                    <a href="{{ route('admin.biicf.job-roles') }}" class="btn btn-outline btn-sm">Reset</a>
-                </form>
+                    <button type="button" class="btn btn-outline btn-sm" @click="reset()">Reset</button>
+                </div>
             </div>
 
             <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Title</th>
-                            <th>Sub-Sector</th>
-                            <th>Level</th>
-                            <th>Functional Group</th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'id' }" @click="sortBy('id')">
+                                ID <i :class="caret('id')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'title' }" @click="sortBy('title')">
+                                Title <i :class="caret('title')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'sub_sector' }" @click="sortBy('sub_sector')">
+                                Sub-Sector <i :class="caret('sub_sector')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'levels' }" @click="sortBy('levels')">
+                                Job Level <i :class="caret('levels')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'functional_group' }" @click="sortBy('functional_group')">
+                                Functional Group <i :class="caret('functional_group')"></i>
+                            </th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($jobRoles as $role)
+                        <template x-for="row in shown" :key="row.id">
                             <tr>
-                                <td>{{ $role->id }}</td>
-                                <td><strong>{{ $role->title }}</strong></td>
-                                <td>{{ $role->subSector->name ?? '-' }}</td>
-                                <td><span class="badge badge-primary">Level {{ $role->career_path_level }}</span></td>
-                                <td>{{ $role->functional_group ?? '-' }}</td>
+                                <td x-text="row.id"></td>
+                                <td><strong x-text="row.title"></strong></td>
+                                <td x-text="row.sub_sector || '-'"></td>
                                 <td>
-                                    <a href="{{ route('admin.biicf.job-roles.show', $role) }}" class="btn btn-sm btn-info">
+                                    <template x-for="level in row.levels" :key="level">
+                                        <span class="badge badge-primary" x-text="level"></span>
+                                    </template>
+                                    <span x-show="!row.levels.length">-</span>
+                                </td>
+                                <td x-text="row.functional_group || '-'"></td>
+                                <td class="actions">
+                                    <a :href="row.show_url" class="btn btn-sm btn-info" title="View">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    <a href="{{ route('admin.biicf.job-roles.edit', $role) }}" class="btn btn-sm btn-warning">
+                                    <a :href="row.edit_url" class="btn btn-sm btn-warning" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.biicf.job-roles.destroy', $role) }}" method="POST" class="d-inline" data-confirm-delete data-item-name="{{ $role->title }}">
+                                    <form :action="row.destroy_url" method="POST" class="d-inline"
+                                          @submit.prevent="confirmDelete($event.target, row.title)">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="text-center">No job roles found.</td>
-                            </tr>
-                        @endforelse
+                        </template>
+
+                        <tr x-show="!filtered.length">
+                            <td colspan="6" class="text-center">No job roles found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            {{ $jobRoles->links() }}
+
+            @include('admin.biicf.partials.pager')
         </div>
     </div>
 </div>
@@ -106,7 +173,9 @@
     .table { width: 100%; border-collapse: collapse; }
     .table th { text-align: left; padding: 12px 16px; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; }
     .table td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
-    .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+    .table-responsive { overflow-x: auto; }
+    .actions { white-space: nowrap; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; margin-right: 4px; }
     .badge-primary { background: #e8f0fe; color: #2a5a8c; }
     .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }

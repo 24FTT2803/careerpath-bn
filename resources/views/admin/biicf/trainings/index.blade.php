@@ -3,10 +3,22 @@
 @section('title', 'Manage Trainings')
 
 @section('content')
+@php
+    $rows = $trainings->map(fn ($training) => [
+        'id' => $training->id,
+        'name' => $training->name,
+        'roles' => $training->job_roles_count,
+        'edit_url' => route('admin.biicf.trainings.edit', $training),
+        'destroy_url' => route('admin.biicf.trainings.destroy', $training),
+    ])->values();
+@endphp
+
+@include('admin.biicf.partials.table')
+
 <div class="biicf-page">
     <div class="page-header">
         <div>
-            <h1><i class="fas fa-graduation-cap"></i> Trainings & Certifications</h1>
+            <h1><i class="fas fa-graduation-cap"></i> Trainings &amp; Certifications</h1>
             <p class="text-muted">Manage trainings and certifications in the BIICF framework</p>
         </div>
         <a href="{{ route('admin.biicf.trainings.create') }}" class="btn btn-primary">
@@ -14,54 +26,74 @@
         </a>
     </div>
 
-    <div class="card">
+    <div class="card" x-data="adminTable(@js($rows), { sort: 'name', searchable: ['name'] })">
         <div class="card-body">
             <div class="filter-bar mb-3">
-                <form method="GET" class="d-flex flex-wrap gap-2">
+                <div class="d-flex flex-wrap gap-2">
                     <div class="filter-field">
-                        <input type="text" name="search" value="{{ request('search') }}" placeholder="Search trainings..." class="form-control">
+                        <input type="text" x-model="query" @input="page = 1"
+                               placeholder="Search trainings..." class="form-control">
                     </div>
-                    <button type="submit" class="btn btn-primary btn-sm">Filter</button>
-                    <a href="{{ route('admin.biicf.trainings') }}" class="btn btn-outline btn-sm">Reset</a>
-                </form>
+                    <button type="button" class="btn btn-outline btn-sm" @click="reset()">Reset</button>
+                </div>
             </div>
 
             <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'id' }" @click="sortBy('id')">
+                                ID <i :class="caret('id')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'name' }" @click="sortBy('name')">
+                                Name <i :class="caret('name')"></i>
+                            </th>
+                            {{--
+                                Worth sorting on: a course no role
+                                recommends is one nothing in the
+                                framework points at any more.
+                            --}}
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'roles' }" @click="sortBy('roles')">
+                                Recommended for <i :class="caret('roles')"></i>
+                            </th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($trainings as $training)
+                        <template x-for="row in shown" :key="row.id">
                             <tr>
-                                <td>{{ $training->id }}</td>
-                                <td><strong>{{ $training->name }}</strong></td>
+                                <td x-text="row.id"></td>
+                                <td><strong x-text="row.name"></strong></td>
                                 <td>
-                                    <a href="{{ route('admin.biicf.trainings.edit', $training) }}" class="btn btn-sm btn-warning">
+                                    <span class="badge badge-primary">
+                                        <span x-text="row.roles"></span>
+                                        <span x-text="row.roles === 1 ? 'role' : 'roles'"></span>
+                                    </span>
+                                </td>
+                                <td class="actions">
+                                    <a :href="row.edit_url" class="btn btn-sm btn-warning" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.biicf.trainings.destroy', $training) }}" method="POST" class="d-inline" data-confirm-delete data-item-name="{{ $training->name }}">
+                                    <form :action="row.destroy_url" method="POST" class="d-inline"
+                                          @submit.prevent="confirmDelete($event.target, row.name)">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="3" class="text-center">No trainings found.</td>
-                            </tr>
-                        @endforelse
+                        </template>
+
+                        <tr x-show="!filtered.length">
+                            <td colspan="4" class="text-center">No trainings found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            {{ $trainings->links() }}
+
+            @include('admin.biicf.partials.pager')
         </div>
     </div>
 </div>
@@ -85,6 +117,10 @@
     .table { width: 100%; border-collapse: collapse; }
     .table th { text-align: left; padding: 12px 16px; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; }
     .table td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+    .table-responsive { overflow-x: auto; }
+    .actions { white-space: nowrap; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
+    .badge-primary { background: #e8f0fe; color: #2a5a8c; }
     .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .form-control { padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; min-width: 150px; }

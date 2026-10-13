@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\BiicfCompetency;
+use App\Models\BiicfJobLevel;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
@@ -27,7 +28,7 @@ class BiicfController extends Controller
     {
         $subSectors = BiicfSubSector::withCount('jobRoles')
             ->orderBy('sort_order')
-            ->paginate(15);
+            ->get();
 
         return view('admin.biicf.sub-sectors.index', compact('subSectors'));
     }
@@ -95,26 +96,29 @@ class BiicfController extends Controller
     // ============================================
     // JOB ROLES
     // ============================================
-    public function jobRoles(Request $request)
+    /**
+     * Every job role, for a listing that sorts and pages itself.
+     *
+     * Sent whole rather than a page at a time. There are
+     * thirty-eight of them, and server paging meant each page of
+     * results was a round trip that reloaded the screen and lost
+     * whatever sorting and filtering had been set.
+     *
+     * The job levels come with them, because a role is held at
+     * one or more of the framework's levels and that is what an
+     * administrator looks for — not the career path number the
+     * Level column used to show.
+     */
+    public function jobRoles()
     {
-        $query = BiicfJobRole::with('subSector');
+        $jobRoles = BiicfJobRole::with(['subSector:id,name', 'tiers.jobLevel:id,name,sort_order'])
+            ->orderBy('title')
+            ->get();
 
-        if ($request->has('sub_sector') && $request->sub_sector) {
-            $query->where('sub_sector_id', $request->sub_sector);
-        }
-
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('title', 'LIKE', "%{$search}%")
-                    ->orWhere('functional_group', 'LIKE', "%{$search}%");
-            });
-        }
-
-        $jobRoles = $query->orderBy('title')->paginate(15);
         $subSectors = BiicfSubSector::orderBy('name')->get();
+        $jobLevels = BiicfJobLevel::orderBy('sort_order')->get();
 
-        return view('admin.biicf.job-roles.index', compact('jobRoles', 'subSectors'));
+        return view('admin.biicf.job-roles.index', compact('jobRoles', 'subSectors', 'jobLevels'));
     }
 
     public function jobRoleCreate()
@@ -428,20 +432,20 @@ class BiicfController extends Controller
     // ============================================
     // COMPETENCIES
     // ============================================
-    public function competencies(Request $request)
+    /**
+     * The whole glossary, for a listing that sorts and pages
+     * itself.
+     *
+     * A hundred and thirty-nine rows, which is small enough to
+     * send once and large enough that paging it on the server —
+     * reloading the screen and dropping the sort each time — was
+     * the worst of both.
+     */
+    public function competencies()
     {
-        $query = BiicfCompetency::query();
-
-        if ($request->has('type') && $request->type) {
-            $query->where('type', $request->type);
-        }
-
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%");
-        }
-
-        $competencies = $query->orderBy('name')->paginate(15);
+        $competencies = BiicfCompetency::withCount('levelDescriptors')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.biicf.competencies.index', compact('competencies'));
     }
@@ -653,16 +657,17 @@ class BiicfController extends Controller
     // ============================================
     // TRAININGS
     // ============================================
-    public function trainings(Request $request)
+    /**
+     * Every recommended course, with how many roles ask for it.
+     *
+     * Sent whole, like the other listings, so sorting and
+     * searching cost nothing and survive paging.
+     */
+    public function trainings()
     {
-        $query = BiicfTraining::query();
-
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%");
-        }
-
-        $trainings = $query->orderBy('name')->paginate(15);
+        $trainings = BiicfTraining::withCount('jobRoles')
+            ->orderBy('name')
+            ->get();
 
         return view('admin.biicf.trainings.index', compact('trainings'));
     }
