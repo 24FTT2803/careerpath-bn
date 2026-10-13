@@ -58,3 +58,17 @@ test('the badge shows initials and a hint when details are missing', function ()
         ->assertSee('No phone added')
         ->assertSee('Programme not set');
 });
+
+test('the edit page explains the current studies fields', function () {
+    $student = User::factory()->create(['role' => 'student']);
+
+    $this->actingAs($student)
+        ->get(route('student.profile.edit'))
+        ->assertOk()
+        ->assertSee('Current Studies')
+        ->assertSee('Your current programme at Politeknik Brunei and your latest CGPA.')
+        ->assertSee('Current programme')
+        ->assertSee('Latest CGPA (out of 4.00)')
+        ->assertSee('placeholder="e.g. 3.25"', false)
+        ->assertSee('name="cgpa"', false);
+});
