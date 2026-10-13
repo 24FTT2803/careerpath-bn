@@ -790,6 +790,40 @@
         border-style: solid;
     }
 
+    /*
+     * Projects and certifications are optional, and their Add
+     * button should ask for about as much attention as that
+     * deserves. A full-width dashed panel asks for a great deal,
+     * and only looked deliberate once the pointer was on it. This
+     * one is small, solid, and sits at the end of the section
+     * where the next thing to do belongs.
+     */
+    .edit-profile .cpbn-section-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 14px;
+    }
+
+    .edit-profile .cpbn-optional {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ink-dim);
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-section-foot .cpbn-add-project,
+    .edit-profile .cpbn-section-foot .cpbn-add-certification {
+        width: auto;
+        padding: 8px 16px;
+        font-size: 12px;
+        border: 1px solid var(--gold);
+        border-radius: 999px;
+        margin-left: auto;
+    }
+
     /* File Upload Helpers */
     .edit-profile .cpbn-file-note {
         display: block;
@@ -2833,14 +2867,19 @@
                     @endforeach
                 </div>
 
-                <button
-                    type="button"
-                    id="add-project"
-                    class="cpbn-add-project"
-                >
-                    <i class="fas fa-plus"></i>
-                    Add Project
-                </button>
+                <div class="cpbn-section-foot">
+                    <p class="cpbn-optional">Optional. Leave it empty if you have none &mdash; your profile still counts as complete.</p>
+
+                    <button
+                        type="button"
+                        id="add-project"
+                        class="cpbn-add-project"
+                    >
+                        <i class="fas fa-plus"></i>
+                        Add Project
+                    </button>
+                </div>
+
             </div>
 
             <!-- SECTION 6: Certifications -->
@@ -3049,14 +3088,19 @@
                     @endforeach
                 </div>
 
-                <button
-                    type="button"
-                    id="add-certification"
-                    class="cpbn-add-certification"
-                >
-                    <i class="fas fa-plus"></i>
-                    Add Certification
-                </button>
+                <div class="cpbn-section-foot">
+                    <p class="cpbn-optional">Optional. Leave it empty if you have none &mdash; your profile still counts as complete.</p>
+
+                    <button
+                        type="button"
+                        id="add-certification"
+                        class="cpbn-add-certification"
+                    >
+                        <i class="fas fa-plus"></i>
+                        Add Certification
+                    </button>
+                </div>
+
             </div>
 
             <!-- SECTION 7: Aspirations -->

@@ -718,13 +718,23 @@ class User extends Authenticatable implements MustVerifyEmail
             || filled($aspiration->long_term_goals)
         );
 
+        /*
+         * Projects and certifications are not counted. They used
+         * to be, which left a first-year who has built no
+         * portfolio and sat no certification stuck below a
+         * hundred with nothing to do about it — the sections are
+         * optional, and a profile without them is finished.
+         *
+         * Adding one still matters everywhere it should: the
+         * adviser reads them, the readiness score counts them,
+         * and the profile shows them. It is only being complete
+         * that they no longer gate.
+         */
         $sections = [
             'profile' => $hasPersonalProfile,
             'academic' => $hasAcademicInformation,
             'competencies' => $this->competencies()->exists(),
             'interests' => $this->interests()->exists(),
-            'projects' => $this->projects()->exists(),
-            'certifications' => $this->certifications()->exists(),
             'aspirations' => $hasMeaningfulAspirations,
         ];
 
