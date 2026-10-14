@@ -58,6 +58,38 @@ class EditionComparer
     private array $skipped = [];
 
     /**
+     * Where in the book each role's values were read from, by
+     * role title and then by field.
+     *
+     * @var array<string, array<string, array<string, mixed>>>
+     */
+    private array $locations = [];
+
+    /**
+     * The locations for the subject being compared right now.
+     *
+     * Set as each subject is taken up and cleared for the ones
+     * the book says nothing about, so that a role the edition
+     * dropped cannot inherit the page of the role compared
+     * before it.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    private array $placing = [];
+
+    /**
+     * Fields the framework spells differently from the book.
+     *
+     * A competency matched across the two is recorded against
+     * the framework's spelling, which is the right thing for a
+     * diff and leaves the field naming a place the book has
+     * never heard of.
+     *
+     * @var array<string, string>
+     */
+    private array $aliases = [];
+
+    /**
      * @param  array<string, mixed>  $payload  the extracted edition
      */
     public function compare(
@@ -67,6 +99,16 @@ class EditionComparer
     ): int {
         $this->changes = [];
         $this->skipped = [];
+        $this->placing = [];
+        $this->aliases = [];
+
+        /*
+         * A reader that knows where it read something says so.
+         * One that does not — a JSON edition has no pages —
+         * leaves every difference without a location, and the
+         * review screen simply has nothing to offer.
+         */
+        $this->locations = $payload['source_locations'] ?? [];
 
         /*
          * Nothing to compare. The edition exists so the book can
@@ -144,6 +186,8 @@ class EditionComparer
     private function compareRole(array $role, string $strategy): void
     {
         $existing = BiicfJobRole::where('title', $role['title'])->first();
+
+        $this->placing = $this->locations[$role['title']] ?? [];
 
         $subject = [
             'subject_type' => 'job_role',
@@ -337,6 +381,10 @@ class EditionComparer
 
             $matched[$name] = true;
 
+            if ($name !== $row['name']) {
+                $this->aliases['competencies.'.$name] = 'competencies.'.$row['name'];
+            }
+
             foreach ($row['levels'] as $label => $number) {
                 $this->field(
                     $subject,
@@ -378,6 +426,12 @@ class EditionComparer
         $existing = BiicfCompetency::where('name', $competency['name'])
             ->where('type', $competency['type'])
             ->first();
+
+        /*
+         * The competency library is not read from the book's
+         * role pages, so nothing here has a place in it.
+         */
+        $this->placing = [];
 
         $subject = [
             'subject_type' => 'competency',
@@ -444,6 +498,12 @@ class EditionComparer
 
         $titles = collect($roles)->pluck('title')->all();
 
+        /*
+         * A role the edition no longer prints is, by definition,
+         * nowhere in it.
+         */
+        $this->placing = [];
+
         BiicfJobRole::query()
             ->whereNotIn('title', $titles)
             ->get()
@@ -505,7 +565,46 @@ class EditionComparer
             return;
         }
 
+        $change['source_location'] = $this->placeOf((string) $change['field']);
+
         $this->changes[] = $change;
+    }
+
+    /**
+     * Where in the book the field being staged was read from.
+     *
+     * A field names a value more precisely than the book prints
+     * it: a proficiency is "competencies.Cloud Computing.Entrant"
+     * and what is printed is the row the figure sits in. So the
+     * field is tried whole, then a segment shorter, and so on
+     * down to its first — the most precise place the book
+     * actually has.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function placeOf(string $field): ?array
+    {
+        if ($this->placing === []) {
+            return null;
+        }
+
+        $parts = explode('.', $field);
+
+        for ($length = count($parts); $length > 0; $length--) {
+            $key = implode('.', array_slice($parts, 0, $length));
+
+            if (isset($this->placing[$key])) {
+                return $this->placing[$key];
+            }
+
+            $alias = $this->aliases[$key] ?? null;
+
+            if ($alias !== null && isset($this->placing[$alias])) {
+                return $this->placing[$alias];
+            }
+        }
+
+        return null;
     }
 
     private function same(mixed $current, mixed $proposed): bool

@@ -264,7 +264,7 @@ class PageLayout
 
         foreach ($runs as $run) {
             if ($current !== [] && ! $run->sharesLineWith($current[0], self::LINE_TOLERANCE)) {
-                $lines[] = PageLine::of($current);
+                $lines[] = PageLine::of($current, $this->number);
                 $current = [];
             }
 
@@ -272,7 +272,7 @@ class PageLayout
         }
 
         if ($current !== []) {
-            $lines[] = PageLine::of($current);
+            $lines[] = PageLine::of($current, $this->number);
         }
 
         return array_values(array_filter($lines, fn (PageLine $line) => ! $line->isBlank()));

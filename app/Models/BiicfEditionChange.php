@@ -42,6 +42,7 @@ class BiicfEditionChange extends Model
         'kind',
         'current_value',
         'proposed_value',
+        'source_location',
         'decision',
         'edited_value',
         'decided_at',
@@ -54,6 +55,7 @@ class BiicfEditionChange extends Model
         return [
             'current_value' => 'array',
             'proposed_value' => 'array',
+            'source_location' => 'array',
             'edited_value' => 'array',
             'decided_at' => 'datetime',
             'applied_at' => 'datetime',

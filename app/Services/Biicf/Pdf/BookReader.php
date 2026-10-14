@@ -125,6 +125,14 @@ class BookReader
     private array $problems = [];
 
     /**
+     * Where each role's values were read from, by role title and
+     * then by field.
+     *
+     * @var array<string, array<string, array{page: int, spans: array<int, array{x: float, y: float, text: string}>}>>
+     */
+    private array $locations = [];
+
+    /**
      * @param  array<int, PageLayout>  $pages
      * @return array<string, mixed>
      */
@@ -152,6 +160,14 @@ class BookReader
             'job_roles' => $roles,
             'competencies' => [],
             'problems' => $this->problems,
+            /*
+             * Where in the book each value came from. Not part
+             * of the framework and never applied to it — it is
+             * what lets an administrator deciding on a
+             * difference open the page and read the sentence for
+             * themselves.
+             */
+            'source_locations' => $this->locations,
         ];
     }
 
@@ -270,13 +286,13 @@ class BookReader
             return null;
         }
 
-        if (($block['sub_sector'] ?? '') === '') {
+        if ($this->valueOf($block, 'sub_sector') === '') {
             $this->problems[] = "{$title}: no sub-sector could be read, so the role was left out.";
 
             return null;
         }
 
-        $tiers = $this->tiers($block['job_level'] ?? '');
+        $tiers = $this->tiers($this->valueOf($block, 'job_level'));
 
         if ($tiers === []) {
             $this->problems[] = "{$title}: no job level could be read, so the role was left out.";
@@ -292,15 +308,15 @@ class BookReader
 
         $role = [
             'title' => $title,
-            'sub_sector' => $block['sub_sector'],
+            'sub_sector' => $this->valueOf($block, 'sub_sector'),
             'tiers' => $tiers,
         ];
 
-        $role['alternate_titles'] = $this->commaList($block['alternate_titles'] ?? '');
+        $role['alternate_titles'] = $this->commaList($this->valueOf($block, 'alternate_titles'));
 
         foreach (['functional_group', 'job_family'] as $extra) {
-            if (($block[$extra] ?? '') !== '') {
-                $role[$extra] = $block[$extra];
+            if ($this->valueOf($block, $extra) !== '') {
+                $role[$extra] = $this->valueOf($block, $extra);
             }
         }
 
@@ -330,7 +346,99 @@ class BookReader
             $role['competencies'] = $tables['rows'];
         }
 
+        $this->place($title, $first, $block, $sections, $tables['places'] ?? [], $tiers);
+
         return $role;
+    }
+
+    /**
+     * Record where each of a role's values was read from.
+     *
+     * Keyed the way a staged difference is keyed, so the review
+     * screen can look up a row's location without knowing
+     * anything about how the book is laid out.
+     *
+     * @param  array<string, array{text: string, runs: array<int, TextRun>}>  $block
+     * @param  array<string, array<int, PageLine>>  $sections
+     * @param  array<string, array{page: int, x: float, y: float, text: string}>  $places
+     * @param  array<int, string>  $tiers
+     */
+    private function place(
+        string $title,
+        PageLayout $first,
+        array $block,
+        array $sections,
+        array $places,
+        array $tiers,
+    ): void {
+        $at = [];
+
+        /*
+         * The whole role, for an edition proposing one the
+         * framework has never had: the title is where a reader
+         * checking it would start.
+         */
+        $at['*'] = Placement::at($first->number, [
+            'x' => 0.0,
+            'y' => 0.0,
+            'text' => $title,
+        ]);
+
+        foreach ($block as $field => $value) {
+            $at[$field] = Placement::ofRuns($first->number, $value['runs']);
+        }
+
+        /*
+         * The job level names the tiers, so a difference in the
+         * tiers points at the label that names them.
+         */
+        $at['tiers'] = $at['job_level'] ?? null;
+
+        $at['alternative_titles'] = $at['alternate_titles'] ?? null;
+
+        foreach ([
+            'description' => 'description',
+            'trainings' => 'trainings',
+            'programming_languages' => 'programming_languages',
+            'work_functions' => 'critical_work_functions',
+        ] as $section => $field) {
+            if (isset($sections[$section])) {
+                $at[$field] = Placement::ofLines($sections[$section]);
+            }
+        }
+
+        /*
+         * Every tier's requirements are printed in one block, so
+         * they share the one location rather than each pointing
+         * at a line the reader cannot tell apart from the next.
+         */
+        if (isset($sections['entry_requirements'])) {
+            $requirements = Placement::ofLines($sections['entry_requirements']);
+
+            $at['entry_requirements'] = $requirements;
+
+            foreach ($tiers as $tier) {
+                $at["entry_requirements.{$tier}"] = $requirements;
+            }
+        }
+
+        /*
+         * A competency's row of figures runs across the page, so
+         * the row is the place and every tier's cell in it shares
+         * that place.
+         */
+        foreach ($places as $name => $where) {
+            $at['competencies.'.$name] = Placement::at((int) $where['page'], [
+                'x' => (float) $where['x'],
+                'y' => (float) $where['y'],
+                'text' => (string) $where['text'],
+            ]);
+        }
+
+        $this->locations[$title] = array_map(
+            fn (Placement $placement) => $placement->toArray(),
+            array_filter($at, fn (?Placement $placement) => $placement !== null)
+        );
     }
 
     /**
@@ -403,6 +511,18 @@ class BookReader
                         'at' => $value->x,
                         'of' => $this->keyOf($name),
                         'level' => trim($value->text),
+                        /*
+                         * Where the row is printed, which is the
+                         * name rather than the figure: a reader
+                         * sent to check a proficiency is looking
+                         * for the competency it belongs to.
+                         */
+                        'where' => [
+                            'page' => $page->number,
+                            'x' => $name->x,
+                            'y' => $name->y,
+                            'text' => $this->tidy($name->text),
+                        ],
                     ];
 
                     $used[$this->keyOf($value)] = true;
@@ -412,7 +532,13 @@ class BookReader
         }
 
         if ($rows === []) {
-            return ['rows' => [], 'used' => [], 'tiers' => $tiers];
+            return ['rows' => [], 'used' => [], 'tiers' => $tiers, 'places' => []];
+        }
+
+        $places = [];
+
+        foreach ($rows as $row) {
+            $places[$row['name']] ??= $row['where'];
         }
 
         $rows = $this->rank($rows);
@@ -420,7 +546,7 @@ class BookReader
         $wide = $this->widthOf($rows, $title);
 
         if ($wide === null) {
-            return ['rows' => [], 'used' => $used, 'tiers' => $tiers];
+            return ['rows' => [], 'used' => $used, 'tiers' => $tiers, 'places' => $places];
         }
 
         /*
@@ -449,6 +575,7 @@ class BookReader
             'rows' => $this->byTier($rows, $tiers, $wide, $title),
             'used' => $used,
             'tiers' => $tiers,
+            'places' => $places,
         ];
     }
 
@@ -898,7 +1025,12 @@ class BookReader
             $key = $this->normalise($run->text);
 
             if (isset(self::LABELS[$key])) {
-                $labels[] = ['field' => self::LABELS[$key], 'x' => $run->x, 'y' => $run->y];
+                $labels[] = [
+                    'field' => self::LABELS[$key],
+                    'x' => $run->x,
+                    'y' => $run->y,
+                    'run' => $run,
+                ];
 
                 continue;
             }
@@ -970,14 +1102,37 @@ class BookReader
             $mine = [];
 
             while ($taken < count($values) && $values[$taken]->y < $ends) {
-                $mine[] = $values[$taken]->text;
+                $mine[] = $values[$taken];
                 $taken++;
             }
 
-            $block[$label['field']] = $this->tidy(implode(' ', $mine));
+            $block[$label['field']] = [
+                'text' => $this->tidy(implode(' ', array_map(
+                    fn (TextRun $run) => $run->text,
+                    $mine
+                ))),
+                /*
+                 * The label itself leads the runs, so a box drawn
+                 * around them says which row of the block the
+                 * value belongs to rather than leaving a reader
+                 * to count rows.
+                 */
+                'runs' => array_merge([$label['run']], $mine),
+            ];
         }
 
         return $block;
+    }
+
+    /**
+     * One label's value, or the empty string where the book
+     * printed the label and left the value blank.
+     *
+     * @param  array<string, array{text: string, runs: array<int, TextRun>}>  $block
+     */
+    private function valueOf(array $block, string $field): string
+    {
+        return $block[$field]['text'] ?? '';
     }
 
     /**
@@ -1078,6 +1233,7 @@ class BookReader
             y: $line->y,
             opensBullet: $line->opensBullet,
             runs: $line->runs,
+            page: $line->page,
         );
     }
 

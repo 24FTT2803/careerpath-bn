@@ -21,6 +21,10 @@ readonly class PageLine
 {
     /**
      * @param  array<int, TextRun>  $runs
+     * @param  int|null  $page  the page this line is printed on, as the
+     *                          reader was handed it — kept so a value
+     *                          stored in the framework can be pointed back
+     *                          at the place in the book it was read from
      */
     public function __construct(
         public string $text,
@@ -28,12 +32,13 @@ readonly class PageLine
         public float $y,
         public bool $opensBullet,
         public array $runs,
+        public ?int $page = null,
     ) {}
 
     /**
      * @param  array<int, TextRun>  $runs  every run sharing one printed line, in reading order
      */
-    public static function of(array $runs): self
+    public static function of(array $runs, ?int $page = null): self
     {
         usort($runs, fn (TextRun $a, TextRun $b) => $a->x <=> $b->x);
 
@@ -77,6 +82,7 @@ readonly class PageLine
             y: $runs[0]->y ?? 0.0,
             opensBullet: $opens,
             runs: $runs,
+            page: $page,
         );
     }
 
