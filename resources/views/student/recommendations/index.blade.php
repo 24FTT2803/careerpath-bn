@@ -283,17 +283,100 @@
         }
     }
 
-    .recommendations-fresh-note {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 14px;
-        padding: 10px 14px;
-        border-radius: 9px;
-        background: rgba(201, 168, 76, 0.14);
+    /* The matches, announced. */
+    .fresh-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(13, 31, 51, 0.55);
+        backdrop-filter: blur(3px);
+        animation: freshFade 0.25s ease;
+    }
+
+    .fresh-popup {
+        position: relative;
+        width: 100%;
+        max-width: 420px;
+        background: white;
+        border-radius: 16px;
+        border-top: 4px solid var(--rec-accent);
+        padding: 32px 30px 26px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(13, 31, 51, 0.3);
+        animation: freshRise 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes freshFade {
+        from { opacity: 0; }
+    }
+
+    @keyframes freshRise {
+        from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    }
+
+    .fresh-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        background: none;
+        border: none;
+        color: var(--rec-muted);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 6px;
+        line-height: 1;
+    }
+
+    .fresh-icon {
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        background: rgba(201, 168, 76, 0.16);
         color: #8a6420;
-        font-size: 12px;
+        font-size: 22px;
+    }
+
+    .fresh-popup h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 21px;
+        color: var(--rec-primary);
+        margin: 0 0 8px;
+    }
+
+    .fresh-popup p {
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--rec-muted);
+        margin: 0 0 22px;
+    }
+
+    .fresh-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 999px;
+        background: var(--rec-accent);
+        color: var(--rec-primary);
+        font-family: inherit;
+        font-size: 13px;
         font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .fresh-action:hover {
+        background: var(--rec-primary);
+        color: white;
     }
 
     /*
@@ -722,15 +805,7 @@
                     student presses generate and comes away
                     thinking nothing happened.
                 --}}
-                @if(session('just_generated'))
-                    <p class="recommendations-fresh-note">
-                        <i class="fas fa-wand-magic-sparkles"></i>
-                        Just generated &mdash; here are your matches.
-                    </p>
-                @endif
-
-                <div class="recommendations-grid @if(session('just_generated')) is-fresh @endif"
-                     id="recommendationsGrid">
+                <div class="recommendations-grid" id="recommendationsGrid">
 
                     @foreach($recommendations as $index => $recommendation)
 
@@ -821,27 +896,75 @@
     </div>
 </div>
 
+{{--
+    Said in front of the student, the same way the dashboard asks
+    them to generate in the first place. The page reloads looking
+    exactly as it did otherwise, and a strip above the grid is
+    read by whoever was already looking at the grid.
+
+    It points at the matches rather than moving the page to them:
+    where they are is part of what the student is learning.
+--}}
 @if(session('just_generated'))
+    <div class="fresh-backdrop" id="freshPopup">
+        <div class="fresh-popup" role="dialog" aria-modal="true" aria-labelledby="freshTitle">
+            <button type="button" class="fresh-close" id="freshClose" aria-label="Close">
+                <i class="fas fa-xmark"></i>
+            </button>
+
+            <span class="fresh-icon">
+                <i class="fas fa-wand-magic-sparkles"></i>
+            </span>
+
+            <h2 id="freshTitle">Here are your recommendations</h2>
+
+            <p>
+                {{ $recommendationCount ?? count($recommendations ?? []) }} career
+                {{ ($recommendationCount ?? count($recommendations ?? [])) === 1 ? 'match' : 'matches' }},
+                ranked against what your profile records. They are waiting below.
+            </p>
+
+            <button type="button" class="fresh-action" id="freshSee">
+                Show me
+                <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
+    </div>
+
     <script>
-        /*
-         * The matches sit below the generation panel, so pressing
-         * the button lands the student back at the top with the
-         * new set out of sight. The page comes to them.
-         */
         document.addEventListener('DOMContentLoaded', function () {
+            const popup = document.getElementById('freshPopup');
             const grid = document.getElementById('recommendationsGrid');
 
-            if (!grid) {
+            if (!popup) {
                 return;
             }
 
-            window.requestAnimationFrame(function () {
-                grid.scrollIntoView({
-                    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
-                        ? 'auto'
-                        : 'smooth',
-                    block: 'start',
-                });
+            const close = function () {
+                popup.remove();
+
+                /*
+                 * The ring and the stagger start when the popup
+                 * clears, so the student is looking at the
+                 * matches as they arrive rather than at a dialog
+                 * over the top of them.
+                 */
+                grid?.classList.add('is-fresh');
+            };
+
+            document.getElementById('freshClose')?.addEventListener('click', close);
+            document.getElementById('freshSee')?.addEventListener('click', close);
+
+            popup.addEventListener('click', function (event) {
+                if (event.target === popup) {
+                    close();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    close();
+                }
             });
         });
     </script>

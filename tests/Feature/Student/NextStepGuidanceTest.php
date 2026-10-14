@@ -7,6 +7,7 @@ use App\Models\OrganisationGroup;
 use App\Models\OrganisationGroupType;
 use App\Models\RecommendationGeneration;
 use App\Models\User;
+use Database\Seeders\BiicfJobRoleSeeder;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
 
@@ -71,9 +72,9 @@ function finishedStudent(): User
 
     $student->profile()->create(['nationality' => 'Bruneian']);
     $student->aspirations()->create(['vision_statement' => 'To work in network security.']);
-    $student->interests()->create(['interest_name' => 'Networking', 'category' => 'career']);
+    $student->interests()->create(['interest_name' => 'Problem Solving', 'category' => 'career']);
     $student->competencies()->create([
-        'skill_name' => 'Networking',
+        'skill_name' => 'Python',
         'category' => 'technical',
         'proficiency_level' => 'intermediate',
     ]);
@@ -84,9 +85,12 @@ function finishedStudent(): User
 /**
  * What the form actually sends.
  *
- * A save writes the whole user row, so a payload leaving out the
- * programme and the CGPA clears them — which unfinishes the very
- * profile these tests are about.
+ * The whole profile, because that is what a save writes: the user
+ * row, the profile row, the aspirations, the interests and the
+ * skills are all replaced by what arrives, so anything left out
+ * of the payload is cleared. A payload naming only the student
+ * wipes the very profile these tests are about and leaves them
+ * asserting against an empty one.
  *
  * @return array<string, mixed>
  */
@@ -97,6 +101,10 @@ function profilePayload(User $student): array
         'student_id' => $student->student_id,
         'programme' => $student->programme,
         'cgpa' => $student->cgpa,
+        'nationality' => $student->profile?->nationality,
+        'vision_statement' => $student->aspirations?->vision_statement,
+        'interests' => $student->interests->pluck('interest_name')->all(),
+        'skills' => $student->competencies->pluck('skill_name')->all(),
     ];
 }
 
@@ -224,6 +232,13 @@ describe('when a set is generated', function () {
     beforeEach(function () {
         $this->seed(FeatureDefinitionSeeder::class);
         $this->seed(PlanSeeder::class);
+
+        /*
+         * Generation refuses to run against fewer than three
+         * competency-profiled roles, so the framework itself has
+         * to be there.
+         */
+        $this->seed(BiicfJobRoleSeeder::class);
     });
 
     test('the page is told to make an entrance', function () {
@@ -241,19 +256,19 @@ describe('when a set is generated', function () {
             ->assertSessionHas('just_generated', true);
     });
 
-    test('the matches announce themselves once, not on the next visit', function () {
+    test('the matches announce themselves once, in front of the student', function () {
         $student = finishedStudent();
 
         $this->actingAs($student)
             ->followingRedirects()
             ->post(route('student.recommendations.generate'))
             ->assertOk()
-            ->assertSee('Just generated');
+            ->assertSee('Here are your recommendations');
 
         /* Opened again, it is yesterday's news and says nothing. */
         $this->actingAs($student)
             ->get(route('student.recommendations.index'))
             ->assertOk()
-            ->assertDontSee('Just generated');
+            ->assertDontSee('Here are your recommendations');
     });
 });

@@ -651,42 +651,130 @@
         }
 
         /*
-         * The step that follows a finished profile, rather than
-         * news about what just happened. Gold, because it is an
-         * invitation and not a result.
+         * The step that follows a finished profile, put in front
+         * of the student rather than filed among the alerts.
+         * Shared with the dashboard's guidance, so being told what
+         * to do next looks the same wherever it happens.
          */
-        .alert-next {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-            background: rgba(201, 168, 76, 0.12);
-            color: #6b5417;
-            border: 1px solid rgba(201, 168, 76, 0.45);
+        .step-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: grid;
+            place-items: center;
+            padding: 20px;
+            background: rgba(13, 31, 51, 0.55);
+            backdrop-filter: blur(3px);
+            animation: stepFade 0.25s ease;
         }
 
-        .alert-next span {
-            flex: 1;
-            min-width: 240px;
+        /*
+         * The dashboard draws its popup hidden and shows it only
+         * if this browser has not seen that step, so the rule has
+         * to beat the display: grid above it.
+         */
+        .step-backdrop[hidden] {
+            display: none;
         }
 
-        .alert-next a {
+        .step-popup {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            background: var(--card);
+            border-radius: 16px;
+            border-top: 4px solid var(--accent);
+            padding: 32px 30px 26px;
+            text-align: center;
+            box-shadow: 0 24px 60px rgba(13, 31, 51, 0.3);
+            animation: stepRise 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes stepFade {
+            from { opacity: 0; }
+        }
+
+        @keyframes stepRise {
+            from { opacity: 0; transform: translateY(14px) scale(0.97); }
+        }
+
+        .step-close {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 16px;
+            cursor: pointer;
+            padding: 6px;
+            line-height: 1;
+        }
+
+        .step-close:hover {
+            color: var(--primary);
+        }
+
+        .step-icon {
+            display: grid;
+            place-items: center;
+            width: 56px;
+            height: 56px;
+            margin: 0 auto 16px;
+            border-radius: 50%;
+            background: rgba(201, 168, 76, 0.16);
+            color: #8a6420;
+            font-size: 22px;
+        }
+
+        .step-popup h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            color: var(--primary);
+            margin: 0 0 8px;
+        }
+
+        .step-popup p {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-muted);
+            margin: 0 0 22px;
+        }
+
+        .step-action {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            padding: 8px 16px;
+            width: 100%;
+            padding: 12px 20px;
             border-radius: 999px;
-            background: #c9a84c;
-            color: #1a3a5c;
+            background: var(--accent);
+            color: var(--primary);
+            font-size: 14px;
             font-weight: 600;
-            font-size: 13px;
             text-decoration: none;
-            white-space: nowrap;
+            transition: var(--transition);
         }
 
-        .alert-next a:hover {
-            background: #1a3a5c;
+        .step-action:hover {
+            background: var(--primary);
             color: #fff;
+        }
+
+        .step-later {
+            display: block;
+            margin: 12px auto 0;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 13px;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .step-later:hover {
+            color: var(--primary);
         }
 
         .alert-warning {
@@ -1112,21 +1200,69 @@
                 Set the first time a student's profile is
                 finished. Recommendations are generated on
                 request, on a page there is otherwise no reason to
-                open, so this is the moment to say so — once, and
-                with the way there attached.
+                open, so this is the moment to say so — once, in
+                front of them, with the way there attached. A line
+                among the other alerts is read by whoever was
+                already reading alerts.
             --}}
             @if (session('generate_prompt'))
-                <div class="alert alert-next">
-                    <i class="fas fa-wand-magic-sparkles"></i>
-                    <span>
-                        Your profile is complete. Generate your career recommendations
-                        to see which roles in the framework match it.
-                    </span>
-                    <a href="{{ route('student.recommendations.index') }}">
-                        Generate recommendations
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
+                <div class="step-backdrop" id="generatePrompt">
+                    <div class="step-popup" role="dialog" aria-modal="true" aria-labelledby="generatePromptTitle">
+                        <button type="button" class="step-close" data-step-dismiss aria-label="Close">
+                            <i class="fas fa-xmark"></i>
+                        </button>
+
+                        <span class="step-icon">
+                            <i class="fas fa-wand-magic-sparkles"></i>
+                        </span>
+
+                        <h2 id="generatePromptTitle">Your profile is complete</h2>
+
+                        <p>
+                            Generate your career recommendations to see which roles in the
+                            framework match what you have recorded.
+                        </p>
+
+                        <a href="{{ route('student.recommendations.index') }}" class="step-action">
+                            Generate recommendations
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+
+                        <button type="button" class="step-later" data-step-dismiss>
+                            Not now
+                        </button>
+                    </div>
                 </div>
+
+                <script>
+                    document.addEventListener('DOMContentLoaded', function () {
+                        const popup = document.getElementById('generatePrompt');
+
+                        if (!popup) {
+                            return;
+                        }
+
+                        const close = function () {
+                            popup.remove();
+                        };
+
+                        popup.querySelectorAll('[data-step-dismiss]').forEach(function (control) {
+                            control.addEventListener('click', close);
+                        });
+
+                        popup.addEventListener('click', function (event) {
+                            if (event.target === popup) {
+                                close();
+                            }
+                        });
+
+                        document.addEventListener('keydown', function (event) {
+                            if (event.key === 'Escape') {
+                                close();
+                            }
+                        });
+                    });
+                </script>
             @endif
 
             @php

@@ -147,122 +147,11 @@
         margin-bottom: 24px;
     }
 
-    /* The next step, in front of the student rather than beside it. */
-    .next-step-backdrop {
-        position: fixed;
-        inset: 0;
-        z-index: 1200;
-        display: grid;
-        place-items: center;
-        padding: 20px;
-        background: rgba(13, 31, 51, 0.55);
-        backdrop-filter: blur(3px);
-        animation: nextStepFade 0.25s ease;
-    }
-
-    .next-step-backdrop[hidden] {
-        display: none;
-    }
-
-    .next-step-popup {
-        position: relative;
-        width: 100%;
-        max-width: 440px;
-        background: var(--card);
-        border-radius: 16px;
-        border-top: 4px solid var(--accent);
-        padding: 32px 30px 26px;
-        text-align: center;
-        box-shadow: 0 24px 60px rgba(13, 31, 51, 0.3);
-        animation: nextStepRise 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    @keyframes nextStepFade {
-        from { opacity: 0; }
-    }
-
-    @keyframes nextStepRise {
-        from { opacity: 0; transform: translateY(14px) scale(0.97); }
-    }
-
-    .next-step-close {
-        position: absolute;
-        top: 12px;
-        right: 14px;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 16px;
-        cursor: pointer;
-        padding: 6px;
-        line-height: 1;
-    }
-
-    .next-step-close:hover {
-        color: var(--primary);
-    }
-
-    .next-step-icon {
-        display: grid;
-        place-items: center;
-        width: 56px;
-        height: 56px;
-        margin: 0 auto 16px;
-        border-radius: 50%;
-        background: rgba(201, 168, 76, 0.16);
-        color: #8a6420;
-        font-size: 22px;
-    }
-
-    .next-step-popup h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 22px;
-        color: var(--primary);
-        margin: 0 0 8px;
-    }
-
-    .next-step-popup p {
-        font-size: 14px;
-        line-height: 1.7;
-        color: var(--text-muted);
-        margin: 0 0 22px;
-    }
-
-    .next-step-action {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        width: 100%;
-        padding: 12px 20px;
-        border-radius: 999px;
-        background: var(--accent);
-        color: var(--primary);
-        font-size: 14px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: var(--transition);
-    }
-
-    .next-step-action:hover {
-        background: var(--primary);
-        color: #fff;
-    }
-
-    .next-step-later {
-        display: block;
-        margin: 12px auto 0;
-        background: none;
-        border: none;
-        color: var(--text-muted);
-        font-size: 13px;
-        cursor: pointer;
-        text-decoration: underline;
-    }
-
-    .next-step-later:hover {
-        color: var(--primary);
-    }
+    /*
+     * The popup itself is styled in the layout, beside the one
+     * that follows a finished profile — being told what to do
+     * next should look the same wherever it happens.
+     */
 
     .stat-card {
         background: var(--card);
@@ -985,29 +874,29 @@
         --}}
         @if($nextStep)
             <div
-                class="next-step-backdrop"
+                class="step-backdrop"
                 id="nextStepPopup"
                 data-step="{{ $nextStep['key'] }}"
                 hidden
             >
-                <div class="next-step-popup" role="dialog" aria-modal="true" aria-labelledby="nextStepTitle">
-                    <button type="button" class="next-step-close" id="nextStepClose" aria-label="Close">
+                <div class="step-popup" role="dialog" aria-modal="true" aria-labelledby="nextStepTitle">
+                    <button type="button" class="step-close" id="nextStepClose" aria-label="Close">
                         <i class="fas fa-xmark"></i>
                     </button>
 
-                    <span class="next-step-icon">
+                    <span class="step-icon">
                         <i class="fas {{ $nextStep['icon'] }}"></i>
                     </span>
 
                     <h2 id="nextStepTitle">{{ $nextStep['title'] }}</h2>
                     <p>{{ $nextStep['body'] }}</p>
 
-                    <a href="{{ $nextStep['route'] }}" class="next-step-action">
+                    <a href="{{ $nextStep['route'] }}" class="step-action">
                         {{ $nextStep['action'] }}
                         <i class="fas fa-arrow-right"></i>
                     </a>
 
-                    <button type="button" class="next-step-later" id="nextStepLater">
+                    <button type="button" class="step-later" id="nextStepLater">
                         Not now
                     </button>
                 </div>
