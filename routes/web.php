@@ -706,6 +706,7 @@ Route::middleware(['auth'])
             Route::patch('/biicf/editions/{edition}/changes/{change}', [BiicfEditionController::class, 'decide'])->name('biicf.editions.decide');
             Route::patch('/biicf/editions/{edition}/changes', [BiicfEditionController::class, 'decideAll'])->name('biicf.editions.decide-all');
             Route::post('/biicf/editions/{edition}/apply', [BiicfEditionController::class, 'apply'])->name('biicf.editions.apply');
+            Route::post('/biicf/editions/{edition}/reread', [BiicfEditionController::class, 'reread'])->name('biicf.editions.reread');
             Route::get('/biicf/editions/{edition}/source', [BiicfEditionController::class, 'source'])->name('biicf.editions.source');
             Route::delete('/biicf/editions/{edition}', [BiicfEditionController::class, 'destroy'])->name('biicf.editions.destroy');
 

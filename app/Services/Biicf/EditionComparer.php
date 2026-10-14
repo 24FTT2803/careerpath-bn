@@ -664,6 +664,20 @@ class EditionComparer
             $key = $change['subject_type'].'|'.$change['subject_key'].'|'.$change['field'];
 
             if ($decided->has($key)) {
+                /*
+                 * The decision stands, but where the book prints
+                 * the value is not something anybody decided. A
+                 * reader corrected since the decision was taken
+                 * should correct these too, or a row decided
+                 * early keeps a page number the rest of the
+                 * edition no longer agrees with.
+                 */
+                $located = $change['source_location'] ?? null;
+
+                if ($located !== null) {
+                    $decided->get($key)->update(['source_location' => $located]);
+                }
+
                 continue;
             }
 

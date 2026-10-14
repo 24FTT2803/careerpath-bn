@@ -34,9 +34,20 @@
                 <span data-pending>{{ $pending }}</span> undecided of {{ $pending + $decided }}
                 @if($edition->source_original_name)
                     · read from
-                    <a href="{{ route('admin.biicf.editions.source', $edition) }}" target="_blank" rel="noopener">
+                    {{--
+                        Opened here rather than in a tab of its own. The
+                        book is what the screen is about, and sending an
+                        administrator out of the review to read it means
+                        finding their place again on the way back.
+                    --}}
+                    @if($edition->source_file_path)
+                        <button type="button" class="book-link" data-book-at data-page="1" data-spans="[]"
+                                data-label="the book itself">
+                            {{ $edition->source_original_name }}
+                        </button>
+                    @else
                         {{ $edition->source_original_name }}
-                    </a>
+                    @endif
                 @endif
             </p>
         </div>
@@ -45,6 +56,29 @@
             <a href="{{ route('admin.biicf.editions.index') }}" class="btn btn-outline">
                 <i class="fas fa-arrow-left"></i> Editions
             </a>
+
+            {{--
+                Read the same file again, with no upload.
+
+                For when the reader has been corrected rather than
+                the book: a fix to how a page is numbered or a
+                section folded has to reach an edition already
+                staged, and uploading the same book again would
+                stage a second edition of it.
+            --}}
+            @if($edition->source_file_path)
+                <form method="POST" action="{{ route('admin.biicf.editions.reread', $edition) }}"
+                      data-confirm="The book will be read again from the file already on record. Differences still undecided are replaced by what it says now; decisions you have already taken are kept."
+                      data-confirm-title="Read the book again?"
+                      data-confirm-ok="Yes, read it again"
+                      data-confirm-type="info">
+                    @csrf
+                    <input type="hidden" name="strategy" value="changed">
+                    <button type="submit" class="btn btn-outline" data-reread>
+                        <i class="fas fa-rotate"></i> Read the book again
+                    </button>
+                </form>
+            @endif
 
             @if($edition->applied_at === null)
                 <form method="POST" action="{{ route('admin.biicf.editions.apply', $edition) }}"
@@ -114,8 +148,13 @@
                 <button type="submit" class="btn btn-outline btn-small">Keep what we have for all</button>
             </form>
 
-            <a href="{{ route('admin.biicf.editions.show', ['edition' => $edition, 'show' => 'pending']) }}"
-               class="btn btn-outline btn-small">Show only undecided</a>
+            @if($everything)
+                <a href="{{ route('admin.biicf.editions.show', $edition) }}"
+                   class="btn btn-outline btn-small">Show only what is undecided</a>
+            @elseif($decided > 0)
+                <a href="{{ route('admin.biicf.editions.show', ['edition' => $edition, 'show' => 'all']) }}"
+                   class="btn btn-outline btn-small">{{ $decided }} already decided</a>
+            @endif
         </div>
     @endif
 
@@ -153,6 +192,31 @@
 
                             @if($change->applied_at)
                                 <span class="badge badge-core">applied</span>
+                            @endif
+
+                            {{--
+                                Where the book says it. The question a
+                                difference asks is which of two values is
+                                right, and until this was recorded the only
+                                way to answer it was to search three hundred
+                                pages by hand.
+
+                                Absent where there is nothing to point at: a
+                                JSON edition has no pages, a role the edition
+                                dropped is in no edition at all, and rows
+                                staged before the reader kept its positions
+                                never had any.
+                            --}}
+                            @if($edition->source_file_path && is_array($change->source_location))
+                                <button type="button"
+                                        class="book-at"
+                                        data-book-at
+                                        data-page="{{ $change->source_location['page'] ?? 1 }}"
+                                        data-spans="{{ json_encode($change->source_location['spans'] ?? []) }}"
+                                        data-label="{{ $change->field === '*' ? 'the whole record' : $change->field }}">
+                                    <i class="fas fa-book-open"></i>
+                                    p.{{ $change->source_location['page'] ?? '?' }}
+                                </button>
                             @endif
                         </div>
 
@@ -237,11 +301,97 @@
     @empty
         <div class="card">
             <div class="card-body">
-                <p>Nothing to review. This edition says nothing the framework does not already say.</p>
+                @if($decided > 0 && ! $everything)
+                    <p>
+                        Everything in this edition has been decided —
+                        {{ $decided }} {{ $decided === 1 ? 'difference' : 'differences' }}
+                        @if($edition->applied_at)
+                            and applied on {{ $edition->applied_at->format('d M Y') }}.
+                        @else
+                            waiting to be applied.
+                        @endif
+                    </p>
+
+                    <a href="{{ route('admin.biicf.editions.show', ['edition' => $edition, 'show' => 'all']) }}"
+                       class="btn btn-outline btn-small">See what was decided</a>
+                @else
+                    <p>Nothing to review. This edition says nothing the framework does not already say.</p>
+                @endif
             </div>
         </div>
     @endforelse
+
+    {{--
+        Shown when the last undecided difference is answered
+        without the page reloading.
+    --}}
+    <div class="card" data-nothing-left hidden>
+        <div class="card-body">
+            <p>That was the last one. Everything in this edition has been decided.</p>
+        </div>
+    </div>
 </div>
+
+{{--
+    The book itself, open at the page.
+
+    One panel for the whole screen rather than one per difference:
+    there are a hundred and twenty differences on a new edition
+    and rendering a page of a three-hundred-page book into each
+    of them is not a page anybody would wait for.
+--}}
+@if($edition->source_file_path)
+    <div class="book-source" id="bookSource" hidden>
+        <div class="book-panel" role="dialog" aria-modal="true" aria-labelledby="bookSourceTitle">
+            <div class="book-bar">
+                <div>
+                    <h3 id="bookSourceTitle">{{ $edition->source_original_name ?? $edition->name }}</h3>
+                    <p>
+                        <span data-book-field></span>
+                        <span class="book-dot">·</span>
+                        <span data-book-page></span>
+                    </p>
+                </div>
+
+                <div class="book-bar-actions">
+                    <a class="btn btn-outline btn-small"
+                       data-book-full
+                       href="{{ route('admin.biicf.editions.source', $edition) }}"
+                       target="_blank"
+                       rel="noopener">
+                        <i class="fas fa-up-right-from-square"></i> Whole book
+                    </a>
+
+                    <button type="button" class="book-close" data-book-close aria-label="Close">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <p class="book-note" data-book-state="loading" hidden>Opening the book…</p>
+
+            <p class="book-note" data-book-state="drawn" hidden>
+                Boxed in gold is what the reader read this value from.
+            </p>
+
+            <p class="book-note book-note-warn" data-book-state="unmarked" hidden>
+                The page is here, but the words could not be found on it to
+                draw a box around. The value was read from this page.
+            </p>
+
+            <p class="book-note book-note-warn" data-book-state="failed" hidden>
+                <span data-book-why></span>
+            </p>
+
+            <div class="book-stage" data-book-stage>
+                <div class="book-sheet">
+                    <canvas data-book-canvas></canvas>
+                    <div class="book-highlights" data-book-highlights></div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endif
 
 <script>
 /*
@@ -263,6 +413,13 @@
         keep: 'Keeping what we have.',
         edit: 'Using your own wording.',
     };
+
+    /*
+     * Whether this screen is showing the decided ones as well.
+     * It decides whether answering a difference folds it or
+     * takes it off the screen.
+     */
+    var showingEverything = @js($everything);
 
     function readable(value) {
         if (value === null || value === undefined) {
@@ -292,7 +449,43 @@
         }
 
         label(row);
-        fold(row, true);
+
+        /*
+         * Decided, so gone.
+         *
+         * A difference that has been dealt with does not need
+         * deciding again, and a screen that keeps every answered
+         * one is a screen where the unanswered ones are hard to
+         * find. The row is not deleted anywhere but here — "show
+         * what was decided" still reaches it, and an applied
+         * edition remains the record of why the framework says
+         * what it does.
+         */
+        if (showingEverything) {
+            fold(row, true);
+
+            return;
+        }
+
+        var card = row.closest('.card');
+
+        row.remove();
+
+        /*
+         * The subject's card goes with its last difference,
+         * rather than sitting there as a heading over nothing.
+         */
+        if (card && card.querySelectorAll('[data-change]').length === 0) {
+            card.remove();
+        }
+
+        if (document.querySelectorAll('[data-change]').length === 0) {
+            var nothing = document.querySelector('[data-nothing-left]');
+
+            if (nothing) {
+                nothing.hidden = false;
+            }
+        }
     }
 
     /* The one line a folded difference shows. */
@@ -427,12 +620,81 @@
     /* Fold the rows already decided when the page was built. */
     document.querySelectorAll('[data-change]').forEach(function (row) {
         if (row.dataset.decision) {
-            row.querySelector('.settled-said').textContent =
-                said[row.dataset.decision] || row.dataset.decision;
+            /*
+             * Absent on an applied edition, which carries no
+             * decide controls at all — there is nothing left to
+             * decide.
+             */
+            var what = row.querySelector('.settled-said');
+
+            if (what) {
+                what.textContent = said[row.dataset.decision] || row.dataset.decision;
+            }
+
             label(row);
             fold(row, true);
         }
     });
+
+    /*
+     * Opening the book at the page a value was read from.
+     *
+     * Delegated, because the rows are built by the server and
+     * the panel is asked for by a click rather than wired up a
+     * hundred and twenty times on load.
+     */
+    document.addEventListener('click', function (event) {
+        var at = event.target.closest('[data-book-at]');
+
+        if (at && window.cpbnBookSource) {
+            var spans = [];
+
+            try {
+                spans = JSON.parse(at.dataset.spans || '[]');
+            } catch (error) {
+                spans = [];
+            }
+
+            window.cpbnBookSource.open({
+                url: @js(route('admin.biicf.editions.source', $edition)),
+                page: parseInt(at.dataset.page, 10) || 1,
+                spans: spans,
+                label: at.dataset.label || '',
+            });
+
+            return;
+        }
+
+        var panel = document.getElementById('bookSource');
+
+        if (!panel || panel.hidden) {
+            return;
+        }
+
+        /* The close button, or the dark outside the panel. */
+        if (event.target.closest('[data-book-close]') || event.target === panel) {
+            window.cpbnBookSource.close();
+        }
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && window.cpbnBookSource) {
+            window.cpbnBookSource.close();
+        }
+    });
+
+    /*
+     * Arrived here to read the book, from the editions list.
+     * Opened at the first page, with nothing to box.
+     */
+    if (@js(request()->boolean('book')) && window.cpbnBookSource) {
+        window.cpbnBookSource.open({
+            url: @js(route('admin.biicf.editions.source', $edition)),
+            page: 1,
+            spans: [],
+            label: 'the book itself',
+        });
+    }
 })();
 </script>
 
@@ -531,6 +793,54 @@
     .flash-warn div { font-size: 13px; line-height: 1.6; }
     @media (max-width: 768px) {
         .values { grid-template-columns: 1fr; }
+    }
+
+    /*
+     * The page a value was read from, opened over the review.
+     *
+     * Gold around the words rather than a wash of highlighter
+     * yellow over them: the point is to read the sentence, and a
+     * box leaves the type underneath it alone.
+     */
+    /*
+     * The file name in the heading, which opens the book here
+     * rather than in a tab of its own. A button because that is
+     * what it does, dressed as the link it replaced.
+     */
+    .book-link { padding: 0; font: inherit; color: #1a3a5c; background: none; border: none; border-bottom: 1px solid #c9a84c; cursor: pointer; }
+    .book-link:hover { color: #8a6420; }
+
+    .book-at { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; font: inherit; font-size: 11px; font-weight: 600; letter-spacing: .03em; color: #8a6420; background: #fbf1de; border: 1px solid #f0e3c0; border-radius: 999px; cursor: pointer; }
+    .book-at:hover { background: #c9a84c; border-color: #c9a84c; color: #0d1f33; }
+    .book-at i { font-size: 10px; }
+
+    .book-source { position: fixed; inset: 0; z-index: 1200; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(13, 31, 51, .62); }
+    .book-source[hidden] { display: none; }
+    body.book-source-open { overflow: hidden; }
+
+    .book-panel { display: flex; flex-direction: column; width: 100%; max-width: 980px; max-height: 100%; background: white; border-radius: 14px; overflow: hidden; box-shadow: 0 24px 60px rgba(13, 31, 51, .35); }
+    .book-bar { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding: 16px 20px; background: #faf8f2; border-bottom: 1px solid #e5e7eb; }
+    .book-bar h3 { margin: 0; font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; color: #1a3a5c; }
+    .book-bar p { margin: 4px 0 0; font-size: 12px; color: #6b7280; font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .book-dot { margin: 0 6px; color: #c9a84c; }
+    .book-bar-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .book-close { width: 34px; height: 34px; display: grid; place-items: center; background: transparent; border: 2px solid #e5e7eb; border-radius: 8px; color: #6b7280; cursor: pointer; }
+    .book-close:hover { border-color: #c9a84c; color: #c9a84c; }
+
+    .book-note { margin: 0; padding: 10px 20px; font-size: 12px; color: #6b7280; background: #fbfbfa; border-bottom: 1px solid #f3f4f6; }
+    .book-note-warn { color: #8a6420; background: #fffbeb; }
+
+    .book-stage { flex: 1; min-height: 0; overflow: auto; padding: 18px; background: #f3f4f6; display: flex; justify-content: center; align-items: flex-start; }
+    .book-sheet { position: relative; line-height: 0; box-shadow: 0 2px 14px rgba(13, 31, 51, .18); }
+    .book-sheet canvas { display: block; }
+    .book-highlights { position: absolute; inset: 0; pointer-events: none; }
+
+    .book-mark { position: absolute; border: 2px solid #c9a84c; border-radius: 3px; background: rgba(201, 168, 76, .16); box-shadow: 0 0 0 3px rgba(201, 168, 76, .18); }
+
+    @media (max-width: 720px) {
+        .book-source { padding: 0; }
+        .book-panel { max-width: none; border-radius: 0; }
+        .book-bar { flex-direction: column; }
     }
 </style>
 @endsection

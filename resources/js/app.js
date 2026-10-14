@@ -7,6 +7,13 @@ import intlTelInput from 'intl-tel-input';
 import 'intl-tel-input/styles';
 import Chart from 'chart.js/auto';
 
+/*
+ * Opening the reference book at a page. It loads pdf.js itself,
+ * the first time somebody asks for a page, so no other screen
+ * pays for it.
+ */
+import './book-source.js';
+
 window.Alpine = Alpine;
 window.cpbnLevenshteinDistance = levenshteinDistance;
 window.Chart = Chart;

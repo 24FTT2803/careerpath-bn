@@ -1,11 +1,14 @@
 <?php
 
 use App\Models\BiicfEdition;
+use App\Models\BiicfEditionChange;
 use App\Models\BiicfJobRole;
+use App\Models\User;
 use App\Services\Biicf\EditionComparer;
 use App\Services\Biicf\Pdf\BookReader;
 use App\Services\Biicf\Pdf\PageLayout;
 use Database\Seeders\BiicfJobRoleSeeder;
+use Illuminate\Support\Facades\Storage;
 
 /*
  * Pointing back at the book.
@@ -44,6 +47,42 @@ function placesInTheBook(): array
     $book = (new BookReader)->read(provenancePages());
 
     return $book['source_locations']['Infrastructure Manager'] ?? [];
+}
+
+/**
+ * One difference on the screen, staged by hand.
+ *
+ * @param  array<string, mixed>|null  $location  where in the book, if anywhere
+ */
+function stagedDifference(BiicfEdition $edition, ?array $location): BiicfEditionChange
+{
+    return $edition->changes()->create([
+        'subject_type' => 'job_role',
+        'subject_key' => 'Infrastructure Manager',
+        'subject_label' => 'Infrastructure Manager',
+        'field' => 'sub_sector',
+        'kind' => BiicfEditionChange::KIND_CHANGED,
+        'current_value' => 'Telecommunications and Network',
+        'proposed_value' => 'Something Else Entirely',
+        'source_location' => $location,
+    ]);
+}
+
+/**
+ * An edition on record, with the file it was read from still on
+ * the disk.
+ */
+function editionOnRecord(string $json): BiicfEdition
+{
+    Storage::disk('local')->put('biicf-editions/third.json', $json);
+
+    return BiicfEdition::create([
+        'name' => 'Third Edition',
+        'slug' => 'third-edition-reread',
+        'edition_number' => 6,
+        'source_file_path' => 'biicf-editions/third.json',
+        'source_original_name' => 'third-edition.json',
+    ]);
 }
 
 describe('what the reader remembers', function () {
@@ -243,5 +282,195 @@ describe('what a staged difference carries', function () {
         $change = $this->edition->changes()->where('field', 'sub_sector')->sole();
 
         expect($change->source_location)->toBeNull();
+    });
+});
+
+describe('offering the book on the review screen', function () {
+    beforeEach(function () {
+        $this->admin = User::factory()->create(['role' => 'admin']);
+
+        $this->edition = BiicfEdition::create([
+            'name' => 'Third Edition',
+            'slug' => 'third-edition-review',
+            'edition_number' => 4,
+            'source_file_path' => 'biicf-editions/third.pdf',
+            'source_original_name' => 'biicf-third-edition.pdf',
+        ]);
+    });
+
+    test('a difference the book can be opened at says which page', function () {
+        stagedDifference($this->edition, [
+            'page' => 55,
+            'spans' => [['x' => 311.3, 'y' => 77.5, 'text' => 'Sub-Sector']],
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.biicf.editions.show', $this->edition))
+            ->assertOk()
+            ->assertSee('class="book-at"', false)
+            ->assertSee('p.55')
+            ->assertSee('bookSource', false)
+            ->assertSee('biicf-third-edition.pdf');
+    });
+
+    test('a difference with nowhere to point offers nothing', function () {
+        stagedDifference($this->edition, null);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.biicf.editions.show', $this->edition))
+            ->assertOk()
+            ->assertDontSee('class="book-at"', false);
+    });
+
+    test('an edition uploaded as JSON has no book to open', function () {
+        /*
+         * The panel is the book itself. Without a file behind
+         * the edition there is no book, so the screen does not
+         * offer one.
+         */
+        $this->edition->update(['source_file_path' => null]);
+
+        stagedDifference($this->edition, [
+            'page' => 55,
+            'spans' => [['x' => 311.3, 'y' => 77.5, 'text' => 'Sub-Sector']],
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.biicf.editions.show', $this->edition))
+            ->assertOk()
+            ->assertDontSee('class="book-at"', false)
+            ->assertDontSee('id="bookSource"', false);
+    });
+});
+
+describe('the review screen once a difference is settled', function () {
+    beforeEach(function () {
+        $this->admin = User::factory()->create(['role' => 'admin']);
+
+        $this->edition = BiicfEdition::create([
+            'name' => 'Third Edition',
+            'slug' => 'third-edition-settled',
+            'edition_number' => 5,
+            'source_file_path' => 'biicf-editions/third.pdf',
+            'source_original_name' => 'biicf-third-edition.pdf',
+        ]);
+    });
+
+    test('a decided difference is off the screen', function () {
+        /*
+         * A hundred and twenty answered differences folded into
+         * one-line summaries still fill the screen, and what
+         * should fill it is the ones still wanting an answer.
+         */
+        $settled = stagedDifference($this->edition, null);
+
+        $settled->update([
+            'decision' => BiicfEditionChange::DECISION_KEEP,
+            'decided_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.biicf.editions.show', $this->edition))
+            ->assertOk()
+            ->assertDontSee('data-change', false)
+            ->assertSee('Everything in this edition has been decided');
+    });
+
+    test('it is gone from the screen, not from the record', function () {
+        $settled = stagedDifference($this->edition, null);
+
+        $settled->update([
+            'decision' => BiicfEditionChange::DECISION_KEEP,
+            'decided_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.biicf.editions.show', ['edition' => $this->edition, 'show' => 'all']))
+            ->assertOk()
+            ->assertSee('data-change', false)
+            ->assertSee('sub_sector');
+    });
+
+    test('an undecided difference is still there', function () {
+        stagedDifference($this->edition, null);
+
+        $this->actingAs($this->admin)
+            ->get(route('admin.biicf.editions.show', $this->edition))
+            ->assertOk()
+            ->assertSee('data-change', false)
+            ->assertDontSee('Everything in this edition has been decided');
+    });
+});
+
+describe('reading the book again', function () {
+    beforeEach(function () {
+        Storage::fake('local');
+
+        $this->seed(BiicfJobRoleSeeder::class);
+
+        $this->admin = User::factory()->create(['role' => 'admin']);
+    });
+
+    test('the file already on record is read without another upload', function () {
+        /*
+         * The point of keeping the file. A fix to the reader —
+         * how a page is numbered, how a section folds — has to
+         * reach an edition already staged, and uploading the
+         * same book again would stage a second edition of it.
+         */
+        $edition = editionOnRecord(json_encode([
+            'job_roles' => [[
+                'title' => 'Infrastructure Manager',
+                'sub_sector' => 'Something Else Entirely',
+            ]],
+        ]));
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.biicf.editions.reread', $edition))
+            ->assertRedirect(route('admin.biicf.editions.show', $edition))
+            ->assertSessionHas('success');
+
+        expect($edition->changes()->where('field', 'sub_sector')->exists())->toBeTrue();
+    });
+
+    test('a decision already taken survives the re-reading', function () {
+        $edition = editionOnRecord(json_encode([
+            'job_roles' => [[
+                'title' => 'Infrastructure Manager',
+                'sub_sector' => 'Something Else Entirely',
+            ]],
+        ]));
+
+        $decided = $edition->changes()->create([
+            'subject_type' => 'job_role',
+            'subject_key' => 'Infrastructure Manager',
+            'subject_label' => 'Infrastructure Manager',
+            'field' => 'sub_sector',
+            'kind' => BiicfEditionChange::KIND_CHANGED,
+            'current_value' => 'Telecommunications and Network',
+            'proposed_value' => 'Something Else Entirely',
+            'decision' => BiicfEditionChange::DECISION_KEEP,
+            'decided_at' => now(),
+        ]);
+
+        $this->actingAs($this->admin)
+            ->post(route('admin.biicf.editions.reread', $edition));
+
+        expect($decided->fresh()->decision)->toBe(BiicfEditionChange::DECISION_KEEP);
+    });
+
+    test('an edition whose file has gone says so', function () {
+        $edition = BiicfEdition::create([
+            'name' => 'Fourth Edition',
+            'slug' => 'fourth-edition-reread',
+            'edition_number' => 7,
+            'source_file_path' => 'biicf-editions/missing.pdf',
+        ]);
+
+        $this->actingAs($this->admin)
+            ->from(route('admin.biicf.editions.show', $edition))
+            ->post(route('admin.biicf.editions.reread', $edition))
+            ->assertRedirect(route('admin.biicf.editions.show', $edition))
+            ->assertSessionHasErrors('reread');
     });
 });

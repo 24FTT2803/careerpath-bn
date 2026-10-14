@@ -175,9 +175,16 @@
                             <span class="badge badge-core">All {{ $edition->changes_count }} decided</span>
                         @endif
 
+                        {{--
+                            Through the review screen, which opens the book
+                            in place. A link straight to the file hands the
+                            browser a PDF and a tab of its own, which is a
+                            way out of the admin rather than a look at a
+                            page.
+                        --}}
                         @if($edition->source_original_name)
-                            <a href="{{ route('admin.biicf.editions.source', $edition) }}"
-                               class="btn btn-outline btn-small" target="_blank" rel="noopener">
+                            <a href="{{ route('admin.biicf.editions.show', ['edition' => $edition, 'book' => 1]) }}"
+                               class="btn btn-outline btn-small">
                                 <i class="fas fa-book-open"></i> The book
                             </a>
                         @endif

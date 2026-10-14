@@ -258,11 +258,23 @@ class BiicfEditionController extends Controller
 
     public function show(Request $request, BiicfEdition $edition)
     {
+        /*
+         * What is still waiting, and nothing else.
+         *
+         * A decided difference has been dealt with and does not
+         * need deciding again. A hundred and twenty of them
+         * folded into one-line summaries still fill the screen,
+         * and what should fill it is the ones still wanting an
+         * answer.
+         *
+         * They are not deleted: an applied edition is the record
+         * of why the framework says what it does, so "show
+         * everything" still reaches them.
+         */
+        $everything = $request->string('show')->toString() === 'all';
+
         $changes = $edition->changes()
-            ->when(
-                $request->string('show')->toString() === 'pending',
-                fn ($query) => $query->pending()
-            )
+            ->unless($everything, fn ($query) => $query->pending())
             ->orderBy('subject_type')
             ->orderBy('subject_label')
             ->orderBy('field')
@@ -272,6 +284,7 @@ class BiicfEditionController extends Controller
         return view('admin.biicf.editions.show', [
             'edition' => $edition,
             'groups' => $changes,
+            'everything' => $everything,
             'pending' => $edition->changes()->pending()->count(),
             'decided' => $edition->changes()->where('decision', '!=', BiicfEditionChange::DECISION_PENDING)->count(),
         ]);
@@ -385,6 +398,69 @@ class BiicfEditionController extends Controller
      * downloading, which is the difference between checking a
      * page and filing a copy somewhere.
      */
+    /**
+     * Read the book this edition was loaded from, again.
+     *
+     * The file is kept, so re-reading it needs no upload. That
+     * matters whenever the reader itself has been corrected
+     * rather than the book: a fix to how a page is numbered or a
+     * section is folded has to reach an edition already staged,
+     * and uploading the same book a second time would stage a
+     * second edition of it.
+     *
+     * Decisions already taken are kept, as they are for any
+     * re-reading. Their location in the book is refreshed
+     * though: where a value was printed is not something an
+     * administrator decided.
+     */
+    public function reread(Request $request, BiicfEdition $edition)
+    {
+        if ($edition->source_file_path === null
+            || ! Storage::disk('local')->exists($edition->source_file_path)) {
+            return back()->withErrors([
+                'reread' => 'The file this edition was read from is no longer here, '
+                    .'so it cannot be read again. Upload the book to stage it afresh.',
+            ]);
+        }
+
+        $this->allowTheReadingRoom();
+
+        try {
+            $payload = $this->extractor->extract(
+                Storage::disk('local')->path($edition->source_file_path)
+            );
+        } catch (Throwable $e) {
+            return back()->withErrors(['reread' => $e->getMessage()]);
+        }
+
+        $comparer = new EditionComparer;
+
+        $strategy = $request->string('strategy')->toString();
+
+        if (! in_array($strategy, EditionComparer::STRATEGIES, true)) {
+            $strategy = EditionComparer::STRATEGY_CHANGED;
+        }
+
+        try {
+            $comparer->compare($edition, $payload, $strategy);
+        } catch (Throwable $e) {
+            return back()->withErrors([
+                'reread' => 'That book was read, but comparing it against the framework '
+                    .'failed: '.$e->getMessage(),
+            ]);
+        }
+
+        return redirect()
+            ->route('admin.biicf.editions.show', $edition)
+            ->with('success', sprintf(
+                '%s was read again. %d still undecided; the decisions you had '
+                .'already taken were kept.',
+                $edition->source_original_name ?? $edition->name,
+                $edition->changes()->pending()->count()
+            ))
+            ->with('problems', array_merge($payload['problems'] ?? [], $comparer->skipped()));
+    }
+
     public function source(BiicfEdition $edition)
     {
         abort_if($edition->source_file_path === null, 404);

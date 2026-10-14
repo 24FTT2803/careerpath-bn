@@ -130,7 +130,14 @@ class PdfEditionExtractor implements EditionExtractor
                 ];
             }
 
-            $pages[] = PageLayout::from($runs, $number);
+            /*
+             * Counted from one, as a page is. The library hands
+             * its pages over as a plain list, so the first is
+             * zero — and a page number off by one sends an
+             * administrator checking a value to the page before
+             * the one it is printed on.
+             */
+            $pages[] = PageLayout::from($runs, (int) $number + 1);
         }
 
         if ($pages === []) {
