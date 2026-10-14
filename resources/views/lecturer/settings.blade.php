@@ -158,6 +158,14 @@
     .badge-swing {
         position: relative;
         transform-origin: 50% -40px;
+        /*
+         * Keep the swinging badge on its own layer the whole time,
+         * so the browser does not redraw its text on every frame
+         * of the sway (which made it shimmer).
+         */
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
 
     .badge-clip {
@@ -765,7 +773,7 @@
     </div>
 
     <!-- Lecturer badge -->
-    <aside class="badge-column" aria-label="Your lecturer badge">
+    <aside class="badge-column" aria-label="Your lecturer badge" data-motion-skip>
         <div class="badge-stage" id="badgeStage">
             <div class="badge-lanyard" aria-hidden="true"></div>
 

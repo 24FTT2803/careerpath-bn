@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\InnovationLabNote;
+use App\Services\Student\InnovationLabNotifier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
@@ -12,6 +13,10 @@ use Illuminate\View\View;
 class InnovationLabController extends Controller
 {
     private const MAX_IMAGE_KILOBYTES = 5120;
+
+    public function __construct(
+        private InnovationLabNotifier $notifier
+    ) {}
 
     public function index(): View
     {
@@ -32,16 +37,20 @@ class InnovationLabController extends Controller
 
     public function store(Request $request)
     {
-        InnovationLabNote::create(
+        $note = InnovationLabNote::create(
             $this->validated($request) + [
                 'image_path' => $this->storeImage($request),
                 'created_by' => $request->user()->id,
             ]
         );
 
+        $notified = $this->notifier->announce($note);
+
         return redirect()
             ->route('admin.business.innovation-lab.index')
-            ->with('success', 'Note published.');
+            ->with('success', $note->is_published
+                ? 'Note published.'.$this->notifiedText($notified)
+                : 'Draft saved. Students will be notified when you publish it.');
     }
 
     public function edit(InnovationLabNote $innovationLab): View
@@ -67,9 +76,13 @@ class InnovationLabController extends Controller
 
         $innovationLab->update($data);
 
+        $notified = $this->notifier->announce($innovationLab);
+
         return redirect()
             ->route('admin.business.innovation-lab.index')
-            ->with('success', 'Note updated.');
+            ->with('success', $notified > 0
+                ? 'Note published.'.$this->notifiedText($notified)
+                : 'Note updated.');
     }
 
     public function destroy(InnovationLabNote $innovationLab)
@@ -105,6 +118,13 @@ class InnovationLabController extends Controller
         return $validated + [
             'is_published' => $request->boolean('is_published'),
         ];
+    }
+
+    private function notifiedText(int $notified): string
+    {
+        return $notified > 0
+            ? ' '.$notified.' '.($notified === 1 ? 'student was' : 'students were').' notified.'
+            : '';
     }
 
     private function storeImage(Request $request): ?string

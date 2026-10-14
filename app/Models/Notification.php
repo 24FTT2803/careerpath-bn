@@ -44,7 +44,7 @@ class Notification extends Model
             ->orderBy('created_at', 'desc')
             ->limit($limit)
             ->get()
-            ->map(function($notification) {
+            ->map(function ($notification) {
                 $iconMap = [
                     'system' => 'bell',
                     'recommendation' => 'star',
@@ -54,12 +54,13 @@ class Notification extends Model
                     'profile' => 'user-edit',
                     'career' => 'briefcase',
                     'premium' => 'crown',
+                    'innovation' => 'lightbulb',
                 ];
 
                 return [
                     'type' => $notification->type,
                     'icon' => $iconMap[$notification->type] ?? 'bell',
-                    'message' => $notification->title . ': ' . $notification->message,
+                    'message' => $notification->title.': '.$notification->message,
                     'time' => $notification->created_at->diffForHumans(),
                     'user_name' => $notification->user?->name ?? 'System',
                     'link' => $notification->link,

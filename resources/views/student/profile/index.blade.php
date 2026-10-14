@@ -487,7 +487,7 @@
         border: 1px solid var(--border);
     }
 
-    .fact-tile i {
+    .fact-tile > i {
         grid-row: 1 / 3;
         width: 36px;
         height: 36px;
@@ -513,6 +513,31 @@
         font-weight: 600;
         color: var(--primary);
         overflow-wrap: anywhere;
+    }
+
+    /* Shown when a detail has not been filled in yet */
+    .fact-value.is-empty {
+        font-size: 13.5px;
+        font-weight: 500;
+        color: var(--text-muted);
+    }
+
+    .fact-value.is-empty a {
+        margin-left: 4px;
+        color: var(--accent-dark);
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    .fact-value.is-empty a:hover {
+        text-decoration: underline;
+    }
+
+    .fact-note {
+        margin-left: 6px;
+        font-size: 12.5px;
+        font-weight: 500;
+        color: var(--text-muted);
     }
 
     .project-grid {
@@ -572,6 +597,14 @@
     .badge-swing {
         position: relative;
         transform-origin: 50% -40px;
+        /*
+         * Keep the swinging badge on its own layer the whole time,
+         * so the browser does not redraw its text on every frame
+         * of the sway (which made it shimmer).
+         */
+        will-change: transform;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
     }
 
     .badge-clip {
@@ -1052,39 +1085,93 @@
 
                 <div class="profile-grid">
 
-                    <!-- Academic Information -->
-                    <div class="panel panel-full">
+                    @php
+                        $editProfileUrl = route('student.profile.edit');
+                        $birthDate = $user->profile?->date_of_birth
+                            ?->timezone(config('app.business_timezone'));
+                    @endphp
+
+                    <!-- Current Studies (same fields as Edit Profile) -->
+                    <div class="panel">
                         <div class="panel-header">
                             <h3>
                                 <i class="fas fa-graduation-cap"></i>
-                                Academic Information
+                                Current Studies
                             </h3>
                         </div>
 
                         <div class="fact-tiles">
                             <div class="fact-tile">
-                                <i class="fas fa-award"></i>
-                                <span class="fact-label">CGPA</span>
-                                <span class="fact-value">{{ $user->cgpa ?? 'Not set' }}</span>
+                                <i class="fas fa-book-open"></i>
+                                <span class="fact-label">Current programme</span>
+                                @if($user->programme)
+                                    <span class="fact-value">{{ $user->programme }}</span>
+                                @else
+                                    <span class="fact-value is-empty">Not added <a href="{{ $editProfileUrl }}">Add</a></span>
+                                @endif
                             </div>
 
-                            @if($user->profile->date_of_birth ?? false)
-                                <div class="fact-tile">
-                                    <i class="fas fa-cake-candles"></i>
-                                    <span class="fact-label">Date of Birth</span>
-                                    <span class="fact-value">
-                                        {{ $user->profile->date_of_birth->timezone(config('app.business_timezone'))->format('d M Y') }}
-                                    </span>
-                                </div>
-                            @endif
+                            <div class="fact-tile">
+                                <i class="fas fa-id-card"></i>
+                                <span class="fact-label">Student ID</span>
+                                @if(filled($user->student_id))
+                                    <span class="fact-value"><x-student-id-status :student="$user" /></span>
+                                @else
+                                    <span class="fact-value is-empty">Not added <a href="{{ $editProfileUrl }}">Add</a></span>
+                                @endif
+                            </div>
 
-                            @if($user->profile->nationality ?? false)
-                                <div class="fact-tile">
-                                    <i class="fas fa-flag"></i>
-                                    <span class="fact-label">Nationality</span>
+                            <div class="fact-tile">
+                                <i class="fas fa-award"></i>
+                                <span class="fact-label">Latest CGPA</span>
+                                @if($user->cgpa !== null)
+                                    <span class="fact-value">{{ number_format((float) $user->cgpa, 2) }} <span class="fact-note">out of 4.00</span></span>
+                                @else
+                                    <span class="fact-value is-empty">Not added <a href="{{ $editProfileUrl }}">Add</a></span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Personal Details -->
+                    <div class="panel">
+                        <div class="panel-header">
+                            <h3>
+                                <i class="fas fa-user"></i>
+                                Personal Details
+                            </h3>
+                        </div>
+
+                        <div class="fact-tiles">
+                            <div class="fact-tile">
+                                <i class="fas fa-cake-candles"></i>
+                                <span class="fact-label">Date of birth</span>
+                                @if($birthDate)
+                                    <span class="fact-value">{{ $birthDate->format('d M Y') }} <span class="fact-note">{{ (int) $birthDate->diffInYears(now()) }} years old</span></span>
+                                @else
+                                    <span class="fact-value is-empty">Not added <a href="{{ $editProfileUrl }}">Add</a></span>
+                                @endif
+                            </div>
+
+                            <div class="fact-tile">
+                                <i class="fas fa-flag"></i>
+                                <span class="fact-label">Nationality</span>
+                                @if($user->profile?->nationality)
                                     <span class="fact-value">{{ $user->profile->nationality }}</span>
-                                </div>
-                            @endif
+                                @else
+                                    <span class="fact-value is-empty">Not added <a href="{{ $editProfileUrl }}">Add</a></span>
+                                @endif
+                            </div>
+
+                            <div class="fact-tile">
+                                <i class="fas fa-phone"></i>
+                                <span class="fact-label">Phone</span>
+                                @if($badgePhone)
+                                    <span class="fact-value">{{ $badgePhone }}</span>
+                                @else
+                                    <span class="fact-value is-empty">Not added <a href="{{ $editProfileUrl }}">Add</a></span>
+                                @endif
+                            </div>
                         </div>
 
                         {{--
@@ -1405,7 +1492,7 @@
             </div>
 
             <!-- Student badge: stays in view while the details scroll -->
-            <aside class="badge-column" aria-label="Your student badge">
+            <aside class="badge-column" aria-label="Your student badge" data-motion-skip>
                 <div class="badge-stage" id="badgeStage">
                     <div class="badge-lanyard" aria-hidden="true"></div>
 
@@ -1471,6 +1558,14 @@
                                                 <span>{{ $badgePhone }}</span>
                                             @else
                                                 <span class="id-badge-muted">No phone added</span>
+                                            @endif
+                                        </div>
+                                        <div>
+                                            <i class="fas fa-flag" title="Nationality"></i>
+                                            @if($user->profile?->nationality)
+                                                <span>{{ $user->profile->nationality }}</span>
+                                            @else
+                                                <span class="id-badge-muted">Nationality not added</span>
                                             @endif
                                         </div>
                                         <div>

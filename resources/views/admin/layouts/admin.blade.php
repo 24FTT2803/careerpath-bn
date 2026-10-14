@@ -1563,5 +1563,6 @@
 <form method="POST" action="{{ route('logout') }}" id="logout-form" style="display:none;">
     @csrf
 </form>
+    @include('partials.long-text')
 </body>
 </html>

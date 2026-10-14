@@ -1447,7 +1447,7 @@
                 </div>
             </div>
 
-            <!-- SECTION 2: Academic Information -->
+            <!-- SECTION 2: Current Studies -->
             <div class="section">
                 <div class="title">
                     <svg
@@ -1461,12 +1461,18 @@
                         <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                     </svg>
 
-                    Academic Information
+                    Current Studies
                 </div>
+
+                <p class="desc">
+                    Your current programme at Politeknik Brunei and your latest CGPA.
+                    We use these to match careers to you, work out your readiness,
+                    and show you to your lecturers.
+                </p>
 
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
-                        <label>Programme</label>
+                        <label>Current programme</label>
 
                         <x-programme-select
                             :selected="$user->programme"
@@ -1479,7 +1485,7 @@
                     </div>
 
                     <div class="cpbn-field">
-                        <label>CGPA</label>
+                        <label>Latest CGPA (out of 4.00)</label>
 
                         <input
                             type="number"
@@ -1487,6 +1493,7 @@
                             step="0.01"
                             min="0"
                             max="4"
+                            placeholder="e.g. 3.25"
                             value="{{ old('cgpa', $user->cgpa) }}"
                         >
 

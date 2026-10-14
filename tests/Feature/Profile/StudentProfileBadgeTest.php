@@ -33,8 +33,9 @@ test('the student profile keeps every section on the page', function () {
         ->get(route('student.profile'))
         ->assertOk()
         ->assertSee('Profile Completion')
-        ->assertSee('Academic Information')
-        ->assertSee('CGPA')
+        ->assertSee('Current Studies')
+        ->assertSee('Latest CGPA')
+        ->assertSee('Personal Details')
         ->assertSee('Skills &amp; Competencies', false)
         ->assertSee('Interests')
         ->assertSee('Projects &amp; Experience', false)
@@ -57,4 +58,56 @@ test('the badge shows initials and a hint when details are missing', function ()
         ->assertSee('MH')
         ->assertSee('No phone added')
         ->assertSee('Programme not set');
+});
+
+test('the edit page explains the current studies fields', function () {
+    $student = User::factory()->create(['role' => 'student']);
+
+    $this->actingAs($student)
+        ->get(route('student.profile.edit'))
+        ->assertOk()
+        ->assertSee('Current Studies')
+        ->assertSee('Your current programme at Politeknik Brunei and your latest CGPA.')
+        ->assertSee('Current programme')
+        ->assertSee('Latest CGPA (out of 4.00)')
+        ->assertSee('placeholder="e.g. 3.25"', false)
+        ->assertSee('name="cgpa"', false);
+});
+
+test('my profile shows current studies and personal details, with prompts for missing ones', function () {
+    $student = User::factory()->create([
+        'role' => 'student',
+        'student_id' => null,
+        'cgpa' => 3.5,
+    ]);
+
+    $this->actingAs($student)
+        ->get(route('student.profile'))
+        ->assertOk()
+        ->assertSee('Current programme')
+        ->assertSee('Student ID')
+        ->assertSee('3.50')
+        ->assertSee('out of 4.00')
+        ->assertSee('Date of birth')
+        ->assertSee('Nationality')
+        ->assertSee('Phone')
+        ->assertSee('Not added');
+});
+
+test('the badge shows nationality, or a prompt when it is missing', function () {
+    $student = User::factory()->create(['role' => 'student']);
+
+    $this->actingAs($student)
+        ->get(route('student.profile'))
+        ->assertOk()
+        ->assertSee('Nationality not added');
+
+    $student->profile()->create(['nationality' => 'Brunei Darussalam']);
+
+    $this->actingAs($student->fresh())
+        ->get(route('student.profile'))
+        ->assertOk()
+        ->assertSee('title="Nationality"', false)
+        ->assertSee('Brunei Darussalam')
+        ->assertDontSee('Nationality not added');
 });

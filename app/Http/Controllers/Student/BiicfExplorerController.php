@@ -195,10 +195,24 @@ class BiicfExplorerController extends Controller
                     'id' => $competency->id,
                     'name' => $competency->name,
                     'type' => $competency->type,
+                    /*
+                     * Shown where the competency is opened, so the
+                     * screen does not ask a student to recognise a
+                     * name with nothing beside it.
+                     */
+                    'description' => $competency->inEssence() ?? $competency->description,
                     'is_core' => (bool) $competency->pivot->is_core,
                     'level' => $level ? [
                         'number' => $level->level_number,
                         'name' => $level->name,
+                        'scale' => $level->scale,
+                        /*
+                         * How many rungs this competency's scale
+                         * has. A bar drawn to a fixed five shows a
+                         * soft skill at Expert as four of five and
+                         * reads as a shortfall.
+                         */
+                        'of' => $level->scaleLength(),
                     ] : null,
                 ];
             })->values());
@@ -291,14 +305,42 @@ class BiicfExplorerController extends Controller
      * Compare the logged-in student's own competencies (student_competencies table)
      * against what this job role requires, matching by skill/competency name.
      *
-     * student_competencies.proficiency_level is a free-text string (beginner/intermediate/
-     * advanced/expert); we map it onto BIICF's numeric level_number scale to compare.
+     * Students pick BIICF levels on their profile (Follow, Assist, Apply, Ensure,
+     * Strategise), so those names are read first. Older free-text levels
+     * (beginner/intermediate/advanced/expert) are still understood.
      */
-    public function compareToMe(BiicfJobRole $jobRole)
+    public function compareToMe(Request $request, BiicfJobRole $jobRole)
     {
         $jobRole->load(['tiers.competencies' => fn ($q) => $q->orderBy('type')]);
 
-        $levelMap = [
+        $levels = BiicfProficiencyLevel::orderBy('level_number')->get();
+
+        $byId = $levels->keyBy('id');
+
+        /*
+         * A rung's name, within its own scale.
+         *
+         * Flat, the two scales read as one and the comparison is
+         * wrong without ever looking it: a soft skill's Advanced
+         * is three of four and a technical Apply is three of
+         * five, and the soft scale's rungs are named Basic,
+         * Intermediate, Advanced and Expert — the same four
+         * words the profile used before BIICF levels existed.
+         * So a student's wording is resolved against the scale
+         * the requirement is on, never across both.
+         */
+        $byScale = $levels
+            ->groupBy('scale')
+            ->map(fn ($rungs) => $rungs
+                ->mapWithKeys(fn ($rung) => [mb_strtolower($rung->name) => (int) $rung->level_number])
+                ->all());
+
+        /*
+         * What the profile recorded before it offered BIICF
+         * levels. Read only where the scale itself does not
+         * recognise the wording.
+         */
+        $legacy = [
             'beginner' => 1,
             'intermediate' => 2,
             'advanced' => 3,
@@ -308,34 +350,63 @@ class BiicfExplorerController extends Controller
         $studentSkills = StudentCompetency::where('user_id', auth()->id())->get()
             ->keyBy(fn ($s) => Str::slug($s->skill_name));
 
-        $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get()->keyBy('id');
+        /*
+         * The tier being looked at, and only that one.
+         *
+         * A requirement belongs to a tier rather than to the
+         * role — Application Development is wanted at 1, 2 and 2
+         * across IT Technician's three levels — so comparing
+         * against the role returns every competency once per
+         * tier and counts each of them again in the summary.
+         */
+        $tier = $jobRole->tiers->firstWhere('id', $request->integer('tier'))
+            ?? $jobRole->tiers->firstWhere('label', $request->string('tier')->toString())
+            ?? $jobRole->tiers->first();
 
-        $entryCompetencies = $jobRole->tiers->first()?->competencies
-            ?? collect();
+        $comparison = ($tier?->competencies ?? collect())
+            ->map(function ($competency) use ($studentSkills, $byId, $byScale, $legacy) {
+                $required = $byId->get($competency->pivot->proficiency_level_id);
+                $match = $studentSkills->get(Str::slug($competency->name));
 
-        $comparison = $entryCompetencies->map(function ($competency) use ($studentSkills, $levelMap, $proficiencyLevels) {
-            $required = $proficiencyLevels->get($competency->pivot->proficiency_level_id);
-            $match = $studentSkills->get(Str::slug($competency->name));
+                $scale = $required?->scale ?? BiicfProficiencyLevel::SCALE_TECHNICAL;
 
-            $studentLevelNumber = $match ? ($levelMap[strtolower($match->proficiency_level)] ?? null) : null;
+                $said = mb_strtolower(trim((string) $match?->proficiency_level));
 
-            return [
-                'competency' => Arr::only($competency->toArray(), ['id', 'name', 'type']),
-                'is_core' => (bool) $competency->pivot->is_core,
-                'required_level' => $required ? Arr::only($required->toArray(), ['level_number', 'name']) : null,
-                'student_has_skill' => (bool) $match,
-                'student_level' => $match?->proficiency_level,
-                'student_level_number' => $studentLevelNumber,
-                'meets_requirement' => $match && $required && $studentLevelNumber !== null && $studentLevelNumber >= $required->level_number,
-            ];
-        });
+                $studentLevelNumber = $match
+                    ? ($byScale[$scale][$said] ?? $legacy[$said] ?? null)
+                    : null;
+
+                return [
+                    'competency' => Arr::only($competency->toArray(), ['id', 'name', 'type']),
+                    'is_core' => (bool) $competency->pivot->is_core,
+                    'required_level' => $required
+                        ? Arr::only($required->toArray(), ['level_number', 'name', 'scale'])
+                        : null,
+                    'scale_of' => $required?->scaleLength(),
+                    'student_has_skill' => (bool) $match,
+                    'student_level' => $match?->proficiency_level,
+                    'student_level_number' => $studentLevelNumber,
+                    'meets_requirement' => $match
+                        && $required
+                        && $studentLevelNumber !== null
+                        && $studentLevelNumber >= $required->level_number,
+                ];
+            });
 
         return response()->json([
             'job_role' => Arr::only($jobRole->toArray(), ['id', 'title', 'slug']),
-            'comparison' => $comparison,
+            'tier' => $tier ? ['id' => $tier->id, 'label' => $tier->label] : null,
+            'tiers' => $jobRole->tiers
+                ->map(fn ($one) => ['id' => $one->id, 'label' => $one->label])
+                ->values(),
+            'comparison' => $comparison->values(),
             'summary' => [
                 'total' => $comparison->count(),
                 'met' => $comparison->where('meets_requirement', true)->count(),
+                'below' => $comparison
+                    ->where('student_has_skill', true)
+                    ->where('meets_requirement', false)
+                    ->count(),
                 'missing' => $comparison->where('student_has_skill', false)->count(),
             ],
         ]);
