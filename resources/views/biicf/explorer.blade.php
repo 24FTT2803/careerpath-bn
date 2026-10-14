@@ -422,17 +422,15 @@
     }
 
     /*
-     * Only what master's redesign does not already style.
+     * Only the classes master's redesign does not style.
      *
-     * The merge kept both stylesheets, and ours sat after
-     * master's: every class both sides write — the sub-sector
-     * tiles, a role's level badge, the career path's nodes —
-     * was drawn by the old rules instead of the new ones, which
-     * is why the screen read as nearly right and crooked
-     * everywhere. The redesign governs those now, and what
-     * stays here is the classes it has never heard of.
+     * The merge kept both stylesheets and put ours second, so
+     * for every class both sides write the old rules won: the
+     * sub-sector tiles, a role's level badge, the career path's
+     * nodes. The redesign draws those now, and what stays here
+     * is what it has never heard of.
      */
-    
+
 
     /*
      * Every list in the explorer is marked the same way: a gold
@@ -469,37 +467,13 @@
         color: var(--accent);
     }
 
-    /* Search + Filters */
-
-    
-
-    
-
-    
-
     .filter-pill:hover:not(.active) {
         border-color: var(--accent-light);
     }
 
-    /* Loading Spinner */
-
-    
-
     @keyframes biicf-spin {
         to { transform: rotate(360deg); }
     }
-
-    /* Sub-sector Cards */
-
-    
-
-    
-
-    /* Job Role List */
-
-    
-
-    
 
     .role-item .level {
         font-size: 12px;
@@ -510,23 +484,15 @@
         white-space: nowrap;
     }
 
-    /* Career Path */
-
-    
-
     .career-path .node.prev {
         background: var(--bg);
         color: var(--text-muted);
     }
 
-    
-
     /* Competencies */
     .comp-group {
         margin-bottom: 20px;
     }
-
-    
 
     .comp-item .name {
         font-weight: 500;
@@ -735,17 +701,9 @@
         color: var(--text-muted);
     }
 
-    /* Entry Requirements */
-
     .req-item:last-child {
         border-bottom: none;
     }
-
-    
-
-    /* Training */
-
-    
 
     /* Programming languages */
     .language-note {
@@ -768,10 +726,6 @@
         font-weight: 500;
         color: var(--primary);
     }
-
-    /* Proficiency Levels */
-
-    
 
     .prof-scale {
         margin-bottom: 26px;
@@ -796,17 +750,10 @@
         color: var(--text-muted);
     }
 
-    /* Compare Button */
-
-    
-
-    
-
     .compare-result .summary .stat {
         text-align: center;
     }
 
-    .compare-result .summary .stat .number {
     .bx-section-title h2 {
         margin: 0;
         font-family: 'Playfair Display', serif;
