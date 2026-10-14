@@ -208,6 +208,47 @@ function showing(panel, state) {
     });
 }
 
+/** What the panel is showing right now, so it can turn a page. */
+const showing_ = { url: null, page: 1, spans: [], label: '', title: '', pages: 1 };
+
+async function render(panel) {
+    showing(panel, 'loading');
+
+    try {
+        const found = await draw(panel, showing_);
+
+        const document_ = await documentAt(showing_.url);
+
+        showing_.pages = document_.numPages;
+
+        panel.querySelector('[data-book-page]').textContent =
+            `page ${showing_.page} of ${document_.numPages}`;
+
+        const jump = panel.querySelector('[data-book-jump]');
+
+        if (jump) {
+            jump.value = showing_.page;
+            jump.max = document_.numPages;
+        }
+
+        panel.querySelectorAll('[data-book-prev]').forEach((b) => { b.disabled = showing_.page <= 1; });
+        panel.querySelectorAll('[data-book-next]').forEach((b) => { b.disabled = showing_.page >= document_.numPages; });
+
+        /*
+         * Nothing to box is not a failure to find anything. The
+         * book opened to be read says so; a value's page that
+         * could not be matched says the other thing.
+         */
+        showing(panel, showing_.spans.length === 0 ? 'plain' : (found > 0 ? 'drawn' : 'unmarked'));
+    } catch (error) {
+        showing(panel, 'failed');
+
+        panel.querySelector('[data-book-why]').textContent = error?.message
+            ? String(error.message)
+            : 'The book could not be opened.';
+    }
+}
+
 window.cpbnBookSource = {
     /**
      * @param {{url: string, page: number, spans: Array, label: string, title: string}} where
@@ -219,31 +260,66 @@ window.cpbnBookSource = {
             return;
         }
 
+        Object.assign(showing_, {
+            url: where.url,
+            page: Number(where.page) || 1,
+            spans: where.spans || [],
+            label: where.label || '',
+            title: where.title || 'The book',
+        });
+
         panel.hidden = false;
         document.body.classList.add('book-source-open');
 
-        panel.querySelector('[data-book-field]').textContent = where.label || '';
-        panel.querySelector('[data-book-page]').textContent = `page ${where.page}`;
+        panel.querySelector('[data-book-title]').textContent = showing_.title;
+        panel.querySelector('[data-book-field]').textContent = showing_.label;
 
         const full = panel.querySelector('[data-book-full]');
 
         if (full) {
-            full.href = `${where.url}#page=${where.page}`;
+            full.href = `${showing_.url}#page=${showing_.page}`;
         }
 
-        showing(panel, 'loading');
+        await render(panel);
+    },
 
-        try {
-            const found = await draw(panel, where);
+    /**
+     * Turn to a page.
+     *
+     * The boxes do not come with it: they belong to the page the
+     * value was read from, and drawn on another page they would
+     * be pointing at whatever happens to sit there.
+     */
+    async goTo(page) {
+        const panel = document.getElementById('bookSource');
 
-            showing(panel, found > 0 ? 'drawn' : 'unmarked');
-        } catch (error) {
-            showing(panel, 'failed');
-
-            panel.querySelector('[data-book-why]').textContent = error?.message
-                ? String(error.message)
-                : 'The book could not be opened.';
+        if (!panel || panel.hidden || !showing_.url) {
+            return;
         }
+
+        const wanted = Math.min(Math.max(1, Number(page) || 1), showing_.pages);
+
+        if (wanted === showing_.page) {
+            return;
+        }
+
+        showing_.page = wanted;
+        showing_.spans = [];
+        showing_.label = 'the book itself';
+
+        panel.querySelector('[data-book-field]').textContent = showing_.label;
+
+        const full = panel.querySelector('[data-book-full]');
+
+        if (full) {
+            full.href = `${showing_.url}#page=${wanted}`;
+        }
+
+        await render(panel);
+    },
+
+    turn(by) {
+        return this.goTo(showing_.page + by);
     },
 
     close() {

@@ -165,28 +165,37 @@
                     </div>
 
                     <div class="edition-state">
-                        @if($edition->changes_count === 0)
-                            <span class="badge">Nothing to review</span>
-                        @elseif($edition->pending_changes_count > 0)
+                        {{--
+                            Only what is still waiting. An edition with
+                            nothing left to decide says nothing: the badge
+                            that announced it took up the same room as the
+                            ones that mean something, on every row, for
+                            ever.
+                        --}}
+                        @if($edition->pending_changes_count > 0)
                             <span class="badge badge-level">
                                 {{ $edition->pending_changes_count }} of {{ $edition->changes_count }} undecided
                             </span>
-                        @else
-                            <span class="badge badge-core">All {{ $edition->changes_count }} decided</span>
+                        @elseif($edition->changes_count === 0)
+                            <span class="badge">Nothing to review</span>
                         @endif
 
                         {{--
-                            Through the review screen, which opens the book
-                            in place. A link straight to the file hands the
-                            browser a PDF and a tab of its own, which is a
-                            way out of the admin rather than a look at a
-                            page.
+                            The book opens here, on this screen. It used to
+                            go to the review and ask it to open the panel,
+                            which is a detour through a screen about
+                            something else — and it never arrived, because
+                            the opener is a module and had not loaded when
+                            the review asked for it.
                         --}}
-                        @if($edition->source_original_name)
-                            <a href="{{ route('admin.biicf.editions.show', ['edition' => $edition, 'book' => 1]) }}"
-                               class="btn btn-outline btn-small">
+                        @if($edition->source_file_path)
+                            <button type="button" class="btn btn-outline btn-small" data-book-at
+                                    data-url="{{ route('admin.biicf.editions.source', $edition) }}"
+                                    data-title="{{ $edition->source_original_name ?? $edition->name }}"
+                                    data-page="1" data-spans="[]"
+                                    data-label="the book itself">
                                 <i class="fas fa-book-open"></i> The book
-                            </a>
+                            </button>
                         @endif
 
                         <a href="{{ route('admin.biicf.editions.show', $edition) }}" class="btn btn-outline btn-small">
@@ -470,4 +479,11 @@
 
     .upload-failed { margin: 18px 0 0; max-width: 560px; }
 </style>
+
+{{--
+    The book, opened on this screen. Shared with the review,
+    which opens the same panel at the page a value was read
+    from.
+--}}
+@include('admin.biicf.partials.book-source')
 @endsection
