@@ -763,12 +763,34 @@ class ProfileController extends Controller
             $user->programme
         );
 
+        /*
+         * The one step nothing ever pointed at. A finished
+         * profile is not the end of anything on its own — the
+         * recommendations are generated on request, on a page the
+         * student has no particular reason to visit, and a
+         * student who never visits it never finds out.
+         *
+         * So: said once, when the profile first comes together,
+         * and said in a notification as well, because the save
+         * lands back on the profile and a flash message is gone
+         * by the next click.
+         */
+        $finished = (int) $user->fresh()->profile_completion === 100;
+
+        if ($finished) {
+            NotificationHelper::notifyProfileComplete($user->id);
+        }
+
         $response = redirect()
             ->route('student.profile')
             ->with(
                 'success',
                 'Profile updated successfully!'
             );
+
+        if ($finished && $user->currentRecommendations()->doesntExist()) {
+            $response->with('generate_prompt', true);
+        }
 
         return $response;
     }

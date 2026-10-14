@@ -147,6 +147,123 @@
         margin-bottom: 24px;
     }
 
+    /* The next step, in front of the student rather than beside it. */
+    .next-step-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(13, 31, 51, 0.55);
+        backdrop-filter: blur(3px);
+        animation: nextStepFade 0.25s ease;
+    }
+
+    .next-step-backdrop[hidden] {
+        display: none;
+    }
+
+    .next-step-popup {
+        position: relative;
+        width: 100%;
+        max-width: 440px;
+        background: var(--card);
+        border-radius: 16px;
+        border-top: 4px solid var(--accent);
+        padding: 32px 30px 26px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(13, 31, 51, 0.3);
+        animation: nextStepRise 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes nextStepFade {
+        from { opacity: 0; }
+    }
+
+    @keyframes nextStepRise {
+        from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    }
+
+    .next-step-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 6px;
+        line-height: 1;
+    }
+
+    .next-step-close:hover {
+        color: var(--primary);
+    }
+
+    .next-step-icon {
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        background: rgba(201, 168, 76, 0.16);
+        color: #8a6420;
+        font-size: 22px;
+    }
+
+    .next-step-popup h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 22px;
+        color: var(--primary);
+        margin: 0 0 8px;
+    }
+
+    .next-step-popup p {
+        font-size: 14px;
+        line-height: 1.7;
+        color: var(--text-muted);
+        margin: 0 0 22px;
+    }
+
+    .next-step-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 20px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--primary);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .next-step-action:hover {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    .next-step-later {
+        display: block;
+        margin: 12px auto 0;
+        background: none;
+        border: none;
+        color: var(--text-muted);
+        font-size: 13px;
+        cursor: pointer;
+        text-decoration: underline;
+    }
+
+    .next-step-later:hover {
+        color: var(--primary);
+    }
+
     .stat-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -854,6 +971,49 @@
             </div>
         </div>
 
+        {{--
+            One step, named, and put in front of the student
+            rather than beside the numbers. A card on the page is
+            read by whoever was already going to read the page;
+            this is for the student who signed up, landed on a
+            screen of statistics, and had no idea what the app
+            wanted from them.
+
+            Shown when the step changes and not again, so it
+            guides rather than nags — and never once there is
+            nothing left to say.
+        --}}
+        @if($nextStep)
+            <div
+                class="next-step-backdrop"
+                id="nextStepPopup"
+                data-step="{{ $nextStep['key'] }}"
+                hidden
+            >
+                <div class="next-step-popup" role="dialog" aria-modal="true" aria-labelledby="nextStepTitle">
+                    <button type="button" class="next-step-close" id="nextStepClose" aria-label="Close">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+
+                    <span class="next-step-icon">
+                        <i class="fas {{ $nextStep['icon'] }}"></i>
+                    </span>
+
+                    <h2 id="nextStepTitle">{{ $nextStep['title'] }}</h2>
+                    <p>{{ $nextStep['body'] }}</p>
+
+                    <a href="{{ $nextStep['route'] }}" class="next-step-action">
+                        {{ $nextStep['action'] }}
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+
+                    <button type="button" class="next-step-later" id="nextStepLater">
+                        Not now
+                    </button>
+                </div>
+            </div>
+        @endif
+
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
@@ -1196,5 +1356,70 @@
 
     </div>
 </div>
+
+<script>
+    /*
+     * The popup is shown when the step is one this browser has
+     * not been shown before, and remembered afterwards. A student
+     * who has been told to finish their profile does not need
+     * telling again every time they open the dashboard; a student
+     * who has just finished it is on a new step, and gets the new
+     * one.
+     *
+     * Remembered per browser rather than per account, which is
+     * the honest limit of doing this without a column: a new
+     * browser shows it once more. Being guided twice is a smaller
+     * failure than never being guided.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        const popup = document.getElementById('nextStepPopup');
+
+        if (!popup) {
+            return;
+        }
+
+        const key = 'cpbn.nextStep.seen';
+        const step = popup.dataset.step;
+
+        let seen = null;
+
+        try {
+            seen = window.localStorage.getItem(key);
+        } catch (error) {
+            /* Private browsing. Show it; that is the safer miss. */
+        }
+
+        if (seen === step) {
+            return;
+        }
+
+        const close = function () {
+            popup.hidden = true;
+
+            try {
+                window.localStorage.setItem(key, step);
+            } catch (error) {
+                /* Nothing to remember it with. It shows again. */
+            }
+        };
+
+        popup.hidden = false;
+
+        document.getElementById('nextStepClose')?.addEventListener('click', close);
+        document.getElementById('nextStepLater')?.addEventListener('click', close);
+
+        popup.addEventListener('click', function (event) {
+            if (event.target === popup) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !popup.hidden) {
+                close();
+            }
+        });
+    });
+</script>
 
 @endsection

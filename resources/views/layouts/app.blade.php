@@ -650,6 +650,45 @@
             border: 1px solid #c3e6cb;
         }
 
+        /*
+         * The step that follows a finished profile, rather than
+         * news about what just happened. Gold, because it is an
+         * invitation and not a result.
+         */
+        .alert-next {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: rgba(201, 168, 76, 0.12);
+            color: #6b5417;
+            border: 1px solid rgba(201, 168, 76, 0.45);
+        }
+
+        .alert-next span {
+            flex: 1;
+            min-width: 240px;
+        }
+
+        .alert-next a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: #c9a84c;
+            color: #1a3a5c;
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .alert-next a:hover {
+            background: #1a3a5c;
+            color: #fff;
+        }
+
         .alert-warning {
             background: #fff3cd;
             color: #856404;
@@ -1066,6 +1105,27 @@
                 <div class="alert alert-danger">
                     <i class="fas fa-exclamation-circle"></i>
                     {{ session('error') }}
+                </div>
+            @endif
+
+            {{--
+                Set the first time a student's profile is
+                finished. Recommendations are generated on
+                request, on a page there is otherwise no reason to
+                open, so this is the moment to say so — once, and
+                with the way there attached.
+            --}}
+            @if (session('generate_prompt'))
+                <div class="alert alert-next">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <span>
+                        Your profile is complete. Generate your career recommendations
+                        to see which roles in the framework match it.
+                    </span>
+                    <a href="{{ route('student.recommendations.index') }}">
+                        Generate recommendations
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
                 </div>
             @endif
 

@@ -418,8 +418,16 @@ class CareerRecommendationController extends Controller
                 );
         }
 
+        /*
+         * Says the page is arriving with something new on it, so
+         * the matches can announce themselves. A student presses
+         * generate, the page reloads looking exactly as it did,
+         * and the thing they asked for is below the fold — which
+         * is how someone comes away thinking nothing happened.
+         */
         return redirect()
-            ->route('student.recommendations.index');
+            ->route('student.recommendations.index')
+            ->with('just_generated', true);
     }
 
     /**

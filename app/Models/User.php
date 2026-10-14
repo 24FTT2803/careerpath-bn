@@ -695,29 +695,6 @@ class User extends Authenticatable implements MustVerifyEmail
      */
     public function getProfileCompletionAttribute()
     {
-        $profile = $this->profile;
-        $aspiration = $this->aspirations;
-
-        $hasPersonalProfile = $profile && (
-            filled($profile->phone)
-            || $profile->date_of_birth
-            || filled($profile->nationality)
-        );
-
-        $hasAcademicInformation = (
-            filled($this->programme)
-            && $this->cgpa !== null
-        );
-
-        $hasMeaningfulAspirations = $aspiration && (
-            ! empty($aspiration->career_goals)
-            || ! empty($aspiration->preferred_industries)
-            || ! empty($aspiration->preferred_work_activities)
-            || filled($aspiration->vision_statement)
-            || filled($aspiration->mission_statement)
-            || filled($aspiration->long_term_goals)
-        );
-
         /*
          * Projects and certifications are not counted. They used
          * to be, which left a first-year who has built no
@@ -730,13 +707,7 @@ class User extends Authenticatable implements MustVerifyEmail
          * and the profile shows them. It is only being complete
          * that they no longer gate.
          */
-        $sections = [
-            'profile' => $hasPersonalProfile,
-            'academic' => $hasAcademicInformation,
-            'competencies' => $this->competencies()->exists(),
-            'interests' => $this->interests()->exists(),
-            'aspirations' => $hasMeaningfulAspirations,
-        ];
+        $sections = $this->profileSections();
 
         $completed = count(
             array_filter($sections)
@@ -744,6 +715,58 @@ class User extends Authenticatable implements MustVerifyEmail
 
         return round(
             ($completed / count($sections)) * 100
+        );
+    }
+
+    /**
+     * Each part of a profile, and whether it is filled in.
+     *
+     * Named so the dashboard can say which part is still waiting
+     * rather than only how far along the student is. A percentage
+     * tells someone they are not finished; it does not tell them
+     * what to do next.
+     *
+     * @return array<string, bool>
+     */
+    public function profileSections(): array
+    {
+        $profile = $this->profile;
+        $aspiration = $this->aspirations;
+
+        return [
+            'Personal details' => $profile && (
+                filled($profile->phone)
+                || $profile->date_of_birth
+                || filled($profile->nationality)
+            ),
+            'Academic information' => filled($this->programme)
+                && $this->cgpa !== null,
+            'Competencies' => $this->competencies()->exists(),
+            'Interests' => $this->interests()->exists(),
+            'Aspirations' => $aspiration && (
+                ! empty($aspiration->career_goals)
+                || ! empty($aspiration->preferred_industries)
+                || ! empty($aspiration->preferred_work_activities)
+                || filled($aspiration->vision_statement)
+                || filled($aspiration->mission_statement)
+                || filled($aspiration->long_term_goals)
+            ),
+        ];
+    }
+
+    /**
+     * The parts still waiting, in the order the form asks for
+     * them.
+     *
+     * @return array<int, string>
+     */
+    public function unfinishedProfileSections(): array
+    {
+        return array_keys(
+            array_filter(
+                $this->profileSections(),
+                fn (bool $done) => ! $done
+            )
         );
     }
 
