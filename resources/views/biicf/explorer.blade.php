@@ -421,21 +421,18 @@
         font-size: 17px;
     }
 
-    .overview-card p {
-        font-size: 13px;
-        color: var(--text-muted);
-        line-height: 1.6;
-        margin-bottom: 12px;
-    }
-
-    .overview-card h5 {
-        font-size: 12px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--text-muted);
-        margin-bottom: 6px;
-    }
+    /*
+     * Only what master's redesign does not already style.
+     *
+     * The merge kept both stylesheets, and ours sat after
+     * master's: every class both sides write — the sub-sector
+     * tiles, a role's level badge, the career path's nodes —
+     * was drawn by the old rules instead of the new ones, which
+     * is why the screen read as nearly right and crooked
+     * everywhere. The redesign governs those now, and what
+     * stays here is the classes it has never heard of.
+     */
+    
 
     /*
      * Every list in the explorer is marked the same way: a gold
@@ -466,10 +463,6 @@
         line-height: 1.5;
     }
 
-    .overview-card li {
-        color: var(--primary);
-    }
-
     .overview-card li::marker,
     .level-statements li::marker,
     .req-list li::marker {
@@ -477,158 +470,36 @@
     }
 
     /* Search + Filters */
-    .search-box {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        padding: 9px 14px;
-        margin-bottom: 16px;
-        background: var(--card);
-    }
 
-    .search-box i {
-        color: var(--text-muted);
-        font-size: 13px;
-    }
+    
 
-    .search-box input {
-        border: none;
-        outline: none;
-        font-size: 13px;
-        font-family: inherit;
-        flex: 1;
-        background: transparent;
-        color: var(--primary);
-    }
+    
 
-    .type-filter-pills {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 16px;
-    }
-
-    .filter-pill {
-        border: 1px solid var(--border);
-        background: var(--card);
-        border-radius: 100px;
-        padding: 5px 16px;
-        font-size: 12px;
-        color: var(--text-muted);
-        cursor: pointer;
-        font-family: inherit;
-        transition: var(--transition);
-    }
-
-    .filter-pill.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
+    
 
     .filter-pill:hover:not(.active) {
         border-color: var(--accent-light);
     }
 
     /* Loading Spinner */
-    .spinner-wrap {
-        text-align: center;
-        padding: 40px 20px;
-        color: var(--text-muted);
-    }
 
-    .spinner {
-        width: 30px;
-        height: 30px;
-        border: 3px solid var(--border);
-        border-top-color: var(--accent);
-        border-radius: 50%;
-        margin: 0 auto 12px;
-        animation: biicf-spin 0.7s linear infinite;
-    }
+    
 
     @keyframes biicf-spin {
         to { transform: rotate(360deg); }
     }
 
     /* Sub-sector Cards */
-    .sub-sector-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 12px;
-    }
 
-    .sub-sector-card {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 14px 18px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--card);
-        cursor: pointer;
-        transition: var(--transition);
-        font-family: inherit;
-        width: 100%;
-        text-align: left;
-    }
+    
 
-    .sub-sector-card:hover {
-        border-color: var(--accent-light);
-        box-shadow: var(--shadow);
-        transform: translateY(-2px);
-    }
-
-    .sub-sector-card .name {
-        font-weight: 500;
-        font-size: 14px;
-        color: var(--primary);
-    }
-
-    .sub-sector-card .count {
-        font-size: 12px;
-        color: var(--text-muted);
-    }
+    
 
     /* Job Role List */
-    .role-list {
-        display: grid;
-        gap: 8px;
-    }
 
-    .role-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 12px 16px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        background: var(--card);
-        cursor: pointer;
-        transition: var(--transition);
-        font-family: inherit;
-        width: 100%;
-        text-align: left;
-        gap: 12px;
-    }
+    
 
-    .role-item:hover {
-        border-color: var(--accent-light);
-        box-shadow: var(--shadow);
-    }
-
-    .role-item .title {
-        font-weight: 500;
-        font-size: 14px;
-        color: var(--primary);
-    }
-
-    .role-item .badges {
-        display: flex;
-        gap: 6px;
-        flex-shrink: 0;
-    }
+    
 
     .role-item .level {
         font-size: 12px;
@@ -640,65 +511,22 @@
     }
 
     /* Career Path */
-    .career-path {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-        padding: 16px 0;
-    }
 
-    .career-path .node {
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-size: 13px;
-        font-weight: 500;
-    }
-
-    .career-path .node.current {
-        background: var(--primary);
-        color: white;
-    }
+    
 
     .career-path .node.prev {
         background: var(--bg);
         color: var(--text-muted);
     }
 
-    .career-path .node.next {
-        background: rgba(201, 168, 76, 0.12);
-        color: var(--accent-dark);
-    }
-
-    .career-path .arrow {
-        color: var(--text-muted);
-        font-size: 14px;
-    }
+    
 
     /* Competencies */
     .comp-group {
         margin-bottom: 20px;
     }
 
-    .comp-group h4 {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-muted);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        margin-bottom: 8px;
-    }
-
-    .comp-item {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px 14px;
-        border: 1px solid var(--border);
-        border-radius: 6px;
-        margin-bottom: 6px;
-        font-size: 13px;
-    }
+    
 
     .comp-item .name {
         font-weight: 500;
@@ -768,14 +596,6 @@
         color: #0d1f33;
         text-transform: none;
         letter-spacing: 0;
-    }
-
-    .prof-level .level {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
     }
 
     .prof-level.required {
@@ -916,39 +736,16 @@
     }
 
     /* Entry Requirements */
-    .req-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid var(--border);
-        font-size: 13px;
-    }
 
     .req-item:last-child {
         border-bottom: none;
     }
 
-    .req-item .label {
-        color: var(--text-muted);
-    }
-
-    .req-item .value {
-        font-weight: 500;
-    }
+    
 
     /* Training */
-    .training-item {
-        padding: 12px 16px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        margin-bottom: 8px;
-    }
 
-    .training-item .name {
-        font-weight: 500;
-        font-size: 14px;
-        color: var(--primary);
-    }
+    
 
     /* Programming languages */
     .language-note {
@@ -973,24 +770,8 @@
     }
 
     /* Proficiency Levels */
-    .prof-level {
-        padding: 14px 18px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-        margin-bottom: 10px;
-    }
 
-    .prof-level .level {
-        font-weight: 600;
-        font-size: 15px;
-        color: var(--primary);
-    }
-
-    .prof-level .desc {
-        font-size: 13px;
-        color: var(--text-muted);
-        margin-top: 4px;
-    }
+    
 
     .prof-scale {
         margin-bottom: 26px;
@@ -1016,46 +797,10 @@
     }
 
     /* Compare Button */
-    .compare-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 8px 16px;
-        border-radius: 8px;
-        border: none;
-        background: var(--accent);
-        color: var(--primary-dark);
-        font-weight: 600;
-        font-size: 13px;
-        cursor: pointer;
-        transition: var(--transition);
-        font-family: inherit;
-    }
 
-    .compare-btn:hover {
-        background: var(--accent-light);
-        transform: translateY(-2px);
-    }
+    
 
-    .compare-btn:disabled {
-        opacity: 0.7;
-        cursor: default;
-        transform: none;
-    }
-
-    .compare-result {
-        margin-top: 16px;
-        padding: 16px 20px;
-        background: rgba(26, 58, 92, 0.04);
-        border-radius: 8px;
-        border: 1px solid var(--border);
-    }
-
-    .compare-result .summary {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
+    
 
     .compare-result .summary .stat {
         text-align: center;
@@ -2954,10 +2699,20 @@
                                 names them for.
                             -->
                             <div x-show="(selectedRole.programming_languages || []).length" style="margin-top:26px;">
-                                <div class="section-title" style="font-size:16px;">
-                                    <i class="fas fa-code"></i> Programming Languages
+                                {{--
+                                    The redesign's own section head. The
+                                    class this used to carry went with the
+                                    rules that drew it.
+                                --}}
+                                <div class="bx-section-head">
+                                    <div class="bx-section-title">
+                                        <span class="bx-section-icon"><i class="fas fa-code"></i></span>
+                                        <div>
+                                            <h2>Programming Languages</h2>
+                                            <p>Languages in demand for this role.</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <p class="language-note">Languages in demand for this role.</p>
                                 <div class="language-list">
                                     <template x-for="l in (selectedRole.programming_languages || [])" :key="l.id">
                                         <span class="language" x-text="l.name"></span>

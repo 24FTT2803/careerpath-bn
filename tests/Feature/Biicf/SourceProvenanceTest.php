@@ -372,7 +372,7 @@ describe('the review screen once a difference is settled', function () {
         $this->actingAs($this->admin)
             ->get(route('admin.biicf.editions.show', $this->edition))
             ->assertOk()
-            ->assertDontSee('data-change', false)
+            ->assertDontSee('class="change change-', false)
             ->assertSee('Everything in this edition has been decided');
     });
 
@@ -387,7 +387,7 @@ describe('the review screen once a difference is settled', function () {
         $this->actingAs($this->admin)
             ->get(route('admin.biicf.editions.show', ['edition' => $this->edition, 'show' => 'all']))
             ->assertOk()
-            ->assertSee('data-change', false)
+            ->assertSee('class="change change-', false)
             ->assertSee('sub_sector');
     });
 
@@ -397,7 +397,7 @@ describe('the review screen once a difference is settled', function () {
         $this->actingAs($this->admin)
             ->get(route('admin.biicf.editions.show', $this->edition))
             ->assertOk()
-            ->assertSee('data-change', false)
+            ->assertSee('class="change change-', false)
             ->assertDontSee('Everything in this edition has been decided');
     });
 });
@@ -422,11 +422,14 @@ describe('reading the book again', function () {
             'job_roles' => [[
                 'title' => 'Infrastructure Manager',
                 'sub_sector' => 'Something Else Entirely',
+                'tiers' => ['Specialist'],
             ]],
         ]));
 
         $this->actingAs($this->admin)
+            ->from(route('admin.biicf.editions.show', $edition))
             ->post(route('admin.biicf.editions.reread', $edition))
+            ->assertSessionHasNoErrors()
             ->assertRedirect(route('admin.biicf.editions.show', $edition))
             ->assertSessionHas('success');
 
@@ -438,6 +441,7 @@ describe('reading the book again', function () {
             'job_roles' => [[
                 'title' => 'Infrastructure Manager',
                 'sub_sector' => 'Something Else Entirely',
+                'tiers' => ['Specialist'],
             ]],
         ]));
 
@@ -454,7 +458,9 @@ describe('reading the book again', function () {
         ]);
 
         $this->actingAs($this->admin)
-            ->post(route('admin.biicf.editions.reread', $edition));
+            ->from(route('admin.biicf.editions.show', $edition))
+            ->post(route('admin.biicf.editions.reread', $edition))
+            ->assertSessionHasNoErrors();
 
         expect($decided->fresh()->decision)->toBe(BiicfEditionChange::DECISION_KEEP);
     });
