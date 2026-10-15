@@ -1636,6 +1636,7 @@
 })();
 </script> 
 <x-cookie-banner />   
+    @include('partials.student-polish')
     @include('partials.long-text')
 </body>
 </html>
