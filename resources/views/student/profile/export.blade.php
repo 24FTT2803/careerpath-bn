@@ -18,6 +18,7 @@
 
         body {
             margin: 0;
+            overflow-wrap: anywhere;
             font-family: DejaVu Sans, sans-serif;
             font-size: 10px;
             line-height: 1.45;
@@ -25,41 +26,66 @@
         }
 
         .header {
-            border-bottom: 3px solid #c9a84c;
-            padding-bottom: 14px;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
 
-        .header-table {
+        .header-band {
             width: 100%;
             border-collapse: collapse;
+            background: #1a3a5c;
         }
 
-        .header-table td {
+        .header-band td {
             vertical-align: middle;
+            padding: 14px 16px;
+        }
+
+        .header-logo-cell {
+            width: 120px;
+            border-bottom: 3px solid #c9a84c;
+            text-align: center;
+        }
+
+        .header-logo {
+            display: block;
+            width: 96px;
+            margin: 0 auto;
+        }
+
+        .header-title-cell {
+            border-bottom: 3px solid #c9a84c;
         }
 
         .brand {
-            font-size: 25px;
+            font-size: 23px;
             font-weight: bold;
-            color: #1a3a5c;
+            color: #ffffff;
+            letter-spacing: 0.3px;
         }
 
         .brand-gold {
-            color: #c9a84c;
+            color: #e3c36b;
         }
 
         .report-title {
             margin-top: 3px;
-            font-size: 13px;
-            color: #667085;
+            font-size: 9px;
+            letter-spacing: 1.6px;
+            text-transform: uppercase;
+            color: #c9d6e4;
         }
 
         .generated {
             text-align: right;
-            font-size: 9px;
-            color: #7b8794;
+            font-size: 8.5px;
+            color: #c9d6e4;
             line-height: 1.6;
+            border-bottom: 3px solid #c9a84c;
+        }
+
+        .generated strong {
+            font-size: 11px;
+            color: #ffffff;
         }
 
         .section {
@@ -68,10 +94,12 @@
 
         .section-title {
             margin: 0 0 10px 0;
-            padding-bottom: 6px;
+            padding: 3px 0 5px 9px;
+            border-left: 4px solid #c9a84c;
             border-bottom: 1px solid #d8dee6;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: bold;
+            letter-spacing: 0.2px;
             color: #1a3a5c;
         }
 
@@ -85,6 +113,7 @@
         .info-table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
 
         .info-table td {
@@ -337,10 +366,10 @@
             left: 0;
             right: 0;
             padding-top: 5px;
-            border-top: 1px solid #e0e4e8;
+            border-top: 2px solid #c9a84c;
             text-align: center;
             font-size: 7px;
-            color: #8a94a1;
+            color: #6b7785;
         }
 
         .page-number:after {
@@ -349,6 +378,14 @@
 
         .avoid-break {
             page-break-inside: avoid;
+        }
+
+        p,
+        td,
+        th,
+        div,
+        span {
+            overflow-wrap: anywhere;
         }
 
         p {
@@ -397,10 +434,28 @@
 </div>
 
 <!-- Header -->
+@php
+    $politeknikLogoPath = public_path('images/politeknik-logo-pdf.png');
+
+    $politeknikLogo = is_file($politeknikLogoPath)
+        ? 'data:image/png;base64,'.base64_encode(file_get_contents($politeknikLogoPath))
+        : null;
+@endphp
+
 <div class="header">
-    <table class="header-table">
+    <table class="header-band">
         <tr>
-            <td>
+            @if($politeknikLogo)
+                <td class="header-logo-cell">
+                    <img
+                        src="{{ $politeknikLogo }}"
+                        alt="Politeknik Brunei"
+                        class="header-logo"
+                    >
+                </td>
+            @endif
+
+            <td class="header-title-cell">
                 <div class="brand">
                     CareerPath <span class="brand-gold">BN</span>
                 </div>
