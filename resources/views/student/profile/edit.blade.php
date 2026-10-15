@@ -919,6 +919,12 @@
         font-family: var(--font-body);
     }
 
+    .edit-profile .cpbn-btn svg {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 18px;
+    }
+
     .edit-profile .cpbn-btn-primary {
         background: var(--gold);
         color: var(--ink);
@@ -1070,11 +1076,21 @@
         }
 
         .edit-profile .submit-row {
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
             flex-direction: column;
+            margin: 24px -4px 0;
+            padding: 10px 4px calc(10px + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(to top, var(--paper, #fff) 70%, rgba(255, 255, 255, 0));
         }
 
         .edit-profile .submit-row .cpbn-btn {
             width: 100%;
+            min-height: 44px;
+            padding: 10px 18px;
+            font-size: 14px;
+            line-height: 1.2;
             justify-content: center;
         }
     }
@@ -2188,20 +2204,30 @@
                                             )
                                             : null;
 
-                                    $levelName =
-                                        $storedLevel
-                                            ? (
-                                                $legacyLevelNames[
-                                                    $storedLevel
-                                                ] ?? $storedLevel
-                                            )
-                                            : null;
-
+                                    /*
+                                     * Soft skills are saved under the
+                                     * soft scale's own names (Basic,
+                                     * Intermediate, Advanced, Expert).
+                                     * The legacy map below only exists
+                                     * for the old technical scale, so
+                                     * it must not touch these names or
+                                     * they stop matching their options.
+                                     */
                                     $selectedLevelId =
-                                        $levelName
-                                            ? $levelsByName
-                                                ->get(
-                                                    $levelName
+                                        $storedLevel
+                                            ? $proficiencyLevels
+                                                ->where(
+                                                    'scale',
+                                                    $competency->scale()
+                                                )
+                                                ->first(
+                                                    fn ($level) =>
+                                                        mb_strtolower(
+                                                            trim(
+                                                                (string)
+                                                                $level->name
+                                                            )
+                                                        ) === $storedLevel
                                                 )?->id
                                             : null;
                                 }

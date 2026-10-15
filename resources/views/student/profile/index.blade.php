@@ -190,6 +190,46 @@
         text-align: right;
     }
 
+    /* Long free-text answers (vision statement, long term goals) */
+    .info-row.info-row-long {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .info-row.info-row-long .value {
+        text-align: left;
+        line-height: 1.6;
+        white-space: pre-line;
+    }
+
+    .info-row.info-row-long .value.is-clamped {
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        overflow: hidden;
+    }
+
+    .read-more-toggle {
+        align-self: flex-start;
+        padding: 0;
+        border: none;
+        background: none;
+        color: var(--accent);
+        font: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .read-more-toggle:hover {
+        text-decoration: underline;
+    }
+
+    .read-more-toggle[hidden] {
+        display: none;
+    }
+
     .tags {
         display: flex;
         flex-wrap: wrap;
@@ -1457,26 +1497,42 @@
                                 @endif
 
                                 @if($user->aspirations->vision_statement)
-                                    <div class="info-row">
+                                    <div class="info-row info-row-long">
                                         <span class="label">
                                             Vision Statement
                                         </span>
 
-                                        <span class="value">
-                                            {{ $user->aspirations->vision_statement }}
-                                        </span>
+                                        <span class="value is-clamped" data-clamp-text>{{ $user->aspirations->vision_statement }}</span>
+
+                                        <button
+                                            type="button"
+                                            class="read-more-toggle"
+                                            data-clamp-toggle
+                                            aria-expanded="false"
+                                            hidden
+                                        >
+                                            Read more
+                                        </button>
                                     </div>
                                 @endif
 
                                 @if($user->aspirations->long_term_goals)
-                                    <div class="info-row">
+                                    <div class="info-row info-row-long">
                                         <span class="label">
                                             Long Term Goals
                                         </span>
 
-                                        <span class="value">
-                                            {{ $user->aspirations->long_term_goals }}
-                                        </span>
+                                        <span class="value is-clamped" data-clamp-text>{{ $user->aspirations->long_term_goals }}</span>
+
+                                        <button
+                                            type="button"
+                                            class="read-more-toggle"
+                                            data-clamp-toggle
+                                            aria-expanded="false"
+                                            hidden
+                                        >
+                                            Read more
+                                        </button>
                                     </div>
                                 @endif
                             </div>
@@ -1585,6 +1641,32 @@
                 </div>
             </aside>
 
+            <script>
+                document.addEventListener('DOMContentLoaded', function () {
+                    document.querySelectorAll('[data-clamp-text]').forEach(function (text) {
+                        const toggle = text.parentElement.querySelector('[data-clamp-toggle]');
+
+                        if (! toggle) {
+                            return;
+                        }
+
+                        const needsToggle = function () {
+                            return text.scrollHeight > text.clientHeight + 1;
+                        };
+
+                        if (needsToggle()) {
+                            toggle.hidden = false;
+                        }
+
+                        toggle.addEventListener('click', function () {
+                            const expanded = text.classList.toggle('is-clamped') === false;
+
+                            toggle.textContent = expanded ? 'Show less' : 'Read more';
+                            toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                        });
+                    });
+                });
+            </script>
             <script>
                 (function () {
                     /* Keep the badge just below the sticky top bar. */
