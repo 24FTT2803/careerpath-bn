@@ -1123,6 +1123,421 @@
     }
 </style>
 
+<style>
+    /* ==========================================================
+       Edit Profile redesign
+       Layout, theme and spacing only. Every field, name, id and
+       script above is unchanged. Selectors are prefixed so they
+       win over the page's earlier rules and the shared polish.
+       ========================================================== */
+    body .edit-profile .wrap {
+        max-width: 1180px;
+    }
+
+    body .edit-profile .ep-layout {
+        display: grid;
+        grid-template-columns: 276px minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+    }
+
+    body .edit-profile .ep-main {
+        min-width: 0;
+    }
+
+    /* ---------- Side column ---------- */
+    body .edit-profile .ep-aside {
+        position: sticky;
+        top: 88px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    body .edit-profile .ep-layout .progress-card {
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(160deg, #0d1f33 0%, #1a3a5c 70%, #2a5a8c 100%);
+        border: none;
+        border-radius: 16px;
+        color: #fff;
+        box-shadow: 0 18px 36px -26px rgba(13, 31, 51, 0.8);
+    }
+
+    body .edit-profile .ep-layout .progress-top span {
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    body .edit-profile .ep-layout .progress-top span:last-child {
+        font-family: 'Playfair Display', serif;
+        font-size: 26px;
+        font-weight: 700;
+        color: #e8d4a0;
+    }
+
+    body .edit-profile .ep-layout .progress-card .bar {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    body .edit-profile .ep-layout .progress-note {
+        margin: 12px 0 0;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    body .edit-profile .ep-nav {
+        padding: 12px;
+        background: #fff;
+        border: 1px solid #e6e8ec;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px -26px rgba(13, 31, 51, 0.45);
+    }
+
+    body .edit-profile .ep-nav-title {
+        margin: 4px 10px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #8a94a1;
+    }
+
+    body .edit-profile .ep-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 10px;
+        border-radius: 10px;
+        color: #4b5868;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    body .edit-profile .ep-nav-link:hover {
+        background: #f6f7f9;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-nav-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 26px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #eef0f3;
+        color: #1a3a5c;
+        font-size: 12px;
+        font-weight: 700;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    body .edit-profile .ep-nav-link.is-active {
+        background: #faf6ea;
+        color: #1a3a5c;
+        font-weight: 600;
+    }
+
+    body .edit-profile .ep-nav-link.is-active .ep-nav-num {
+        background: #1a3a5c;
+        color: #e8d4a0;
+    }
+
+    /* ---------- Section cards ---------- */
+    body .edit-profile .ep-layout .section {
+        scroll-margin-top: 96px;
+        margin-bottom: 22px;
+        padding: 28px;
+        background: #fff;
+        border: 1px solid #e6e8ec;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px -26px rgba(13, 31, 51, 0.45);
+    }
+
+    body .edit-profile .ep-layout .section .title {
+        gap: 12px;
+        margin-bottom: 22px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #eef0f3;
+        font-family: 'Playfair Display', serif;
+        font-size: 19px;
+        font-weight: 700;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-layout .section .desc {
+        margin-top: -8px;
+        margin-bottom: 20px;
+        color: #6b7785;
+        line-height: 1.6;
+    }
+
+    /* ---------- Fields ---------- */
+    body .edit-profile .ep-layout .cpbn-fgrid {
+        gap: 18px 20px;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field label {
+        margin-bottom: 7px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    body .edit-profile .ep-layout .cpbn-field select,
+    body .edit-profile .ep-layout .cpbn-field textarea {
+        min-height: 46px;
+        padding: 10px 14px;
+        border: 1px solid #dfe3e8;
+        border-radius: 12px;
+        background: #fcfcfd;
+        font-size: 14px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field textarea {
+        min-height: 110px;
+        line-height: 1.6;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+    body .edit-profile .ep-layout .cpbn-field select:hover,
+    body .edit-profile .ep-layout .cpbn-field textarea:hover {
+        border-color: #cdd3da;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+    body .edit-profile .ep-layout .cpbn-field select:focus,
+    body .edit-profile .ep-layout .cpbn-field textarea:focus {
+        background: #fff;
+        border-color: #c9a84c;
+        box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.16);
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:disabled {
+        background: #f3f4f6;
+        color: #6b7785;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field .hint {
+        margin-top: 6px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #8a94a1;
+    }
+
+    body .edit-profile .ep-layout .cpbn-check {
+        border-radius: 12px;
+    }
+
+    /* ---------- Inner cards ---------- */
+    body .edit-profile .ep-layout .cpbn-profile-picture {
+        padding: 20px;
+        border: 1px solid #e8d4a0;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #faf6ea 0%, #ffffff 100%);
+    }
+
+    body .edit-profile .ep-layout .cpbn-project-card,
+    body .edit-profile .ep-layout .cpbn-certification-card,
+    body .edit-profile .ep-layout .cpbn-competency-item {
+        border: 1px solid #e6e8ec;
+        border-radius: 14px;
+        background: #fbfbfd;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body .edit-profile .ep-layout .cpbn-project-card:hover,
+    body .edit-profile .ep-layout .cpbn-certification-card:hover,
+    body .edit-profile .ep-layout .cpbn-competency-item:hover {
+        border-color: #e8d4a0;
+        box-shadow: 0 12px 26px -22px rgba(13, 31, 51, 0.5);
+    }
+
+    body .edit-profile .ep-layout .cpbn-competency-item.selected {
+        border-color: #e8d4a0;
+        background: #faf6ea;
+    }
+
+    body .edit-profile .ep-layout .cpbn-project-number {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 11px;
+        border-radius: 999px;
+        background: #1a3a5c;
+        color: #e8d4a0;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    body .edit-profile .ep-layout .cpbn-competency-heading {
+        padding-left: 12px;
+        border-left: 4px solid #c9a84c;
+    }
+
+    body .edit-profile .ep-layout .cpbn-custom-chip {
+        border-radius: 999px;
+        background: #eef3f9;
+        border-color: #d3deea;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-layout .cpbn-add-btn,
+    body .edit-profile .ep-layout .cpbn-add-project,
+    body .edit-profile .ep-layout .cpbn-add-certification {
+        border: 1px dashed #c9a84c;
+        border-radius: 12px;
+        background: #faf6ea;
+        color: #1a3a5c;
+        font-weight: 600;
+    }
+
+    body .edit-profile .ep-layout .cpbn-add-btn:hover,
+    body .edit-profile .ep-layout .cpbn-add-project:hover,
+    body .edit-profile .ep-layout .cpbn-add-certification:hover {
+        background: #f4ecd2;
+        border-style: solid;
+    }
+
+    body .edit-profile .ep-layout .cpbn-competency-page-button,
+    body .edit-profile .ep-layout .cpbn-competency-toggle {
+        border-radius: 999px;
+    }
+
+    /* ---------- Floating save bar ---------- */
+    body .edit-profile .ep-layout .submit-row {
+        position: sticky;
+        bottom: 16px;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 8px 0 0;
+        padding: 12px 14px 12px 22px;
+        background: rgba(255, 255, 255, 0.94);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid #e6e8ec;
+        border-radius: 16px;
+        box-shadow: 0 18px 40px -22px rgba(13, 31, 51, 0.55);
+    }
+
+    body .edit-profile .ep-save-note {
+        margin: 0;
+        font-size: 13px;
+        color: #6b7785;
+    }
+
+    body .edit-profile .ep-layout .submit-row .cpbn-btn {
+        min-height: 46px;
+        padding: 10px 26px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #1a3a5c 0%, #2a5a8c 100%);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 22px -14px rgba(13, 31, 51, 0.8);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body .edit-profile .ep-layout .submit-row .cpbn-btn svg {
+        color: #e8d4a0;
+    }
+
+    body .edit-profile .ep-layout .submit-row .cpbn-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 28px -16px rgba(13, 31, 51, 0.85);
+    }
+
+    /* ---------- Tablet and phone ---------- */
+    @media (max-width: 1000px) {
+        body .edit-profile .ep-layout {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        body .edit-profile .ep-aside {
+            position: static;
+            max-height: none;
+            overflow: visible;
+        }
+
+        body .edit-profile .ep-nav {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        body .edit-profile .ep-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        body .edit-profile .ep-nav-title {
+            display: none;
+        }
+
+        body .edit-profile .ep-nav-link {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            padding: 8px 12px;
+        }
+    }
+
+    @media (max-width: 720px) {
+        body .edit-profile .ep-layout .section {
+            padding: 20px 16px;
+            border-radius: 16px;
+        }
+
+        body .edit-profile .ep-layout .section .title {
+            font-size: 17px;
+        }
+
+        body .edit-profile .ep-layout .submit-row {
+            bottom: 0;
+            margin: 8px -4px 0;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+            border-radius: 16px 16px 0 0;
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        body .edit-profile .ep-save-note {
+            display: none;
+        }
+
+        body .edit-profile .ep-layout .submit-row .cpbn-btn {
+            width: 100%;
+            min-height: 44px;
+            justify-content: center;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body .edit-profile .ep-layout .submit-row .cpbn-btn,
+        body .edit-profile .ep-nav-link,
+        body .edit-profile .ep-layout .cpbn-project-card,
+        body .edit-profile .ep-layout .cpbn-certification-card,
+        body .edit-profile .ep-layout .cpbn-competency-item {
+            transition: none;
+        }
+    }
+</style>
+
 <div class="edit-profile">
     <div class="wrap">
 
@@ -1140,7 +1555,9 @@
             </a>
         </div>
 
-        <!-- Progress -->
+        <div class="ep-layout">
+            <aside class="ep-aside">
+            <!-- Progress -->
         <div class="progress-card">
             <div class="progress-top">
                 <span>Profile Completion</span>
@@ -1164,6 +1581,45 @@
             </p>
         </div>
 
+                <nav class="ep-nav" aria-label="Profile sections">
+                    <p class="ep-nav-title">Sections</p>
+                    <a href="#ep-personal" class="ep-nav-link" data-ep-target="ep-personal">
+                        <span class="ep-nav-num">1</span>
+                        <span class="ep-nav-label">Personal Information</span>
+                    </a>
+                    <a href="#ep-studies" class="ep-nav-link" data-ep-target="ep-studies">
+                        <span class="ep-nav-num">2</span>
+                        <span class="ep-nav-label">Current Studies</span>
+                    </a>
+                    <a href="#ep-qualifications" class="ep-nav-link" data-ep-target="ep-qualifications">
+                        <span class="ep-nav-num">3</span>
+                        <span class="ep-nav-label">Qualifications</span>
+                    </a>
+                    <a href="#ep-skills" class="ep-nav-link" data-ep-target="ep-skills">
+                        <span class="ep-nav-num">4</span>
+                        <span class="ep-nav-label">Skills &amp; Competencies</span>
+                    </a>
+                    <a href="#ep-interests" class="ep-nav-link" data-ep-target="ep-interests">
+                        <span class="ep-nav-num">5</span>
+                        <span class="ep-nav-label">Interests &amp; Preferences</span>
+                    </a>
+                    <a href="#ep-projects" class="ep-nav-link" data-ep-target="ep-projects">
+                        <span class="ep-nav-num">6</span>
+                        <span class="ep-nav-label">Projects &amp; Experience</span>
+                    </a>
+                    <a href="#ep-certifications" class="ep-nav-link" data-ep-target="ep-certifications">
+                        <span class="ep-nav-num">7</span>
+                        <span class="ep-nav-label">Certifications</span>
+                    </a>
+                    <a href="#ep-aspirations" class="ep-nav-link" data-ep-target="ep-aspirations">
+                        <span class="ep-nav-num">8</span>
+                        <span class="ep-nav-label">Career Aspirations</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <div class="ep-main">
+
         <form
             method="POST"
             action="{{ route('student.profile.update') }}"
@@ -1178,7 +1634,7 @@
             @method('PUT')
 
             <!-- SECTION 1: Personal Information -->
-            <div class="section">
+            <div class="section" id="ep-personal">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="8" r="4"/>
@@ -1464,7 +1920,7 @@
             </div>
 
             <!-- SECTION 2: Current Studies -->
-            <div class="section">
+            <div class="section" id="ep-studies">
                 <div class="title">
                     <svg
                         viewBox="0 0 24 24"
@@ -1521,7 +1977,7 @@
             </div>
 
             <!-- SECTION 2b: Qualifications -->
-            <div class="section">
+            <div class="section" id="ep-qualifications">
                 <div class="title">
                     <svg
                         viewBox="0 0 24 24"
@@ -1721,7 +2177,7 @@
             </div>
 
             <!-- SECTION 3: Skills -->
-            <div class="section">
+            <div class="section" id="ep-skills">
                 <div class="title">
                     <svg
                         viewBox="0 0 24 24"
@@ -2520,7 +2976,7 @@
             </div>
 
             <!-- SECTION 4: Interests -->
-            <div class="section">
+            <div class="section" id="ep-interests">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
@@ -2716,7 +3172,7 @@
             </div>
 
             <!-- SECTION 5: Projects -->
-            <div class="section">
+            <div class="section" id="ep-projects">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -2916,7 +3372,7 @@
             </div>
 
             <!-- SECTION 6: Certifications -->
-            <div class="section">
+            <div class="section" id="ep-certifications">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="9" r="6"/>
@@ -3137,7 +3593,7 @@
             </div>
 
             <!-- SECTION 7: Aspirations -->
-            <div class="section">
+            <div class="section" id="ep-aspirations">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/>
@@ -3189,6 +3645,10 @@
             </div>
 
             <div class="submit-row">
+                <p class="ep-save-note">
+                    Your progress can be saved now and completed later.
+                </p>
+
                 <button
                     type="submit"
                     class="cpbn-btn cpbn-btn-primary"
@@ -3202,8 +3662,111 @@
             </div>
         </form>
 
+            </div>
+        </div>
+
     </div>
 </div>
+
+<script>
+    /*
+     * Side navigator for the profile sections. Highlights the
+     * section being read and scrolls to one when it is clicked.
+     * It only reads the page and never touches the form's data.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        const links = Array.from(
+            document.querySelectorAll('.ep-nav-link[data-ep-target]')
+        );
+
+        if (links.length === 0) {
+            return;
+        }
+
+        const reduceMotion = window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        ).matches;
+
+        const setActive = function (id) {
+            links.forEach(function (link) {
+                const active = link.dataset.epTarget === id;
+
+                link.classList.toggle('is-active', active);
+
+                if (active) {
+                    link.setAttribute('aria-current', 'true');
+
+                    /*
+                     * On narrow screens the tabs scroll sideways. Move
+                     * only that strip. scrollIntoView() would drag the
+                     * whole page back up to the tabs while the student
+                     * is scrolling down.
+                     */
+                    const strip = link.parentElement;
+
+                    if (
+                        window.innerWidth <= 1000
+                        && strip
+                        && strip.scrollWidth > strip.clientWidth
+                    ) {
+                        strip.scrollTo({
+                            left: link.offsetLeft
+                                - (strip.clientWidth - link.offsetWidth) / 2,
+                            behavior: reduceMotion ? 'auto' : 'smooth',
+                        });
+                    }
+                } else {
+                    link.removeAttribute('aria-current');
+                }
+            });
+        };
+
+        links.forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                const target = document.getElementById(
+                    link.dataset.epTarget
+                );
+
+                if (! target) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                target.scrollIntoView({
+                    behavior: reduceMotion ? 'auto' : 'smooth',
+                    block: 'start',
+                });
+
+                setActive(link.dataset.epTarget);
+            });
+        });
+
+        if (! ('IntersectionObserver' in window)) {
+            setActive(links[0].dataset.epTarget);
+
+            return;
+        }
+
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setActive(entry.target.id);
+                }
+            });
+        }, { rootMargin: '-25% 0px -65% 0px' });
+
+        links.forEach(function (link) {
+            const section = document.getElementById(link.dataset.epTarget);
+
+            if (section) {
+                observer.observe(section);
+            }
+        });
+
+        setActive(links[0].dataset.epTarget);
+    });
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
