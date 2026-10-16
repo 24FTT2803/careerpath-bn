@@ -287,7 +287,6 @@
        ====================================================== */
     body .generation-panel {
         position: relative;
-        overflow: hidden;
         padding: 22px 24px 22px 28px;
         background: linear-gradient(180deg, #ffffff 0%, #faf6ea 140%);
     }
@@ -299,12 +298,13 @@
         top: 0;
         bottom: 0;
         width: 5px;
+        border-radius: 16px 0 0 16px;
         background: linear-gradient(180deg, #c9a84c, #e8d4a0);
     }
 
     body .generation-panel h2 {
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
+        font-size: 19px;
+        font-weight: 700;
         color: #1a3a5c;
     }
 
@@ -313,6 +313,17 @@
         background: linear-gradient(135deg, #1a3a5c 0%, #2a5a8c 100%);
         box-shadow: 0 10px 22px -14px rgba(13, 31, 51, 0.8);
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    /* The tooltip lives inside the button, so it must restore normal wrapping */
+    body .generate-button .stale-why {
+        width: 260px;
+        white-space: normal;
+        overflow-wrap: break-word;
+        text-align: left;
+        font-weight: 500;
+        letter-spacing: normal;
+        text-transform: none;
     }
 
     body .generate-button:not(:disabled):hover {
@@ -346,7 +357,7 @@
     }
 
     body .recommendation-card h3 {
-        font-family: 'Playfair Display', serif;
+        font-weight: 700;
         color: #1a3a5c;
     }
 
@@ -357,10 +368,6 @@
         border-radius: 999px;
         background: #e8f5ee;
         color: #1f8a5b;
-    }
-
-    body .recommendations-page .section-heading h2 {
-        font-family: 'Playfair Display', serif;
     }
 
     body .analysis-link {
@@ -385,7 +392,7 @@
        Career Analysis
        ====================================================== */
     body .cpbn-analysis {
-        --font-display: 'Playfair Display', Georgia, serif;
+        --font-display: 'Inter', -apple-system, sans-serif;
         --font-body: 'Inter', -apple-system, sans-serif;
         background: var(--bg, #f4f6f9);
     }
@@ -421,6 +428,7 @@
     }
 
     body .cpbn-hero h1 {
+        font-family: 'Playfair Display', serif;
         color: #fff;
         font-weight: 700;
     }
@@ -600,8 +608,7 @@
 
     body .profile-page .panel-header h3 {
         gap: 10px;
-        font-family: 'Playfair Display', serif;
-        font-size: 18px;
+        font-size: 17px;
         font-weight: 700;
     }
 
