@@ -88,12 +88,47 @@
                     @error('student_id')<p class="err">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="cpbn-field" style="margin-bottom:0">
+                <div class="cpbn-field">
                     <label>Programme <span class="req">*</span></label>
                     <x-programme-select
                         :selected="$user->programme"
                         :selected-group-id="$user->programme_group_id"
                     />
+                </div>
+
+                {{--
+                    Granted and withdrawn in the same place. An
+                    exemption that could only ever be given would
+                    be a one-way door.
+                --}}
+                <div class="cpbn-field" style="margin-bottom:0">
+                    <label class="cpbn-waive">
+                        <input type="checkbox" name="waive_email_confirmation" value="1"
+                               @checked(old('waive_email_confirmation', $user->emailConfirmationWaived()))>
+                        <span>This account does not need to confirm its email</span>
+                    </label>
+
+                    @if($user->emailConfirmationWaived())
+                        <p class="cpbn-hint">
+                            Excused
+                            @if($user->emailConfirmationWaivedBy)
+                                by {{ $user->emailConfirmationWaivedBy->name }}
+                            @endif
+                            on {{ $user->email_confirmation_waived_at->format('d M Y') }}.
+                            Unticking this asks them to confirm from their next visit.
+                        </p>
+                    @elseif($user->hasVerifiedEmail())
+                        <p class="cpbn-hint">
+                            This address is already confirmed, so nothing is being asked
+                            of it either way.
+                        </p>
+                    @else
+                        <p class="cpbn-hint">
+                            For demonstration accounts, and for a student whose address
+                            does not exist. The address is not marked confirmed — it is
+                            recorded that you excused it.
+                        </p>
+                    @endif
                 </div>
             </div>
 
@@ -168,6 +203,8 @@
     .cpbn-field input:focus,.cpbn-field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,154,61,0.15)}
     .cpbn-hint{font-size:11.5px;color:var(--ink-dim);margin-top:4px}
     .err{color:var(--rose);font-size:12px;margin-top:4px}
+    .cpbn-waive{display:flex;align-items:flex-start;gap:9px;font-weight:500;cursor:pointer}
+    .cpbn-waive input{width:auto;margin-top:2px;flex-shrink:0}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 </style>
 

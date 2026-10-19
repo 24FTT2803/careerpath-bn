@@ -86,9 +86,33 @@
                     @error('student_id')<p class="err">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="cpbn-field" style="margin-bottom:0">
+                <div class="cpbn-field">
                     <label>Programme <span class="req">*</span></label>
                     <x-programme-select :selected="null" />
+                </div>
+
+                {{--
+                    An account that cannot confirm its email.
+
+                    Verification is asked of students created
+                    since the requirement began, which is right
+                    for students who sign themselves up and
+                    leaves no way in for one typed in here: the
+                    address may not exist, and nothing ever sends
+                    it anything. Off by default, because a real
+                    student should confirm.
+                --}}
+                <div class="cpbn-field" style="margin-bottom:0">
+                    <label class="cpbn-waive">
+                        <input type="checkbox" name="waive_email_confirmation" value="1"
+                               @checked(old('waive_email_confirmation'))>
+                        <span>This account does not need to confirm its email</span>
+                    </label>
+                    <p class="cpbn-hint">
+                        For demonstration accounts, and for a student whose address
+                        does not exist. The address is not marked confirmed — it is
+                        recorded that you excused it, and you can withdraw that later.
+                    </p>
                 </div>
             </div>
 
@@ -162,6 +186,8 @@
     .cpbn-field input:focus,.cpbn-field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,154,61,0.15)}
     .cpbn-hint{font-size:11.5px;color:var(--ink-dim);margin-top:4px}
     .err{color:var(--rose);font-size:12px;margin-top:4px}
+    .cpbn-waive{display:flex;align-items:flex-start;gap:9px;font-weight:500;cursor:pointer}
+    .cpbn-waive input{width:auto;margin-top:2px;flex-shrink:0}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 </style>
 

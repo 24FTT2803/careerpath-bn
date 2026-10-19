@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\StudentProfile;
 use App\Models\User;
+use App\Rules\NoProfanity;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Rules\NoProfanity;
 
 class UserController extends Controller
 {
@@ -65,7 +65,7 @@ class UserController extends Controller
         // Phone: valid for the chosen country, never shared between accounts
         $rules += User::phoneWithCountryRules();
 
-            $request->merge([
+        $request->merge([
             'student_id' => User::normaliseStudentId($request->input('student_id')),
         ]);
 
@@ -89,13 +89,28 @@ class UserController extends Controller
             'phone' => $phone,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-                        'student_id' => $request->role === 'student'
+            'student_id' => $request->role === 'student'
                 ? $request->student_id
                 : null,
             'programme' => $request->role === 'student'
                 ? $request->programme
                 : null,
         ]);
+
+        /*
+         * Excused from confirming its email, if that was asked
+         * for. Only students are ever asked in the first place,
+         * so it is only recorded for them — and recorded as a
+         * waiver rather than written into email_verified_at,
+         * which would claim an address was confirmed when
+         * nothing confirmed it.
+         */
+        if ($user->role === 'student' && $request->boolean('waive_email_confirmation')) {
+            $user->forceFill([
+                'email_confirmation_waived_at' => now(),
+                'email_confirmation_waived_by' => $request->user()->id,
+            ])->save();
+        }
 
         /*
          * An ID entered by an admin counts as verified by them.
@@ -154,7 +169,7 @@ class UserController extends Controller
         // Phone: valid for the chosen country, never shared between accounts
         $rules += User::phoneWithCountryRules();
 
-            $request->merge([
+        $request->merge([
             'student_id' => User::normaliseStudentId($request->input('student_id')),
         ]);
 
@@ -187,6 +202,23 @@ class UserController extends Controller
         }
 
         $user->fill($data);
+
+        /*
+         * The waiver can be granted and taken back. Taken back,
+         * the account is asked to confirm from its next request
+         * on — which is the point of being able to take it back.
+         */
+        $waive = $request->boolean('waive_email_confirmation') && $request->role === 'student';
+
+        if ($waive && $user->email_confirmation_waived_at === null) {
+            $user->email_confirmation_waived_at = now();
+            $user->email_confirmation_waived_by = $request->user()->id;
+        }
+
+        if (! $waive && $user->email_confirmation_waived_at !== null) {
+            $user->email_confirmation_waived_at = null;
+            $user->email_confirmation_waived_by = null;
+        }
 
         /*
          * An admin entering or changing a student's ID vouches

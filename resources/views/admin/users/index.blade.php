@@ -158,6 +158,18 @@
                             <i class="fas {{ $roleIcon }}"></i>
                             {{ $roleLabel }}
                         </span>
+
+                        {{--
+                            Said out loud, because an account in
+                            without having proved its address is
+                            worth noticing. An exemption nobody
+                            can see is one nobody reviews.
+                        --}}
+                        @if($user->emailConfirmationWaived())
+                            <span class="waived-badge" title="An administrator excused this account from confirming its email">
+                                <i class="fas fa-envelope-open"></i> Confirmation waived
+                            </span>
+                        @endif
                     </div>
                 </div>
 
@@ -595,6 +607,22 @@
         align-items: flex-end;
         gap: 4px;
         flex-shrink: 0;
+    }
+
+    .waived-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 3px 9px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .03em;
+        color: #8a6420;
+        background: #fbf1de;
+        border: 1px solid #f0e3c0;
+        border-radius: 999px;
+        white-space: nowrap;
     }
 
     .role-badge {

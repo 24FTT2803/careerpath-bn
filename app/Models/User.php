@@ -60,6 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'password' => 'hashed',
             'last_login_at' => 'datetime',
             'student_id_verified_at' => 'datetime',
+            'email_confirmation_waived_at' => 'datetime',
             'last_active_at' => 'datetime',
             'show_ads' => 'boolean',
         ];
@@ -423,8 +424,36 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
+        /*
+         * An account an administrator excused. They are the ones
+         * created rather than signed up — a demonstration
+         * account, a stand-in for an address that does not exist
+         * — and asking them to confirm a message nothing sends
+         * leaves no way in at all.
+         */
+        if ($this->email_confirmation_waived_at !== null) {
+            return false;
+        }
+
         return $this->created_at !== null
             && $this->created_at->gte($from);
+    }
+
+    /**
+     * Whether this account was excused from confirming, and so
+     * is in without ever having proved its address.
+     *
+     * Worth saying out loud wherever accounts are listed: an
+     * exemption nobody can see is one nobody reviews.
+     */
+    public function emailConfirmationWaived(): bool
+    {
+        return $this->email_confirmation_waived_at !== null;
+    }
+
+    public function emailConfirmationWaivedBy(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'email_confirmation_waived_by');
     }
 
     public function unreadNotifications()
