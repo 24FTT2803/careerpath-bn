@@ -105,24 +105,20 @@
                     <label class="cpbn-waive">
                         <input type="checkbox" name="waive_email_confirmation" value="1"
                                @checked(old('waive_email_confirmation', $user->emailConfirmationWaived()))>
-                        <span class="cpbn-waive-body">
-                            <span class="cpbn-waive-title">Skip email confirmation</span>
+                        <span class="cpbn-waive-title">Skip email confirmation</span>
 
-                            <span class="cpbn-waive-note">
-                                @if($user->emailConfirmationWaived())
-                                    Excused@if($user->emailConfirmationWaivedBy) by {{ $user->emailConfirmationWaivedBy->name }}@endif
-                                    on {{ $user->email_confirmation_waived_at->format('d M Y') }}.
-                                    Unticking this asks them to confirm from their next visit.
-                                @elseif($user->hasVerifiedEmail())
-                                    This address is already confirmed, so nothing is being
-                                    asked of it either way.
-                                @else
-                                    For demonstration accounts, and for a student whose
-                                    address does not exist. The address is not marked as
-                                    confirmed — it is recorded that you excused it.
+                        {{--
+                            Who excused it and when, which is a record rather
+                            than an explanation. Only on an account that was.
+                        --}}
+                        @if($user->emailConfirmationWaived())
+                            <span class="cpbn-waive-by">
+                                @if($user->emailConfirmationWaivedBy)
+                                    {{ $user->emailConfirmationWaivedBy->name }} ·
                                 @endif
+                                {{ $user->email_confirmation_waived_at->format('d M Y') }}
                             </span>
-                        </span>
+                        @endif
                     </label>
                 </div>
             </div>
@@ -207,7 +203,7 @@
      * you click, gold when it is on, and the box inside it is
      * reset back to being a box.
      */
-    .cpbn-waive{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;border:2px solid var(--line,#e7e2d4);border-radius:6px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+    .cpbn-waive{display:flex;align-items:center;gap:11px;padding:12px 15px;border:2px solid var(--line,#e7e2d4);border-radius:6px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease}
     .cpbn-waive:hover{border-color:var(--gold,#cf9a3d)}
     .cpbn-waive:has(input:checked){border-color:var(--gold,#cf9a3d);background:rgba(207,154,61,.07)}
     /*
@@ -225,12 +221,11 @@
      * element and ::after on one is not something every browser
      * renders.
      */
-    .cpbn-field .cpbn-waive input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:20px;height:20px;min-width:20px;flex:0 0 auto;margin:0;padding:0;border:2px solid var(--line,#e7e2d4);border-radius:5px;background:#fff;box-shadow:none;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+    .cpbn-field .cpbn-waive input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:19px;height:19px;min-width:19px;flex:0 0 auto;margin:0;padding:0;border:2px solid var(--line,#e7e2d4);border-radius:5px;background:#fff;box-shadow:none;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
     .cpbn-field .cpbn-waive input[type="checkbox"]:checked{background-color:var(--gold,#cf9a3d);border-color:var(--gold,#cf9a3d);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.6 L6.3 11.9 L13 5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:14px 14px}
     .cpbn-field .cpbn-waive input[type="checkbox"]:focus-visible{outline:none;border-color:var(--gold,#cf9a3d);box-shadow:0 0 0 3px rgba(207,154,61,.25)}
-    .cpbn-waive-body{display:flex;flex-direction:column;gap:3px}
     .cpbn-waive-title{font-size:13.5px;font-weight:600;color:var(--ink,#0d1a2b)}
-    .cpbn-waive-note{font-size:11.5px;color:var(--ink-dim,#5b6675);line-height:1.55}
+    .cpbn-waive-by{margin-left:auto;font-size:11.5px;color:var(--ink-dim,#5b6675);white-space:nowrap}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 </style>
 
