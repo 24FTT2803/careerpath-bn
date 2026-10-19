@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\BiicfEdition;
 use App\Models\BiicfEditionChange;
+use App\Models\BiicfEditionLocation;
+use App\Models\BiicfJobRole;
 use App\Services\Biicf\EditionApplier;
 use App\Services\Biicf\EditionComparer;
 use App\Services\Biicf\EditionExtractor;
+use App\Services\Biicf\EditionLocationWriter;
+use App\Services\Biicf\FrameworkValue;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -145,6 +149,15 @@ class BiicfEditionController extends Controller
             'source_file_path' => $path,
             'source_original_name' => $file->getClientOriginalName(),
         ]);
+
+        /*
+         * Where the book prints each value, kept whether or not
+         * it differs from the framework. Checking against the
+         * book is what an administrator does before they know
+         * anything is wrong, so it cannot depend on a
+         * disagreement having been staged.
+         */
+        (new EditionLocationWriter)->write($edition, $payload['source_locations'] ?? []);
 
         $comparer = new EditionComparer;
 
@@ -433,6 +446,14 @@ class BiicfEditionController extends Controller
             return back()->withErrors(['reread' => $e->getMessage()]);
         }
 
+        /*
+         * Rewritten whole rather than merged. A reader corrected
+         * since the last reading should correct every place it
+         * recorded, not leave the ones it happens not to visit
+         * again pointing at the version before.
+         */
+        (new EditionLocationWriter)->write($edition, $payload['source_locations'] ?? []);
+
         $comparer = new EditionComparer;
 
         $strategy = $request->string('strategy')->toString();
@@ -459,6 +480,96 @@ class BiicfEditionController extends Controller
                 $edition->changes()->pending()->count()
             ))
             ->with('problems', array_merge($payload['problems'] ?? [], $comparer->skipped()));
+    }
+
+    /**
+     * Check the framework against the book, side by side.
+     *
+     * Not against the extraction — against the printed page. An
+     * administrator asking whether a role's duties are right
+     * does not want to be told what a reader made of them; they
+     * want the sentence the book prints, next to the sentence
+     * the framework holds, and to decide for themselves.
+     *
+     * Every value the book states is here, agreed or not. The
+     * review screen only ever showed the ones that disagreed,
+     * which is the opposite of what checking means: once an
+     * edition is applied there are no disagreements left and
+     * there was nothing to check.
+     */
+    public function book(Request $request, BiicfEdition $edition, FrameworkValue $framework)
+    {
+        abort_if($edition->source_file_path === null, 404);
+
+        /*
+         * The roles the book speaks about, as the framework
+         * names them — the subject keys this edition recorded.
+         * A role the framework has since lost its page for is
+         * still listed, so its absence is visible rather than
+         * silently dropped.
+         */
+        $subjects = BiicfEditionLocation::query()
+            ->where('edition_id', $edition->id)
+            ->where('subject_type', 'job_role')
+            ->distinct()
+            ->orderBy('subject_key')
+            ->pluck('subject_key');
+
+        $wanted = $request->string('role')->toString();
+
+        $title = $subjects->contains($wanted) ? $wanted : $subjects->first();
+
+        $role = $title === null ? null : BiicfJobRole::query()
+            ->with([
+                'subSector:id,name',
+                'tiers.entryRequirements',
+                'tiers.competencies',
+                'descriptionPoints',
+                'trainings',
+                'programmingLanguages',
+                'criticalWorkFunctions',
+                'jobFamilies',
+            ])
+            ->where('title', $title)
+            ->first();
+
+        $places = $title === null ? collect() : BiicfEditionLocation::query()
+            ->where('edition_id', $edition->id)
+            ->where('subject_type', 'job_role')
+            ->where('subject_key', $title)
+            ->orderBy('page')
+            ->orderBy('field')
+            ->get();
+
+        /*
+         * Paired here rather than in the page: a field names a
+         * place in the book and a value in the framework, and
+         * reading one against the other is the whole purpose of
+         * the screen.
+         */
+        $rows = $places->map(function (BiicfEditionLocation $place) use ($role, $framework) {
+            $held = $role === null
+                ? ['label' => $framework->label($place->field), 'value' => [], 'missing' => true]
+                : $framework->for($role, $place->field);
+
+            return [
+                'field' => $place->field,
+                'label' => $held['label'],
+                'value' => $held['value'],
+                'missing' => $held['missing'],
+                'page' => $place->page,
+                'spans' => $place->spans,
+            ];
+        })->values();
+
+        return view('admin.biicf.editions.book', [
+            'edition' => $edition,
+            'subjects' => $subjects,
+            'title' => $title,
+            'role' => $role,
+            'rows' => $rows,
+            'recorded' => BiicfEditionLocation::where('edition_id', $edition->id)->count(),
+        ]);
     }
 
     public function source(BiicfEdition $edition)

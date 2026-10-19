@@ -60,6 +60,12 @@
                 <i class="fas fa-arrow-left"></i> Editions
             </a>
 
+            @if($edition->source_file_path)
+                <a href="{{ route('admin.biicf.editions.book', $edition) }}" class="btn btn-outline">
+                    <i class="fas fa-book-open-reader"></i> Check against the book
+                </a>
+            @endif
+
             {{--
                 Read the same file again, with no upload.
 

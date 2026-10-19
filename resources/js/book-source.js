@@ -208,8 +208,19 @@ function showing(panel, state) {
     });
 }
 
-/** What the panel is showing right now, so it can turn a page. */
-const showing_ = { url: null, page: 1, spans: [], label: '', title: '', pages: 1 };
+/**
+ * What is on show right now, so it can turn a page.
+ *
+ * "into" is which panel is drawing it. The review opens the
+ * book over the screen; the checking screen keeps it in a column
+ * beside the framework's own values, which is the whole point of
+ * that screen — so the panel is told, not assumed.
+ */
+const showing_ = { url: null, page: 1, spans: [], label: '', title: '', pages: 1, into: '#bookSource' };
+
+function panelFor(selector) {
+    return document.querySelector(selector || '#bookSource');
+}
 
 async function render(panel) {
     showing(panel, 'loading');
@@ -254,13 +265,14 @@ window.cpbnBookSource = {
      * @param {{url: string, page: number, spans: Array, label: string, title: string}} where
      */
     async open(where) {
-        const panel = document.getElementById('bookSource');
+        const panel = panelFor(where.into);
 
         if (!panel) {
             return;
         }
 
         Object.assign(showing_, {
+            into: where.into || '#bookSource',
             url: where.url,
             page: Number(where.page) || 1,
             spans: where.spans || [],
@@ -269,9 +281,21 @@ window.cpbnBookSource = {
         });
 
         panel.hidden = false;
-        document.body.classList.add('book-source-open');
 
-        panel.querySelector('[data-book-title]').textContent = showing_.title;
+        /*
+         * Only the one that covers the screen takes the scroll
+         * with it. A panel sitting in a column of the page is
+         * part of the page.
+         */
+        if (showing_.into === '#bookSource') {
+            document.body.classList.add('book-source-open');
+        }
+
+        const titled = panel.querySelector('[data-book-title]');
+
+        if (titled) {
+            titled.textContent = showing_.title;
+        }
         panel.querySelector('[data-book-field]').textContent = showing_.label;
 
         const full = panel.querySelector('[data-book-full]');
@@ -291,7 +315,7 @@ window.cpbnBookSource = {
      * be pointing at whatever happens to sit there.
      */
     async goTo(page) {
-        const panel = document.getElementById('bookSource');
+        const panel = panelFor(showing_.into);
 
         if (!panel || panel.hidden || !showing_.url) {
             return;
@@ -331,5 +355,10 @@ window.cpbnBookSource = {
 
         panel.hidden = true;
         document.body.classList.remove('book-source-open');
+    },
+
+    /** Which panel is drawing, for a screen with more than one. */
+    showingIn() {
+        return showing_.into;
     },
 };

@@ -202,6 +202,19 @@
                             Review
                         </a>
 
+                        {{--
+                            Checking is not reviewing. A review asks which
+                            of two values to take where they disagree; this
+                            asks whether what the framework holds matches
+                            the page, which is a question with no
+                            disagreement in it.
+                        --}}
+                        @if($edition->source_file_path)
+                            <a href="{{ route('admin.biicf.editions.book', $edition) }}" class="btn btn-outline btn-small">
+                                <i class="fas fa-book-open-reader"></i> Check against the book
+                            </a>
+                        @endif
+
                         @if($edition->applied_at === null)
                             {{--
                                 Only before it is applied. Afterwards the
