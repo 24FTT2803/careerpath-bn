@@ -18,6 +18,20 @@ use Illuminate\Support\Facades\Notification;
  * nothing is asked of the new ones.
  */
 
+/*
+ * The date the requirement starts, fixed here.
+ *
+ * Read from the environment it would be whatever the machine
+ * running the tests happens to set — and a blank or future
+ * AUTH_VERIFICATION_REQUIRED_FROM switches verification off
+ * entirely, so every test about being asked to confirm passes
+ * by not asking. Which is how three of these were green while
+ * the feature they cover did nothing.
+ */
+beforeEach(function () {
+    config(['auth.verification.required_from' => '2026-01-01']);
+});
+
 function unverifiedStudent($createdAt = null): User
 {
     return User::factory()->create([

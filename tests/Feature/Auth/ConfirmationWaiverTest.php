@@ -19,6 +19,20 @@ use Database\Seeders\OrganisationGroupSeeder;
  * be trusted by anything else that reads it.
  */
 
+/*
+ * The date the requirement starts, fixed here.
+ *
+ * Read from the environment it would be whatever the machine
+ * running the tests happens to set — and a blank or future
+ * AUTH_VERIFICATION_REQUIRED_FROM switches verification off
+ * entirely, so every test about being asked to confirm passes
+ * by not asking. Which is how three of these were green while
+ * the feature they cover did nothing.
+ */
+beforeEach(function () {
+    config(['auth.verification.required_from' => '2026-01-01']);
+});
+
 function waivedStudent(): User
 {
     return User::factory()->create([
@@ -117,7 +131,7 @@ describe('an administrator granting it', function () {
         $this->actingAs($this->admin)
             ->get(route('admin.users.create'))
             ->assertOk()
-            ->assertSee('does not need to confirm its email')
+            ->assertSee('Skip email confirmation')
             ->assertSee('waive_email_confirmation', false);
     });
 

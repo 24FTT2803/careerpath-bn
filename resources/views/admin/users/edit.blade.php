@@ -105,30 +105,25 @@
                     <label class="cpbn-waive">
                         <input type="checkbox" name="waive_email_confirmation" value="1"
                                @checked(old('waive_email_confirmation', $user->emailConfirmationWaived()))>
-                        <span>This account does not need to confirm its email</span>
-                    </label>
+                        <span class="cpbn-waive-body">
+                            <span class="cpbn-waive-title">Skip email confirmation</span>
 
-                    @if($user->emailConfirmationWaived())
-                        <p class="cpbn-hint">
-                            Excused
-                            @if($user->emailConfirmationWaivedBy)
-                                by {{ $user->emailConfirmationWaivedBy->name }}
-                            @endif
-                            on {{ $user->email_confirmation_waived_at->format('d M Y') }}.
-                            Unticking this asks them to confirm from their next visit.
-                        </p>
-                    @elseif($user->hasVerifiedEmail())
-                        <p class="cpbn-hint">
-                            This address is already confirmed, so nothing is being asked
-                            of it either way.
-                        </p>
-                    @else
-                        <p class="cpbn-hint">
-                            For demonstration accounts, and for a student whose address
-                            does not exist. The address is not marked confirmed — it is
-                            recorded that you excused it.
-                        </p>
-                    @endif
+                            <span class="cpbn-waive-note">
+                                @if($user->emailConfirmationWaived())
+                                    Excused@if($user->emailConfirmationWaivedBy) by {{ $user->emailConfirmationWaivedBy->name }}@endif
+                                    on {{ $user->email_confirmation_waived_at->format('d M Y') }}.
+                                    Unticking this asks them to confirm from their next visit.
+                                @elseif($user->hasVerifiedEmail())
+                                    This address is already confirmed, so nothing is being
+                                    asked of it either way.
+                                @else
+                                    For demonstration accounts, and for a student whose
+                                    address does not exist. The address is not marked as
+                                    confirmed — it is recorded that you excused it.
+                                @endif
+                            </span>
+                        </span>
+                    </label>
                 </div>
             </div>
 
@@ -203,8 +198,39 @@
     .cpbn-field input:focus,.cpbn-field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,154,61,0.15)}
     .cpbn-hint{font-size:11.5px;color:var(--ink-dim);margin-top:4px}
     .err{color:var(--rose);font-size:12px;margin-top:4px}
-    .cpbn-waive{display:flex;align-items:flex-start;gap:9px;font-weight:500;cursor:pointer}
-    .cpbn-waive input{width:auto;margin-top:2px;flex-shrink:0}
+    /*
+     * The one tick box on a form of full-width fields.
+     *
+     * It cannot be a bare checkbox here: .cpbn-field input gives
+     * every input a 2px border and 10px of padding, which turns
+     * a 13px box into a padded bordered lump. So it is a panel
+     * you click, gold when it is on, and the box inside it is
+     * reset back to being a box.
+     */
+    .cpbn-waive{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;border:2px solid var(--line,#e7e2d4);border-radius:6px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+    .cpbn-waive:hover{border-color:var(--gold,#cf9a3d)}
+    .cpbn-waive:has(input:checked){border-color:var(--gold,#cf9a3d);background:rgba(207,154,61,.07)}
+    /*
+     * The box is drawn here rather than by the browser.
+     *
+     * .cpbn-field input above gives every input a background, and
+     * a checkbox with a background is one the browser stops
+     * drawing natively — it paints a plain square, fills it with
+     * the accent colour when ticked, and draws no tick at all.
+     * Which is what a black square with nothing in it was.
+     *
+     * So the native widget is turned off on purpose and the tick
+     * is ours: a white check on gold, as a background image
+     * rather than a pseudo-element, because a checkbox is a void
+     * element and ::after on one is not something every browser
+     * renders.
+     */
+    .cpbn-field .cpbn-waive input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:20px;height:20px;min-width:20px;flex:0 0 auto;margin:0;padding:0;border:2px solid var(--line,#e7e2d4);border-radius:5px;background:#fff;box-shadow:none;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+    .cpbn-field .cpbn-waive input[type="checkbox"]:checked{background-color:var(--gold,#cf9a3d);border-color:var(--gold,#cf9a3d);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.6 L6.3 11.9 L13 5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:14px 14px}
+    .cpbn-field .cpbn-waive input[type="checkbox"]:focus-visible{outline:none;border-color:var(--gold,#cf9a3d);box-shadow:0 0 0 3px rgba(207,154,61,.25)}
+    .cpbn-waive-body{display:flex;flex-direction:column;gap:3px}
+    .cpbn-waive-title{font-size:13.5px;font-weight:600;color:var(--ink,#0d1a2b)}
+    .cpbn-waive-note{font-size:11.5px;color:var(--ink-dim,#5b6675);line-height:1.55}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 </style>
 
