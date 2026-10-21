@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\SponsorshipController;
 use App\Http\Controllers\Admin\UserPlanGrantController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\LecturerController;
 
 // ============================================
 // HOME ROUTE
@@ -688,6 +689,13 @@ Route::middleware(['auth'])
             Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
             Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('users.update');
             Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+        });
+
+        // Admin ONLY routes - Lecturers
+        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+            Route::get('/lecturers', [LecturerController::class, 'index'])->name('lecturers.index');
+            Route::post('/lecturers/{lecturer}/groups', [LecturerController::class, 'assign'])->name('lecturers.assign');
+            Route::delete('/lecturers/{lecturer}/groups/{group}', [LecturerController::class, 'unassign'])->name('lecturers.unassign');
         });
     });
 
