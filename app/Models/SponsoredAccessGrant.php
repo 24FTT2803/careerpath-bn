@@ -19,6 +19,7 @@ class SponsoredAccessGrant extends Model
         'is_active',
         'priority',
         'funding_type',
+        'expiry_notified_at',
     ];
 
     protected function casts(): array
@@ -26,6 +27,7 @@ class SponsoredAccessGrant extends Model
         return [
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
+            'expiry_notified_at' => 'datetime',
             'is_active' => 'boolean',
             'priority' => 'integer',
         ];

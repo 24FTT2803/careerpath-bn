@@ -10,7 +10,7 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!Auth::check()) {
+        if (! Auth::check()) {
             return redirect()->route('login');
         }
 
@@ -20,6 +20,10 @@ class RoleMiddleware
             }
         }
 
-        abort(403, 'Unauthorized - You do not have permission to access this page.');
+        abort(
+            403,
+            'This page belongs to a different kind of account '
+            .'than yours.'
+        );
     }
 }

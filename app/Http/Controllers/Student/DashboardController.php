@@ -65,6 +65,15 @@ class DashboardController extends Controller
                 $user
             );
 
+        /*
+         * What to do next, in one step rather than four tiles of
+         * numbers. A student arriving from the sign-up form has
+         * never been told where to start, and a student who
+         * finishes their profile is never told that the
+         * recommendations are generated on request.
+         */
+        $nextStep = $this->nextStep($user, $profileCompletion, $recommendationCount);
+
         $detailedAnalysisAccess =
             $this->entitlements
                 ->featureAccess(
@@ -84,9 +93,52 @@ class DashboardController extends Controller
                 'milestones',
                 'milestoneCount',
                 'recentActivities',
-                'detailedAnalysisAccess'
+                'detailedAnalysisAccess',
+                'nextStep'
             )
         );
+    }
+
+    /**
+     * The one thing worth doing next, or nothing.
+     *
+     * Three states, in the order a student meets them: a profile
+     * to finish, recommendations never generated, and then
+     * nothing — a dashboard that keeps telling someone to do
+     * something they have done is a dashboard they stop reading.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function nextStep(User $user, $profileCompletion, int $recommendationCount): ?array
+    {
+        if ((int) $profileCompletion < 100) {
+            $waiting = $user->unfinishedProfileSections();
+
+            return [
+                'key' => 'profile',
+                'title' => 'Finish your profile',
+                'body' => $waiting === []
+                    ? 'A little more to fill in before your recommendations can be any good.'
+                    : 'Still to fill in: '.implode(', ', $waiting).'.',
+                'action' => 'Update my profile',
+                'route' => route('student.profile.edit'),
+                'icon' => 'fa-user-pen',
+            ];
+        }
+
+        if ($recommendationCount === 0) {
+            return [
+                'key' => 'generate',
+                'title' => 'Your profile is ready',
+                'body' => 'Generate your career recommendations to see which roles in the '
+                    .'framework match what you have recorded.',
+                'action' => 'Generate recommendations',
+                'route' => route('student.recommendations.index'),
+                'icon' => 'fa-wand-magic-sparkles',
+            ];
+        }
+
+        return null;
     }
 
     private function calculateReadinessScore(

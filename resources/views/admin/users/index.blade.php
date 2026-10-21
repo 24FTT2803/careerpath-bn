@@ -116,6 +116,11 @@
                                 ) }}"
                                 alt="{{ $user->name }} profile picture"
                             >
+                        @elseif($user->avatar)
+                            <img
+                                src="{{ asset('storage/'.ltrim($user->avatar, '/')) }}"
+                                alt="{{ $user->name }} profile picture"
+                            >
                         @else
                             {{
                                 strtoupper(
@@ -153,6 +158,18 @@
                             <i class="fas {{ $roleIcon }}"></i>
                             {{ $roleLabel }}
                         </span>
+
+                        {{--
+                            Said out loud, because an account in
+                            without having proved its address is
+                            worth noticing. An exemption nobody
+                            can see is one nobody reviews.
+                        --}}
+                        @if($user->emailConfirmationWaived())
+                            <span class="waived-badge" title="An administrator excused this account from confirming its email">
+                                <i class="fas fa-envelope-open"></i> Confirmation waived
+                            </span>
+                        @endif
                     </div>
                 </div>
 
@@ -206,7 +223,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Email</span>
-                                <span class="metric-value" style="font-size: 12px; word-break: break-all;">{{ $user->email }}</span>
+                                <span class="metric-value metric-value-email" title="{{ $user->email }}">{{ $user->email }}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
@@ -233,7 +250,7 @@
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Email</span>
-                                <span class="metric-value" style="font-size: 12px; word-break: break-all;">{{ $user->email }}</span>
+                                <span class="metric-value metric-value-email" title="{{ $user->email }}">{{ $user->email }}</span>
                             </div>
                             <div class="metric">
                                 <span class="metric-label">Joined</span>
@@ -592,6 +609,22 @@
         flex-shrink: 0;
     }
 
+    .waived-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 6px;
+        padding: 3px 9px;
+        font-size: 10.5px;
+        font-weight: 600;
+        letter-spacing: .03em;
+        color: #8a6420;
+        background: #fbf1de;
+        border: 1px solid #f0e3c0;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+
     .role-badge {
         display: inline-flex;
         align-items: center;
@@ -652,6 +685,13 @@
         font-weight: 600;
         color: #1a3a5c;
         margin-top: 2px;
+    }
+
+    .metric-value-email {
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .completion-badge {

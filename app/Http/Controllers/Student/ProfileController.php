@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Student;
 
 use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
+use App\Models\BiicfBdqfLevel;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\Notification;
@@ -19,6 +20,7 @@ use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
+use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -184,6 +186,15 @@ class ProfileController extends Controller
         $interestOptions = self::PREDEFINED_INTERESTS;
         $interestAliasGroups = self::INTEREST_ALIAS_GROUPS;
 
+        /*
+         * The framework's own qualification ladder, highest
+         * first, so a student can say which rung an award sits
+         * on rather than the app guessing from its name.
+         */
+        $bdqfLevels = BiicfBdqfLevel::query()
+            ->orderByDesc('level')
+            ->get();
+
         return view(
             'student.profile.edit',
             compact(
@@ -194,7 +205,8 @@ class ProfileController extends Controller
                 'biicfCompetencies',
                 'proficiencyLevels',
                 'interestOptions',
-                'interestAliasGroups'
+                'interestAliasGroups',
+                'bdqfLevels'
             )
         );
     }
@@ -206,7 +218,7 @@ class ProfileController extends Controller
         Request $request,
         RecommendationStatusService $recommendationStatus
     ) {
-                /** @var User $user */
+        /** @var User $user */
         $user = Auth::user();
 
         /*
@@ -381,6 +393,78 @@ class ProfileController extends Controller
                 'max:500',
             ],
 
+            /*
+             * A student can hold several qualifications, and
+             * each one's BDQF level is what a role's entry
+             * requirement is matched against. The level is
+             * optional: not knowing which rung an award sits on
+             * is reported as undetermined rather than guessed.
+             */
+            'qualifications' => ['nullable', 'array'],
+
+            'qualifications.*.id' => [
+                'nullable',
+                'integer',
+                'distinct',
+            ],
+
+            'qualifications.*.institution_name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'qualifications.*.programme_name' => [
+                'required',
+                'string',
+                'max:150',
+            ],
+
+            'qualifications.*.level' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'qualifications.*.bdqf_level' => [
+                'nullable',
+                'integer',
+                'exists:biicf_bdqf_levels,level',
+            ],
+
+            'qualifications.*.field_of_study' => [
+                'nullable',
+                'string',
+                'max:150',
+            ],
+
+            'qualifications.*.start_date' => [
+                'required',
+                'date',
+                'before_or_equal:today',
+            ],
+
+            'qualifications.*.end_date' => [
+                'nullable',
+                'date',
+                'after:qualifications.*.start_date',
+            ],
+
+            'qualifications.*.is_current' => [
+                'nullable',
+                'boolean',
+            ],
+
+            'removed_qualification_ids' => [
+                'nullable',
+                'array',
+            ],
+
+            'removed_qualification_ids.*' => [
+                'integer',
+                'distinct',
+            ],
+
             'certifications' => ['nullable', 'array'],
 
             'certifications.*.id' => [
@@ -438,8 +522,8 @@ class ProfileController extends Controller
             'phone_country.required_with' => 'Please select a country for the phone number.',
 
             'phone_country.size' => 'The selected phone country is invalid.',
-                        'name.required' => 'Please enter your full name.',
-                        ...User::studentIdMessages(),
+            'name.required' => 'Please enter your full name.',
+            ...User::studentIdMessages(),
             'cgpa.min' => 'CGPA must be at least 0.',
             'cgpa.max' => 'CGPA cannot exceed 4.0.',
         ]);
@@ -569,7 +653,7 @@ class ProfileController extends Controller
         }
 
         // Update User
-            $userData = [
+        $userData = [
             'name' => $request->name,
             'programme' => $request->programme,
             'cgpa' => $request->cgpa,
@@ -623,6 +707,12 @@ class ProfileController extends Controller
             $user->projects()->delete();
         }
 
+        // Process Qualifications
+        $this->syncQualifications(
+            $user,
+            $request
+        );
+
         // Process Certifications
         $this->syncCertifications(
             $user,
@@ -673,12 +763,34 @@ class ProfileController extends Controller
             $user->programme
         );
 
+        /*
+         * The one step nothing ever pointed at. A finished
+         * profile is not the end of anything on its own — the
+         * recommendations are generated on request, on a page the
+         * student has no particular reason to visit, and a
+         * student who never visits it never finds out.
+         *
+         * So: said once, when the profile first comes together,
+         * and said in a notification as well, because the save
+         * lands back on the profile and a flash message is gone
+         * by the next click.
+         */
+        $finished = (int) $user->fresh()->profile_completion === 100;
+
+        if ($finished) {
+            NotificationHelper::notifyProfileComplete($user->id);
+        }
+
         $response = redirect()
             ->route('student.profile')
             ->with(
                 'success',
                 'Profile updated successfully!'
             );
+
+        if ($finished && $user->currentRecommendations()->doesntExist()) {
+            $response->with('generate_prompt', true);
+        }
 
         return $response;
     }
@@ -722,6 +834,21 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request)
     {
+        /*
+         * Deleting an account takes everything with it and cannot
+         * be undone, so the password is asked for again. Without
+         * this, anyone who reaches an already signed-in session —
+         * a shared lab machine, an unattended laptop — can destroy
+         * a student's work with one click.
+         *
+         * The named error bag keeps the message beside this form
+         * rather than surfacing in the change-password panel
+         * above it, which shares the page.
+         */
+        $request->validateWithBag('userDeletion', [
+            'password' => ['required', 'current_password'],
+        ]);
+
         /** @var User $user */
         $user = Auth::user();
 
@@ -786,7 +913,7 @@ class ProfileController extends Controller
         CareerReportBuilder $reportBuilder,
         ?RecommendationGeneration $generation = null
     ) {
-                $user = User::findOrFail($userId);
+        $user = User::findOrFail($userId);
         $currentUser = Auth::user();
 
         // Only allow admins and lecturers to view other students' profiles
@@ -811,7 +938,7 @@ class ProfileController extends Controller
             && $currentUser->id !== $user->id
         ) {
             $scope = app(
-                \App\Services\Lecturer\LecturerScopeResolver::class
+                LecturerScopeResolver::class
             );
 
             abort_unless(
@@ -1039,7 +1166,7 @@ class ProfileController extends Controller
             ->visibleUnreadNotifications()
             ->count();
 
-                return view(
+        return view(
             'student.notifications.index',
             compact(
                 'notifications',
@@ -1087,7 +1214,7 @@ class ProfileController extends Controller
     /**
      * Mark a notification as read.
      */
-        public function markAsRead($id)
+    public function markAsRead($id)
     {
         $notification = Notification::where(
             'user_id',
@@ -1095,7 +1222,7 @@ class ProfileController extends Controller
         )
             ->whereIn(
                 'type',
-                ['milestone', 'recommendation', 'system', 'reminder']
+                ['milestone', 'recommendation', 'system', 'reminder', 'premium', 'innovation']
             )
             ->findOrFail($id);
 
@@ -1112,18 +1239,18 @@ class ProfileController extends Controller
             );
     }
 
-        /**
+    /**
      * Mark all notifications as read.
      */
     public function markAllAsRead()
     {
-            Notification::where(
+        Notification::where(
             'user_id',
             Auth::id()
         )
             ->whereIn(
                 'type',
-                ['milestone', 'recommendation', 'system', 'reminder']
+                ['milestone', 'recommendation', 'system', 'reminder', 'premium', 'innovation']
             )
             ->where(
                 'is_read',
@@ -1417,6 +1544,22 @@ class ProfileController extends Controller
             if (! $level) {
                 throw ValidationException::withMessages([
                     "biicf_competencies.$competencyId.proficiency_level_id" => 'Select a proficiency level for '
+                        .$competency->name
+                        .'.',
+                ]);
+            }
+
+            /*
+             * The framework rates technical competencies over
+             * five levels and soft skills over four, so a level
+             * from the wrong scale is not a weaker answer but a
+             * meaningless one. The form only offers the right
+             * scale; this is what stops a submitted request
+             * getting around that.
+             */
+            if ($level->scale !== $competency->scale()) {
+                throw ValidationException::withMessages([
+                    "biicf_competencies.$competencyId.proficiency_level_id" => 'That proficiency level does not belong to the scale used for '
                         .$competency->name
                         .'.',
                 ]);
@@ -2032,6 +2175,63 @@ class ProfileController extends Controller
     /**
      * Sync the student's certifications and uploaded evidence.
      */
+    /**
+     * Write the student's qualifications.
+     *
+     * Each one carries the rung of the BDQF ladder it sits on,
+     * which is what a role's entry requirement is stated in. A
+     * qualification still being studied is kept apart from one
+     * already awarded: it is not something a role can be entered
+     * with, but it is what the student will hold on finishing.
+     *
+     * Removal is explicit, as it is for certifications: a row
+     * missing from the submitted list is not enough to delete a
+     * record a student entered.
+     */
+    private function syncQualifications(
+        User $user,
+        Request $request
+    ): void {
+        foreach ($request->input('qualifications', []) as $data) {
+            $values = [
+                'institution_name' => $data['institution_name'],
+                'programme_name' => $data['programme_name'],
+                'level' => $data['level'],
+                'bdqf_level' => $data['bdqf_level'] ?? null,
+                'field_of_study' => $data['field_of_study'] ?? null,
+                'start_date' => $data['start_date'],
+                'end_date' => $data['end_date'] ?? null,
+                'is_current' => (bool) ($data['is_current'] ?? false),
+            ];
+
+            if (! empty($data['id'])) {
+                $user->academicRecords()
+                    ->whereKey($data['id'])
+                    ->firstOrFail()
+                    ->update($values);
+
+                continue;
+            }
+
+            $user->academicRecords()->create($values);
+        }
+
+        $removedIds = array_values(
+            array_unique(
+                array_map(
+                    'intval',
+                    $request->input('removed_qualification_ids', [])
+                )
+            )
+        );
+
+        if ($removedIds !== []) {
+            $user->academicRecords()
+                ->whereIn('id', $removedIds)
+                ->delete();
+        }
+    }
+
     private function syncCertifications(
         User $user,
         Request $request

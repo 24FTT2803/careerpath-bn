@@ -65,17 +65,6 @@
 </script>
 
 <style>
-    /* Smooth cross-fade between pages (Chrome/Edge; other browsers just navigate normally). */
-    @view-transition {
-        navigation: auto;
-    }
-
-    ::view-transition-old(root),
-    ::view-transition-new(root) {
-        animation-duration: 0.22s;
-        animation-timing-function: ease;
-    }
-
     /* ---------- Content reveal ---------- */
     html.motion-pending main {
         opacity: 0;
@@ -418,13 +407,6 @@
         width: 100%;
     }
 
-    /* ---------- Respect "reduce motion" and printing ---------- */
-    @media (prefers-reduced-motion: reduce) {
-        @view-transition {
-            navigation: none;
-        }
-    }
-
     @media print {
         html.motion-pending main,
         html.motion-on [data-reveal] {
@@ -501,7 +483,16 @@
                     return;
                 }
 
-                /* Leave anything that already animates itself alone. */
+                /*
+                 * Leave anything that already animates itself alone, or
+                 * that asks to be left out with data-motion-skip (such as
+                 * the ID badges, whose own drop-in would otherwise play
+                 * twice and flash).
+                 */
+                if (element.hasAttribute('data-motion-skip')) {
+                    return;
+                }
+
                 if (getComputedStyle(element).animationName !== 'none') {
                     return;
                 }

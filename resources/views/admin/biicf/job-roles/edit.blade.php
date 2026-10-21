@@ -58,17 +58,23 @@
                 <div class="form-group">
                     <label>Job Description</label>
                     <textarea name="job_description" class="form-control @error('job_description') is-invalid @enderror" 
-                              rows="3">{{ old('job_description', $jobRole->job_description) }}</textarea>
+                              rows="12">{{ old('job_description', $jobRole->descriptionPoints->pluck('text')->implode("\n")) }}</textarea>
                     @error('job_description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
 
+                @include('admin.biicf.partials.work-function-tree', [
+                    'tree' => $workFunctionTree,
+                    'jobFamilies' => $jobFamilies,
+                ])
+
                 <div class="form-group">
-                    <label>Critical Work Function</label>
-                    <textarea name="critical_work_function" class="form-control @error('critical_work_function') is-invalid @enderror" 
-                              rows="3">{{ old('critical_work_function', $jobRole->critical_work_function) }}</textarea>
-                    @error('critical_work_function')
+                    <label>Programming Languages</label>
+                    <textarea name="programming_languages" class="form-control @error('programming_languages') is-invalid @enderror"
+                              rows="8" placeholder="One per line">{{ old('programming_languages', $jobRole->programmingLanguages->pluck('name')->implode("\n")) }}</textarea>
+                    <small class="form-text">One per line. The framework lists these as a section of their own, not as recommended courses.</small>
+                    @error('programming_languages')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>
@@ -79,22 +85,6 @@
                         <input type="number" name="career_path_level" class="form-control @error('career_path_level') is-invalid @enderror" 
                                value="{{ old('career_path_level', $jobRole->career_path_level) }}" min="0">
                         @error('career_path_level')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="form-group half">
-                        <label>Box Colour</label>
-                        <select name="box_colour" class="form-control @error('box_colour') is-invalid @enderror">
-                            <option value="primary" {{ old('box_colour', $jobRole->box_colour) == 'primary' ? 'selected' : '' }}>Primary (Blue)</option>
-                            <option value="secondary" {{ old('box_colour', $jobRole->box_colour) == 'secondary' ? 'selected' : '' }}>Secondary (Grey)</option>
-                            <option value="success" {{ old('box_colour', $jobRole->box_colour) == 'success' ? 'selected' : '' }}>Success (Green)</option>
-                            <option value="danger" {{ old('box_colour', $jobRole->box_colour) == 'danger' ? 'selected' : '' }}>Danger (Red)</option>
-                            <option value="warning" {{ old('box_colour', $jobRole->box_colour) == 'warning' ? 'selected' : '' }}>Warning (Yellow)</option>
-                            <option value="info" {{ old('box_colour', $jobRole->box_colour) == 'info' ? 'selected' : '' }}>Info (Light Blue)</option>
-                            <option value="light-blue" {{ old('box_colour', $jobRole->box_colour) == 'light-blue' ? 'selected' : '' }}>Light Blue</option>
-                        </select>
-                        @error('box_colour')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -110,38 +100,75 @@
 
                 <div class="form-divider">Competencies</div>
 
+                @php
+                    /*
+                     * The book prints a role's competencies as a
+                     * table with a column per tier, and the same
+                     * competency can be wanted at a different
+                     * level in each — Application Development at
+                     * 1, 2 and 2 across IT Technician's three.
+                     *
+                     * This form offered one level for the entry
+                     * tier alone, so the other columns could be
+                     * read on this page and edited nowhere.
+                     */
+                    $tiers = $jobRole->tiers;
+                    $heldAt = $tiers->mapWithKeys(fn ($tier) => [
+                        $tier->id => $tier->competencies->keyBy('id'),
+                    ]);
+                @endphp
+
                 <div class="form-group">
                     <label>Select Competencies</label>
+                    <small class="form-text">
+                        A competency is wanted at a level per tier. Leave a tier at
+                        &ldquo;not required&rdquo; where the framework asks for nothing
+                        — that is what an empty cell in the book's table means.
+                    </small>
+
                     <div class="competency-grid">
                         @foreach($competencies as $comp)
                             @php
-                                $selected = $jobRole->competencies->contains($comp->id);
-                                $pivot = $selected ? $jobRole->competencies->find($comp->id)->pivot : null;
+                                $pivots = $tiers->mapWithKeys(fn ($tier) => [
+                                    $tier->id => $heldAt[$tier->id]->get($comp->id)?->pivot,
+                                ]);
+                                $selected = $pivots->filter()->isNotEmpty();
+                                $core = $pivots->filter()->first()?->is_core ?? true;
                             @endphp
                             <div class="competency-item">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" name="competencies[{{ $comp->id }}][id]" 
-                                           value="{{ $comp->id }}" 
+                                    <input type="checkbox" name="competencies[{{ $comp->id }}][id]"
+                                           value="{{ $comp->id }}"
                                            {{ $selected ? 'checked' : '' }}
                                            onchange="toggleCompetency(this, {{ $comp->id }})">
                                     <span class="comp-name">{{ $comp->name }}</span>
                                     <span class="comp-type {{ $comp->type }}">{{ $comp->type == 'technical' ? 'Tech' : 'Soft' }}</span>
                                 </label>
                                 <div class="comp-details" id="comp-details-{{ $comp->id }}" style="{{ $selected ? 'display:block' : 'display:none' }}">
-                                    <div class="comp-row">
-                                        <label>Proficiency Level</label>
-                                        <select name="competencies[{{ $comp->id }}][proficiency_level_id]" class="form-control-sm">
-                                            @foreach($proficiencyLevels as $level)
-                                                <option value="{{ $level->id }}" {{ $selected && $pivot && $pivot->proficiency_level_id == $level->id ? 'selected' : '' }}>
-                                                    Level {{ $level->level_number }} - {{ $level->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                                    @foreach($tiers as $tier)
+                                        <div class="comp-row">
+                                            <label>{{ $tier->label }}</label>
+                                            {{--
+                                                Only this competency's own scale:
+                                                five levels for a technical
+                                                competency, four for a soft skill.
+                                            --}}
+                                            <select name="competencies[{{ $comp->id }}][levels][{{ $tier->id }}]" class="form-control-sm">
+                                                <option value="">Not required</option>
+                                                @foreach($proficiencyLevels->where('scale', $comp->scale()) as $level)
+                                                    <option value="{{ $level->id }}"
+                                                        {{ $pivots[$tier->id]?->proficiency_level_id == $level->id ? 'selected' : '' }}>
+                                                        Level {{ $level->level_number }} - {{ $level->name }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endforeach
+
                                     <div class="comp-row">
                                         <label>
-                                            <input type="checkbox" name="competencies[{{ $comp->id }}][is_core]" value="1" 
-                                                   {{ $selected && $pivot && $pivot->is_core ? 'checked' : '' }}>
+                                            <input type="checkbox" name="competencies[{{ $comp->id }}][is_core]" value="1"
+                                                   {{ $core ? 'checked' : '' }}>
                                             Is Core Competency
                                         </label>
                                     </div>
@@ -164,9 +191,6 @@
                                 <input type="checkbox" name="trainings[]" value="{{ $training->id }}" 
                                        {{ $jobRole->trainings->contains($training->id) ? 'checked' : '' }}>
                                 <span class="training-name">{{ $training->name }}</span>
-                                @if($training->provider)
-                                    <span class="training-provider">{{ $training->provider }}</span>
-                                @endif
                             </label>
                         @endforeach
                     </div>
@@ -221,13 +245,17 @@
     .comp-details .comp-row label { font-weight: 500; font-size: 13px; margin: 0; min-width: 120px; }
     .training-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
     .training-name { font-weight: 500; }
-    .training-provider { font-size: 11px; color: #6b7280; }
     .form-text { font-size: 12px; color: #6b7280; margin-top: 4px; }
-    @media (max-width: 768px) {
-        .form-row { flex-direction: column; }
-        .competency-grid { grid-template-columns: 1fr; }
-        .training-grid { grid-template-columns: 1fr; }
-    }
+    textarea.form-control { line-height: 1.7; resize: vertical; min-height: 120px; }
+    /*
+     * Narrow screens scroll rather than compress. These columns
+     * used to collapse into one, which squeezed a label, a
+     * proficiency select and a checkbox into a phone's width
+     * and left the whole form unreadable. The form keeps a
+     * readable width and the card scrolls sideways instead.
+     */
+    .card-body { overflow-x: auto; }
+    .card-body form { min-width: 720px; }
 </style>
 
 <script>

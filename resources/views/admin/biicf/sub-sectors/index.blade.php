@@ -3,6 +3,20 @@
 @section('title', 'Manage ICT Sub-Sectors')
 
 @section('content')
+@php
+    $rows = $subSectors->map(fn ($subSector) => [
+        'id' => $subSector->id,
+        'name' => $subSector->name,
+        'slug' => $subSector->slug,
+        'roles' => $subSector->job_roles_count,
+        'sort_order' => $subSector->sort_order,
+        'edit_url' => route('admin.biicf.sub-sectors.edit', $subSector),
+        'destroy_url' => route('admin.biicf.sub-sectors.destroy', $subSector),
+    ])->values();
+@endphp
+
+@include('admin.biicf.partials.table')
+
 <div class="biicf-page">
     <div class="page-header">
         <div>
@@ -14,52 +28,72 @@
         </a>
     </div>
 
-    <div class="card">
+    <div class="card" x-data="adminTable(@js($rows), { sort: 'sort_order', searchable: ['name', 'slug'] })">
         <div class="card-body">
+            <div class="filter-bar mb-3">
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="filter-field">
+                        <input type="text" x-model="query" @input="page = 1"
+                               placeholder="Search sub-sectors..." class="form-control">
+                    </div>
+                    <button type="button" class="btn btn-outline btn-sm" @click="reset()">Reset</button>
+                </div>
+            </div>
+
             <div class="table-responsive">
                 <table class="table">
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Slug</th>
-                            <th>Lead Organisation</th>
-                            <th>Job Roles</th>
-                            <th>Sort Order</th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'id' }" @click="sortBy('id')">
+                                ID <i :class="caret('id')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'name' }" @click="sortBy('name')">
+                                Name <i :class="caret('name')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'slug' }" @click="sortBy('slug')">
+                                Slug <i :class="caret('slug')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'roles' }" @click="sortBy('roles')">
+                                Job Roles <i :class="caret('roles')"></i>
+                            </th>
+                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'sort_order' }" @click="sortBy('sort_order')">
+                                Sort Order <i :class="caret('sort_order')"></i>
+                            </th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($subSectors as $subSector)
+                        <template x-for="row in shown" :key="row.id">
                             <tr>
-                                <td>{{ $subSector->id }}</td>
-                                <td><strong>{{ $subSector->name }}</strong></td>
-                                <td><code>{{ $subSector->slug }}</code></td>
-                                <td>{{ $subSector->lead_organisation ?? '-' }}</td>
-                                <td><span class="badge badge-primary">{{ $subSector->job_roles_count }}</span></td>
-                                <td>{{ $subSector->sort_order }}</td>
-                                <td>
-                                    <a href="{{ route('admin.biicf.sub-sectors.edit', $subSector) }}" class="btn btn-sm btn-warning">
+                                <td x-text="row.id"></td>
+                                <td><strong x-text="row.name"></strong></td>
+                                <td><code x-text="row.slug"></code></td>
+                                <td><span class="badge badge-primary" x-text="row.roles"></span></td>
+                                <td x-text="row.sort_order"></td>
+                                <td class="actions">
+                                    <a :href="row.edit_url" class="btn btn-sm btn-warning" title="Edit">
                                         <i class="fas fa-edit"></i>
                                     </a>
-                                    <form action="{{ route('admin.biicf.sub-sectors.destroy', $subSector) }}" method="POST" class="d-inline" data-confirm-delete data-item-name="{{ $subSector->name }}">
+                                    <form :action="row.destroy_url" method="POST" class="d-inline"
+                                          @submit.prevent="confirmDelete($event.target, row.name)">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="btn btn-sm btn-danger">
+                                        <button type="submit" class="btn btn-sm btn-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
                                     </form>
                                 </td>
                             </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="text-center">No sub-sectors found.</td>
-                            </tr>
-                        @endforelse
+                        </template>
+
+                        <tr x-show="!filtered.length">
+                            <td colspan="6" class="text-center">No sub-sectors found.</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
-            {{ $subSectors->links() }}
+
+            @include('admin.biicf.partials.pager')
         </div>
     </div>
 </div>
@@ -81,8 +115,18 @@
     .table { width: 100%; border-collapse: collapse; }
     .table th { text-align: left; padding: 12px 16px; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; border-bottom: 2px solid #e5e7eb; }
     .table td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
+    .table-responsive { overflow-x: auto; }
+    .actions { white-space: nowrap; }
     .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
     .badge-primary { background: #e8f0fe; color: #2a5a8c; }
+    .btn-outline { background: transparent; color: #1a1a2e; border: 2px solid #e5e7eb; padding: 8px 16px; border-radius: 8px; font-weight: 500; }
+    .btn-outline:hover { border-color: #c9a84c; color: #c9a84c; }
+    .form-control { padding: 8px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; min-width: 150px; }
+    .filter-bar .filter-field { min-width: 180px; }
+    .d-flex { display: flex; }
+    .flex-wrap { flex-wrap: wrap; }
+    .gap-2 { gap: 8px; }
+    .mb-3 { margin-bottom: 16px; }
     .alert { padding: 12px 16px; border-radius: 8px; margin-bottom: 16px; }
     .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
     .alert-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }

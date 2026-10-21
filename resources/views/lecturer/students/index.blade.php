@@ -3,7 +3,7 @@
 @section('title', 'My Students')
 
 @section('content')
-<div>
+<div class="lecturer-student-list">
     <div class="page-header">
         <div>
             <h1>

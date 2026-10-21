@@ -366,13 +366,8 @@
         }
 
         .hero-illustration .icon-item {
-    background: rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    padding: 20px;
-    text-align: center;
-    transition: none;
-    cursor: default;
-}
+            cursor: default;
+        }
 
         .hero-illustration .icon-item i {
             font-size: 28px;
@@ -428,6 +423,29 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 24px;
+        }
+
+        /*
+         * The About grids. These were written inline, where a
+         * media query cannot reach them, so they stayed two and
+         * three columns at every width. On a phone the three
+         * column one could not fit, which pushed the whole page
+         * wider than the screen: the section itself still drew,
+         * and every other section — being only as wide as the
+         * viewport — left blank space beside it.
+         */
+        .about-pillars {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .about-values {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 30px;
         }
 
         .feature-card {
@@ -738,7 +756,7 @@
         .footer-logos {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 16px;
             margin-top: 16px;
             flex-wrap: wrap;
         }
@@ -754,7 +772,7 @@
         }
 
         .footer-logos .footer-logo {
-            height: 50px;
+            height: 40px;
             width: auto;
             object-fit: contain;
             filter: brightness(0) invert(1) opacity(0.8);
@@ -850,6 +868,188 @@
             transform: translateY(-2px);
         }
 
+        /* ---------- Footer structure: contact rows and legal links ---------- */
+        .footer-col .contact-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 5px 0;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .footer-col .contact-row i {
+            width: 16px;
+            margin: 4px 0 0;
+            flex-shrink: 0;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.4);
+            transition: var(--transition);
+        }
+
+        .footer-col .contact-row > span {
+            min-width: 0;
+            overflow-wrap: break-word;
+        }
+
+        .footer-col .contact-row a {
+            display: inline;
+            padding: 0;
+        }
+
+        .footer-col a.contact-row:hover,
+        .footer-col a.contact-row:hover i,
+        .footer-col .contact-row a:hover {
+            color: var(--accent);
+        }
+
+        .footer-col .contact-sep {
+            margin: 0 4px;
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        .footer-bottom-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .footer-legal {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 12px;
+        }
+
+        .footer-legal a {
+            color: rgba(255, 255, 255, 0.55);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-legal a:hover {
+            color: var(--accent);
+        }
+
+        .footer-legal span {
+            color: rgba(255, 255, 255, 0.25);
+        }
+
+        @media (min-width: 1025px) {
+            .footer-grid {
+                grid-template-columns: 1.7fr 0.9fr 0.9fr 1.5fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .footer-bottom-text {
+                align-items: center;
+            }
+        }
+
+        /* ---------- Hero card: gentle motion on the career icons ---------- */
+        .hero-illustration {
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .hero-illustration:hover {
+            border-color: rgba(201, 168, 76, 0.35);
+            box-shadow: 0 18px 50px -20px rgba(201, 168, 76, 0.35);
+        }
+
+        .hero-illustration .icon-item {
+            border: 1px solid transparent;
+            transition:
+                scale 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+                background-color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+        }
+
+        .hero-illustration .icon-item i {
+            display: inline-block;
+            transition:
+                scale 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                rotate 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+                color 0.3s ease,
+                text-shadow 0.3s ease;
+        }
+
+        .hero-illustration .icon-item span {
+            transition: color 0.3s ease;
+        }
+
+        @media (hover: hover) {
+            .hero-illustration .icon-item:hover {
+                scale: 1.06;
+                background-color: rgba(255, 255, 255, 0.14);
+                border-color: rgba(201, 168, 76, 0.45);
+                box-shadow: 0 10px 24px -10px rgba(0, 0, 0, 0.45);
+            }
+
+            .hero-illustration .icon-item:hover i {
+                scale: 1.18;
+                rotate: -8deg;
+                color: var(--accent-light);
+                text-shadow: 0 0 18px rgba(201, 168, 76, 0.55);
+            }
+
+            .hero-illustration .icon-item:hover span {
+                color: rgba(255, 255, 255, 0.9);
+            }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+            /* A slow, staggered bob so the icons feel alive before anyone hovers. */
+            .hero-illustration .icon-item i {
+                animation: hero-icon-bob 3.6s ease-in-out infinite;
+            }
+
+            .hero-illustration .icon-item:nth-child(2) i { animation-delay: -0.6s; }
+            .hero-illustration .icon-item:nth-child(3) i { animation-delay: -1.2s; }
+            .hero-illustration .icon-item:nth-child(4) i { animation-delay: -1.8s; }
+            .hero-illustration .icon-item:nth-child(5) i { animation-delay: -2.4s; }
+            .hero-illustration .icon-item:nth-child(6) i { animation-delay: -3s; }
+
+            @keyframes hero-icon-bob {
+                0%, 100% { translate: 0 0; }
+                50% { translate: 0 -4px; }
+            }
+        }
+
+        /* Phones: let the hero shrink to the screen instead of
+           widening the page (the icon card was forcing it wider). */
+        @media (max-width: 768px) {
+            .hero-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-illustration {
+                padding: 24px 18px;
+            }
+
+            .hero-illustration .icon-grid {
+                gap: 10px;
+            }
+
+            .hero-illustration .icon-item {
+                padding: 16px 6px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .hero-illustration .icon-item,
+            .hero-illustration .icon-item i {
+                scale: none !important;
+                rotate: none !important;
+                translate: none !important;
+                animation: none !important;
+            }
+        }
+
         /* ============================================
            RESPONSIVE
            ============================================ */
@@ -870,10 +1070,27 @@
             .step-arrow { display: none; }
             .biicf-grid { grid-template-columns: 1fr; text-align: center; }
             .biicf-stats { grid-template-columns: 1fr 1fr; }
+            .about-pillars { grid-template-columns: 1fr; }
             .footer-grid { grid-template-columns: 1fr; }
             .nav-links { display: none; }
             .footer-bottom { flex-direction: column; text-align: center; }
             .hero-illustration .icon-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        /* Phones: smaller logo, buttons kept on one line each. */
+        @media (max-width: 600px) {
+            .site-header .logo { gap: 8px !important; }
+            .site-header .logo img:first-child { height: 42px !important; width: 42px !important; }
+            .site-header .logo img + img { height: 38px !important; }
+            .nav-actions { gap: 8px; }
+            .nav-actions .btn-sm { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
+        }
+
+        @media (max-width: 380px) {
+            .site-header .logo img:first-child { height: 36px !important; width: 36px !important; }
+            .site-header .logo img + img { height: 32px !important; }
+            .nav-actions .btn-sm { padding: 7px 11px; }
+            .nav-actions .btn-sm i { display: none; }
         }
 
         @media (max-width: 480px) {
@@ -883,7 +1100,9 @@
             .hero-stats { grid-template-columns: 1fr; gap: 12px; }
             .hero-stat { text-align: center; }
             .biicf-stats { grid-template-columns: 1fr; }
-            .footer-logos { flex-direction: column; align-items: flex-start; }
+            .about-values { grid-template-columns: 1fr; }
+            .footer-logos { gap: 14px 18px; }
+            .footer-logos .footer-logo { height: 32px; }
         }
 
                 /* ============================================
@@ -975,6 +1194,7 @@
 
     </style>
     @include('partials.motion', ['reveal' => false])
+    @include('partials.attention')
 </head>
 <body>
 
@@ -1277,7 +1497,7 @@
             <p>Driving the future of career guidance for ICT students in Brunei.</p>
         </div>
         
-                <div class="reveal-stagger" style="display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:40px;">
+                <div class="about-pillars reveal-stagger">
             <div style="background:linear-gradient(135deg,var(--primary),var(--primary-light));border-radius:var(--radius);padding:40px;color:white;text-align:center;">
                 <div style="font-size:48px;margin-bottom:16px;color:var(--accent);">
                     <i class="fas fa-eye"></i>
@@ -1301,7 +1521,7 @@
             </div>
         </div>
         
-            <div class="reveal-stagger" style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:30px;">
+            <div class="about-values reveal-stagger">
             <div style="text-align:center;padding:20px;background:var(--bg);border-radius:var(--radius);border:1px solid var(--border);">
                 <div style="font-size:28px;color:var(--accent);margin-bottom:8px;">
                     <i class="fas fa-lightbulb"></i>
@@ -1357,6 +1577,13 @@
                                 <span class="logo-fallback"><i class="fas fa-building"></i> AITI</span>
                             @endif
                         </a>
+                        <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="logo-link">
+                            @if(file_exists(public_path('images/innovation-lab-logo.png')))
+                                <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="footer-logo">
+                            @else
+                                <span class="logo-fallback"><i class="fas fa-lightbulb"></i> Brunei Innovation Lab</span>
+                            @endif
+                        </a>
                     </div>
                 </div>
                 <div class="footer-col">
@@ -1375,33 +1602,56 @@
                 </div>
                 <div class="footer-col">
                     <h4>Contact</h4>
-                    <a href="https://www.google.com/maps/search/?api=1&query=Politeknik+Brunei+Ong+Sum+Ping" target="_blank">
-    <i class="fas fa-map-marker-alt"></i>
-    Politeknik Brunei, Jalan Ong Sum Ping
-</a>
-
-<a href="tel:+6732234630">
-    <i class="fas fa-phone"></i>
-    +673 2234630
-</a>
-
-<a href="mailto:contact@pb.edu.bn">
-    <i class="fas fa-envelope"></i>
-    contact@pb.edu.bn
-</a>
-
-<a href="https://www.pb.edu.bn" target="_blank">
-    <i class="fas fa-globe"></i>
-    www.pb.edu.bn
-</a>
+                    <a class="contact-row" href="https://www.google.com/maps/search/?api=1&query=Politeknik+Brunei+Ong+Sum+Ping" target="_blank" rel="noopener">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>Politeknik Brunei, Jalan Ong Sum Ping</span>
+                    </a>
+                    <a class="contact-row" href="tel:+6732234630">
+                        <i class="fas fa-phone"></i>
+                        <span>+673 2234630</span>
+                    </a>
+                    <div class="contact-row">
+                        <i class="fas fa-envelope"></i>
+                        <span>
+                            <a href="mailto:contact@pb.edu.bn"
+                               data-attn-place="above"
+                               data-attn-tip="Politeknik Brunei's official email, for questions about your studies, programmes or the school."
+                               data-email-confirm="This is Politeknik Brunei's official email. Use it for questions about your studies, programmes or the school. For help with CareerPath BN itself, use our business email instead."
+                               data-email-title="Email Politeknik Brunei"
+                               data-email-owner="Official Politeknik Brunei email"
+                               data-email-icon="fa-building-columns">contact@pb.edu.bn</a>
+                            <span class="contact-sep">/</span>
+                            <a href="mailto:careerpathbn@gmail.com"
+                               data-attn-place="above"
+                               data-attn-tip="CareerPath BN's business email, for help with this website, your account, Premium or partnerships."
+                               data-email-confirm="This is the CareerPath BN team's business email. Use it for help with this website, your account, Premium or partnerships. For questions about your studies, contact Politeknik Brunei instead."
+                               data-email-title="Email CareerPath BN"
+                               data-email-owner="CareerPath BN business email"
+                               data-email-tone="gold"
+                               data-email-icon="fa-compass">careerpathbn@gmail.com</a>
+                        </span>
+                    </div>
+                    <a class="contact-row" href="https://www.pb.edu.bn" target="_blank" rel="noopener">
+                        <i class="fas fa-globe"></i>
+                        <span>www.pb.edu.bn</span>
+                    </a>
                 </div>
             </div>
             <div class="footer-bottom">
-                <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
-                <p class="credit">In collaboration with AITI - Brunei ICT Industry Competency Framework (BIICF)</p>
+                <div class="footer-bottom-text">
+                    <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
+                    <p class="credit">In collaboration with AITI - Brunei ICT Industry Competency Framework (BIICF)</p>
+                </div>
+                <nav class="footer-legal" aria-label="Legal">
+                    <a href="{{ route('privacy') }}">Privacy Policy</a>
+                    <span aria-hidden="true">&middot;</span>
+                    <a href="{{ route('terms') }}">Terms of Service</a>
+                </nav>
             </div>
         </div>
     </footer>
+
+    @include('partials.email-confirm')
 
     <!-- ============================================
     SCROLL EFFECT

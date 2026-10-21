@@ -147,6 +147,12 @@
         margin-bottom: 24px;
     }
 
+    /*
+     * The popup itself is styled in the layout, beside the one
+     * that follows a finished profile — being told what to do
+     * next should look the same wherever it happens.
+     */
+
     .stat-card {
         background: var(--card);
         border: 1px solid var(--border);
@@ -249,6 +255,41 @@
         justify-content: center;
         text-align: center;
         white-space: normal;
+    }
+
+    /* Quick actions: a small "pop" on hover. Scale (not a lift) keeps
+       the button under the cursor, so it never flickers or misses a click. */
+    .quick-actions .btn {
+        transition:
+            transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+            box-shadow 0.22s ease,
+            background-color 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .quick-actions .btn i {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (hover: hover) {
+        .quick-actions .btn:hover,
+        .quick-actions .btn:focus-visible {
+            transform: scale(1.035);
+            box-shadow: 0 10px 22px -8px rgba(26, 58, 92, 0.4);
+        }
+
+        .quick-actions .btn:hover i,
+        .quick-actions .btn:focus-visible i {
+            transform: scale(1.18) rotate(-6deg);
+        }
+    }
+
+    @media (hover: none), (prefers-reduced-motion: reduce) {
+        .quick-actions .btn:hover,
+        .quick-actions .btn:hover i {
+            transform: none;
+        }
     }
 
     .btn {
@@ -819,6 +860,49 @@
             </div>
         </div>
 
+        {{--
+            One step, named, and put in front of the student
+            rather than beside the numbers. A card on the page is
+            read by whoever was already going to read the page;
+            this is for the student who signed up, landed on a
+            screen of statistics, and had no idea what the app
+            wanted from them.
+
+            Shown when the step changes and not again, so it
+            guides rather than nags — and never once there is
+            nothing left to say.
+        --}}
+        @if($nextStep)
+            <div
+                class="step-backdrop"
+                id="nextStepPopup"
+                data-step="{{ $nextStep['key'] }}"
+                hidden
+            >
+                <div class="step-popup" role="dialog" aria-modal="true" aria-labelledby="nextStepTitle">
+                    <button type="button" class="step-close" id="nextStepClose" aria-label="Close">
+                        <i class="fas fa-xmark"></i>
+                    </button>
+
+                    <span class="step-icon">
+                        <i class="fas {{ $nextStep['icon'] }}"></i>
+                    </span>
+
+                    <h2 id="nextStepTitle">{{ $nextStep['title'] }}</h2>
+                    <p>{{ $nextStep['body'] }}</p>
+
+                    <a href="{{ $nextStep['route'] }}" class="step-action">
+                        {{ $nextStep['action'] }}
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+
+                    <button type="button" class="step-later" id="nextStepLater">
+                        Not now
+                    </button>
+                </div>
+            </div>
+        @endif
+
         <!-- Stats -->
         <div class="stats-grid">
             <div class="stat-card">
@@ -866,14 +950,25 @@
         </div>
 
         <!-- Quick Actions -->
+        @php
+            $attention = app(\App\Services\Student\StudentAttention::class)->for(auth()->user());
+        @endphp
+
         <div class="quick-actions">
 
             <a
                 href="{{ route('student.profile') }}"
-                class="btn btn-primary"
+                class="btn btn-primary attn-anchor"
             >
                 <i class="fas fa-user-edit"></i>
                 Update Profile
+                @if($attention['profile'])
+                    <span class="attn-dot is-gold" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="profile">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>Complete your profile so we can match you with the right careers!</span>
+                    </span>
+                @endif
             </a>
 
             <a
@@ -882,10 +977,23 @@
                         'student.recommendations.index'
                     )
                 }}"
-                class="btn btn-outline"
+                class="btn btn-outline attn-anchor"
             >
                 <i class="fas fa-bullseye"></i>
                 Career Recommendations
+                @if($attention['recommendations'] === 'ready')
+                    <span class="attn-dot" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="recommendations-ready">
+                        <i class="fas fa-bullseye"></i>
+                        <span>Your profile is complete. Generate your career matches now!</span>
+                    </span>
+                @elseif($attention['recommendations'] === 'outdated')
+                    <span class="attn-dot" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="recommendations-outdated">
+                        <i class="fas fa-rotate"></i>
+                        <span>Your profile has changed. Refresh your career matches to keep them accurate.</span>
+                    </span>
+                @endif
             </a>
 
             <a
@@ -918,10 +1026,17 @@
 
             <a
                 href="{{ route('student.innovation-lab') }}"
-                class="btn btn-outline"
+                class="btn btn-outline attn-anchor"
             >
                 <i class="fas fa-lightbulb"></i>
                 Innovation Lab
+                @if($attention['innovation'] > 0)
+                    <span class="attn-dot" aria-hidden="true"></span>
+                    <span class="attn-tip" role="status" data-auto="innovation-{{ $attention['innovation'] }}-{{ now()->toDateString() }}">
+                        <i class="fas fa-lightbulb"></i>
+                        <span>{{ $attention['innovation'] === 1 ? 'There is a new post' : 'There are '.$attention['innovation'].' new posts' }} in the Innovation Lab. Take a look!</span>
+                    </span>
+                @endif
             </a>
 
         </div>
@@ -1137,5 +1252,70 @@
 
     </div>
 </div>
+
+<script>
+    /*
+     * The popup is shown when the step is one this browser has
+     * not been shown before, and remembered afterwards. A student
+     * who has been told to finish their profile does not need
+     * telling again every time they open the dashboard; a student
+     * who has just finished it is on a new step, and gets the new
+     * one.
+     *
+     * Remembered per browser rather than per account, which is
+     * the honest limit of doing this without a column: a new
+     * browser shows it once more. Being guided twice is a smaller
+     * failure than never being guided.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        const popup = document.getElementById('nextStepPopup');
+
+        if (!popup) {
+            return;
+        }
+
+        const key = 'cpbn.nextStep.seen';
+        const step = popup.dataset.step;
+
+        let seen = null;
+
+        try {
+            seen = window.localStorage.getItem(key);
+        } catch (error) {
+            /* Private browsing. Show it; that is the safer miss. */
+        }
+
+        if (seen === step) {
+            return;
+        }
+
+        const close = function () {
+            popup.hidden = true;
+
+            try {
+                window.localStorage.setItem(key, step);
+            } catch (error) {
+                /* Nothing to remember it with. It shows again. */
+            }
+        };
+
+        popup.hidden = false;
+
+        document.getElementById('nextStepClose')?.addEventListener('click', close);
+        document.getElementById('nextStepLater')?.addEventListener('click', close);
+
+        popup.addEventListener('click', function (event) {
+            if (event.target === popup) {
+                close();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !popup.hidden) {
+                close();
+            }
+        });
+    });
+</script>
 
 @endsection

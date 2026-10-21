@@ -976,6 +976,18 @@
             font-size: 27px;
         }
 
+        /* Phones: the quota pill and arrows move under the title if needed. */
+        .conversation-header {
+            flex-wrap: wrap;
+            gap: 10px 12px;
+            padding: 14px 16px;
+        }
+
+        .adviser-identity {
+            flex: 1 1 200px;
+            min-width: 0;
+        }
+
         .conversation-body {
             min-height: 370px;
             padding: 20px 16px;

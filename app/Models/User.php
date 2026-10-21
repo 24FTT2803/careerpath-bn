@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Notifications\ResetPasswordNotification;
+use App\Notifications\VerifyEmailNotification;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -10,9 +13,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Validation\Rule;
-use App\Notifications\ResetPasswordNotification;
+use Illuminate\Validation\ValidationException;
+use Propaganistas\LaravelPhone\PhoneNumber;
+use Propaganistas\LaravelPhone\Rules\Phone;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable;
 
@@ -55,12 +60,13 @@ class User extends Authenticatable
             'password' => 'hashed',
             'last_login_at' => 'datetime',
             'student_id_verified_at' => 'datetime',
+            'email_confirmation_waived_at' => 'datetime',
             'last_active_at' => 'datetime',
             'show_ads' => 'boolean',
         ];
     }
 
-        /**
+    /**
      * Store the email in lowercase.
      *
      * Politeknik Brunei student emails use uppercase letters in
@@ -69,7 +75,6 @@ class User extends Authenticatable
      * so the same address is never two accounts and logins
      * match regardless of capitalisation.
      */
-
     public function setNameAttribute($value): void
     {
         /*
@@ -206,7 +211,6 @@ class User extends Authenticatable
     // VALIDATION HELPERS
     // ============================================
 
-
     /**
      * Get the allowed domains for a specific role
      */
@@ -256,6 +260,63 @@ class User extends Authenticatable
             'max:20',
             'regex:/^[\+\d\s\-\(\)]{7,20}$/',
         ];
+    }
+
+    /**
+     * Phone rules shared by every form that edits a phone number
+     * (student profile, lecturer settings, admin user forms): the
+     * number must be valid for the chosen country.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    public static function phoneWithCountryRules(): array
+    {
+        return [
+            'phone' => ['nullable', 'string', 'max:30', (new Phone)->countryField('phone_country')],
+            'phone_country' => ['nullable', 'required_with:phone', 'string', 'size:2'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function phoneWithCountryMessages(): array
+    {
+        return [
+            'phone.phone' => 'Enter a valid phone number for the selected country.',
+            'phone.max' => 'The phone number is too long.',
+            'phone_country.required_with' => 'Please select a country for the phone number.',
+            'phone_country.size' => 'The selected phone country is invalid.',
+        ];
+    }
+
+    /**
+     * Turn a validated phone number into the stored form
+     * (e.g. +6737123456) and refuse one that already belongs to
+     * another account.
+     *
+     * @throws ValidationException
+     */
+    public static function standardisePhone(?string $phone, ?string $country, ?int $ignoreUserId = null): ?string
+    {
+        if (blank($phone)) {
+            return null;
+        }
+
+        $standard = (new PhoneNumber($phone, strtoupper((string) $country)))->formatE164();
+
+        $taken = static::query()
+            ->where('phone', $standard)
+            ->when($ignoreUserId, fn ($query) => $query->where('id', '!=', $ignoreUserId))
+            ->exists();
+
+        if ($taken) {
+            throw ValidationException::withMessages([
+                'phone' => 'This phone number is already registered to another account.',
+            ]);
+        }
+
+        return $standard;
     }
 
     /**
@@ -324,12 +385,83 @@ class User extends Authenticatable
         );
     }
 
+    /**
+     * Use the project's own confirmation mail rather than
+     * Laravel's plain one, for the same reason as the reset
+     * above: the link is built by the framework, only the
+     * wrapping changes.
+     */
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(
+            new VerifyEmailNotification
+        );
+    }
+
+    /**
+     * Whether this account has to confirm its address.
+     *
+     * Verification was introduced partway through the project's
+     * life, so it applies from that point rather than to
+     * everyone: an account that predates it keeps working, and
+     * can still confirm from its settings if it wants to.
+     */
+    public function mustVerifyEmailAddress(): bool
+    {
+        $from = config('auth.verification.required_from');
+
+        if (! $from) {
+            return false;
+        }
+
+        /*
+         * Students only. They are the ones who sign themselves
+         * up and so receive the confirmation; staff accounts are
+         * created by an administrator and would otherwise be
+         * asked to confirm a message nothing ever sends.
+         */
+        if ($this->role !== 'student') {
+            return false;
+        }
+
+        /*
+         * An account an administrator excused. They are the ones
+         * created rather than signed up — a demonstration
+         * account, a stand-in for an address that does not exist
+         * — and asking them to confirm a message nothing sends
+         * leaves no way in at all.
+         */
+        if ($this->email_confirmation_waived_at !== null) {
+            return false;
+        }
+
+        return $this->created_at !== null
+            && $this->created_at->gte($from);
+    }
+
+    /**
+     * Whether this account was excused from confirming, and so
+     * is in without ever having proved its address.
+     *
+     * Worth saying out loud wherever accounts are listed: an
+     * exemption nobody can see is one nobody reviews.
+     */
+    public function emailConfirmationWaived(): bool
+    {
+        return $this->email_confirmation_waived_at !== null;
+    }
+
+    public function emailConfirmationWaivedBy(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'email_confirmation_waived_by');
+    }
+
     public function unreadNotifications()
     {
         return $this->notifications()->where('is_read', false);
     }
 
-        /**
+    /**
      * Notifications shown on the user's own bell and page.
      *
      * Excludes administrator activity entries — registrations,
@@ -498,7 +630,7 @@ class User extends Authenticatable
         return $this->hasMany(GroupMembership::class);
     }
 
-        /**
+    /**
      * Classes this user teaches, when the user is a lecturer.
      *
      * Distinct from groupMemberships(), which is about
@@ -592,38 +724,19 @@ class User extends Authenticatable
      */
     public function getProfileCompletionAttribute()
     {
-        $profile = $this->profile;
-        $aspiration = $this->aspirations;
-
-            $hasPersonalProfile = $profile && (
-            filled($profile->phone)
-            || $profile->date_of_birth
-            || filled($profile->nationality)
-        );
-
-        $hasAcademicInformation = (
-            filled($this->programme)
-            && $this->cgpa !== null
-        );
-
-        $hasMeaningfulAspirations = $aspiration && (
-            ! empty($aspiration->career_goals)
-            || ! empty($aspiration->preferred_industries)
-            || ! empty($aspiration->preferred_work_activities)
-            || filled($aspiration->vision_statement)
-            || filled($aspiration->mission_statement)
-            || filled($aspiration->long_term_goals)
-        );
-
-        $sections = [
-            'profile' => $hasPersonalProfile,
-            'academic' => $hasAcademicInformation,
-            'competencies' => $this->competencies()->exists(),
-            'interests' => $this->interests()->exists(),
-            'projects' => $this->projects()->exists(),
-            'certifications' => $this->certifications()->exists(),
-            'aspirations' => $hasMeaningfulAspirations,
-        ];
+        /*
+         * Projects and certifications are not counted. They used
+         * to be, which left a first-year who has built no
+         * portfolio and sat no certification stuck below a
+         * hundred with nothing to do about it — the sections are
+         * optional, and a profile without them is finished.
+         *
+         * Adding one still matters everywhere it should: the
+         * adviser reads them, the readiness score counts them,
+         * and the profile shows them. It is only being complete
+         * that they no longer gate.
+         */
+        $sections = $this->profileSections();
 
         $completed = count(
             array_filter($sections)
@@ -631,6 +744,58 @@ class User extends Authenticatable
 
         return round(
             ($completed / count($sections)) * 100
+        );
+    }
+
+    /**
+     * Each part of a profile, and whether it is filled in.
+     *
+     * Named so the dashboard can say which part is still waiting
+     * rather than only how far along the student is. A percentage
+     * tells someone they are not finished; it does not tell them
+     * what to do next.
+     *
+     * @return array<string, bool>
+     */
+    public function profileSections(): array
+    {
+        $profile = $this->profile;
+        $aspiration = $this->aspirations;
+
+        return [
+            'Personal details' => $profile && (
+                filled($profile->phone)
+                || $profile->date_of_birth
+                || filled($profile->nationality)
+            ),
+            'Academic information' => filled($this->programme)
+                && $this->cgpa !== null,
+            'Competencies' => $this->competencies()->exists(),
+            'Interests' => $this->interests()->exists(),
+            'Aspirations' => $aspiration && (
+                ! empty($aspiration->career_goals)
+                || ! empty($aspiration->preferred_industries)
+                || ! empty($aspiration->preferred_work_activities)
+                || filled($aspiration->vision_statement)
+                || filled($aspiration->mission_statement)
+                || filled($aspiration->long_term_goals)
+            ),
+        ];
+    }
+
+    /**
+     * The parts still waiting, in the order the form asks for
+     * them.
+     *
+     * @return array<int, string>
+     */
+    public function unfinishedProfileSections(): array
+    {
+        return array_keys(
+            array_filter(
+                $this->profileSections(),
+                fn (bool $done) => ! $done
+            )
         );
     }
 

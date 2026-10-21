@@ -3,8 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\BiicfCompetency;
+use App\Models\BiicfCriticalWorkFunction;
 use App\Models\BiicfEntryRequirement;
+use App\Models\BiicfJobDescriptionPoint;
 use App\Models\BiicfJobRole;
+use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
@@ -31,25 +34,109 @@ class BiicfExplorerSeeder extends Seeder
         $this->seedIctSecurity($subSectors['ICT Security']);
         $this->seedDigitalMedia($subSectors['Digital Media']);
         $this->seedDataAi($subSectors['Data and Artificial Intelligence']);
+
+        $this->ensureEveryRoleHasATier();
+        $this->ensureWorkFunctionRows();
     }
 
     /**
-     * Real BIICF technical proficiency scale: Follow / Assist / Apply / Ensure / Strategise (1-5).
-     * Soft-skill proficiency (Basic/Intermediate/Advanced/Expert) is mapped onto the same 1-5
-     * scale (2/3/4/5) since this schema shares one scale across both competency types.
+     * Mirror the text columns into the structured tables.
+     *
+     * The backfill migration does this for roles that exist when
+     * it runs, which on a freshly migrated database is none —
+     * the roles arrive here afterwards. Same split as the
+     * migration: one generic function per line, one description
+     * point for the prose, nothing attributed to a family or
+     * nested, since the text records neither.
+     */
+    private function ensureWorkFunctionRows(): void
+    {
+        BiicfJobRole::query()
+            ->whereDoesntHave('criticalWorkFunctions')
+            ->get()
+            ->each(function (BiicfJobRole $role) {
+                $lines = preg_split(
+                    '/\R/',
+                    (string) $role->critical_work_function
+                ) ?: [];
+
+                $order = 0;
+
+                foreach ($lines as $line) {
+                    $line = trim($line);
+
+                    if ($line === '') {
+                        continue;
+                    }
+
+                    BiicfCriticalWorkFunction::create([
+                        'job_role_id' => $role->id,
+                        'kind' => BiicfCriticalWorkFunction::KIND_GENERIC,
+                        'text' => $line,
+                        'sort_order' => ++$order,
+                    ]);
+                }
+            });
+
+        BiicfJobRole::query()
+            ->whereDoesntHave('descriptionPoints')
+            ->whereNotNull('job_description')
+            ->get()
+            ->each(function (BiicfJobRole $role) {
+                $description = trim((string) $role->job_description);
+
+                if ($description === '') {
+                    return;
+                }
+
+                BiicfJobDescriptionPoint::create([
+                    'job_role_id' => $role->id,
+                    'text' => $description,
+                    'sort_order' => 1,
+                ]);
+            });
+    }
+
+    /**
+     * Hold the invariant that every role has at least one tier.
+     *
+     * Most roles here get theirs when their competencies are
+     * attached, but the ones built without the role() helper
+     * never did, and the backfill migration only covered roles
+     * that existed when it ran. A sweep at the end is cheaper
+     * than remembering at twenty call sites.
+     */
+    private function ensureEveryRoleHasATier(): void
+    {
+        BiicfJobRole::query()
+            ->whereDoesntHave('tiers')
+            ->get()
+            ->each(fn (BiicfJobRole $role) => $this->tierFor($role));
+    }
+
+    /**
+     * Load the technical proficiency scale this seeder rates
+     * against.
+     *
+     * Both scales now live in BiicfReferenceDataSeeder, which is
+     * the one place the book's wording is kept. Keying on the
+     * level number alone would no longer be enough here: with
+     * the technical and soft scales sharing one table, numbers
+     * 1 to 4 each match two rows.
+     *
+     * The soft-skill competencies attached below are still given
+     * technical levels, which is wrong and is what the real
+     * framework data corrects when it replaces this seeder.
      */
     private function seedProficiencyLevels(): void
     {
-        $defs = [
-            ['level_number' => 1, 'name' => 'Follow', 'description' => 'Demonstrates introductory understanding and, with guidance, applies the competency in a few simple situations.'],
-            ['level_number' => 2, 'name' => 'Assist', 'description' => 'Demonstrates basic knowledge and, with guidance, applies the competency in common situations with limited difficulty. (Soft skill equivalent: Basic)'],
-            ['level_number' => 3, 'name' => 'Apply', 'description' => 'Demonstrates solid knowledge and applies the competency with minimal guidance in typical situations. (Soft skill equivalent: Intermediate)'],
-            ['level_number' => 4, 'name' => 'Ensure', 'description' => 'Demonstrates advanced knowledge and applies the competency in new or complex situations, guiding others. (Soft skill equivalent: Advanced)'],
-            ['level_number' => 5, 'name' => 'Strategise', 'description' => 'Demonstrates expert knowledge, develops new approaches and is recognised as an expert. (Soft skill equivalent: Expert)'],
-        ];
-        foreach ($defs as $d) {
-            $this->levels[$d['level_number']] = BiicfProficiencyLevel::updateOrCreate(['level_number' => $d['level_number']], $d);
-        }
+        $this->call(BiicfReferenceDataSeeder::class);
+
+        $this->levels = BiicfProficiencyLevel::query()
+            ->technical()
+            ->get()
+            ->keyBy('level_number')
+            ->all();
     }
 
     private function lvl(int $n): BiicfProficiencyLevel
@@ -154,24 +241,29 @@ class BiicfExplorerSeeder extends Seeder
             'box_colour' => $boxColour,
         ]);
 
+        $tier = $this->tierFor($role);
+
         foreach ($technical as $name => $level) {
-            $role->competencies()->syncWithoutDetaching([
+            $tier->competencies()->syncWithoutDetaching([
                 $this->comp($name)->id => ['proficiency_level_id' => $this->lvl($level)->id, 'is_core' => true],
             ]);
         }
         foreach ($soft as $name => $level) {
-            $role->competencies()->syncWithoutDetaching([
+            $tier->competencies()->syncWithoutDetaching([
                 $this->comp($name)->id => ['proficiency_level_id' => $this->lvl($level)->id, 'is_core' => false],
             ]);
         }
 
         if ($bdqfLevel || $fieldOfStudy) {
-            BiicfEntryRequirement::updateOrCreate(['job_role_id' => $role->id], [
-                'bdqf_level' => $bdqfLevel,
-                'field_of_study' => $fieldOfStudy,
-                'alternative_pathway' => $altPathway,
-                'years_experience' => $yearsExperience,
-            ]);
+            BiicfEntryRequirement::updateOrCreate(
+                ['job_role_tier_id' => $tier->id, 'alternative_number' => 1],
+                [
+                    'raw_text' => $bdqfLevel,
+                    'field_of_study' => $fieldOfStudy,
+                    'alternative_pathway' => $altPathway,
+                    'years_experience' => $yearsExperience,
+                ]
+            );
         }
 
         foreach ($trainings as $t) {
@@ -180,6 +272,23 @@ class BiicfExplorerSeeder extends Seeder
         }
 
         return $role;
+    }
+
+    /**
+     * The single placeholder tier for a role seeded here.
+     *
+     * Entry requirements and competency proficiencies belong to
+     * a tier. These roles are an approximation of the book and
+     * carry no tier information of their own, so each gets one
+     * tier covering everything, which the first real edition
+     * import replaces with the book's own columns.
+     */
+    private function tierFor(BiicfJobRole $role): BiicfJobRoleTier
+    {
+        return BiicfJobRoleTier::updateOrCreate(
+            ['job_role_id' => $role->id, 'label' => 'All levels'],
+            ['sort_order' => 1]
+        );
     }
 
     private function chain(BiicfJobRole ...$roles): void
@@ -199,7 +308,7 @@ class BiicfExplorerSeeder extends Seeder
             'alternative_titles' => ['Technology Associate', 'IT Generalist', 'Network Administrator', 'Network Support Technician', 'IT Administrator', 'Help Desk Specialist', 'IT Professional', 'IT Technical Support Professional', 'IT Support Engineer'],
             'career_path_level' => 0, 'box_colour' => 'primary',
         ]);
-        $tech->competencies()->syncWithoutDetaching([
+        $this->tierFor($tech)->competencies()->syncWithoutDetaching([
             $this->comp('Application Development')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => true],
             $this->comp('Infrastructure Management')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => true],
             $this->comp('Information Security Management')->id => ['proficiency_level_id' => $this->lvl(3)->id, 'is_core' => true],
@@ -209,12 +318,15 @@ class BiicfExplorerSeeder extends Seeder
             $this->comp('Teamwork')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => false],
             $this->comp('Analytical Thinking')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => false],
         ]);
-        BiicfEntryRequirement::updateOrCreate(['job_role_id' => $tech->id], [
-            'bdqf_level' => 'BDQF Level 2-4 (by seniority)',
-            'field_of_study' => 'IT or related field',
-            'alternative_pathway' => 'BDQF Level 3 with relevant industry certification can substitute for Level 4.',
-            'years_experience' => 'Level 2 requires relevant industry experience alongside BDQF Level 2.',
-        ]);
+        BiicfEntryRequirement::updateOrCreate(
+            ['job_role_tier_id' => $this->tierFor($tech)->id, 'alternative_number' => 1],
+            [
+                'raw_text' => 'BDQF Level 2-4 (by seniority)',
+                'field_of_study' => 'IT or related field',
+                'alternative_pathway' => 'BDQF Level 3 with relevant industry certification can substitute for Level 4.',
+                'years_experience' => 'Level 2 requires relevant industry experience alongside BDQF Level 2.',
+            ]
+        );
         foreach (['Cisco Certified Technician (CCT)', 'Cisco Certified Network Associate (CCNA)', 'CompTIA A+', 'CompTIA Network+', 'CompTIA Security+', 'Microsoft 365 Fundamentals', 'PMI Certified Associate in Project Management (CAPM)'] as $t) {
             $tr = BiicfTraining::updateOrCreate(['name' => $t], ['name' => $t]);
             $tech->trainings()->syncWithoutDetaching([$tr->id]);
@@ -532,15 +644,22 @@ class BiicfExplorerSeeder extends Seeder
             'critical_work_function' => "Input and update data records accurately\nVerify data quality and flag discrepancies\nMaintain basic documentation of data sources",
             'alternative_titles' => ['Data Entry Clerk', 'Data Entry Operator'], 'career_path_level' => 0, 'box_colour' => 'primary',
         ]);
-        $entry->competencies()->syncWithoutDetaching([
+        $this->tierFor($entry)->competencies()->syncWithoutDetaching([
             $this->comp('Database Management')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => true],
             $this->comp('Data Analytics')->id => ['proficiency_level_id' => $this->lvl(1)->id, 'is_core' => true],
             $this->comp('Communication')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => false],
             $this->comp('Work Management')->id => ['proficiency_level_id' => $this->lvl(2)->id, 'is_core' => false],
         ]);
-        BiicfEntryRequirement::updateOrCreate(['job_role_id' => $entry->id], [
-            'bdqf_level' => 'BDQF Level 3', 'field_of_study' => 'IT or related field', 'alternative_pathway' => null, 'years_experience' => null,
-        ]);
+        BiicfEntryRequirement::updateOrCreate(
+            ['job_role_tier_id' => $this->tierFor($entry)->id, 'alternative_number' => 1],
+            [
+                'raw_text' => 'BDQF Level 3',
+                'bdqf_level' => 3,
+                'field_of_study' => 'IT or related field',
+                'alternative_pathway' => null,
+                'years_experience' => null,
+            ]
+        );
 
         $analyst = $this->role($s, 'Data Analyst', 'data-analyst', 'Data Operations',
             'Collects, processes and performs statistical analysis on data. Interprets data to identify trends and patterns, and prepares reports and visualisations that support business decision-making.',

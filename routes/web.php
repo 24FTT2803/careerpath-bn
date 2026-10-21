@@ -1,27 +1,35 @@
 <?php
 
-use App\Http\Controllers\Student\DashboardController;
-use App\Http\Controllers\Student\HistoryController;
-use App\Http\Controllers\Student\ProfileController;
-use App\Http\Controllers\Student\MilestoneController;
-use App\Http\Controllers\Student\CareerRecommendationController;
-use App\Http\Controllers\Student\CareerAdviserController;
-use App\Http\Controllers\Student\BiicfExplorerController;
-use App\Http\Controllers\Student\InnovationLabController as StudentInnovationLabController;
-use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
-use App\Http\Controllers\Admin\StudentController as AdminStudentController;
-use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\Admin\CareerController as AdminCareerController;
-use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\AdvertisementController;
-use App\Http\Controllers\Admin\InnovationLabController;
+use App\Http\Controllers\Admin\BiicfController;
+use App\Http\Controllers\Admin\BiicfEditionController;
 use App\Http\Controllers\Admin\BusinessPlanController;
+use App\Http\Controllers\Admin\CareerController as AdminCareerController;
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GroupMembershipController;
+use App\Http\Controllers\Admin\InnovationLabController;
 use App\Http\Controllers\Admin\OrganisationController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\SponsorshipController;
+use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Admin\UserPlanGrantController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboardController;
+use App\Http\Controllers\Lecturer\SettingsController;
+use App\Http\Controllers\Lecturer\StudentController;
+use App\Http\Controllers\Staff\StudentIdVerificationController;
+use App\Http\Controllers\Student\BiicfExplorerController;
+use App\Http\Controllers\Student\CareerAdviserController;
+use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\DashboardController;
+use App\Http\Controllers\Student\HistoryController;
+use App\Http\Controllers\Student\InnovationLabController as StudentInnovationLabController;
+use App\Http\Controllers\Student\MilestoneController;
+use App\Http\Controllers\Student\ProfileController;
+use App\Http\Middleware\AdminMiddleware;
+use App\Http\Middleware\EnsureEmailIsVerifiedSince;
+use App\Http\Middleware\LecturerMiddleware;
+use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LecturerController;
 
@@ -68,9 +76,16 @@ require __DIR__.'/auth.php';
 // ============================================
 // STUDENT ROUTES
 // ============================================
+/*
+ * Students confirm their address before using the site. Only
+ * accounts created since the requirement began are asked — see
+ * EnsureEmailIsVerifiedSince — so nobody who signed up earlier
+ * is shut out of an account they already had.
+ */
 Route::middleware([
     'auth',
-    \App\Http\Middleware\RoleMiddleware::class . ':student',
+    RoleMiddleware::class.':student',
+    EnsureEmailIsVerifiedSince::class,
 ])
     ->prefix('student')
     ->name('student.')
@@ -228,8 +243,8 @@ Route::middleware([
         )->name('notifications.read-all');
 
         Route::get(
-        '/notifications/recent',
-        [ProfileController::class, 'recentNotifications']
+            '/notifications/recent',
+            [ProfileController::class, 'recentNotifications']
         )->name('notifications.recent');
 
         // BIICF Explorer
@@ -267,6 +282,15 @@ Route::middleware([
                     [BiicfExplorerController::class, 'compareToMe']
                 )->name('job-role.compare');
 
+                /*
+                 * Before the listing, so "competencies/12" is
+                 * not read as a filter on the list.
+                 */
+                Route::get(
+                    '/competencies/{competency}',
+                    [BiicfExplorerController::class, 'competency']
+                )->name('competency.show');
+
                 Route::get(
                     '/competencies',
                     [BiicfExplorerController::class, 'competencies']
@@ -279,7 +303,7 @@ Route::middleware([
 // ============================================
 Route::middleware([
     'auth',
-    \App\Http\Middleware\LecturerMiddleware::class,
+    LecturerMiddleware::class,
 ])
     ->get(
         '/student/profile/export/{userId}/{generation?}',
@@ -292,19 +316,19 @@ Route::middleware([
 // ============================================
 Route::middleware([
     'auth',
-    \App\Http\Middleware\LecturerMiddleware::class,
+    LecturerMiddleware::class,
 ])
     ->prefix('staff/students/{student}/student-id')
     ->name('staff.student-id.')
     ->group(function () {
         Route::post(
             '/verify',
-            [\App\Http\Controllers\Staff\StudentIdVerificationController::class, 'verify']
+            [StudentIdVerificationController::class, 'verify']
         )->name('verify');
 
         Route::delete(
             '/verify',
-            [\App\Http\Controllers\Staff\StudentIdVerificationController::class, 'revoke']
+            [StudentIdVerificationController::class, 'revoke']
         )->name('revoke');
     });
 
@@ -322,10 +346,10 @@ Route::middleware(['auth'])
         )
             ->name('dashboard')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
-                /*
+        /*
          * Admin only. Lecturers have their own scoped page at
          * /lecturer/students; letting them reach this one would
          * show every student in the institution.
@@ -336,7 +360,7 @@ Route::middleware(['auth'])
         )
             ->name('students.index')
             ->middleware(
-                \App\Http\Middleware\AdminMiddleware::class
+                AdminMiddleware::class
             );
 
         Route::get(
@@ -345,7 +369,7 @@ Route::middleware(['auth'])
         )
             ->name('students.show')
             ->middleware(
-                \App\Http\Middleware\AdminMiddleware::class
+                AdminMiddleware::class
             );
 
         // CAREER ROUTES
@@ -355,7 +379,7 @@ Route::middleware(['auth'])
         )
             ->name('careers.index')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
         Route::get(
@@ -364,23 +388,23 @@ Route::middleware(['auth'])
         )
             ->name('careers.show')
             ->middleware(
-                \App\Http\Middleware\LecturerMiddleware::class
+                LecturerMiddleware::class
             );
 
-                /*
+        /*
          * Admin and lecturer. The controller checks that a
          * lecturer only views proofs belonging to students in
          * the classes they teach.
          */
         Route::get('/students/{studentId}/milestones/{milestoneId}/proof', [MilestoneController::class, 'viewProofAdmin'])
             ->name('milestones.proof')
-            ->middleware(\App\Http\Middleware\LecturerMiddleware::class);
+            ->middleware(LecturerMiddleware::class);
 
         // ============================================
         // BUSINESS MANAGEMENT (Admin ONLY)
         // ============================================
         Route::middleware(
-            \App\Http\Middleware\AdminMiddleware::class
+            AdminMiddleware::class
         )
             ->prefix('business')
             ->name('business.')
@@ -641,9 +665,9 @@ Route::middleware(['auth'])
         // ============================================
         // BIICF MANAGEMENT (Admin ONLY)
         // ============================================
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
-    
-            Route::get('/biicf', function() {
+        Route::middleware(AdminMiddleware::class)->group(function () {
+
+            Route::get('/biicf', function () {
                 return redirect()->route('admin.biicf.sub-sectors');
             })->name('biicf');
 
@@ -668,9 +692,25 @@ Route::middleware(['auth'])
             Route::get('/biicf/competencies', [BiicfController::class, 'competencies'])->name('biicf.competencies');
             Route::get('/biicf/competencies/create', [BiicfController::class, 'competencyCreate'])->name('biicf.competencies.create');
             Route::post('/biicf/competencies', [BiicfController::class, 'competencyStore'])->name('biicf.competencies.store');
+            Route::get('/biicf/competencies/{competency}', [BiicfController::class, 'competencyShow'])->name('biicf.competencies.show');
             Route::get('/biicf/competencies/{competency}/edit', [BiicfController::class, 'competencyEdit'])->name('biicf.competencies.edit');
             Route::put('/biicf/competencies/{competency}', [BiicfController::class, 'competencyUpdate'])->name('biicf.competencies.update');
             Route::delete('/biicf/competencies/{competency}', [BiicfController::class, 'competencyDestroy'])->name('biicf.competencies.destroy');
+
+            /*
+             * Editions — uploading a new reference book, deciding
+             * what it changes, and applying those decisions.
+             */
+            Route::get('/biicf/editions', [BiicfEditionController::class, 'index'])->name('biicf.editions.index');
+            Route::post('/biicf/editions', [BiicfEditionController::class, 'store'])->name('biicf.editions.store');
+            Route::get('/biicf/editions/{edition}', [BiicfEditionController::class, 'show'])->name('biicf.editions.show');
+            Route::patch('/biicf/editions/{edition}/changes/{change}', [BiicfEditionController::class, 'decide'])->name('biicf.editions.decide');
+            Route::patch('/biicf/editions/{edition}/changes', [BiicfEditionController::class, 'decideAll'])->name('biicf.editions.decide-all');
+            Route::post('/biicf/editions/{edition}/apply', [BiicfEditionController::class, 'apply'])->name('biicf.editions.apply');
+            Route::post('/biicf/editions/{edition}/reread', [BiicfEditionController::class, 'reread'])->name('biicf.editions.reread');
+            Route::get('/biicf/editions/{edition}/book', [BiicfEditionController::class, 'book'])->name('biicf.editions.book');
+            Route::get('/biicf/editions/{edition}/source', [BiicfEditionController::class, 'source'])->name('biicf.editions.source');
+            Route::delete('/biicf/editions/{edition}', [BiicfEditionController::class, 'destroy'])->name('biicf.editions.destroy');
 
             // Trainings - Use 'biicf.' NOT 'admin.biicf.'
             Route::get('/biicf/trainings', [BiicfController::class, 'trainings'])->name('biicf.trainings');
@@ -682,7 +722,7 @@ Route::middleware(['auth'])
         });
 
         // Admin ONLY routes - Users
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+        Route::middleware(AdminMiddleware::class)->group(function () {
             Route::get('/users', [AdminUserController::class, 'index'])->name('users.index');
             Route::get('/users/create', [AdminUserController::class, 'create'])->name('users.create');
             Route::post('/users', [AdminUserController::class, 'store'])->name('users.store');
@@ -702,7 +742,7 @@ Route::middleware(['auth'])
 // ============================================
 // LECTURER ROUTES
 // ============================================
-Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
+Route::middleware(['auth', LecturerMiddleware::class])
     ->prefix('lecturer')
     ->name('lecturer.')
     ->group(function () {
@@ -718,11 +758,40 @@ Route::middleware(['auth', \App\Http\Middleware\LecturerMiddleware::class])
          */
         Route::get(
             '/students',
-            [\App\Http\Controllers\Lecturer\StudentController::class, 'index']
+            [StudentController::class, 'index']
         )->name('students.index');
 
         Route::get(
             '/students/{student}',
-            [\App\Http\Controllers\Lecturer\StudentController::class, 'show']
+            [StudentController::class, 'show']
         )->name('students.show');
+
+        /*
+         * The lecturer's own account settings. The controller
+         * refuses anyone who is not a lecturer.
+         */
+        Route::get(
+            '/settings',
+            [SettingsController::class, 'show']
+        )->name('settings');
+
+        Route::put(
+            '/settings/profile',
+            [SettingsController::class, 'updateProfile']
+        )->name('settings.profile');
+
+        Route::put(
+            '/settings/avatar',
+            [SettingsController::class, 'updateAvatar']
+        )->name('settings.avatar');
+
+        Route::put(
+            '/settings/password',
+            [SettingsController::class, 'updatePassword']
+        )->name('settings.password');
+
+        Route::delete(
+            '/settings',
+            [SettingsController::class, 'destroy']
+        )->name('settings.destroy');
     });

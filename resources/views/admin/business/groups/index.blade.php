@@ -4,58 +4,138 @@
 
 @section('content')
 <style>
+    /* ---------- Structure tree ---------- */
+    .tree-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+
+    .tree-legend {
+        font-size: 11px;
+        color: #9ca3af;
+    }
+
+    /*
+     * Hiding the overflow meant a deep branch, already pushed
+     * right by its indentation, was simply cut off. It scrolls
+     * instead, so the tree stops condensing once there is no
+     * more room and nothing is lost.
+     */
+    #groupTree {
+        border: 1px solid #f0f1f3;
+        border-radius: 10px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+    }
+
     .group-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        padding-top: 9px;
-        padding-bottom: 9px;
-        padding-right: 8px;
-        border-bottom: 1px solid #f1f1f1;
+        gap: 16px;
+        min-height: 48px;
+
+        /*
+         * The floor below which rows stop compressing. Narrower
+         * than this and the tree scrolls rather than crushing
+         * names and actions into each other.
+         */
+        min-width: 720px;
+
+        padding-top: 8px;
+        padding-bottom: 8px;
+
+        /*
+         * Room at the end of the scroll, so the last control is
+         * not flush against the edge.
+         */
+        padding-right: 24px;
+        border-bottom: 1px solid #f3f4f6;
         font-size: 14px;
+        background: white;
+        transition: background-color 0.15s ease;
     }
 
-    .group-row:hover {
-        background: #fafafa;
+    .group-row:hover,
+    .group-row:focus-within {
+        background: #fcfbf7;
     }
 
     .group-main {
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-width: 0;
+        gap: 10px;
+
+        /*
+         * Deliberately allowed to size to its content. With
+         * min-width: 0 it shrank below the name, which is what
+         * put the ellipsis there in the first place.
+         */
+        flex: 1 0 auto;
     }
 
     .group-toggle,
     .group-toggle-space {
-        width: 14px;
-        font-size: 12px;
+        flex-shrink: 0;
+        width: 18px;
+        height: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        font-size: 11px;
         color: #9ca3af;
         cursor: pointer;
+        transition: transform 0.2s ease, background-color 0.15s ease, color 0.15s ease;
+    }
+
+    .group-toggle:hover {
+        background: #f3f4f6;
+        color: var(--primary);
     }
 
     .group-toggle.collapsed {
         transform: rotate(-90deg);
     }
 
+    /*
+     * Names are no longer truncated: the tree scrolls, so a long
+     * one widens its row instead of being cut to an ellipsis.
+     */
     .group-name {
         font-weight: 500;
         color: #111827;
+        white-space: nowrap;
+    }
+
+    .group-row[data-depth="0"] .group-name {
+        font-weight: 700;
+        color: var(--primary);
     }
 
     .group-code {
-        font-size: 11px;
+        flex-shrink: 0;
+        font-size: 10.5px;
         color: #6b7280;
         font-family: ui-monospace, monospace;
+        background: #f3f4f6;
+        padding: 1px 6px;
+        border-radius: 4px;
     }
 
     .group-chip {
-        background: #f3f4f6;
-        color: #4b5563;
+        flex-shrink: 0;
+        background: #eef2f7;
+        color: #3d5a7a;
         font-size: 11px;
-        padding: 2px 8px;
-        border-radius: 6px;
+        font-weight: 500;
+        padding: 2px 9px;
+        border-radius: 999px;
     }
 
     .group-chip.archived {
@@ -64,60 +144,114 @@
     }
 
     .group-meta {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
         font-size: 12px;
-        color: #9ca3af;
+        color: #6b7280;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid transparent;
     }
 
     a.group-members {
         text-decoration: none;
+        margin-left: auto;
+        min-width: 120px;
+        justify-content: flex-end;
     }
 
     a.group-members:hover {
-        color: #2563eb;
-        text-decoration: underline;
+        color: var(--primary);
+        border-color: var(--border);
+        background: white;
     }
 
+    a.group-members i {
+        font-size: 10px;
+        color: #9ca3af;
+    }
+
+    /* Actions: always in the same place, quiet until the row is in use. */
     .group-actions {
-        display: none;
-        align-items: center;
-        gap: 10px;
-        flex-shrink: 0;
-        font-size: 12px;
-    }
-
-    .group-row:hover .group-actions {
         display: flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+        opacity: 0.35;
+        transition: opacity 0.15s ease;
     }
 
-    .group-actions a,
-    .group-actions button {
-        color: #2563eb;
-        background: none;
-        border: 0;
-        padding: 0;
-        font-size: 12px;
-        cursor: pointer;
-        text-decoration: none;
-        font-family: inherit;
-    }
-
-    .group-actions button.danger {
-        color: #dc2626;
+    .group-row:hover .group-actions,
+    .group-row:focus-within .group-actions {
+        opacity: 1;
     }
 
     .group-actions form {
         display: inline;
     }
 
-    .group-blocked {
-        color: #d1d5db;
+    .group-actions a,
+    .group-actions button,
+    .group-actions .group-blocked {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 9px;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: white;
+        color: var(--primary);
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        line-height: 1.3;
+        text-decoration: none;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+
+    .group-actions a i,
+    .group-actions button i {
+        font-size: 10px;
+    }
+
+    .group-actions a:hover,
+    .group-actions button:hover {
+        background: #faf7ee;
+        border-color: var(--accent);
+    }
+
+    .group-actions .action-divider {
+        width: 1px;
+        height: 18px;
+        margin: 0 4px;
+        background: var(--border);
+    }
+
+    .group-actions button.danger {
+        color: var(--danger);
+    }
+
+    .group-actions button.danger:hover {
+        background: #fdf1f0;
+        border-color: #f0b8b1;
+    }
+
+    .group-actions .group-blocked {
+        color: #c3c7ce;
+        background: #fafafa;
         cursor: not-allowed;
     }
 
     .group-move {
-        padding-top: 8px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid #f1f1f1;
+        padding-top: 10px;
+        padding-bottom: 12px;
+        padding-right: 12px;
+        border-bottom: 1px solid #f3f4f6;
+        background: #fcfbf7;
     }
 
     .group-move form {
@@ -128,24 +262,60 @@
     }
 
     .group-move select {
-        max-width: 320px;
+        max-width: 360px;
     }
 
-    .group-actions .group-move-toggle {
-        color: #2563eb;
-        background: none;
-        border: 0;
-        padding: 0;
-        font-size: 12px;
-        cursor: pointer;
-        font-family: inherit;
+    .group-move .link {
+        padding: 8px 14px;
+        border-radius: 8px;
+        background: var(--accent);
+        color: var(--primary-dark);
+        text-decoration: none;
     }
 
     .group-also {
         font-size: 12px;
         color: #9ca3af;
+        padding-top: 4px;
         padding-bottom: 8px;
-        border-bottom: 1px solid #f1f1f1;
+        border-bottom: 1px solid #f3f4f6;
+        background: white;
+    }
+
+    .group-also i {
+        font-size: 10px;
+        margin-right: 4px;
+    }
+
+    /* Guide line from a parent down through its children. */
+    .group-branch {
+        position: relative;
+    }
+
+    .group-branch::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: calc(12px + var(--depth, 0) * 22px + 8px);
+        border-left: 1px dashed #e2dccb;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    @media (max-width: 900px) {
+        /*
+         * The actions used to wrap onto a second line here, which
+         * is what made a narrow tree feel cramped. The tree
+         * scrolls now instead, so they stay on the row.
+         *
+         * They are still revealed, because the hover that
+         * normally brings them up never happens on a touch
+         * screen.
+         */
+        .group-actions {
+            opacity: 1;
+        }
     }
 
     .type-chip {
@@ -235,7 +405,7 @@
             A new one starts with a single group named after it.
         </p>
 
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <div class="filter-pills">
             @foreach([
                 '' => 'All',
                 'active' => 'Active',
@@ -258,140 +428,151 @@
         @if($allOrganisations->isEmpty())
             <p class="empty-text">No organisations yet.</p>
         @else
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>Organisation</th>
-                        <th>Structure</th>
-                        <th>Status</th>
-                        <th class="text-right">Actions</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    @foreach($allOrganisations as $item)
+            <div class="table-scroll">
+                <table class="admin-table">
+                    <thead>
                         <tr>
-                            <td>
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.organisations.update', $item) }}"
-                                    style="display:flex;gap:8px;align-items:center;"
-                                >
-                                    @csrf
-                                    @method('PUT')
-
-                                    <input
-                                        type="text"
-                                        name="name"
-                                        value="{{ $item->name }}"
-                                        maxlength="150"
-                                        required
-                                        class="field-input"
-                                        style="max-width:240px;"
-                                    >
-
-                                    <input
-                                        type="text"
-                                        name="code"
-                                        value="{{ $item->code }}"
-                                        maxlength="40"
-                                        placeholder="Code"
-                                        class="field-input"
-                                        style="max-width:100px;"
-                                    >
-
-                                    <button type="submit" class="link">Save</button>
-                                </form>
-                            </td>
-
-                            <td class="cell-sub">
-                                {{ $item->groups_count }}
-                                {{ Str::plural('group', $item->groups_count) }}
-                                &middot;
-                                {{ $item->group_types_count }}
-                                {{ Str::plural('type', $item->group_types_count) }}
-                            </td>
-
-                            <td>
-                                @if($item->is_active)
-                                    <span class="status-pill status-pill-green">Active</span>
-                                @else
-                                    <span class="status-pill status-pill-muted">Archived</span>
-                                @endif
-                            </td>
-
-                            <td><div class="row-actions">
-                                <a
-                                    href="{{ route('admin.business.groups.index', ['organisation' => $item->id]) }}"
-                                    class="link"
-                                >
-                                    Open
-                                </a>
-
-                                @if($item->is_active)
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.organisations.archive', $item) }}"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="link">Archive</button>
-                                    </form>
-                                @else
-                                    <form
-                                        method="POST"
-                                        action="{{ route('admin.business.organisations.restore', $item) }}"
-                                    >
-                                        @csrf
-                                        @method('PUT')
-                                        <button type="submit" class="link">Restore</button>
-                                    </form>
-                                @endif
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.business.organisations.destroy', $item) }}"
-                                    onsubmit="return confirm('Delete {{ $item->name }} and everything in it?');"
-                                >
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="link link-danger">Delete</button>
-                                </form>
-                            </div></td>
+                            <th>Organisation</th>
+                            <th>Structure</th>
+                            <th>Status</th>
+                            <th class="text-right">Actions</th>
                         </tr>
-                    @endforeach
-                </tbody>
-            </table>
+                    </thead>
+
+                    <tbody>
+                        @foreach($allOrganisations as $item)
+                            <tr>
+                                <td>
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.organisations.update', $item) }}"
+                                        class="inline-form"
+                                    >
+                                        @csrf
+                                        @method('PUT')
+
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value="{{ $item->name }}"
+                                            maxlength="150"
+                                            required
+                                            class="field-input"
+                                            aria-label="Organisation name"
+                                        >
+
+                                        <input
+                                            type="text"
+                                            name="code"
+                                            value="{{ $item->code }}"
+                                            maxlength="40"
+                                            placeholder="Code"
+                                            class="field-input is-short"
+                                            aria-label="Code"
+                                        >
+
+                                        <button type="submit" class="btn btn-sm btn-subtle">
+                                            <i class="fas fa-check"></i> Save
+                                        </button>
+                                    </form>
+                                </td>
+
+                                <td class="cell-sub">
+                                    {{ $item->groups_count }}
+                                    {{ Str::plural('group', $item->groups_count) }}
+                                    &middot;
+                                    {{ $item->group_types_count }}
+                                    {{ Str::plural('type', $item->group_types_count) }}
+                                </td>
+
+                                <td>
+                                    @if($item->is_active)
+                                        <span class="status-pill status-pill-green">Active</span>
+                                    @else
+                                        <span class="status-pill status-pill-muted">Archived</span>
+                                    @endif
+                                </td>
+
+                                <td><div class="row-actions">
+                                    <a
+                                        href="{{ route('admin.business.groups.index', ['organisation' => $item->id]) }}"
+                                        class="link"
+                                    >
+                                        <i class="fas fa-folder-open"></i> Open
+                                    </a>
+
+                                    @if($item->is_active)
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.business.organisations.archive', $item) }}"
+                                        >
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="link"><i class="fas fa-box-archive"></i> Archive</button>
+                                        </form>
+                                    @else
+                                        <form
+                                            method="POST"
+                                            action="{{ route('admin.business.organisations.restore', $item) }}"
+                                        >
+                                            @csrf
+                                            @method('PUT')
+                                            <button type="submit" class="link"><i class="fas fa-rotate-left"></i> Restore</button>
+                                        </form>
+                                    @endif
+
+                                    <form
+                                        method="POST"
+                                        action="{{ route('admin.business.organisations.destroy', $item) }}"
+                                        data-confirm="Delete {{ $item->name }} and everything in it? This cannot be undone."
+                                        data-confirm-title="Delete Group"
+                                        data-confirm-ok="Yes, Delete"
+                                        data-confirm-type="danger"
+                                    >
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="link link-danger"><i class="fas fa-trash-alt"></i> Delete</button>
+                                    </form>
+                                </div></td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
         @endif
 
-        <form
-            method="POST"
-            action="{{ route('admin.business.organisations.store') }}"
-            style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;"
-        >
-            @csrf
+        <div class="add-row">
+            <span class="add-row-label">Add an institution</span>
 
-            <input
-                type="text"
-                name="name"
-                maxlength="150"
-                required
-                placeholder="Institution name"
-                class="field-input"
-                style="max-width:240px;"
+            <form
+                method="POST"
+                action="{{ route('admin.business.organisations.store') }}"
+                class="inline-form"
             >
+                @csrf
 
-            <input
-                type="text"
-                name="code"
-                maxlength="40"
-                placeholder="Code"
-                class="field-input"
-                style="max-width:100px;"
-            >
+                <input
+                    type="text"
+                    name="name"
+                    maxlength="150"
+                    required
+                    placeholder="Institution name"
+                    class="field-input"
+                >
 
-            <button type="submit" class="btn btn-subtle">Add</button>
-        </form>
+                <input
+                    type="text"
+                    name="code"
+                    maxlength="40"
+                    placeholder="Code"
+                    class="field-input is-short"
+                >
+
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add
+                </button>
+            </form>
+        </div>
     </div>
 
 @else
@@ -408,7 +589,7 @@
         @if($types->isEmpty())
             <p class="field-hint">No types yet.</p>
         @else
-            <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+            <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
                 @foreach($types as $type)
                     @php $usage = $typeUsage[$type->id] ?? 0; @endphp
 
@@ -424,7 +605,10 @@
                             <form
                                 method="POST"
                                 action="{{ route('admin.business.groups.types.destroy', $type) }}"
-                                onsubmit="return confirm('Remove the {{ $type->name }} type?');"
+                                data-confirm="Remove the {{ $type->name }} type?"
+                                data-confirm-title="Remove Type"
+                                data-confirm-ok="Yes, Remove"
+                                data-confirm-type="danger"
                             >
                                 @csrf
                                 @method('DELETE')
@@ -436,36 +620,50 @@
             </div>
         @endif
 
-        <form
-            method="POST"
-            action="{{ route('admin.business.groups.types.store') }}"
-            style="display:flex;gap:8px;margin-top:12px;"
-        >
-            @csrf
+        <div class="add-row">
+            <span class="add-row-label">Add a type</span>
 
-            <input
-                type="hidden"
-                name="organisation_id"
-                value="{{ $organisation->id }}"
+            <form
+                method="POST"
+                action="{{ route('admin.business.groups.types.store') }}"
+                class="inline-form"
             >
+                @csrf
 
-            <input
-                type="text"
-                name="name"
-                maxlength="60"
-                required
-                placeholder="New type for {{ $organisation->name }}"
-                class="field-input"
-                style="max-width:280px;"
-            >
+                <input
+                    type="hidden"
+                    name="organisation_id"
+                    value="{{ $organisation->id }}"
+                >
 
-            <button type="submit" class="btn btn-subtle">Add type</button>
-        </form>
+                <input
+                    type="text"
+                    name="name"
+                    maxlength="60"
+                    required
+                    placeholder="New type for {{ $organisation->name }}"
+                    class="field-input"
+                    style="max-width:360px;"
+                >
+
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus"></i> Add type
+                </button>
+            </form>
+        </div>
     </div>
 
     <!-- Tree -->
     <div class="card">
-        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
+        <div class="tree-card-head">
+            <h3 class="card-heading" style="margin:0;">Structure</h3>
+
+            <div class="tree-legend">
+                <span><i class="fas fa-users"></i> members: direct &middot; total including groups inside</span>
+            </div>
+        </div>
+
+        <div class="filter-pills">
             @foreach([
                 '' => 'All',
                 'active' => 'Active',
@@ -485,12 +683,16 @@
             @endforeach
         </div>
 
-        <input
-            type="text"
-            id="groupSearch"
-            placeholder="Search groups"
-            class="w-full border border-gray-300 rounded-lg px-3 py-2 mb-4 text-sm"
-        >
+        <div class="search-field">
+            <i class="fas fa-search"></i>
+
+            <input
+                type="text"
+                id="groupSearch"
+                placeholder="Search groups by name or code"
+                class="field-input"
+            >
+        </div>
 
         @if($roots->isEmpty())
             <p class="empty-text">

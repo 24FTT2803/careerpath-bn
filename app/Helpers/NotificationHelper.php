@@ -21,14 +21,37 @@ class NotificationHelper
     }
 
     /**
+     * The title this notification is kept under, so that
+     * finishing a profile twice does not say so twice.
+     */
+    public const PROFILE_COMPLETE = 'Profile Complete!';
+
+    /**
      * Notify user when profile is complete.
+     *
+     * Once. A student edits their profile for years after
+     * finishing it, and every save would otherwise announce the
+     * same news again.
+     *
+     * The link matters as much as the words: career matches and
+     * the button that generates them are the same page, so this
+     * is what takes a student there — which is the one step the
+     * app never told anybody to take.
      */
     public static function notifyProfileComplete($userId)
     {
+        $told = Notification::where('user_id', $userId)
+            ->where('title', self::PROFILE_COMPLETE)
+            ->exists();
+
+        if ($told) {
+            return null;
+        }
+
         return self::create(
             $userId,
             'system',
-            'Profile Complete!',
+            self::PROFILE_COMPLETE,
             'Your profile is ready. Generate your personalised career recommendations when you are ready!',
             route(
                 'student.recommendations.index',
@@ -156,7 +179,7 @@ class NotificationHelper
             'deleted' => 'Deleted Milestone',
         ];
 
-        $actionLabel = $actionMap[$action] ?? ucfirst($action) . ' Milestone';
+        $actionLabel = $actionMap[$action] ?? ucfirst($action).' Milestone';
 
         return self::create(
             $userId,

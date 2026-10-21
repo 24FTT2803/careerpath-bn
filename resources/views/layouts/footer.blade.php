@@ -25,6 +25,13 @@
                             <span class="logo-fallback"><i class="fas fa-satellite-dish"></i> AITI</span>
                         @endif
                     </a>
+                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="logo-link">
+                        @if(file_exists(public_path('images/innovation-lab-logo.png')))
+                            <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="footer-logo">
+                        @else
+                            <span class="logo-fallback"><i class="fas fa-lightbulb"></i> Brunei Innovation Lab</span>
+                        @endif
+                    </a>
                 </div>
             </div>
             <div class="footer-col">
@@ -43,33 +50,56 @@
             </div>
             <div class="footer-col">
                 <h4>Contact</h4>
-                <a href="https://www.google.com/maps/search/?api=1&query=Politeknik+Brunei+Ong+Sum+Ping" target="_blank">
-    <i class="fas fa-map-marker-alt"></i>
-    Block 2E, Ong Sum Ping Condominium, BA1311
-</a>
-
-<a href="tel:+6732234630">
-    <i class="fas fa-phone"></i>
-    +673 2234630
-</a>
-
-<a href="mailto:contact@pb.edu.bn">
-    <i class="fas fa-envelope"></i>
-    contact@pb.edu.bn
-</a>
-
-<a href="https://www.pb.edu.bn" target="_blank">
-    <i class="fas fa-globe"></i>
-    www.pb.edu.bn
-</a>
+                <a class="contact-row" href="https://www.google.com/maps/search/?api=1&query=Politeknik+Brunei+Ong+Sum+Ping" target="_blank" rel="noopener">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>Block 2E, Ong Sum Ping Condominium, BA1311</span>
+                </a>
+                <a class="contact-row" href="tel:+6732234630">
+                    <i class="fas fa-phone"></i>
+                    <span>+673 2234630</span>
+                </a>
+                <div class="contact-row">
+                    <i class="fas fa-envelope"></i>
+                    <span>
+                        <a href="mailto:contact@pb.edu.bn"
+                           data-attn-place="above"
+                           data-attn-tip="Politeknik Brunei's official email, for questions about your studies, programmes or the school."
+                           data-email-confirm="This is Politeknik Brunei's official email. Use it for questions about your studies, programmes or the school. For help with CareerPath BN itself, use our business email instead."
+                           data-email-title="Email Politeknik Brunei"
+                           data-email-owner="Official Politeknik Brunei email"
+                           data-email-icon="fa-building-columns">contact@pb.edu.bn</a>
+                        <span class="contact-sep">/</span>
+                        <a href="mailto:careerpathbn@gmail.com"
+                           data-attn-place="above"
+                           data-attn-tip="CareerPath BN's business email, for help with this website, your account, Premium or partnerships."
+                           data-email-confirm="This is the CareerPath BN team's business email. Use it for help with this website, your account, Premium or partnerships. For questions about your studies, contact Politeknik Brunei instead."
+                           data-email-title="Email CareerPath BN"
+                           data-email-owner="CareerPath BN business email"
+                           data-email-tone="gold"
+                           data-email-icon="fa-compass">careerpathbn@gmail.com</a>
+                    </span>
+                </div>
+                <a class="contact-row" href="https://www.pb.edu.bn" target="_blank" rel="noopener">
+                    <i class="fas fa-globe"></i>
+                    <span>www.pb.edu.bn</span>
+                </a>
             </div>
         </div>
         <div class="footer-bottom">
-            <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
-            <p class="credit">In collaboration with AITI - Brunei ICT Industry Competency Framework (BIICF)</p>
+            <div class="footer-bottom-text">
+                <p>&copy; {{ date('Y') }} CareerPath BN. Developed by SICT Students, Politeknik Brunei.</p>
+                <p class="credit">In collaboration with AITI - Brunei ICT Industry Competency Framework (BIICF)</p>
+            </div>
+            <nav class="footer-legal" aria-label="Legal">
+                <a href="{{ route('privacy') }}">Privacy Policy</a>
+                <span aria-hidden="true">&middot;</span>
+                <a href="{{ route('terms') }}">Terms of Service</a>
+            </nav>
         </div>
     </div>
 </footer>
+
+@include('partials.email-confirm')
 
 <style>
     .site-footer {
@@ -250,6 +280,86 @@
         }
         .footer-logos {
             gap: 12px;
+        }
+    }
+
+    /* ---------- Footer structure: contact rows and legal links ---------- */
+    .footer-col .contact-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 5px 0;
+        color: rgba(255, 255, 255, 0.5);
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    .footer-col .contact-row i {
+        width: 16px;
+        margin: 4px 0 0;
+        flex-shrink: 0;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.4);
+        transition: var(--transition);
+    }
+
+    .footer-col .contact-row > span {
+        min-width: 0;
+        overflow-wrap: break-word;
+    }
+
+    .footer-col .contact-row a {
+        display: inline;
+        padding: 0;
+    }
+
+    .footer-col a.contact-row:hover,
+    .footer-col a.contact-row:hover i,
+    .footer-col .contact-row a:hover {
+        color: var(--accent);
+    }
+
+    .footer-col .contact-sep {
+        margin: 0 4px;
+        color: rgba(255, 255, 255, 0.25);
+    }
+
+    .footer-bottom-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .footer-legal {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 12px;
+    }
+
+    .footer-legal a {
+        color: rgba(255, 255, 255, 0.55);
+        text-decoration: none;
+        transition: var(--transition);
+    }
+
+    .footer-legal a:hover {
+        color: var(--accent);
+    }
+
+    .footer-legal span {
+        color: rgba(255, 255, 255, 0.25);
+    }
+
+    @media (min-width: 1025px) {
+        .footer-grid {
+            grid-template-columns: 1.7fr 0.9fr 0.9fr 1.5fr;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .footer-bottom-text {
+            align-items: center;
         }
     }
 </style>

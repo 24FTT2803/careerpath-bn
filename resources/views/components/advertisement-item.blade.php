@@ -21,15 +21,38 @@
             ></iframe>
 
 @elseif($advertisement->isVideo())
-    <video
-        src="{{ $mediaUrl }}"
-        class="ad-slot-media"
-        muted
-        loop
-        autoplay
-        playsinline
-        aria-label="{{ $label }}"
+    {{--
+        Wrapped like an image when there is somewhere to go. It
+        was the only kind that could not be clicked, however its
+        destination was set.
+    --}}
+    @if($advertisement->click_url)
+        <a
+            href="{{ $advertisement->click_url }}"
+            target="_blank"
+            rel="noopener sponsored"
+        >
+            <video
+                src="{{ $mediaUrl }}"
+                class="ad-slot-media"
+                muted
+                loop
+                autoplay
+                playsinline
+                aria-label="{{ $label }}"
             ></video>
+        </a>
+    @else
+        <video
+            src="{{ $mediaUrl }}"
+            class="ad-slot-media"
+            muted
+            loop
+            autoplay
+            playsinline
+            aria-label="{{ $label }}"
+        ></video>
+    @endif
 
 @elseif($mediaUrl)
     @if($advertisement->click_url)

@@ -287,6 +287,63 @@
         color: var(--gold);
     }
 
+    /*
+     * A checkbox inside a field inherits the full-width text
+     * input styling above — 100% wide, 10px of padding, a 2px
+     * border — which squeezes the native tick out of sight, so
+     * there was no telling whether the box was ticked.
+     */
+    .edit-profile .cpbn-field label.cpbn-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 24px 0 0;
+        font-size: 13px;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: 0;
+        color: var(--ink);
+    }
+
+    .edit-profile .cpbn-field .cpbn-check input[type="checkbox"] {
+        appearance: auto;
+        -webkit-appearance: checkbox;
+        width: 18px;
+        height: 18px;
+        min-width: 18px;
+        padding: 0;
+        border: none;
+        background: none;
+        accent-color: var(--gold);
+    }
+
+    /*
+     * And the state in words beside it, since a tick says what
+     * the box is but not what it means for the qualification.
+     */
+    .edit-profile .cpbn-check-state {
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 10px;
+        border-radius: 100px;
+        background: rgba(45, 143, 92, 0.12);
+        color: var(--green);
+        white-space: nowrap;
+    }
+
+    .edit-profile .cpbn-check-state::after {
+        content: 'Completed';
+    }
+
+    .edit-profile .cpbn-check input[type="checkbox"]:checked ~ .cpbn-check-state {
+        background: var(--gold-wash);
+        color: #8a6420;
+    }
+
+    .edit-profile .cpbn-check input[type="checkbox"]:checked ~ .cpbn-check-state::after {
+        content: 'Still studying';
+    }
+
     .edit-profile .cpbn-check-note {
         font-size: 11px;
         color: var(--ink-dim);
@@ -680,6 +737,7 @@
 
     /* Remove Buttons */
     .edit-profile .cpbn-remove-project,
+    .edit-profile .cpbn-remove-qualification,
     .edit-profile .cpbn-remove-certification {
         background: var(--rose-wash);
         color: var(--rose);
@@ -697,6 +755,7 @@
     }
 
     .edit-profile .cpbn-remove-project:hover,
+    .edit-profile .cpbn-remove-qualification:hover,
     .edit-profile .cpbn-remove-certification:hover {
         background: var(--rose);
         color: white;
@@ -704,6 +763,7 @@
 
     /* Add Buttons */
     .edit-profile .cpbn-add-project,
+    .edit-profile .cpbn-add-btn,
     .edit-profile .cpbn-add-certification {
         background: var(--gold-wash);
         color: #8a6420;
@@ -723,10 +783,45 @@
     }
 
     .edit-profile .cpbn-add-project:hover,
+    .edit-profile .cpbn-add-btn:hover,
     .edit-profile .cpbn-add-certification:hover {
         background: var(--gold);
         color: var(--ink);
         border-style: solid;
+    }
+
+    /*
+     * Projects and certifications are optional, and their Add
+     * button should ask for about as much attention as that
+     * deserves. A full-width dashed panel asks for a great deal,
+     * and only looked deliberate once the pointer was on it. This
+     * one is small, solid, and sits at the end of the section
+     * where the next thing to do belongs.
+     */
+    .edit-profile .cpbn-section-foot {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 14px;
+    }
+
+    .edit-profile .cpbn-optional {
+        margin: 0;
+        font-size: 12px;
+        color: var(--ink-dim);
+        font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-section-foot .cpbn-add-project,
+    .edit-profile .cpbn-section-foot .cpbn-add-certification {
+        width: auto;
+        padding: 8px 16px;
+        font-size: 12px;
+        border: 1px solid var(--gold);
+        border-radius: 999px;
+        margin-left: auto;
     }
 
     /* File Upload Helpers */
@@ -822,6 +917,12 @@
         transition: all 0.2s;
         text-decoration: none;
         font-family: var(--font-body);
+    }
+
+    .edit-profile .cpbn-btn svg {
+        width: 18px;
+        height: 18px;
+        flex: 0 0 18px;
     }
 
     .edit-profile .cpbn-btn-primary {
@@ -975,11 +1076,21 @@
         }
 
         .edit-profile .submit-row {
+            position: sticky;
+            bottom: 0;
+            z-index: 20;
             flex-direction: column;
+            margin: 24px -4px 0;
+            padding: 10px 4px calc(10px + env(safe-area-inset-bottom, 0px));
+            background: linear-gradient(to top, var(--paper, #fff) 70%, rgba(255, 255, 255, 0));
         }
 
         .edit-profile .submit-row .cpbn-btn {
             width: 100%;
+            min-height: 44px;
+            padding: 10px 18px;
+            font-size: 14px;
+            line-height: 1.2;
             justify-content: center;
         }
     }
@@ -1012,6 +1123,421 @@
     }
 </style>
 
+<style>
+    /* ==========================================================
+       Edit Profile redesign
+       Layout, theme and spacing only. Every field, name, id and
+       script above is unchanged. Selectors are prefixed so they
+       win over the page's earlier rules and the shared polish.
+       ========================================================== */
+    body .edit-profile .wrap {
+        max-width: 1180px;
+    }
+
+    body .edit-profile .ep-layout {
+        display: grid;
+        grid-template-columns: 276px minmax(0, 1fr);
+        gap: 28px;
+        align-items: start;
+    }
+
+    body .edit-profile .ep-main {
+        min-width: 0;
+    }
+
+    /* ---------- Side column ---------- */
+    body .edit-profile .ep-aside {
+        position: sticky;
+        top: 88px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        max-height: calc(100vh - 110px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    body .edit-profile .ep-layout .progress-card {
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(160deg, #0d1f33 0%, #1a3a5c 70%, #2a5a8c 100%);
+        border: none;
+        border-radius: 16px;
+        color: #fff;
+        box-shadow: 0 18px 36px -26px rgba(13, 31, 51, 0.8);
+    }
+
+    body .edit-profile .ep-layout .progress-top span {
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    body .edit-profile .ep-layout .progress-top span:last-child {
+        font-family: 'Playfair Display', serif;
+        font-size: 26px;
+        font-weight: 700;
+        color: #e8d4a0;
+    }
+
+    body .edit-profile .ep-layout .progress-card .bar {
+        height: 8px;
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    body .edit-profile .ep-layout .progress-note {
+        margin: 12px 0 0;
+        font-size: 12.5px;
+        line-height: 1.5;
+        color: rgba(255, 255, 255, 0.72);
+    }
+
+    body .edit-profile .ep-nav {
+        padding: 12px;
+        background: #fff;
+        border: 1px solid #e6e8ec;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px -26px rgba(13, 31, 51, 0.45);
+    }
+
+    body .edit-profile .ep-nav-title {
+        margin: 4px 10px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: #8a94a1;
+    }
+
+    body .edit-profile .ep-nav-link {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 9px 10px;
+        border-radius: 10px;
+        color: #4b5868;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    body .edit-profile .ep-nav-link:hover {
+        background: #f6f7f9;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-nav-num {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 26px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #eef0f3;
+        color: #1a3a5c;
+        font-size: 12px;
+        font-weight: 700;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    body .edit-profile .ep-nav-link.is-active {
+        background: #faf6ea;
+        color: #1a3a5c;
+        font-weight: 600;
+    }
+
+    body .edit-profile .ep-nav-link.is-active .ep-nav-num {
+        background: #1a3a5c;
+        color: #e8d4a0;
+    }
+
+    /* ---------- Section cards ---------- */
+    body .edit-profile .ep-layout .section {
+        scroll-margin-top: 96px;
+        margin-bottom: 22px;
+        padding: 28px;
+        background: #fff;
+        border: 1px solid #e6e8ec;
+        border-radius: 18px;
+        box-shadow: 0 10px 30px -26px rgba(13, 31, 51, 0.45);
+    }
+
+    body .edit-profile .ep-layout .section .title {
+        gap: 12px;
+        margin-bottom: 22px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #eef0f3;
+        font-family: 'Playfair Display', serif;
+        font-size: 19px;
+        font-weight: 700;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-layout .section .desc {
+        margin-top: -8px;
+        margin-bottom: 20px;
+        color: #6b7785;
+        line-height: 1.6;
+    }
+
+    /* ---------- Fields ---------- */
+    body .edit-profile .ep-layout .cpbn-fgrid {
+        gap: 18px 20px;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field label {
+        margin-bottom: 7px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+    body .edit-profile .ep-layout .cpbn-field select,
+    body .edit-profile .ep-layout .cpbn-field textarea {
+        min-height: 46px;
+        padding: 10px 14px;
+        border: 1px solid #dfe3e8;
+        border-radius: 12px;
+        background: #fcfcfd;
+        font-size: 14px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field textarea {
+        min-height: 110px;
+        line-height: 1.6;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):hover,
+    body .edit-profile .ep-layout .cpbn-field select:hover,
+    body .edit-profile .ep-layout .cpbn-field textarea:hover {
+        border-color: #cdd3da;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+    body .edit-profile .ep-layout .cpbn-field select:focus,
+    body .edit-profile .ep-layout .cpbn-field textarea:focus {
+        background: #fff;
+        border-color: #c9a84c;
+        box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.16);
+    }
+
+    body .edit-profile .ep-layout .cpbn-field input:disabled {
+        background: #f3f4f6;
+        color: #6b7785;
+    }
+
+    body .edit-profile .ep-layout .cpbn-field .hint {
+        margin-top: 6px;
+        font-size: 12px;
+        line-height: 1.5;
+        color: #8a94a1;
+    }
+
+    body .edit-profile .ep-layout .cpbn-check {
+        border-radius: 12px;
+    }
+
+    /* ---------- Inner cards ---------- */
+    body .edit-profile .ep-layout .cpbn-profile-picture {
+        padding: 20px;
+        border: 1px solid #e8d4a0;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #faf6ea 0%, #ffffff 100%);
+    }
+
+    body .edit-profile .ep-layout .cpbn-project-card,
+    body .edit-profile .ep-layout .cpbn-certification-card,
+    body .edit-profile .ep-layout .cpbn-competency-item {
+        border: 1px solid #e6e8ec;
+        border-radius: 14px;
+        background: #fbfbfd;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body .edit-profile .ep-layout .cpbn-project-card:hover,
+    body .edit-profile .ep-layout .cpbn-certification-card:hover,
+    body .edit-profile .ep-layout .cpbn-competency-item:hover {
+        border-color: #e8d4a0;
+        box-shadow: 0 12px 26px -22px rgba(13, 31, 51, 0.5);
+    }
+
+    body .edit-profile .ep-layout .cpbn-competency-item.selected {
+        border-color: #e8d4a0;
+        background: #faf6ea;
+    }
+
+    body .edit-profile .ep-layout .cpbn-project-number {
+        display: inline-flex;
+        align-items: center;
+        padding: 3px 11px;
+        border-radius: 999px;
+        background: #1a3a5c;
+        color: #e8d4a0;
+        font-size: 12px;
+        font-weight: 700;
+    }
+
+    body .edit-profile .ep-layout .cpbn-competency-heading {
+        padding-left: 12px;
+        border-left: 4px solid #c9a84c;
+    }
+
+    body .edit-profile .ep-layout .cpbn-custom-chip {
+        border-radius: 999px;
+        background: #eef3f9;
+        border-color: #d3deea;
+        color: #1a3a5c;
+    }
+
+    body .edit-profile .ep-layout .cpbn-add-btn,
+    body .edit-profile .ep-layout .cpbn-add-project,
+    body .edit-profile .ep-layout .cpbn-add-certification {
+        border: 1px dashed #c9a84c;
+        border-radius: 12px;
+        background: #faf6ea;
+        color: #1a3a5c;
+        font-weight: 600;
+    }
+
+    body .edit-profile .ep-layout .cpbn-add-btn:hover,
+    body .edit-profile .ep-layout .cpbn-add-project:hover,
+    body .edit-profile .ep-layout .cpbn-add-certification:hover {
+        background: #f4ecd2;
+        border-style: solid;
+    }
+
+    body .edit-profile .ep-layout .cpbn-competency-page-button,
+    body .edit-profile .ep-layout .cpbn-competency-toggle {
+        border-radius: 999px;
+    }
+
+    /* ---------- Floating save bar ---------- */
+    body .edit-profile .ep-layout .submit-row {
+        position: sticky;
+        bottom: 16px;
+        z-index: 30;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin: 8px 0 0;
+        padding: 12px 14px 12px 22px;
+        background: rgba(255, 255, 255, 0.94);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid #e6e8ec;
+        border-radius: 16px;
+        box-shadow: 0 18px 40px -22px rgba(13, 31, 51, 0.55);
+    }
+
+    body .edit-profile .ep-save-note {
+        margin: 0;
+        font-size: 13px;
+        color: #6b7785;
+    }
+
+    body .edit-profile .ep-layout .submit-row .cpbn-btn {
+        min-height: 46px;
+        padding: 10px 26px;
+        border: none;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #1a3a5c 0%, #2a5a8c 100%);
+        color: #fff;
+        font-size: 14px;
+        font-weight: 600;
+        box-shadow: 0 10px 22px -14px rgba(13, 31, 51, 0.8);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    body .edit-profile .ep-layout .submit-row .cpbn-btn svg {
+        color: #e8d4a0;
+    }
+
+    body .edit-profile .ep-layout .submit-row .cpbn-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 16px 28px -16px rgba(13, 31, 51, 0.85);
+    }
+
+    /* ---------- Tablet and phone ---------- */
+    @media (max-width: 1000px) {
+        body .edit-profile .ep-layout {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        body .edit-profile .ep-aside {
+            position: static;
+            max-height: none;
+            overflow: visible;
+        }
+
+        body .edit-profile .ep-nav {
+            display: flex;
+            gap: 6px;
+            padding: 8px;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        body .edit-profile .ep-nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        body .edit-profile .ep-nav-title {
+            display: none;
+        }
+
+        body .edit-profile .ep-nav-link {
+            flex: 0 0 auto;
+            white-space: nowrap;
+            padding: 8px 12px;
+        }
+    }
+
+    @media (max-width: 720px) {
+        body .edit-profile .ep-layout .section {
+            padding: 20px 16px;
+            border-radius: 16px;
+        }
+
+        body .edit-profile .ep-layout .section .title {
+            font-size: 17px;
+        }
+
+        body .edit-profile .ep-layout .submit-row {
+            bottom: 0;
+            margin: 8px -4px 0;
+            padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+            border-radius: 16px 16px 0 0;
+            background: rgba(255, 255, 255, 0.96);
+        }
+
+        body .edit-profile .ep-save-note {
+            display: none;
+        }
+
+        body .edit-profile .ep-layout .submit-row .cpbn-btn {
+            width: 100%;
+            min-height: 44px;
+            justify-content: center;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        body .edit-profile .ep-layout .submit-row .cpbn-btn,
+        body .edit-profile .ep-nav-link,
+        body .edit-profile .ep-layout .cpbn-project-card,
+        body .edit-profile .ep-layout .cpbn-certification-card,
+        body .edit-profile .ep-layout .cpbn-competency-item {
+            transition: none;
+        }
+    }
+</style>
+
 <div class="edit-profile">
     <div class="wrap">
 
@@ -1029,7 +1555,9 @@
             </a>
         </div>
 
-        <!-- Progress -->
+        <div class="ep-layout">
+            <aside class="ep-aside">
+            <!-- Progress -->
         <div class="progress-card">
             <div class="progress-top">
                 <span>Profile Completion</span>
@@ -1053,6 +1581,45 @@
             </p>
         </div>
 
+                <nav class="ep-nav" aria-label="Profile sections">
+                    <p class="ep-nav-title">Sections</p>
+                    <a href="#ep-personal" class="ep-nav-link" data-ep-target="ep-personal">
+                        <span class="ep-nav-num">1</span>
+                        <span class="ep-nav-label">Personal Information</span>
+                    </a>
+                    <a href="#ep-studies" class="ep-nav-link" data-ep-target="ep-studies">
+                        <span class="ep-nav-num">2</span>
+                        <span class="ep-nav-label">Current Studies</span>
+                    </a>
+                    <a href="#ep-qualifications" class="ep-nav-link" data-ep-target="ep-qualifications">
+                        <span class="ep-nav-num">3</span>
+                        <span class="ep-nav-label">Qualifications</span>
+                    </a>
+                    <a href="#ep-skills" class="ep-nav-link" data-ep-target="ep-skills">
+                        <span class="ep-nav-num">4</span>
+                        <span class="ep-nav-label">Skills &amp; Competencies</span>
+                    </a>
+                    <a href="#ep-interests" class="ep-nav-link" data-ep-target="ep-interests">
+                        <span class="ep-nav-num">5</span>
+                        <span class="ep-nav-label">Interests &amp; Preferences</span>
+                    </a>
+                    <a href="#ep-projects" class="ep-nav-link" data-ep-target="ep-projects">
+                        <span class="ep-nav-num">6</span>
+                        <span class="ep-nav-label">Projects &amp; Experience</span>
+                    </a>
+                    <a href="#ep-certifications" class="ep-nav-link" data-ep-target="ep-certifications">
+                        <span class="ep-nav-num">7</span>
+                        <span class="ep-nav-label">Certifications</span>
+                    </a>
+                    <a href="#ep-aspirations" class="ep-nav-link" data-ep-target="ep-aspirations">
+                        <span class="ep-nav-num">8</span>
+                        <span class="ep-nav-label">Career Aspirations</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <div class="ep-main">
+
         <form
             method="POST"
             action="{{ route('student.profile.update') }}"
@@ -1067,7 +1634,7 @@
             @method('PUT')
 
             <!-- SECTION 1: Personal Information -->
-            <div class="section">
+            <div class="section" id="ep-personal">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="8" r="4"/>
@@ -1352,8 +1919,8 @@
                 </div>
             </div>
 
-            <!-- SECTION 2: Academic Information -->
-            <div class="section">
+            <!-- SECTION 2: Current Studies -->
+            <div class="section" id="ep-studies">
                 <div class="title">
                     <svg
                         viewBox="0 0 24 24"
@@ -1366,12 +1933,18 @@
                         <path d="M6 12v5c3 3 9 3 12 0v-5"/>
                     </svg>
 
-                    Academic Information
+                    Current Studies
                 </div>
+
+                <p class="desc">
+                    Your current programme at Politeknik Brunei and your latest CGPA.
+                    We use these to match careers to you, work out your readiness,
+                    and show you to your lecturers.
+                </p>
 
                 <div class="cpbn-fgrid">
                     <div class="cpbn-field">
-                        <label>Programme</label>
+                        <label>Current programme</label>
 
                         <x-programme-select
                             :selected="$user->programme"
@@ -1384,7 +1957,7 @@
                     </div>
 
                     <div class="cpbn-field">
-                        <label>CGPA</label>
+                        <label>Latest CGPA (out of 4.00)</label>
 
                         <input
                             type="number"
@@ -1392,6 +1965,7 @@
                             step="0.01"
                             min="0"
                             max="4"
+                            placeholder="e.g. 3.25"
                             value="{{ old('cgpa', $user->cgpa) }}"
                         >
 
@@ -1402,8 +1976,208 @@
                 </div>
             </div>
 
+            <!-- SECTION 2b: Qualifications -->
+            <div class="section" id="ep-qualifications">
+                <div class="title">
+                    <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                    >
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                    </svg>
+
+                    Qualifications
+                </div>
+
+                <p class="desc">
+                    Every qualification you hold or are working towards. Job roles state
+                    what they need as a BDQF level, so saying which level an award sits on
+                    is what lets the explorer tell you how you compare.
+                </p>
+
+                @php
+                    $qualificationRows = old('qualifications');
+
+                    if ($qualificationRows === null) {
+                        $qualificationRows = $user->academicRecords
+                            ->map(fn ($record) => [
+                                'id' => $record->id,
+                                'institution_name' => $record->institution_name,
+                                'programme_name' => $record->programme_name,
+                                'level' => $record->level,
+                                'bdqf_level' => $record->bdqf_level,
+                                'field_of_study' => $record->field_of_study,
+                                'start_date' => $record->start_date?->format('Y-m-d'),
+                                'end_date' => $record->end_date?->format('Y-m-d'),
+                                'is_current' => $record->is_current,
+                            ])
+                            ->values()
+                            ->all();
+                    }
+
+                    $nextQualificationIndex = empty($qualificationRows)
+                        ? 0
+                        : max(array_map('intval', array_keys($qualificationRows))) + 1;
+
+                    $bdqfOptions = ($bdqfLevels ?? collect())
+                        ->map(fn ($level) => [
+                            'level' => $level->level,
+                            'label' => 'Level '.$level->level
+                                .' — '.implode(', ', array_slice($level->qualifications(), 0, 3)),
+                        ])
+                        ->all();
+                @endphp
+
+                <div id="removed-qualification-fields">
+                    @foreach(old('removed_qualification_ids', []) as $removedQualificationId)
+                        <input
+                            type="hidden"
+                            name="removed_qualification_ids[]"
+                            value="{{ $removedQualificationId }}"
+                        >
+                    @endforeach
+                </div>
+
+                <div
+                    id="qualification-list"
+                    data-next-index="{{ $nextQualificationIndex }}"
+                    data-bdqf-options="{{ json_encode($bdqfOptions) }}"
+                >
+                    @foreach($qualificationRows as $index => $qualification)
+                        <div class="cpbn-certification-card">
+                            @if(! empty($qualification['id']))
+                                <input
+                                    type="hidden"
+                                    name="qualifications[{{ $index }}][id]"
+                                    value="{{ $qualification['id'] }}"
+                                >
+                            @endif
+
+                            <div class="cpbn-fgrid">
+                                <div class="cpbn-field">
+                                    <label>Institution <span class="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][institution_name]"
+                                        value="{{ $qualification['institution_name'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="Politeknik Brunei"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Programme <span class="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][programme_name]"
+                                        value="{{ $qualification['programme_name'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="Diploma in Information Technology"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Award <span class="req">*</span></label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][level]"
+                                        value="{{ $qualification['level'] ?? '' }}"
+                                        maxlength="100"
+                                        placeholder="Diploma"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>BDQF Level</label>
+                                    <select name="qualifications[{{ $index }}][bdqf_level]">
+                                        <option value="">Not sure</option>
+                                        @foreach($bdqfOptions as $option)
+                                            <option
+                                                value="{{ $option['level'] }}"
+                                                @selected((string) ($qualification['bdqf_level'] ?? '') === (string) $option['level'])
+                                            >{{ $option['label'] }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="cpbn-file-note">
+                                        Leave as "Not sure" rather than guessing — the explorer
+                                        will say it cannot tell instead of comparing you wrongly.
+                                    </small>
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Field of Study</label>
+                                    <input
+                                        type="text"
+                                        name="qualifications[{{ $index }}][field_of_study]"
+                                        value="{{ $qualification['field_of_study'] ?? '' }}"
+                                        maxlength="150"
+                                        placeholder="Information Technology"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Started <span class="req">*</span></label>
+                                    <input
+                                        type="date"
+                                        name="qualifications[{{ $index }}][start_date]"
+                                        value="{{ $qualification['start_date'] ?? '' }}"
+                                        max="{{ now()->format('Y-m-d') }}"
+                                        required
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label>Finished</label>
+                                    <input
+                                        type="date"
+                                        name="qualifications[{{ $index }}][end_date]"
+                                        value="{{ $qualification['end_date'] ?? '' }}"
+                                    >
+                                </div>
+
+                                <div class="cpbn-field">
+                                    <label class="cpbn-check">
+                                        <input
+                                            type="hidden"
+                                            name="qualifications[{{ $index }}][is_current]"
+                                            value="0"
+                                        >
+                                        <input
+                                            type="checkbox"
+                                            name="qualifications[{{ $index }}][is_current]"
+                                            value="1"
+                                            @checked($qualification['is_current'] ?? false)
+                                        >
+                                        <span>Still studying this</span>
+                                        <span class="cpbn-check-state"></span>
+                                    </label>
+                                    <small class="cpbn-file-note">
+                                        A programme you are still on counts towards what you
+                                        will hold, not what you hold now.
+                                    </small>
+                                </div>
+                            </div>
+
+                            <button type="button" class="cpbn-remove-qualification">
+                                Remove
+                            </button>
+                        </div>
+                    @endforeach
+                </div>
+
+                <button type="button" id="add-qualification" class="cpbn-add-btn">
+                    + Add qualification
+                </button>
+            </div>
+
             <!-- SECTION 3: Skills -->
-            <div class="section">
+            <div class="section" id="ep-skills">
                 <div class="title">
                     <svg
                         viewBox="0 0 24 24"
@@ -1437,8 +2211,20 @@
                     $proficiencyLevels =
                         $proficiencyLevels ?? collect();
 
+                    /*
+                     * Options for skills a student types in
+                     * themselves, which carry no BIICF type and
+                     * so no scale of their own. The framework's
+                     * soft skills are a closed list of eleven
+                     * named ones, so anything written in here is
+                     * treated as technical.
+                     */
                     $proficiencyLevelOptions =
                         $proficiencyLevels
+                            ->where(
+                                'scale',
+                                \App\Models\BiicfProficiencyLevel::SCALE_TECHNICAL
+                            )
                             ->map(
                                 fn ($level) => [
                                     'id' => $level->id,
@@ -1730,7 +2516,7 @@
                                     </option>
 
                                     @foreach(
-                                        $proficiencyLevels
+                                        $proficiencyLevels->where('scale', $competency->scale())
                                             as $level
                                     )
                                         <option
@@ -1874,20 +2660,30 @@
                                             )
                                             : null;
 
-                                    $levelName =
-                                        $storedLevel
-                                            ? (
-                                                $legacyLevelNames[
-                                                    $storedLevel
-                                                ] ?? $storedLevel
-                                            )
-                                            : null;
-
+                                    /*
+                                     * Soft skills are saved under the
+                                     * soft scale's own names (Basic,
+                                     * Intermediate, Advanced, Expert).
+                                     * The legacy map below only exists
+                                     * for the old technical scale, so
+                                     * it must not touch these names or
+                                     * they stop matching their options.
+                                     */
                                     $selectedLevelId =
-                                        $levelName
-                                            ? $levelsByName
-                                                ->get(
-                                                    $levelName
+                                        $storedLevel
+                                            ? $proficiencyLevels
+                                                ->where(
+                                                    'scale',
+                                                    $competency->scale()
+                                                )
+                                                ->first(
+                                                    fn ($level) =>
+                                                        mb_strtolower(
+                                                            trim(
+                                                                (string)
+                                                                $level->name
+                                                            )
+                                                        ) === $storedLevel
                                                 )?->id
                                             : null;
                                 }
@@ -1922,7 +2718,7 @@
                                     </option>
 
                                     @foreach(
-                                        $proficiencyLevels
+                                        $proficiencyLevels->where('scale', $competency->scale())
                                             as $level
                                     )
                                         <option
@@ -2052,7 +2848,7 @@
                                     </option>
 
                                     @foreach(
-                                        $proficiencyLevels
+                                        $proficiencyLevels->where('scale', \App\Models\BiicfProficiencyLevel::SCALE_TECHNICAL)
                                             as $level
                                     )
                                         <option
@@ -2180,7 +2976,7 @@
             </div>
 
             <!-- SECTION 4: Interests -->
-            <div class="section">
+            <div class="section" id="ep-interests">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
@@ -2376,7 +3172,7 @@
             </div>
 
             <!-- SECTION 5: Projects -->
-            <div class="section">
+            <div class="section" id="ep-projects">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="3" y="3" width="7" height="7" rx="1"/>
@@ -2560,18 +3356,23 @@
                     @endforeach
                 </div>
 
-                <button
-                    type="button"
-                    id="add-project"
-                    class="cpbn-add-project"
-                >
-                    <i class="fas fa-plus"></i>
-                    Add Project
-                </button>
+                <div class="cpbn-section-foot">
+                    <p class="cpbn-optional">Optional. Leave it empty if you have none &mdash; your profile still counts as complete.</p>
+
+                    <button
+                        type="button"
+                        id="add-project"
+                        class="cpbn-add-project"
+                    >
+                        <i class="fas fa-plus"></i>
+                        Add Project
+                    </button>
+                </div>
+
             </div>
 
             <!-- SECTION 6: Certifications -->
-            <div class="section">
+            <div class="section" id="ep-certifications">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="9" r="6"/>
@@ -2776,18 +3577,23 @@
                     @endforeach
                 </div>
 
-                <button
-                    type="button"
-                    id="add-certification"
-                    class="cpbn-add-certification"
-                >
-                    <i class="fas fa-plus"></i>
-                    Add Certification
-                </button>
+                <div class="cpbn-section-foot">
+                    <p class="cpbn-optional">Optional. Leave it empty if you have none &mdash; your profile still counts as complete.</p>
+
+                    <button
+                        type="button"
+                        id="add-certification"
+                        class="cpbn-add-certification"
+                    >
+                        <i class="fas fa-plus"></i>
+                        Add Certification
+                    </button>
+                </div>
+
             </div>
 
             <!-- SECTION 7: Aspirations -->
-            <div class="section">
+            <div class="section" id="ep-aspirations">
                 <div class="title">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/>
@@ -2839,6 +3645,10 @@
             </div>
 
             <div class="submit-row">
+                <p class="ep-save-note">
+                    Your progress can be saved now and completed later.
+                </p>
+
                 <button
                     type="submit"
                     class="cpbn-btn cpbn-btn-primary"
@@ -2852,8 +3662,111 @@
             </div>
         </form>
 
+            </div>
+        </div>
+
     </div>
 </div>
+
+<script>
+    /*
+     * Side navigator for the profile sections. Highlights the
+     * section being read and scrolls to one when it is clicked.
+     * It only reads the page and never touches the form's data.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        const links = Array.from(
+            document.querySelectorAll('.ep-nav-link[data-ep-target]')
+        );
+
+        if (links.length === 0) {
+            return;
+        }
+
+        const reduceMotion = window.matchMedia(
+            '(prefers-reduced-motion: reduce)'
+        ).matches;
+
+        const setActive = function (id) {
+            links.forEach(function (link) {
+                const active = link.dataset.epTarget === id;
+
+                link.classList.toggle('is-active', active);
+
+                if (active) {
+                    link.setAttribute('aria-current', 'true');
+
+                    /*
+                     * On narrow screens the tabs scroll sideways. Move
+                     * only that strip. scrollIntoView() would drag the
+                     * whole page back up to the tabs while the student
+                     * is scrolling down.
+                     */
+                    const strip = link.parentElement;
+
+                    if (
+                        window.innerWidth <= 1000
+                        && strip
+                        && strip.scrollWidth > strip.clientWidth
+                    ) {
+                        strip.scrollTo({
+                            left: link.offsetLeft
+                                - (strip.clientWidth - link.offsetWidth) / 2,
+                            behavior: reduceMotion ? 'auto' : 'smooth',
+                        });
+                    }
+                } else {
+                    link.removeAttribute('aria-current');
+                }
+            });
+        };
+
+        links.forEach(function (link) {
+            link.addEventListener('click', function (event) {
+                const target = document.getElementById(
+                    link.dataset.epTarget
+                );
+
+                if (! target) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                target.scrollIntoView({
+                    behavior: reduceMotion ? 'auto' : 'smooth',
+                    block: 'start',
+                });
+
+                setActive(link.dataset.epTarget);
+            });
+        });
+
+        if (! ('IntersectionObserver' in window)) {
+            setActive(links[0].dataset.epTarget);
+
+            return;
+        }
+
+        const observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    setActive(entry.target.id);
+                }
+            });
+        }, { rootMargin: '-25% 0px -65% 0px' });
+
+        links.forEach(function (link) {
+            const section = document.getElementById(link.dataset.epTarget);
+
+            if (section) {
+                observer.observe(section);
+            }
+        });
+
+        setActive(links[0].dataset.epTarget);
+    });
+</script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

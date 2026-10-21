@@ -29,24 +29,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Provider</label>
-                    <input type="text" name="provider" class="form-control @error('provider') is-invalid @enderror" 
-                           value="{{ old('provider') }}" placeholder="Cisco">
-                    @error('provider')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label>Certification Body</label>
-                    <input type="text" name="certification_body" class="form-control @error('certification_body') is-invalid @enderror" 
-                           value="{{ old('certification_body') }}" placeholder="Cisco Systems">
-                    @error('certification_body')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
                     <label>URL</label>
                     <input type="url" name="url" class="form-control @error('url') is-invalid @enderror" 
                            value="{{ old('url') }}" placeholder="https://www.cisco.com/certification">
@@ -58,7 +40,7 @@
                 <div class="form-group">
                     <label>Description</label>
                     <textarea name="description" class="form-control @error('description') is-invalid @enderror" 
-                              rows="3" placeholder="Describe this training...">{{ old('description') }}</textarea>
+                              rows="8" placeholder="Describe this training...">{{ old('description') }}</textarea>
                     @error('description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

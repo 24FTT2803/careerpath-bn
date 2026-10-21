@@ -678,6 +678,50 @@
                 </div>
                 @endif
 
+                {{--
+                    Only shown to an account that has not
+                    confirmed its address. Accounts from before
+                    verification existed are not made to, but
+                    nothing should stop one choosing to.
+                --}}
+                @unless(auth()->user()->hasVerifiedEmail())
+                    <div class="panel">
+                        <div class="panel-title">
+                            <i class="fas fa-envelope-open-text"></i>
+                            Email Address
+                        </div>
+
+                        @if(session('status') === 'verification-link-sent')
+                            <div class="alert alert-success">
+                                <i class="fas fa-circle-check"></i>
+                                A confirmation link is on its way
+                                to {{ auth()->user()->email }}.
+                            </div>
+                        @endif
+
+                        <p class="warning-text" style="color:var(--text-muted);">
+                            <i class="fas fa-circle-info"></i>
+                            Your address
+                            <strong>{{ auth()->user()->email }}</strong>
+                            has not been confirmed. Confirming it
+                            lets us reach you about your account
+                            and your career recommendations.
+                        </p>
+
+                        <form
+                            method="POST"
+                            action="{{ route('verification.send') }}"
+                        >
+                            @csrf
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane"></i>
+                                Send confirmation link
+                            </button>
+                        </form>
+                    </div>
+                @endunless
+
                 <!-- Change Password -->
                 <div class="panel">
                     <div class="panel-title"><i class="fas fa-lock"></i> Change Password</div>
@@ -727,9 +771,41 @@
                         This includes your profile, career recommendations, milestones, and all associated data.
                         <strong>This action cannot be undone.</strong>
                     </p>
+                    @if($errors->userDeletion->any())
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <ul style="margin:0;padding-left:16px;">
+                                @foreach($errors->userDeletion->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
                     <form method="POST" action="{{ route('student.profile.destroy') }}" data-confirm-delete data-item-name="your account">
                         @csrf
                         @method('DELETE')
+
+                        {{--
+                            Asked for again because the account and
+                            everything in it goes at this point,
+                            and a signed-in session is not proof of
+                            who is at the keyboard.
+                        --}}
+                        <div class="field" style="margin-bottom:16px;">
+                            <label for="delete_password">
+                                Confirm your password
+                            </label>
+
+                            <input
+                                id="delete_password"
+                                type="password"
+                                name="password"
+                                required
+                                autocomplete="current-password"
+                            >
+                        </div>
+
                         <button type="submit" class="btn btn-danger">
                             <i class="fas fa-trash-alt"></i> Delete Account
                         </button>

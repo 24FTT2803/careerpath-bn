@@ -32,17 +32,8 @@
                 <div class="form-group">
                     <label>Description</label>
                     <textarea name="description" class="form-control @error('description') is-invalid @enderror" 
-                              rows="3">{{ old('description', $subSector->description) }}</textarea>
+                              rows="8">{{ old('description', $subSector->description) }}</textarea>
                     @error('description')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label>Lead Organisation</label>
-                    <input type="text" name="lead_organisation" class="form-control @error('lead_organisation') is-invalid @enderror" 
-                           value="{{ old('lead_organisation', $subSector->lead_organisation) }}">
-                    @error('lead_organisation')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
                 </div>

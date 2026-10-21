@@ -3,15 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\BiicfSubSector;
-use App\Models\BiicfJobRole;
 use App\Models\BiicfCompetency;
+use App\Models\BiicfCriticalWorkFunction;
+use App\Models\BiicfJobLevel;
+use App\Models\BiicfJobRole;
+use App\Models\BiicfJobRoleTier;
 use App\Models\BiicfProficiencyLevel;
+use App\Models\BiicfSubSector;
 use App\Models\BiicfTraining;
-use App\Models\BiicfEntryRequirement;
+use App\Services\Biicf\CompetencyDescriptorUpdater;
+use App\Services\Biicf\JobRoleContentUpdater;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class BiicfController extends Controller
 {
@@ -22,7 +29,8 @@ class BiicfController extends Controller
     {
         $subSectors = BiicfSubSector::withCount('jobRoles')
             ->orderBy('sort_order')
-            ->paginate(15);
+            ->get();
+
         return view('admin.biicf.sub-sectors.index', compact('subSectors'));
     }
 
@@ -36,7 +44,6 @@ class BiicfController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:biicf_sub_sectors',
             'description' => 'nullable|string',
-            'lead_organisation' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -44,7 +51,6 @@ class BiicfController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
-            'lead_organisation' => $request->lead_organisation,
             'sort_order' => $request->sort_order ?? 0,
         ]);
 
@@ -62,7 +68,6 @@ class BiicfController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('biicf_sub_sectors')->ignore($subSector->id)],
             'description' => 'nullable|string',
-            'lead_organisation' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
         ]);
 
@@ -70,7 +75,6 @@ class BiicfController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'description' => $request->description,
-            'lead_organisation' => $request->lead_organisation,
             'sort_order' => $request->sort_order ?? 0,
         ]);
 
@@ -85,6 +89,7 @@ class BiicfController extends Controller
                 ->with('error', 'Cannot delete sub-sector with associated job roles.');
         }
         $subSector->delete();
+
         return redirect()->route('admin.biicf.sub-sectors')
             ->with('success', 'Sub-sector deleted successfully.');
     }
@@ -92,26 +97,29 @@ class BiicfController extends Controller
     // ============================================
     // JOB ROLES
     // ============================================
-    public function jobRoles(Request $request)
+    /**
+     * Every job role, for a listing that sorts and pages itself.
+     *
+     * Sent whole rather than a page at a time. There are
+     * thirty-eight of them, and server paging meant each page of
+     * results was a round trip that reloaded the screen and lost
+     * whatever sorting and filtering had been set.
+     *
+     * The job levels come with them, because a role is held at
+     * one or more of the framework's levels and that is what an
+     * administrator looks for — not the career path number the
+     * Level column used to show.
+     */
+    public function jobRoles()
     {
-        $query = BiicfJobRole::with('subSector');
-        
-        if ($request->has('sub_sector') && $request->sub_sector) {
-            $query->where('sub_sector_id', $request->sub_sector);
-        }
-        
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where(function($q) use ($search) {
-                $q->where('title', 'LIKE', "%{$search}%")
-                  ->orWhere('functional_group', 'LIKE', "%{$search}%");
-            });
-        }
-        
-        $jobRoles = $query->orderBy('title')->paginate(15);
+        $jobRoles = BiicfJobRole::with(['subSector:id,name', 'tiers.jobLevel:id,name,sort_order'])
+            ->orderBy('title')
+            ->get();
+
         $subSectors = BiicfSubSector::orderBy('name')->get();
-        
-        return view('admin.biicf.job-roles.index', compact('jobRoles', 'subSectors'));
+        $jobLevels = BiicfJobLevel::orderBy('sort_order')->get();
+
+        return view('admin.biicf.job-roles.index', compact('jobRoles', 'subSectors', 'jobLevels'));
     }
 
     public function jobRoleCreate()
@@ -120,8 +128,90 @@ class BiicfController extends Controller
         $competencies = BiicfCompetency::orderBy('name')->get();
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
         $trainings = BiicfTraining::orderBy('name')->get();
-        
+
         return view('admin.biicf.job-roles.create', compact('subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
+    }
+
+    /**
+     * Check each selected competency against the scale it is
+     * actually rated on.
+     *
+     * The framework rates technical competencies over five
+     * levels and soft skills over four, so a level borrowed from
+     * the other scale is not a weaker answer but a meaningless
+     * one. The form only offers the matching scale; this is what
+     * holds when a request arrives without going through it.
+     *
+     * @param  array<int|string, mixed>  $selections
+     */
+    private function validateCompetencyScales(array $selections): void
+    {
+        $chosen = collect($selections)
+            ->filter(
+                fn ($selection) => is_array($selection)
+                    && isset($selection['id'])
+            );
+
+        if ($chosen->isEmpty()) {
+            return;
+        }
+
+        $competencies = BiicfCompetency::query()
+            ->whereIn('id', $chosen->pluck('id'))
+            ->get()
+            ->keyBy('id');
+
+        $levels = BiicfProficiencyLevel::all()->keyBy('id');
+
+        foreach ($chosen as $selection) {
+            $competency = $competencies->get((int) $selection['id']);
+
+            if (! $competency) {
+                continue;
+            }
+
+            /*
+             * A level per tier, since the book gives a role one
+             * column per tier. The create form has no tiers to
+             * name yet and sends a single level instead.
+             *
+             * A tier left empty is "not required there", which is
+             * what an empty cell in the book's table says — so it
+             * is skipped rather than refused. What is refused is a
+             * level from the wrong ladder: Advanced is the third
+             * of a soft skill's four rungs and means nothing on a
+             * technical competency's five.
+             */
+            $wanted = array_key_exists('levels', $selection)
+                ? (array) $selection['levels']
+                : [$selection['proficiency_level_id'] ?? null];
+
+            $given = 0;
+
+            foreach ($wanted as $levelId) {
+                if (blank($levelId)) {
+                    continue;
+                }
+
+                $level = $levels->get((int) $levelId);
+
+                if (! $level || $level->scale !== $competency->scale()) {
+                    throw ValidationException::withMessages([
+                        'competencies' => $competency->name
+                            .' needs a proficiency level from its own scale.',
+                    ]);
+                }
+
+                $given++;
+            }
+
+            if ($given === 0) {
+                throw ValidationException::withMessages([
+                    'competencies' => $competency->name
+                        .' is ticked but asked for at no level. Choose one, or untick it.',
+                ]);
+            }
+        }
     }
 
     public function jobRoleStore(Request $request)
@@ -132,16 +222,23 @@ class BiicfController extends Controller
             'functional_group' => 'nullable|string|max:255',
             'job_description' => 'nullable|string',
             'critical_work_function' => 'nullable|string',
+            'work_functions' => 'nullable|json',
+            'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
-            'box_colour' => 'nullable|string|max:20',
             'competencies' => 'nullable|array',
             'competencies.*.id' => 'exists:biicf_competencies,id',
-            'competencies.*.proficiency_level_id' => 'exists:biicf_proficiency_levels,id',
+            'competencies.*.proficiency_level_id' => 'nullable|exists:biicf_proficiency_levels,id',
+            'competencies.*.levels' => 'nullable|array',
+            'competencies.*.levels.*' => 'nullable|exists:biicf_proficiency_levels,id',
             'competencies.*.is_core' => 'boolean',
             'trainings' => 'nullable|array',
             'trainings.*' => 'exists:biicf_trainings,id',
         ]);
+
+        $this->validateCompetencyScales(
+            $request->input('competencies', [])
+        );
 
         $jobRole = BiicfJobRole::create([
             'sub_sector_id' => $request->sub_sector_id,
@@ -152,24 +249,23 @@ class BiicfController extends Controller
             'critical_work_function' => $request->critical_work_function,
             'alternative_titles' => $request->alternative_titles ?? [],
             'career_path_level' => $request->career_path_level ?? 0,
-            'box_colour' => $request->box_colour ?? 'primary',
         ]);
 
-        if ($request->has('competencies')) {
-    foreach ($request->competencies as $comp) {
-        // The proficiency <select> always submits, even when the
-        // competency checkbox is unticked, so an entry can arrive
-        // without its 'id'. Skip those.
-        if (! is_array($comp) || ! isset($comp['id'])) {
-            continue;
-        }
+        $this->writeStructuredContent($jobRole, $request);
 
-        $jobRole->competencies()->attach($comp['id'], [
-            'proficiency_level_id' => $comp['proficiency_level_id'],
-            'is_core' => $comp['is_core'] ?? true,
+        /*
+         * Entry requirements and required proficiencies hang off
+         * a tier, so a role without one cannot carry either.
+         * Roles from the reference book bring the book's own
+         * tiers; one added here gets a single tier covering it.
+         */
+        BiicfJobRoleTier::create([
+            'job_role_id' => $jobRole->id,
+            'label' => 'All levels',
+            'sort_order' => 1,
         ]);
-    }
-}
+
+        $this->syncCompetencyTable($jobRole, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -179,10 +275,149 @@ class BiicfController extends Controller
             ->with('success', 'Job role created successfully.');
     }
 
+    /**
+     * Store the description and duties as rows.
+     *
+     * The textareas remain the way these are typed, but the rows
+     * are what every page now reads. The old columns are still
+     * written so the two cannot disagree; they go when the
+     * edition import replaces the seeder that still feeds them.
+     */
+    private function writeStructuredContent(BiicfJobRole $jobRole, Request $request): void
+    {
+        $updater = new JobRoleContentUpdater;
+
+        $updater->replaceDescription(
+            $jobRole,
+            $request->input('job_description')
+        );
+
+        /*
+         * The tree if the form drew one, the old textarea
+         * otherwise. The two cannot both be sent: the tree holds
+         * every duty the role has, and the textarea only the
+         * generic ones, so running both would write the role's
+         * duties twice over from two different readings.
+         */
+        if ($request->filled('work_functions')) {
+            $updater->replaceWorkFunctions(
+                $jobRole,
+                json_decode($request->input('work_functions'), true) ?: []
+            );
+        } elseif ($request->has('critical_work_function')) {
+            $updater->replaceGenericWorkFunctions(
+                $jobRole,
+                $request->input('critical_work_function')
+            );
+        }
+
+        if ($request->has('programming_languages')) {
+            $updater->replaceProgrammingLanguages(
+                $jobRole,
+                $request->input('programming_languages')
+            );
+        }
+    }
+
+    /**
+     * Write the role's competency table, a column per tier.
+     *
+     * The book prints one column for each of a role's tiers, and
+     * the same competency can be wanted at a different level in
+     * each — Application Development at 1, 2 and 2 across IT
+     * Technician's three levels. The form used to offer the entry
+     * tier alone, so the other columns could be read on the
+     * role's page and corrected nowhere.
+     *
+     * A tier left at "not required" gets no row, which is what an
+     * empty cell in the book's table says.
+     */
+    private function syncCompetencyTable(BiicfJobRole $jobRole, Request $request): void
+    {
+        /*
+         * Only when the form carries it. A request that says
+         * nothing about competencies is editing something else,
+         * and reading silence as an empty table would strip the
+         * role of every proficiency the book gives it.
+         */
+        if (! $request->has('competencies')) {
+            return;
+        }
+
+        $tiers = $jobRole->tiers()->get()->keyBy('id');
+
+        if ($tiers->isEmpty()) {
+            return;
+        }
+
+        foreach ($tiers as $tier) {
+            $tier->competencies()->detach();
+        }
+
+        foreach ($request->input('competencies', []) as $selection) {
+            if (! is_array($selection) || ! isset($selection['id'])) {
+                continue;
+            }
+
+            $core = (bool) ($selection['is_core'] ?? true);
+
+            /*
+             * A form with no tier columns — the create page,
+             * where the role's single tier does not exist yet —
+             * sends one level for the role instead.
+             */
+            $levels = $selection['levels']
+                ?? [$tiers->keys()->first() => $selection['proficiency_level_id'] ?? null];
+
+            foreach ($levels as $tierId => $levelId) {
+                if (blank($levelId) || ! $tiers->has((int) $tierId)) {
+                    continue;
+                }
+
+                $tiers->get((int) $tierId)->competencies()->attach($selection['id'], [
+                    'proficiency_level_id' => $levelId,
+                    'is_core' => $core,
+                ]);
+            }
+        }
+    }
+
     public function jobRoleShow(BiicfJobRole $jobRole)
     {
-        $jobRole->load(['subSector', 'competencies', 'trainings', 'entryRequirement']);
-        return view('admin.biicf.job-roles.show', compact('jobRole'));
+        $jobRole->load([
+            'subSector',
+            'trainings',
+            'descriptionPoints',
+            /*
+             * Three levels deep: the book groups duties under
+             * headings of its own and nests a further level
+             * under some of them.
+             */
+            'genericWorkFunctions.children.children',
+            'specificWorkFunctions.jobFamily',
+            'specificWorkFunctions.children.children',
+            'tiers.competencies',
+            'tiers.entryRequirements',
+        ]);
+
+        /*
+         * The pivot carries a proficiency level id and there is
+         * no pivot class to resolve it, which is why this badge
+         * used to read "Level ?". A lookup is cheaper than a
+         * custom pivot for one label.
+         *
+         * The label is the level's own name rather than its
+         * number: the two scales number their rungs separately,
+         * so a soft skill shown as "Level 3" would read as a
+         * technical rung. The book calls it Advanced.
+         */
+        $levelLabels = BiicfProficiencyLevel::query()
+            ->get()
+            ->mapWithKeys(fn (BiicfProficiencyLevel $level) => [
+                $level->id => $level->level_number.' · '.$level->name,
+            ]);
+
+        return view('admin.biicf.job-roles.show', compact('jobRole', 'levelLabels'));
     }
 
     public function jobRoleEdit(BiicfJobRole $jobRole)
@@ -191,10 +426,89 @@ class BiicfController extends Controller
         $competencies = BiicfCompetency::orderBy('name')->get();
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
         $trainings = BiicfTraining::orderBy('name')->get();
-        
-        $jobRole->load(['competencies', 'trainings']);
-        
-        return view('admin.biicf.job-roles.edit', compact('jobRole', 'subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
+
+        /*
+         * The form's two textareas are prefilled from the
+         * description and duty rows, not the old text columns, so
+         * editing a role whose content came from the reference
+         * book shows what is actually stored.
+         */
+        $jobRole->load([
+            'trainings',
+            'descriptionPoints',
+            'programmingLanguages',
+            /*
+             * Every duty, nested as it is stored, and both kinds
+             * of it. The form used to be given the generic ones
+             * alone, which is why deleting a duplicate there left
+             * its copies standing: they were nested, or they
+             * belonged to a job family, and either way the form
+             * could not see them.
+             */
+            'criticalWorkFunctions.children.children',
+            'tiers.competencies',
+        ]);
+
+        /*
+         * The role's own families, since a family-specific duty
+         * belongs to one of them. Offering every family in the
+         * framework would invite filing a duty under a family the
+         * role is not practised in.
+         */
+        $jobFamilies = $jobRole->jobFamilies;
+
+        $workFunctionTree = $this->workFunctionTree($jobRole);
+
+        return view('admin.biicf.job-roles.edit', compact(
+            'jobRole',
+            'subSectors',
+            'competencies',
+            'proficiencyLevels',
+            'trainings',
+            'jobFamilies',
+            'workFunctionTree'
+        ));
+    }
+
+    /**
+     * A role's duties as a tree, for the form to draw.
+     *
+     * Starting from the rows that sit at the top of a list and
+     * going down through their children, rather than handing over
+     * a flat collection: the nesting is the thing being edited.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function workFunctionTree(BiicfJobRole $jobRole): array
+    {
+        return $this->workFunctionBranch(
+            $jobRole->criticalWorkFunctions->whereNull('parent_id')
+        );
+    }
+
+    /**
+     * @param  Collection<int, BiicfCriticalWorkFunction>  $functions
+     * @return array<int, array<string, mixed>>
+     */
+    private function workFunctionBranch($functions): array
+    {
+        return $functions
+            ->map(fn ($function) => [
+                'text' => $function->text,
+                'kind' => $function->kind,
+                'job_family_id' => $function->job_family_id,
+                /*
+                 * Only as deep as was loaded. The framework goes
+                 * three levels and the form writes three, so a
+                 * fourth would be something this page cannot show
+                 * — better that it is not quietly half-read.
+                 */
+                'children' => $function->relationLoaded('children')
+                    ? $this->workFunctionBranch($function->children)
+                    : [],
+            ])
+            ->values()
+            ->all();
     }
 
     public function jobRoleUpdate(Request $request, BiicfJobRole $jobRole)
@@ -205,16 +519,23 @@ class BiicfController extends Controller
             'functional_group' => 'nullable|string|max:255',
             'job_description' => 'nullable|string',
             'critical_work_function' => 'nullable|string',
+            'work_functions' => 'nullable|json',
+            'programming_languages' => 'nullable|string',
             'alternative_titles' => 'nullable|array',
             'career_path_level' => 'nullable|integer|min:0',
-            'box_colour' => 'nullable|string|max:20',
             'competencies' => 'nullable|array',
             'competencies.*.id' => 'exists:biicf_competencies,id',
-            'competencies.*.proficiency_level_id' => 'exists:biicf_proficiency_levels,id',
+            'competencies.*.proficiency_level_id' => 'nullable|exists:biicf_proficiency_levels,id',
+            'competencies.*.levels' => 'nullable|array',
+            'competencies.*.levels.*' => 'nullable|exists:biicf_proficiency_levels,id',
             'competencies.*.is_core' => 'boolean',
             'trainings' => 'nullable|array',
             'trainings.*' => 'exists:biicf_trainings,id',
         ]);
+
+        $this->validateCompetencyScales(
+            $request->input('competencies', [])
+        );
 
         $jobRole->update([
             'sub_sector_id' => $request->sub_sector_id,
@@ -225,23 +546,24 @@ class BiicfController extends Controller
             'critical_work_function' => $request->critical_work_function,
             'alternative_titles' => $request->alternative_titles ?? [],
             'career_path_level' => $request->career_path_level ?? 0,
-            'box_colour' => $request->box_colour ?? 'primary',
         ]);
 
-        $jobRole->competencies()->detach();
+        $this->writeStructuredContent($jobRole, $request);
 
-if ($request->has('competencies')) {
-    foreach ($request->competencies as $comp) {
-        if (! is_array($comp) || ! isset($comp['id'])) {
-            continue;
+        /*
+         * A role has to have a tier: entry requirements and
+         * required proficiencies hang off one. A role from the
+         * book brings its own.
+         */
+        if ($jobRole->tiers()->doesntExist()) {
+            BiicfJobRoleTier::create([
+                'job_role_id' => $jobRole->id,
+                'label' => 'All levels',
+                'sort_order' => 1,
+            ]);
         }
 
-        $jobRole->competencies()->attach($comp['id'], [
-            'proficiency_level_id' => $comp['proficiency_level_id'],
-            'is_core' => $comp['is_core'] ?? true,
-        ]);
-    }
-}
+        $this->syncCompetencyTable($jobRole, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -258,7 +580,7 @@ if ($request->has('competencies')) {
         $jobRole->competencies()->detach();
         $jobRole->trainings()->detach();
         $jobRole->delete();
-        
+
         return redirect()->route('admin.biicf.job-roles')
             ->with('success', 'Job role deleted successfully.');
     }
@@ -266,21 +588,21 @@ if ($request->has('competencies')) {
     // ============================================
     // COMPETENCIES
     // ============================================
-    public function competencies(Request $request)
+    /**
+     * The whole glossary, for a listing that sorts and pages
+     * itself.
+     *
+     * A hundred and thirty-nine rows, which is small enough to
+     * send once and large enough that paging it on the server —
+     * reloading the screen and dropping the sort each time — was
+     * the worst of both.
+     */
+    public function competencies()
     {
-        $query = BiicfCompetency::query();
-        
-        if ($request->has('type') && $request->type) {
-            $query->where('type', $request->type);
-        }
-        
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%");
-        }
-        
-        $competencies = $query->orderBy('name')->paginate(15);
-        
+        $competencies = BiicfCompetency::withCount('levelDescriptors')
+            ->orderBy('name')
+            ->get();
+
         return view('admin.biicf.competencies.index', compact('competencies'));
     }
 
@@ -294,6 +616,7 @@ if ($request->has('competencies')) {
         $request->validate([
             'name' => 'required|string|max:255|unique:biicf_competencies',
             'type' => 'required|in:technical,soft_skill',
+            'short_definition' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
 
@@ -301,6 +624,7 @@ if ($request->has('competencies')) {
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'type' => $request->type,
+            'short_definition' => $request->short_definition,
             'description' => $request->description,
         ]);
 
@@ -308,9 +632,38 @@ if ($request->has('competencies')) {
             ->with('success', 'Competency created successfully.');
     }
 
+    /**
+     * One competency, in full.
+     *
+     * The listing could only ever show a name and a type, so
+     * until this page there was nowhere to read what the book
+     * says a competency means at each of its levels, or to see
+     * which roles ask for it.
+     */
+    public function competencyShow(BiicfCompetency $competency)
+    {
+        $competency->load([
+            'levelDescriptors.proficiencyLevel',
+            'levelDescriptors.jobRoles:id,title,slug',
+        ]);
+
+        return view('admin.biicf.competencies.show', [
+            'competency' => $competency,
+            'scale' => $this->scaleFor($competency),
+            'sets' => $this->descriptorSets($competency),
+            'requiredBy' => $this->rolesRequiring($competency),
+        ]);
+    }
+
     public function competencyEdit(BiicfCompetency $competency)
     {
-        return view('admin.biicf.competencies.edit', compact('competency'));
+        $competency->load('levelDescriptors');
+
+        return view('admin.biicf.competencies.edit', [
+            'competency' => $competency,
+            'scale' => $this->scaleFor($competency),
+            'sets' => $this->descriptorSets($competency),
+        ]);
     }
 
     public function competencyUpdate(Request $request, BiicfCompetency $competency)
@@ -318,43 +671,160 @@ if ($request->has('competencies')) {
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('biicf_competencies')->ignore($competency->id)],
             'type' => 'required|in:technical,soft_skill',
+            'short_definition' => 'nullable|string|max:255',
             'description' => 'nullable|string',
+            'descriptors' => 'nullable|array',
+            'descriptors.*.scope' => 'nullable|string|max:255',
+            'descriptors.*.levels' => 'nullable|array',
+            'descriptors.*.levels.*' => 'nullable|string',
         ]);
 
         $competency->update([
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'type' => $request->type,
+            'short_definition' => $request->short_definition,
             'description' => $request->description,
         ]);
 
-        return redirect()->route('admin.biicf.competencies')
+        /*
+         * Only when the form carries them. A request without the
+         * field is editing something else, and reading that as
+         * "every level is now empty" would delete the book's
+         * statements for the whole competency.
+         */
+        if ($request->has('descriptors')) {
+            (new CompetencyDescriptorUpdater)->write(
+                $competency,
+                $request->input('descriptors')
+            );
+        }
+
+        return redirect()->route('admin.biicf.competencies.show', $competency)
             ->with('success', 'Competency updated successfully.');
+    }
+
+    /**
+     * The rungs this competency is rated on.
+     *
+     * Five for a technical competency, four for a soft skill.
+     * Reading one scale for both is what once showed a soft
+     * skill as needing a fifth level that does not exist.
+     *
+     * @return Collection<int, BiicfProficiencyLevel>
+     */
+    private function scaleFor(BiicfCompetency $competency)
+    {
+        return BiicfProficiencyLevel::where('scale', $competency->scale())
+            ->orderBy('level_number')
+            ->get();
+    }
+
+    /**
+     * A competency's descriptors, grouped by the scope they
+     * apply to, with a row for every rung of the scale.
+     *
+     * The general set comes first, then any that name the roles
+     * they cover. A rung with no descriptor is kept in the list
+     * and marked: the book's N/A is an absence, and the form has
+     * to be able to show it as one.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function descriptorSets(BiicfCompetency $competency): array
+    {
+        $scale = $this->scaleFor($competency);
+
+        $sets = $competency->levelDescriptors
+            ->groupBy(fn ($descriptor) => $descriptor->scope_label ?? '')
+            ->sortKeys()
+            ->map(fn ($descriptors, $scope) => [
+                'scope' => $scope,
+                'job_roles' => $descriptors->first()?->jobRoles ?? collect(),
+                'levels' => $scale->map(fn ($level) => [
+                    'level' => $level,
+                    'descriptor' => $descriptors->firstWhere('proficiency_level_id', $level->id),
+                ])->all(),
+            ])
+            ->values()
+            ->all();
+
+        if ($sets === []) {
+            $sets = [[
+                'scope' => '',
+                'job_roles' => collect(),
+                'levels' => $scale->map(fn ($level) => [
+                    'level' => $level,
+                    'descriptor' => null,
+                ])->all(),
+            ]];
+        }
+
+        return $sets;
+    }
+
+    /**
+     * Which roles ask for this competency, and at what level.
+     *
+     * Through the tier, because that is where the proficiency
+     * lives: IT Technician wants Application Development at 1,
+     * 2 and 2 across its three levels.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function rolesRequiring(BiicfCompetency $competency): array
+    {
+        $levels = BiicfProficiencyLevel::all()->keyBy('id');
+
+        $tiers = BiicfJobRoleTier::with(['jobRole:id,title,sub_sector_id', 'jobRole.subSector:id,name'])
+            ->get()
+            ->keyBy('id');
+
+        /*
+         * Read off the pivot rather than through the relation: a
+         * competency the whole framework asks for appears on
+         * eight hundred rows, and loading each tier's full
+         * competency list to find one of them is a query per
+         * role.
+         */
+        return DB::table('biicf_job_role_competency')
+            ->where('competency_id', $competency->id)
+            ->whereNotNull('job_role_tier_id')
+            ->get(['job_role_tier_id', 'proficiency_level_id'])
+            ->map(fn ($row) => [
+                'role' => $tiers->get($row->job_role_tier_id)?->jobRole,
+                'tier' => $tiers->get($row->job_role_tier_id)?->label,
+                'level' => $levels->get($row->proficiency_level_id),
+            ])
+            ->filter(fn ($row) => $row['role'] !== null)
+            ->sortBy(fn ($row) => $row['role']->title.' '.$row['tier'])
+            ->values()
+            ->all();
     }
 
     public function competencyDestroy(BiicfCompetency $competency)
     {
         $competency->delete();
+
         return redirect()->route('admin.biicf.competencies')
             ->with('success', 'Competency deleted successfully.');
     }
 
-
     // ============================================
     // TRAININGS
     // ============================================
-    public function trainings(Request $request)
+    /**
+     * Every recommended course, with how many roles ask for it.
+     *
+     * Sent whole, like the other listings, so sorting and
+     * searching cost nothing and survive paging.
+     */
+    public function trainings()
     {
-        $query = BiicfTraining::query();
-        
-        if ($request->has('search') && $request->search) {
-            $search = $request->search;
-            $query->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('provider', 'LIKE', "%{$search}%");
-        }
-        
-        $trainings = $query->orderBy('name')->paginate(15);
-        
+        $trainings = BiicfTraining::withCount('jobRoles')
+            ->orderBy('name')
+            ->get();
+
         return view('admin.biicf.trainings.index', compact('trainings'));
     }
 
@@ -367,8 +837,6 @@ if ($request->has('competencies')) {
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'provider' => 'nullable|string|max:255',
-            'certification_body' => 'nullable|string|max:255',
             'url' => 'nullable|url|max:255',
             'description' => 'nullable|string',
         ]);
@@ -388,8 +856,6 @@ if ($request->has('competencies')) {
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'provider' => 'nullable|string|max:255',
-            'certification_body' => 'nullable|string|max:255',
             'url' => 'nullable|url|max:255',
             'description' => 'nullable|string',
         ]);
@@ -403,6 +869,7 @@ if ($request->has('competencies')) {
     public function trainingDestroy(BiicfTraining $training)
     {
         $training->delete();
+
         return redirect()->route('admin.biicf.trainings')
             ->with('success', 'Training deleted successfully.');
     }

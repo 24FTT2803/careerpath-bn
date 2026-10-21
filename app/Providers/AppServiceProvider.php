@@ -14,7 +14,12 @@ use App\Services\AI\MockCareerAdviserClient;
 use App\Services\AI\MockCareerAiClient;
 use App\Services\AI\OpenAiCompatibleClient;
 use App\Services\AI\OpenRouterClient;
+use App\Services\Biicf\EditionExtractor;
+use App\Services\Biicf\EditionExtractors;
+use App\Services\Biicf\JsonEditionExtractor;
+use App\Services\Biicf\PdfEditionExtractor;
 use App\Services\Business\AdvertisementService;
+use App\Services\Student\StudentAttention;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
@@ -23,6 +28,26 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        /*
+         * One per request, so the navigation and the page share
+         * the same "new" badge checks instead of repeating them.
+         */
+        $this->app->scoped(StudentAttention::class);
+
+        /*
+         * How an uploaded edition is read. Bound separately from
+         * everything that uses what comes out, so a reader tuned
+         * to one printing of the book can be replaced without
+         * touching the comparison or the review queue.
+         */
+        $this->app->bind(
+            EditionExtractor::class,
+            fn () => new EditionExtractors(
+                new PdfEditionExtractor,
+                new JsonEditionExtractor,
+            )
+        );
+
         /*
          * Which service runs the model. Bound separately from the
          * career clients so switching provider leaves the prompts

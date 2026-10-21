@@ -48,9 +48,11 @@
 
             <div class="cpbn-field">
                 <label>Phone Number</label>
-                <input type="text" name="phone" value="{{ old('phone') }}" placeholder="+673 123 4567">
-                <p class="cpbn-hint">Only digits, +, -, spaces, and parentheses allowed (7-20 characters)</p>
+                <input type="tel" id="phone" name="phone" value="{{ old('phone') }}" maxlength="30" autocomplete="tel">
+                <input type="hidden" id="phone_country" name="phone_country" value="{{ old('phone_country', 'BN') }}">
+                <p class="cpbn-hint">Choose the country, then enter the number. Brunei (+673) is selected by default.</p>
                 @error('phone')<p class="err">{{ $message }}</p>@enderror
+                @error('phone_country')<p class="err">{{ $message }}</p>@enderror
             </div>
 
             <div class="cpbn-field">
@@ -84,9 +86,28 @@
                     @error('student_id')<p class="err">{{ $message }}</p>@enderror
                 </div>
 
-                <div class="cpbn-field" style="margin-bottom:0">
+                <div class="cpbn-field">
                     <label>Programme <span class="req">*</span></label>
                     <x-programme-select :selected="null" />
+                </div>
+
+                {{--
+                    An account that cannot confirm its email.
+
+                    Verification is asked of students created
+                    since the requirement began, which is right
+                    for students who sign themselves up and
+                    leaves no way in for one typed in here: the
+                    address may not exist, and nothing ever sends
+                    it anything. Off by default, because a real
+                    student should confirm.
+                --}}
+                <div class="cpbn-field" style="margin-bottom:0">
+                    <label class="cpbn-waive">
+                        <input type="checkbox" name="waive_email_confirmation" value="1"
+                               @checked(old('waive_email_confirmation'))>
+                        <span class="cpbn-waive-title">Skip email confirmation</span>
+                    </label>
                 </div>
             </div>
 
@@ -160,6 +181,38 @@
     .cpbn-field input:focus,.cpbn-field select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(207,154,61,0.15)}
     .cpbn-hint{font-size:11.5px;color:var(--ink-dim);margin-top:4px}
     .err{color:var(--rose);font-size:12px;margin-top:4px}
+    /*
+     * The one tick box on a form of full-width fields.
+     *
+     * It cannot be a bare checkbox here: .cpbn-field input gives
+     * every input a 2px border and 10px of padding, which turns
+     * a 13px box into a padded bordered lump. So it is a panel
+     * you click, gold when it is on, and the box inside it is
+     * reset back to being a box.
+     */
+    .cpbn-waive{display:flex;align-items:center;gap:11px;padding:12px 15px;border:2px solid var(--line,#e7e2d4);border-radius:6px;background:#fff;cursor:pointer;transition:border-color .15s ease,background .15s ease}
+    .cpbn-waive:hover{border-color:var(--gold,#cf9a3d)}
+    .cpbn-waive:has(input:checked){border-color:var(--gold,#cf9a3d);background:rgba(207,154,61,.07)}
+    /*
+     * The box is drawn here rather than by the browser.
+     *
+     * .cpbn-field input above gives every input a background, and
+     * a checkbox with a background is one the browser stops
+     * drawing natively — it paints a plain square, fills it with
+     * the accent colour when ticked, and draws no tick at all.
+     * Which is what a black square with nothing in it was.
+     *
+     * So the native widget is turned off on purpose and the tick
+     * is ours: a white check on gold, as a background image
+     * rather than a pseudo-element, because a checkbox is a void
+     * element and ::after on one is not something every browser
+     * renders.
+     */
+    .cpbn-field .cpbn-waive input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:19px;height:19px;min-width:19px;flex:0 0 auto;margin:0;padding:0;border:2px solid var(--line,#e7e2d4);border-radius:5px;background:#fff;box-shadow:none;cursor:pointer;transition:background-color .15s ease,border-color .15s ease}
+    .cpbn-field .cpbn-waive input[type="checkbox"]:checked{background-color:var(--gold,#cf9a3d);border-color:var(--gold,#cf9a3d);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 8.6 L6.3 11.9 L13 5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:center;background-size:14px 14px}
+    .cpbn-field .cpbn-waive input[type="checkbox"]:focus-visible{outline:none;border-color:var(--gold,#cf9a3d);box-shadow:0 0 0 3px rgba(207,154,61,.25)}
+    .cpbn-waive-title{font-size:13.5px;font-weight:600;color:var(--ink,#0d1a2b)}
+    .cpbn-waive-by{margin-left:auto;font-size:11.5px;color:var(--ink-dim,#5b6675);white-space:nowrap}
     .cpbn-form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:18px}
 </style>
 

@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             OrganisationGroupSeeder::class,
             FeatureDefinitionSeeder::class,
             PlanSeeder::class,
+            BiicfReferenceDataSeeder::class,
         ]);
     }
 }

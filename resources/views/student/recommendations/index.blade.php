@@ -117,7 +117,74 @@
         margin-top: 2px;
     }
 
+    /*
+     * A set generated before the profile changed. One red dot,
+     * on the button that fixes it, and the reason on hover for
+     * whoever wants it — rather than a paragraph above, which
+     * said the same thing at ten times the size and nowhere near
+     * the thing to press.
+     */
+    .generate-button.is-stale {
+        overflow: visible;
+    }
+
+    .stale-dot {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #dc2626;
+        border: 2px solid white;
+        box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.55);
+        animation: stalePulse 2s ease-out infinite;
+    }
+
+    @keyframes stalePulse {
+        70% { box-shadow: 0 0 0 9px rgba(220, 38, 38, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    .stale-why {
+        position: absolute;
+        bottom: calc(100% + 10px);
+        right: 0;
+        width: 260px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: #1a1a2e;
+        color: #f4f6f9;
+        font-size: 11px;
+        font-weight: 500;
+        line-height: 1.6;
+        text-align: left;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(4px);
+        transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s;
+        pointer-events: none;
+        z-index: 5;
+    }
+
+    .stale-why::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        right: 18px;
+        border: 6px solid transparent;
+        border-top-color: #1a1a2e;
+    }
+
+    .generate-button.is-stale:hover .stale-why,
+    .generate-button.is-stale:focus-visible .stale-why {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+    }
+
     .generate-button {
+        position: relative;
         min-height: 44px;
         display: inline-flex;
         align-items: center;
@@ -183,6 +250,145 @@
         border: 1px solid var(--rec-border);
         border-radius: 12px;
         background: var(--rec-card);
+    }
+
+    /*
+     * Each card arrives in turn, and holds a gold ring for a
+     * moment before settling. Enough to be impossible to miss on
+     * a page that otherwise looks unchanged, and over soon enough
+     * not to be in the way of reading it.
+     */
+    .recommendations-grid.is-fresh .recommendation-card {
+        animation:
+            cardArrive 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) backwards,
+            cardNotice 2.4s ease-out 0.5s backwards;
+        animation-delay: calc(var(--card-order) * 0.12s), calc(var(--card-order) * 0.12s + 0.5s);
+    }
+
+    @keyframes cardArrive {
+        from {
+            opacity: 0;
+            transform: translateY(18px) scale(0.98);
+        }
+    }
+
+    @keyframes cardNotice {
+        0%, 55% {
+            border-color: var(--rec-accent);
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.25);
+        }
+        100% {
+            border-color: var(--rec-border);
+            box-shadow: 0 0 0 0 rgba(201, 168, 76, 0);
+        }
+    }
+
+    /* The matches, announced. */
+    .fresh-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1200;
+        display: grid;
+        place-items: center;
+        padding: 20px;
+        background: rgba(13, 31, 51, 0.55);
+        backdrop-filter: blur(3px);
+        animation: freshFade 0.25s ease;
+    }
+
+    .fresh-popup {
+        position: relative;
+        width: 100%;
+        max-width: 420px;
+        background: white;
+        border-radius: 16px;
+        border-top: 4px solid var(--rec-accent);
+        padding: 32px 30px 26px;
+        text-align: center;
+        box-shadow: 0 24px 60px rgba(13, 31, 51, 0.3);
+        animation: freshRise 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes freshFade {
+        from { opacity: 0; }
+    }
+
+    @keyframes freshRise {
+        from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    }
+
+    .fresh-close {
+        position: absolute;
+        top: 12px;
+        right: 14px;
+        background: none;
+        border: none;
+        color: var(--rec-muted);
+        font-size: 16px;
+        cursor: pointer;
+        padding: 6px;
+        line-height: 1;
+    }
+
+    .fresh-icon {
+        display: grid;
+        place-items: center;
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 16px;
+        border-radius: 50%;
+        background: rgba(201, 168, 76, 0.16);
+        color: #8a6420;
+        font-size: 22px;
+    }
+
+    .fresh-popup h2 {
+        font-family: 'Playfair Display', serif;
+        font-size: 21px;
+        color: var(--rec-primary);
+        margin: 0 0 8px;
+    }
+
+    .fresh-popup p {
+        font-size: 13px;
+        line-height: 1.7;
+        color: var(--rec-muted);
+        margin: 0 0 22px;
+    }
+
+    .fresh-action {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 999px;
+        background: var(--rec-accent);
+        color: var(--rec-primary);
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.2s ease, color 0.2s ease;
+    }
+
+    .fresh-action:hover {
+        background: var(--rec-primary);
+        color: white;
+    }
+
+    /*
+     * Movement is a preference, and a student who has turned it
+     * off still needs to see that something arrived — so the ring
+     * stays and the sliding goes.
+     */
+    @media (prefers-reduced-motion: reduce) {
+        .recommendations-grid.is-fresh .recommendation-card {
+            animation: cardNotice 2.4s ease-out backwards;
+            animation-delay: 0s;
+        }
     }
 
     .recommendation-rank {
@@ -468,21 +674,15 @@
                     </div>
                 @endif
 
-                @if(($currentGeneration?->status ?? null) === 'outdated')
-                    <div class="recommendation-status outdated">
-                        <i class="fas fa-triangle-exclamation"></i>
-
-                        Your profile has changed since these
-                        recommendations were generated on
-                        {{
-                            $currentGeneration
-                                ->generated_at
-                                ->timezone(config('app.business_timezone'))->format('j M Y')
-                        }}.
-                        Generate again to reflect your
-                        current profile.
-                    </div>
-                @elseif($currentGeneration)
+                {{--
+                    An out-of-date set used to say so in a
+                    paragraph under the heading, which is a lot of
+                    words for one fact and sat nowhere near the
+                    button that answers it. The button carries a
+                    dot now, and the sentence with it, for whoever
+                    wants to know what the dot means.
+                --}}
+                @if($currentGeneration && ($currentGeneration->status ?? null) !== 'outdated')
                     <div class="recommendation-status current">
                         <i class="fas fa-circle-check"></i>
 
@@ -517,11 +717,25 @@
                     --}}
                     <button
                         type="submit"
-                        class="generate-button"
+                        class="generate-button @if(($currentGeneration?->status ?? null) === 'outdated') is-stale @endif"
                         id="generateButton"
                         data-cooldown="{{ $cooldownSeconds ?? 0 }}"
                         @disabled(($cooldownSeconds ?? 0) > 0)
                     >
+                        @if(($currentGeneration?->status ?? null) === 'outdated')
+                            <span class="stale-dot" aria-hidden="true"></span>
+
+                            <span class="stale-why" role="note">
+                                Your profile has changed since these were generated on
+                                {{
+                                    $currentGeneration
+                                        ->generated_at
+                                        ->timezone(config('app.business_timezone'))->format('j M Y')
+                                }}.
+                                Generate again to reflect it.
+                            </span>
+                        @endif
+
                         <i
                             class="fas
                             fa-wand-magic-sparkles"
@@ -584,11 +798,18 @@
 
             @if($hasRecommendations)
 
-                <div class="recommendations-grid">
+                {{--
+                    Freshly generated, and saying so. The page
+                    reloads looking exactly as it did, with the
+                    new matches below the fold — which is how a
+                    student presses generate and comes away
+                    thinking nothing happened.
+                --}}
+                <div class="recommendations-grid" id="recommendationsGrid">
 
-                    @foreach($recommendations as $recommendation)
+                    @foreach($recommendations as $index => $recommendation)
 
-                        <article class="recommendation-card">
+                        <article class="recommendation-card" style="--card-order: {{ $index }}">
 
                             <div class="recommendation-rank">
                                 Rank
@@ -674,6 +895,80 @@
 
     </div>
 </div>
+
+{{--
+    Said in front of the student, the same way the dashboard asks
+    them to generate in the first place. The page reloads looking
+    exactly as it did otherwise, and a strip above the grid is
+    read by whoever was already looking at the grid.
+
+    It points at the matches rather than moving the page to them:
+    where they are is part of what the student is learning.
+--}}
+@if(session('just_generated'))
+    <div class="fresh-backdrop" id="freshPopup">
+        <div class="fresh-popup" role="dialog" aria-modal="true" aria-labelledby="freshTitle">
+            <button type="button" class="fresh-close" id="freshClose" aria-label="Close">
+                <i class="fas fa-xmark"></i>
+            </button>
+
+            <span class="fresh-icon">
+                <i class="fas fa-wand-magic-sparkles"></i>
+            </span>
+
+            <h2 id="freshTitle">Here are your recommendations</h2>
+
+            <p>
+                {{ $recommendationCount ?? count($recommendations ?? []) }} career
+                {{ ($recommendationCount ?? count($recommendations ?? [])) === 1 ? 'match' : 'matches' }},
+                ranked against what your profile records. They are waiting below.
+            </p>
+
+            <button type="button" class="fresh-action" id="freshSee">
+                Show me
+                <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const popup = document.getElementById('freshPopup');
+            const grid = document.getElementById('recommendationsGrid');
+
+            if (!popup) {
+                return;
+            }
+
+            const close = function () {
+                popup.remove();
+
+                /*
+                 * The ring and the stagger start when the popup
+                 * clears, so the student is looking at the
+                 * matches as they arrive rather than at a dialog
+                 * over the top of them.
+                 */
+                grid?.classList.add('is-fresh');
+            };
+
+            document.getElementById('freshClose')?.addEventListener('click', close);
+            document.getElementById('freshSee')?.addEventListener('click', close);
+
+            popup.addEventListener('click', function (event) {
+                if (event.target === popup) {
+                    close();
+                }
+            });
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape') {
+                    close();
+                }
+            });
+        });
+    </script>
+@endif
 
 @endsection
 

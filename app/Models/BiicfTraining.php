@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasEditionProvenance;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class BiicfTraining extends Model
 {
+    use HasEditionProvenance;
+
     protected $table = 'biicf_trainings';
 
-    protected $fillable = ['name', 'provider', 'certification_body', 'url', 'description'];
+    protected $fillable = ['name', 'url', 'description'];
 
     public function jobRoles(): BelongsToMany
     {

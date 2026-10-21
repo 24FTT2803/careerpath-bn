@@ -44,10 +44,6 @@
                     <span class="value"><span class="badge badge-primary">Level {{ $jobRole->career_path_level }}</span></span>
                 </div>
                 <div class="info-row">
-                    <span class="label">Box Colour</span>
-                    <span class="value"><span class="color-box" style="background:{{ $jobRole->box_colour }};color:white;padding:4px 12px;border-radius:4px;">{{ $jobRole->box_colour }}</span></span>
-                </div>
-                <div class="info-row">
                     <span class="label">Alternative Titles</span>
                     <span class="value">{{ $jobRole->alternative_titles ? implode(', ', $jobRole->alternative_titles) : '-' }}</span>
                 </div>
@@ -57,47 +53,156 @@
         <div class="card">
             <div class="card-header">Job Description</div>
             <div class="card-body">
-                <p>{{ $jobRole->job_description ?? 'No description available.' }}</p>
+                @forelse($jobRole->descriptionPoints as $point)
+                    <div class="function-item">
+                        <i class="fas fa-angle-right"></i>
+                        {{ $point->text }}
+                    </div>
+                @empty
+                    <p>No description available.</p>
+                @endforelse
             </div>
         </div>
 
         <div class="card full-width">
             <div class="card-header">Critical Work Functions</div>
             <div class="card-body">
-                @if($jobRole->critical_work_function)
-                    @foreach(explode("\n", $jobRole->critical_work_function) as $function)
-                        @if(trim($function))
+                {{--
+                    The book splits these in two: duties the role
+                    performs however it is practised, and duties
+                    belonging to one of its job families. Only the
+                    generic ones can be typed into the form; the
+                    rest arrive with the reference book.
+                --}}
+                @php
+                    $byFamily = $jobRole->specificWorkFunctions
+                        ->groupBy(fn ($function) => $function->jobFamily?->name ?? 'Unassigned');
+                @endphp
+
+                @if($jobRole->genericWorkFunctions->isNotEmpty())
+                    {{--
+                        The heading only earns its place when the
+                        role actually draws the distinction. One
+                        role in the book does; the rest print a
+                        single flat list, and labelling that
+                        "Generic" would imply a counterpart that
+                        does not exist.
+                    --}}
+                    @if($byFamily->isNotEmpty())
+                        <h4 class="function-group-heading">Generic Functions</h4>
+                    @endif
+
+                    @foreach($jobRole->genericWorkFunctions as $function)
+                        <div class="function-item">
+                            <i class="fas fa-check-circle"></i>
+                            {{ $function->text }}
+                        </div>
+
+                        {{--
+                            The book groups duties under headings
+                            of its own and nests a third level
+                            under some of them, which is as deep
+                            as it goes.
+                        --}}
+                        @foreach($function->children as $child)
+                            <div class="function-item is-nested">
+                                <i class="fas fa-circle"></i>
+                                {{ $child->text }}
+                            </div>
+
+                            @foreach($child->children as $leaf)
+                                <div class="function-item is-nested-twice">
+                                    <i class="fas fa-circle"></i>
+                                    {{ $leaf->text }}
+                                </div>
+                            @endforeach
+                        @endforeach
+                    @endforeach
+                @endif
+
+                @if($byFamily->isNotEmpty())
+                    <h4 class="function-group-heading">Specific Functions</h4>
+
+                    @foreach($byFamily as $familyName => $functions)
+                        <h5 class="function-family-heading">{{ $familyName }}</h5>
+
+                        @foreach($functions as $function)
                             <div class="function-item">
                                 <i class="fas fa-check-circle"></i>
-                                {{ trim($function) }}
+                                {{ $function->text }}
                             </div>
-                        @endif
+
+                            @foreach($function->children as $child)
+                                <div class="function-item is-nested">
+                                    <i class="fas fa-circle"></i>
+                                    {{ $child->text }}
+                                </div>
+
+                                @foreach($child->children as $leaf)
+                                    <div class="function-item is-nested-twice">
+                                        <i class="fas fa-circle"></i>
+                                        {{ $leaf->text }}
+                                    </div>
+                                @endforeach
+                            @endforeach
+                        @endforeach
                     @endforeach
-                @else
+                @endif
+
+                @if($jobRole->genericWorkFunctions->isEmpty() && $byFamily->isEmpty())
                     <p>No critical work functions defined.</p>
                 @endif
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" x-data="{ tier: {{ $jobRole->tiers->first()?->id ?? 0 }} }">
             <div class="card-header">Competencies</div>
             <div class="card-body">
-                @if($jobRole->competencies->count() > 0)
-                    @foreach($jobRole->competencies->groupBy('type') as $type => $competencies)
-                        <h4>{{ ucfirst(str_replace('_', ' ', $type)) }}</h4>
-                        @foreach($competencies as $comp)
-                            <div class="competency-item">
-                                <span class="comp-name">{{ $comp->name }}</span>
-                                <span class="badge {{ $comp->pivot->is_core ? 'badge-core' : 'badge-supporting' }}">
-                                    {{ $comp->pivot->is_core ? 'Core' : 'Supporting' }}
-                                </span>
-                                <span class="badge badge-level">
-                                    Level {{ $comp->pivot->proficiencyLevel->level_number ?? '?' }}
-                                </span>
-                            </div>
+                {{--
+                    A required proficiency belongs to a tier — one
+                    column of the book's table each — so a role
+                    with three tiers has three columns, and the
+                    same competency can be wanted at a different
+                    level in each. This showed the lowest tier and
+                    said so, which answered the question for one
+                    column out of three.
+                --}}
+                @if($jobRole->tiers->count() > 1)
+                    <div class="tier-buttons">
+                        @foreach($jobRole->tiers as $tier)
+                            <button type="button"
+                                    :class="{ 'is-on': tier === {{ $tier->id }} }"
+                                    @click="tier = {{ $tier->id }}">
+                                {{ $tier->label }}
+                            </button>
                         @endforeach
-                    @endforeach
-                @else
+                    </div>
+                @endif
+
+                @foreach($jobRole->tiers as $tier)
+                    <div x-show="tier === {{ $tier->id }}">
+                        @if($tier->competencies->count() > 0)
+                            @foreach($tier->competencies->groupBy('type') as $type => $competencies)
+                                <h4>{{ ucfirst(str_replace('_', ' ', $type)) }}</h4>
+                                @foreach($competencies as $comp)
+                                    <div class="competency-item">
+                                        <span class="comp-name">{{ $comp->name }}</span>
+                                        <span class="badge {{ $comp->pivot->is_core ? 'badge-core' : 'badge-supporting' }}">
+                                            {{ $comp->pivot->is_core ? 'Core' : 'Supporting' }}
+                                        </span>
+                                        <span class="badge badge-level">
+                                            {{ $levelLabels[$comp->pivot->proficiency_level_id] ?? '?' }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            @endforeach
+                        @else
+                            <p>No competencies recorded at {{ $tier->label }}.</p>
+                        @endif
+                    </div>
+                @endforeach
+
+                @if($jobRole->tiers->isEmpty())
                     <p>No competencies assigned.</p>
                 @endif
             </div>
@@ -110,12 +215,6 @@
                     @foreach($jobRole->trainings as $training)
                         <div class="training-item">
                             <span class="training-name">{{ $training->name }}</span>
-                            @if($training->provider)
-                                <span class="training-provider">{{ $training->provider }}</span>
-                            @endif
-                            @if($training->certification_body)
-                                <span class="badge badge-cert">Cert: {{ $training->certification_body }}</span>
-                            @endif
                         </div>
                     @endforeach
                 @else
@@ -124,29 +223,72 @@
             </div>
         </div>
 
-        @if($jobRole->entryRequirement)
+        @if($jobRole->programmingLanguages->isNotEmpty())
+            {{--
+                The framework gives these a section of their own
+                rather than listing them as courses, and a role
+                either has the section or does not — so an empty
+                card here would say something the book does not.
+            --}}
+            <div class="card">
+                <div class="card-header">Programming Languages</div>
+                <div class="card-body">
+                    <div class="language-list">
+                        @foreach($jobRole->programmingLanguages as $language)
+                            <span class="language">{{ $language->name }}</span>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="card full-width">
             <div class="card-header">Entry Requirements</div>
             <div class="card-body">
-                <div class="info-row">
-                    <span class="label">BDQF Level</span>
-                    <span class="value">{{ $jobRole->entryRequirement->bdqf_level ?? '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Field of Study</span>
-                    <span class="value">{{ $jobRole->entryRequirement->field_of_study ?? '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Years Experience</span>
-                    <span class="value">{{ $jobRole->entryRequirement->years_experience ?? '-' }}</span>
-                </div>
-                <div class="info-row">
-                    <span class="label">Alternative Pathway</span>
-                    <span class="value">{{ $jobRole->entryRequirement->alternative_pathway ?? '-' }}</span>
-                </div>
+                {{--
+                    A tier can be entered more than one way, and
+                    meeting any one of them is enough. Each keeps
+                    the book's own sentence beside the level that
+                    a qualification is matched against.
+                --}}
+                @php
+                    $tiersWithRequirements = $jobRole->tiers
+                        ->filter(fn ($tier) => $tier->entryRequirements->isNotEmpty());
+                @endphp
+
+                @forelse($tiersWithRequirements as $tier)
+                    @if($jobRole->tiers->count() > 1)
+                        <h4>{{ $tier->label }}</h4>
+                    @endif
+
+                    @foreach($tier->entryRequirements as $requirement)
+                        <div class="req-alternative">
+                            <div class="req-alternative-head">
+                                {{--
+                                    Only when the book names a level. Most
+                                    alternatives do; the few that do not say
+                                    so in their own sentence below, and a
+                                    badge reading "No level stated" on every
+                                    one of them was noise standing in for
+                                    nothing.
+                                --}}
+                                @if($requirement->bdqf_level)
+                                    <span class="badge badge-primary">
+                                        BDQF Level {{ $requirement->bdqf_level }}
+                                    </span>
+                                @endif
+                                @foreach($requirement->conditions() as $condition)
+                                    <span class="badge badge-supporting">{{ $condition }}</span>
+                                @endforeach
+                            </div>
+                            <p>{{ $requirement->raw_text }}</p>
+                        </div>
+                    @endforeach
+                @empty
+                    <p>The framework states no entry requirement for this role.</p>
+                @endforelse
             </div>
         </div>
-        @endif
     </div>
 </div>
 
@@ -162,7 +304,10 @@
     .btn-outline:hover { border-color: #c9a84c; color: #c9a84c; }
     .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
     .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-    .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; }
+    .card { background: white; border-radius: 12px; border: 1px solid #e5e7eb; overflow: hidden; padding: 0; }
+    .card-grid > .card { margin-bottom: 0; }
+    .card-body h4 { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #8a6420; margin: 18px 0 4px; padding-bottom: 6px; border-bottom: 1px solid #f3f4f6; }
+    .card-body h4:first-child { margin-top: 0; }
     .card.full-width { grid-column: 1 / -1; }
     .card-header { padding: 16px 20px; background: #faf8f2; border-bottom: 1px solid #e5e7eb; font-weight: 600; font-size: 16px; color: #1a3a5c; }
     .card-body { padding: 20px; }
@@ -175,17 +320,32 @@
     .badge-core { background: #e9f3ee; color: #2d8f5c; }
     .badge-supporting { background: #fbf1de; color: #8a6420; }
     .badge-level { background: #f1ecf7; color: #7a5ea8; }
-    .badge-cert { background: #fbeceb; color: #c65b4e; }
     .function-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; }
     .function-item:last-child { border-bottom: none; }
     .function-item i { color: #c9a84c; }
+    .tier-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+    .tier-buttons button { padding: 6px 14px; border: 1px solid #e5e7eb; background: white; border-radius: 999px; font-size: 13px; font-weight: 500; color: #1a1a2e; cursor: pointer; }
+    .tier-buttons button:hover { border-color: #c9a84c; }
+    .tier-buttons button.is-on { background: #1a3a5c; border-color: #1a3a5c; color: white; }
+    .req-alternative { padding: 12px 0; border-bottom: 1px solid #f3f4f6; }
+    .req-alternative:last-child { border-bottom: none; }
+    .req-alternative-head { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+    .req-alternative p { margin: 0; font-size: 14px; line-height: 1.6; color: #1a1a2e; }
+    .function-item.is-nested { padding-left: 26px; }
+    .function-item.is-nested i { font-size: 6px; color: #9ca3af; }
+    .function-item.is-nested-twice { padding-left: 46px; }
+    .function-item.is-nested-twice i { font-size: 5px; color: #c7cbd1; }
+    .function-group-heading { margin: 4px 0 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #1a3a5c; }
+    .function-group-heading:not(:first-child) { margin-top: 22px; }
+    .function-family-heading { margin: 16px 0 6px; font-size: 13px; font-weight: 600; color: #6b7280; }
     .competency-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
     .competency-item:last-child { border-bottom: none; }
     .comp-name { font-weight: 500; flex: 1; }
+    .language-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .language { padding: 5px 12px; border: 1px solid #e5e7eb; border-radius: 999px; background: #faf8f2; font-size: 13px; font-weight: 500; color: #1a3a5c; }
     .training-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f3f4f6; flex-wrap: wrap; }
     .training-item:last-child { border-bottom: none; }
     .training-name { font-weight: 500; }
-    .training-provider { color: #6b7280; font-size: 13px; }
     .color-box { display: inline-block; padding: 4px 12px; border-radius: 4px; text-transform: capitalize; }
     @media (max-width: 768px) {
         .card-grid { grid-template-columns: 1fr; }

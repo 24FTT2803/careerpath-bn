@@ -30,24 +30,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Provider</label>
-                    <input type="text" name="provider" class="form-control @error('provider') is-invalid @enderror" 
-                           value="{{ old('provider', $training->provider) }}">
-                    @error('provider')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
-                    <label>Certification Body</label>
-                    <input type="text" name="certification_body" class="form-control @error('certification_body') is-invalid @enderror" 
-                           value="{{ old('certification_body', $training->certification_body) }}">
-                    @error('certification_body')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
                     <label>URL</label>
                     <input type="url" name="url" class="form-control @error('url') is-invalid @enderror" 
                            value="{{ old('url', $training->url) }}" placeholder="https://...">
@@ -59,7 +41,7 @@
                 <div class="form-group">
                     <label>Description</label>
                     <textarea name="description" class="form-control @error('description') is-invalid @enderror" 
-                              rows="3">{{ old('description', $training->description) }}</textarea>
+                              rows="8">{{ old('description', $training->description) }}</textarea>
                     @error('description')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror

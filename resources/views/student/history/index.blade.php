@@ -142,12 +142,16 @@
 
 <div class="history-page">
 
-    <h1 class="history-heading">History</h1>
+    <div class="history-header">
+        <div>
+            <h1 class="history-heading">History</h1>
 
-    <p class="history-subheading">
-        Everything CareerPath BN has generated for you, kept so
-        you can look back at earlier results.
-    </p>
+            <p class="history-subheading">
+                Everything CareerPath BN has generated for you, kept so
+                you can look back at earlier results.
+            </p>
+        </div>
+    </div>
 
     {{-- Recommendation generations --}}
     <div class="history-section">
@@ -221,7 +225,7 @@
                                 href="{{ route('student.recommendations.report', $generation) }}"
                                 class="history-action"
                             >
-                                Report
+                                Download
                             </a>
                         @endif
 
@@ -230,66 +234,6 @@
                 </div>
 
             @endforeach
-
-        @endif
-
-    </div>
-
-    {{-- Career Adviser --}}
-    <div class="history-section">
-
-        <div class="history-section-title">
-            Career Adviser
-        </div>
-
-        @if(! $adviserHistoryAccess['allowed'])
-
-            <div class="history-empty">
-                {{
-                    $adviserHistoryAccess['message']
-                        ?? 'Career Adviser history is not available on your current plan.'
-                }}
-            </div>
-
-        @elseif(! $conversation || $conversation->message_count === 0)
-
-            <div class="history-empty">
-                You have not asked the Career Adviser anything
-                yet. Your conversation is kept here once you do.
-            </div>
-
-        @else
-
-            <div class="history-card">
-
-                <div class="history-card-main">
-
-                    <div class="history-card-title">
-                        Your conversation
-                    </div>
-
-                    <div class="history-card-meta">
-                        {{ $conversation->message_count }} {{ Str::plural('message', $conversation->message_count) }}
-
-                        @if($conversation->last_message_at)
-                            &middot;
-                            last active
-                            {{ $conversation->last_message_at->diffForHumans() }}
-                        @endif
-                    </div>
-
-                </div>
-
-                <div class="history-actions">
-                    <a
-                        href="{{ route('student.career-adviser') }}"
-                        class="history-action"
-                    >
-                        Open
-                    </a>
-                </div>
-
-            </div>
 
         @endif
 

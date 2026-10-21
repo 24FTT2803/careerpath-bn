@@ -3,7 +3,7 @@
 @section('title', $student->name)
 
 @section('content')
-<div>
+<div class="lecturer-student-detail">
     <div class="page-header">
         <div>
             <h1><i class="fas fa-user-graduate"></i> {{ $student->name }}</h1>

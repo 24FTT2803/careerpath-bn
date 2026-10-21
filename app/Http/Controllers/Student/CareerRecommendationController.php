@@ -163,14 +163,18 @@ class CareerRecommendationController extends Controller
             $entryRequirement =
                 $jobRole->entryRequirement;
 
+            /*
+             * Already reads as "BDQF Level 3", or as the book's
+             * own wording where that names no single level, so it
+             * needs no label of its own.
+             */
+            $entryLevel = $entryRequirement?->level_label;
+
             $careerDetails = [
                 'entry_requirements' => array_values(
                     array_filter([
-                        filled(
-                            $entryRequirement?->bdqf_level
-                        )
-                            ? 'BDQF Level: '
-                                .$entryRequirement->bdqf_level
+                        filled($entryLevel)
+                            ? $entryLevel
                             : null,
 
                         filled(
@@ -414,8 +418,16 @@ class CareerRecommendationController extends Controller
                 );
         }
 
+        /*
+         * Says the page is arriving with something new on it, so
+         * the matches can announce themselves. A student presses
+         * generate, the page reloads looking exactly as it did,
+         * and the thing they asked for is below the fold — which
+         * is how someone comes away thinking nothing happened.
+         */
         return redirect()
-            ->route('student.recommendations.index');
+            ->route('student.recommendations.index')
+            ->with('just_generated', true);
     }
 
     /**

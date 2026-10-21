@@ -5,11 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\StudentProfile;
 use App\Models\User;
+use App\Rules\NoProfanity;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use App\Rules\NoProfanity;
 
 class UserController extends Controller
 {
@@ -62,10 +62,10 @@ class UserController extends Controller
         $rules['email'] = User::getEmailValidationRules($request->role);
         $rules['email'][] = 'unique:users';
 
-        // Phone validation
-        $rules['phone'] = User::getPhoneValidationRules();
+        // Phone: valid for the chosen country, never shared between accounts
+        $rules += User::phoneWithCountryRules();
 
-            $request->merge([
+        $request->merge([
             'student_id' => User::normaliseStudentId($request->input('student_id')),
         ]);
 
@@ -79,21 +79,38 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
-        $request->validate($rules, User::studentIdMessages());
+        $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
+
+        $phone = User::standardisePhone($request->phone, $request->phone_country);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $phone,
             'password' => Hash::make($request->password),
             'role' => $request->role,
-                        'student_id' => $request->role === 'student'
+            'student_id' => $request->role === 'student'
                 ? $request->student_id
                 : null,
             'programme' => $request->role === 'student'
                 ? $request->programme
                 : null,
         ]);
+
+        /*
+         * Excused from confirming its email, if that was asked
+         * for. Only students are ever asked in the first place,
+         * so it is only recorded for them — and recorded as a
+         * waiver rather than written into email_verified_at,
+         * which would claim an address was confirmed when
+         * nothing confirmed it.
+         */
+        if ($user->role === 'student' && $request->boolean('waive_email_confirmation')) {
+            $user->forceFill([
+                'email_confirmation_waived_at' => now(),
+                'email_confirmation_waived_by' => $request->user()->id,
+            ])->save();
+        }
 
         /*
          * An ID entered by an admin counts as verified by them.
@@ -113,6 +130,7 @@ class UserController extends Controller
         // Create student profile with phone number if provided
         StudentProfile::create([
             'user_id' => $user->id,
+            'phone' => $phone,
         ]);
 
         return redirect()->route('admin.users.index')
@@ -148,10 +166,10 @@ class UserController extends Controller
         $rules['email'] = User::getEmailValidationRules($request->role);
         $rules['email'][] = 'unique:users,email,'.$id;
 
-        // Phone validation
-        $rules['phone'] = ['nullable', 'string', 'max:20', 'regex:/^[\+\d\s\-\(\)]{7,20}$/'];
+        // Phone: valid for the chosen country, never shared between accounts
+        $rules += User::phoneWithCountryRules();
 
-            $request->merge([
+        $request->merge([
             'student_id' => User::normaliseStudentId($request->input('student_id')),
         ]);
 
@@ -165,12 +183,14 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
-        $request->validate($rules, User::studentIdMessages());
+        $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
+
+        $phone = User::standardisePhone($request->phone, $request->phone_country, $user->id);
 
         $data = [
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $phone,
             'role' => $request->role,
             'student_id' => $request->role === 'student' ? $request->student_id : null,
             'programme' => $request->role === 'student' ? $request->programme : null,
@@ -184,6 +204,23 @@ class UserController extends Controller
         $user->fill($data);
 
         /*
+         * The waiver can be granted and taken back. Taken back,
+         * the account is asked to confirm from its next request
+         * on — which is the point of being able to take it back.
+         */
+        $waive = $request->boolean('waive_email_confirmation') && $request->role === 'student';
+
+        if ($waive && $user->email_confirmation_waived_at === null) {
+            $user->email_confirmation_waived_at = now();
+            $user->email_confirmation_waived_by = $request->user()->id;
+        }
+
+        if (! $waive && $user->email_confirmation_waived_at !== null) {
+            $user->email_confirmation_waived_at = null;
+            $user->email_confirmation_waived_by = null;
+        }
+
+        /*
          * An admin entering or changing a student's ID vouches
          * for it, so it is verified in the same save.
          */
@@ -193,6 +230,9 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        /* Keep the profile's copy of the phone in step, as the student's own form does. */
+        $user->profile?->update(['phone' => $phone]);
 
         app(ProgrammeEnrolmentService::class)->syncFor(
             $user->fresh(),

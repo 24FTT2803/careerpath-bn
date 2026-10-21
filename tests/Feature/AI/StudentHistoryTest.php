@@ -93,14 +93,27 @@ test(
 );
 
 test(
-    'the history page shows adviser activity',
+    'the student history page does not show the career adviser section',
     function () {
         $student = studentWithHistory();
 
         $this->actingAs($student)
             ->get(route('student.history'))
             ->assertOk()
-            ->assertSee('2 messages');
+            ->assertDontSee('2 messages')
+            ->assertDontSee('Your conversation');
+    }
+);
+
+test(
+    'the history page offers a download rather than a report',
+    function () {
+        $student = studentWithHistory();
+
+        $this->actingAs($student)
+            ->get(route('student.history'))
+            ->assertOk()
+            ->assertSee('Download');
     }
 );
 

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Plan;
 use App\Models\User;
 use App\Models\UserPlanGrant;
+use App\Services\Business\PremiumNotifier;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -52,7 +53,7 @@ class UserPlanGrantController extends Controller
         );
     }
 
-    public function store(Request $request)
+    public function store(Request $request, PremiumNotifier $notifier)
     {
         $validated = $request->validate(
             [
@@ -85,13 +86,16 @@ class UserPlanGrantController extends Controller
          * grant below it, so offering a choice only invited a
          * mistake.
          */
-        UserPlanGrant::create(
+        $grant = UserPlanGrant::create(
             $this->withWindow($validated) + [
                 'plan_id' => Plan::where('code', 'premium')
                     ->value('id'),
                 'is_active' => true,
             ]
         );
+
+        /* Let the student know through their notification bell. */
+        $notifier->notifyDirectGrant($grant);
 
         return redirect()
             ->route('admin.business.grants.index')
@@ -107,12 +111,19 @@ class UserPlanGrantController extends Controller
      * The record is kept so there is a trace of who was given
      * what and when it was taken away.
      */
-    public function revoke(UserPlanGrant $grant)
+    public function revoke(UserPlanGrant $grant, PremiumNotifier $notifier)
     {
+        $wasLive = $grant->is_active;
+
         $grant->update([
             'is_active' => false,
             'ends_at' => $grant->ends_at ?? now(),
         ]);
+
+        /* Tell the student, so losing Premium is never a mystery. */
+        if ($wasLive) {
+            $notifier->notifyDirectRevoke($grant);
+        }
 
         return redirect()
             ->route('admin.business.grants.index')
