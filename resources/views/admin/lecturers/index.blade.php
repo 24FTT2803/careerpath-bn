@@ -57,8 +57,10 @@
                         @php $group = $assignment->organisationGroup; @endphp
                         @if($group)
                             <form method="POST"
-                                  action="{{ route('admin.lecturers.unassign', [$lecturer, $group]) }}"
-                                  onsubmit="return confirm('Remove {{ $lecturer->name }} from {{ $group->name }}?')">
+                                action="{{ route('admin.lecturers.unassign', [$lecturer, $group]) }}"
+                                class="js-confirm-unassign"
+                                data-lecturer="{{ $lecturer->name }}"
+                                data-group="{{ $group->name }}">
                                 @csrf
                                 @method('DELETE')
                                 <span class="lec-chip" title="{{ $labels[$group->id]->label ?? $group->name }}">
@@ -93,6 +95,59 @@
     </div>
 
     <div class="lec-pagination">{{ $lecturers->links() }}</div>
+
+        <div class="lec-modal" id="unassignModal" hidden>
+        <div class="lec-modal-backdrop" data-close></div>
+            <div class="lec-modal-box" role="dialog" aria-modal="true" aria-labelledby="unassignTitle">
+            <div class="lec-modal-icon"><i class="fas fa-user-minus"></i></div>
+            <h3 id="unassignTitle">Remove assignment?</h3>
+            <p id="unassignText"></p>
+            <div class="lec-modal-actions">
+                <button type="button" class="btn btn-outline" data-close>Cancel</button>
+                <button type="button" class="btn lec-btn-danger" id="unassignConfirm">
+                    <i class="fas fa-user-minus"></i> Remove
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var modal = document.getElementById('unassignModal');
+    var text = document.getElementById('unassignText');
+    var confirmBtn = document.getElementById('unassignConfirm');
+    var pending = null;
+
+    function closeModal() {
+        modal.hidden = true;
+        pending = null;
+    }
+
+    document.querySelectorAll('.js-confirm-unassign').forEach(function (form) {
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            pending = form;
+            text.textContent = 'Remove ' + form.dataset.lecturer + ' from ' + form.dataset.group +
+                '? They will no longer see this class\'s students.';
+            modal.hidden = false;
+            confirmBtn.focus();
+        });
+    });
+
+    confirmBtn.addEventListener('click', function () {
+        if (pending) pending.submit();
+    });
+
+    modal.querySelectorAll('[data-close]').forEach(function (el) {
+        el.addEventListener('click', closeModal);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !modal.hidden) closeModal();
+    });
+});
+</script>
 </div>
 
 <style>
@@ -138,5 +193,17 @@
         .lec-grid { grid-template-columns:1fr; }
         .lec-stats { justify-content:space-around; width:100%; }
     }
+
+    .lec-modal { position:fixed; inset:0; z-index:10000; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .lec-modal[hidden] { display:none; }
+    .lec-modal-backdrop { position:absolute; inset:0; background:rgba(13,31,51,.55); backdrop-filter:blur(2px); }
+    .lec-modal-box { position:relative; background:#fff; border-radius:12px; padding:28px 28px 22px; max-width:400px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(13,31,51,.3); animation:lecModalIn .2s ease; }
+    .lec-modal-icon { width:52px; height:52px; border-radius:50%; background:rgba(192,57,43,.1); color:var(--danger); display:flex; align-items:center; justify-content:center; font-size:20px; margin:0 auto 14px; }
+    .lec-modal-box h3 { margin:0 0 8px; font-size:18px; color:var(--primary); }
+    .lec-modal-box p { margin:0 0 22px; font-size:13.5px; color:var(--text-muted); line-height:1.5; }
+    .lec-modal-actions { display:flex; gap:10px; justify-content:center; }
+    .lec-btn-danger { background:var(--danger); color:#fff; }
+    .lec-btn-danger:hover { background:#a93226; transform:translateY(-2px); }
+    @keyframes lecModalIn { from { opacity:0; transform:translateY(8px) scale(.97); } to { opacity:1; transform:none; } }
 </style>
 @endsection
