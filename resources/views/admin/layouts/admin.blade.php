@@ -363,6 +363,11 @@
             opacity: 1;
         }
 
+        /* Three-line wordmark: a little taller so its text stays readable. */
+        .admin-footer-logo.is-stacked {
+            height: 34px;
+        }
+
         .admin-footer-logo-fallback {
             display: inline-flex;
             align-items: center;
@@ -530,15 +535,25 @@
             margin-top: 4px;
         }
 
+        /*
+         * Text flows as one paragraph, with the icon in its own column.
+         * (As a flex row, a link or bold label inside the sentence became
+         * a separate column and squeezed the text, badly on phones.)
+         */
         .info-banner {
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            padding: 12px 18px;
+            position: relative;
+            display: block;
+            padding: 12px 18px 12px 44px;
             border-radius: 8px;
             font-size: 13px;
             margin-bottom: 16px;
             line-height: 1.5;
+        }
+
+        .info-banner > i:first-child {
+            position: absolute;
+            top: 15px;
+            left: 18px;
         }
 
         .info-banner-blue {
@@ -757,6 +772,14 @@
             border: 1px solid #f5c6cb;
         }
 
+        .sidebar-logo-badge {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.45);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .admin-sidebar {
@@ -796,8 +819,14 @@
                 max-width: 100%;
             }
             .sidebar-brand {
-                padding: 16px;
+                padding: 14px 6px !important;
                 justify-content: center;
+            }
+            .admin-sidebar .sidebar-logo-full {
+                display: none !important;
+            }
+            .admin-sidebar .sidebar-logo-badge {
+                display: block;
             }
             .sidebar-footer .nav-user {
                 padding: 6px !important;
@@ -850,8 +879,222 @@
             outline-offset: 2px;
         }
 
+
+        /* ============================================
+           ADMIN DESIGN REFINEMENTS (layout only)
+           ============================================ */
+
+        /* Label-style cells must stay table cells, or columns drift apart. */
+        .admin-table td.cell-sub,
+        .admin-table td.cell-title,
+        .admin-table th.cell-sub {
+            display: table-cell;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding-right: 16px;
+        }
+
+        .admin-table th:last-child,
+        .admin-table td:last-child {
+            padding-right: 0;
+        }
+
+        .admin-table td {
+            vertical-align: middle;
+        }
+
+        .admin-table th {
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-size: 11px;
+        }
+
+        .admin-table tbody tr {
+            transition: background-color 0.15s ease;
+        }
+
+        .admin-table tbody tr:hover {
+            background: #fcfbf7;
+        }
+
+        /* Row actions: small outlined buttons instead of loose text links. */
+        .row-actions {
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .row-actions .link,
+        .row-actions .link-disabled {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            color: var(--primary);
+            font-size: 12px;
+            font-weight: 600;
+            line-height: 1.3;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .row-actions .link:hover {
+            background: #faf7ee;
+            border-color: var(--accent);
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .row-actions .link-danger {
+            color: var(--danger);
+        }
+
+        .row-actions .link-danger:hover {
+            background: #fdf1f0;
+            border-color: #f0b8b1;
+            color: #a93226;
+        }
+
+        .row-actions .link-disabled {
+            color: #c3c7ce;
+            background: #fafafa;
+            cursor: not-allowed;
+        }
+
+        /* Phone country picker fills its field like any other input. */
+        .iti {
+            display: block;
+            width: 100%;
+        }
+
+        /*
+         * Wide tables scroll inside their card rather than
+         * compressing past the point of being readable.
+         *
+         * The padding is deliberate: without it the last column
+         * sits flush against the edge at the end of the scroll,
+         * with nothing to show the row has finished.
+         */
+        /*
+         * Two names for the same job. The BIICF and dashboard
+         * pages were written against .table-responsive, which
+         * nothing defined — there is no Bootstrap here — so those
+         * tables had neither a floor nor anywhere to scroll.
+         * Both names are honoured rather than rewriting the
+         * markup of six pages.
+         */
+        .table-scroll,
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-right: 16px;
+            padding-bottom: 4px;
+        }
+
+        /*
+         * The floor below which a table stops condensing and
+         * starts scrolling. Tables carrying more columns raise it
+         * for themselves with --table-floor, since one shared
+         * number either squashes the widest table or makes the
+         * narrowest scroll for no reason.
+         */
+        .table-scroll .admin-table,
+        .table-responsive .table,
+        .table-responsive .cpbn-table {
+            min-width: var(--table-floor, 820px);
+        }
+
+        /* Small inline forms (add a row, quick edit) line up neatly. */
+        .inline-form {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .inline-form .field-input {
+            width: auto;
+            min-width: 0;
+            flex: 1 1 200px;
+        }
+
+        .inline-form .field-input.is-short {
+            flex: 0 1 120px;
+        }
+
+        .inline-form .btn {
+            align-self: stretch;
+        }
+
+        .add-row {
+            margin-top: 16px;
+            padding: 14px 16px;
+            border: 1px dashed #e2dccb;
+            border-radius: 10px;
+            background: #fcfbf7;
+        }
+
+        .add-row-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--text-muted);
+        }
+
+        /* Filter pills above a list. */
+        .filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        /* Search box with an icon. */
+        .search-field {
+            position: relative;
+            margin-bottom: 14px;
+        }
+
+        .search-field i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 13px;
+            pointer-events: none;
+        }
+
+        .search-field .field-input {
+            padding-left: 38px;
+        }
+
+        /* Settings strip (e.g. advertisement placement options). */
+        .settings-strip {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 12px;
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            border-radius: 10px;
+            background: #f9fafb;
+            border: 1px solid #f0f1f3;
+        }
+
+        .settings-strip .btn {
+            height: 44px;
+        }
     </style>
     @include('partials.motion')
+    @include('partials.attention')
 </head>
 <body>
 
@@ -861,7 +1104,14 @@
     <img
         src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
         alt="CareerPath BN"
+        class="sidebar-logo-full"
         style="height: 64px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
+    >
+    {{-- On phones the sidebar is a narrow icon strip, so the round badge stands in for the logo. --}}
+    <img
+        src="{{ asset('images/careerpath-badge.png') }}"
+        alt="CareerPath BN"
+        class="sidebar-logo-badge"
     >
 </div>
 
@@ -871,6 +1121,14 @@
                 $isLecturerOnly = auth()->user()->role === 'lecturer';
                 $dashboardRoute = $isLecturerOnly ? route('lecturer.dashboard') : route('admin.dashboard');
                 $dashboardActive = request()->routeIs('admin.dashboard') || request()->routeIs('lecturer.dashboard');
+                $pendingStudentIds = app(\App\Services\Student\StudentAttention::class)->pendingStudentIds(auth()->user());
+                $pendingTip = $pendingStudentIds === 1
+                    ? '1 student needs their student ID verified.'
+                    : $pendingStudentIds.' students need their student ID verified.';
+
+                if ($isLecturerOnly && $pendingStudentIds > 0) {
+                    $pendingTip = rtrim($pendingTip, '.').' in your classes.';
+                }
             @endphp
             <a href="{{ $dashboardRoute }}" class="sidebar-link {{ $dashboardActive ? 'active' : '' }}">
                 <i class="fas fa-th-large"></i>
@@ -884,9 +1142,16 @@
                             ? 'active'
                             : ''
                     }}"
+                    @if($pendingStudentIds > 0)
+                        data-attn-tip="{{ $pendingTip }}"
+                        data-attn-auto="pending-ids-{{ $pendingStudentIds }}"
+                    @endif
                 >
                     <i class="fas fa-user-graduate"></i>
                     <span>My Students</span>
+                    @if($pendingStudentIds > 0)
+                        <span class="badge attn-count">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
+                    @endif
                 </a>
             @else
                 <a
@@ -896,54 +1161,102 @@
                             ? 'active'
                             : ''
                     }}"
+                    @if($pendingStudentIds > 0)
+                        data-attn-tip="{{ $pendingTip }}"
+                        data-attn-auto="pending-ids-{{ $pendingStudentIds }}"
+                    @endif
                 >
                     <i class="fas fa-user-graduate"></i>
                     <span>Students</span>
+                    @if($pendingStudentIds > 0)
+                        <span class="badge attn-count">{{ $pendingStudentIds > 99 ? '99+' : $pendingStudentIds }}</span>
+                    @endif
                 </a>
-            
             @endif
-            @if(auth()->user()->role === 'admin')
+                        @if(auth()->user()->role === 'admin')
                 @php
                     $unassignedLecturers = \App\Models\User::where('role', 'lecturer')
                         ->whereNotIn('id', \App\Models\LecturerAssignment::select('user_id'))
                         ->count();
-                    @endphp
-                <a href="{{ route('admin.lecturers.index') }}" class="sidebar-link {{ request()->routeIs('admin.lecturers.*') ? 'active' : '' }}">
+                    $lecturerTip = $unassignedLecturers === 1
+                        ? '1 lecturer needs to be assigned to a group.'
+                        : $unassignedLecturers.' lecturers need to be assigned to a group.';
+                @endphp
+                <a href="{{ route('admin.lecturers.index') }}"
+                   class="sidebar-link {{ request()->routeIs('admin.lecturers.*') ? 'active' : '' }}"
+                   @if($unassignedLecturers > 0)
+                       data-attn-tip="{{ $lecturerTip }}"
+                       data-attn-auto="unassigned-lecturers-{{ $unassignedLecturers }}"
+                   @endif
+                >
                     <i class="fas fa-chalkboard-teacher"></i>
-                    <span>Lecturers
-                        @if($unassignedLecturers > 0)
-                            <span class="badge lecturer-badge"
-                                  title="{{ $unassignedLecturers }} {{ \Illuminate\Support\Str::plural('lecturer', $unassignedLecturers) }} {{ $unassignedLecturers === 1 ? 'needs' : 'need' }} to be assigned to a group">{{ $unassignedLecturers }}</span>
-                        @endif
-                    </span>
+                    <span>Lecturers</span>
+                    @if($unassignedLecturers > 0)
+                        <span class="badge attn-count">{{ $unassignedLecturers > 99 ? '99+' : $unassignedLecturers }}</span>
+                    @endif
                 </a>
-                <style>
-                    .lecturer-badge { cursor: help; display: inline-block; transition: transform .2s ease, box-shadow .2s ease; }
-                    .lecturer-badge:hover { transform: scale(1.2); box-shadow: 0 0 0 3px rgba(201,168,76,.35); }
-                </style>
             @endif
             <a href="{{ route('admin.careers.index') }}" class="sidebar-link {{ request()->routeIs('admin.careers.*') ? 'active' : '' }}">
                 <i class="fas fa-briefcase"></i>
                 <span>Careers</span>
             </a>
+            @if(auth()->user()->role === 'lecturer')
+                <div class="nav-label" style="margin-top:16px;">Account</div>
+                <a href="{{ route('lecturer.settings') }}" class="sidebar-link {{ request()->routeIs('lecturer.settings') ? 'active' : '' }}">
+                    <i class="fas fa-id-badge"></i>
+                    <span>My Profile</span>
+                </a>
+            @endif
             @if(auth()->user()->role === 'admin')
                 <div class="nav-label" style="margin-top:16px;">BIICF Management</div>
-                <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}">
+                @php
+                    $biicfCounts = [
+                        'subSectors' => \App\Models\BiicfSubSector::count(),
+                        'jobRoles' => \App\Models\BiicfJobRole::count(),
+                        'competencies' => \App\Models\BiicfCompetency::count(),
+                        'trainings' => \App\Models\BiicfTraining::count(),
+                    ];
+                @endphp
+                <a href="{{ route('admin.biicf.sub-sectors') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.sub-sectors*') ? 'active' : '' }}"
+                   data-attn-tip="There {{ $biicfCounts['subSectors'] === 1 ? 'is 1 ICT sub-sector' : 'are '.$biicfCounts['subSectors'].' ICT sub-sectors' }} available in the BIICF framework.">
                     <i class="fas fa-layer-group"></i>
-                    <span>Sub-Sectors <span class="badge">{{ \App\Models\BiicfSubSector::count() }}</span></span>
+                    <span>Sub-Sectors <span class="badge attn-count">{{ $biicfCounts['subSectors'] }}</span></span>
                 </a>
-                <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}">
+                <a href="{{ route('admin.biicf.job-roles') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.job-roles*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $biicfCounts['jobRoles'] === 1 ? '1 job role is' : $biicfCounts['jobRoles'].' job roles are' }} available for career matching.">
                     <i class="fas fa-briefcase"></i>
-                    <span>Job Roles <span class="badge">{{ \App\Models\BiicfJobRole::count() }}</span></span>
+                    <span>Job Roles <span class="badge attn-count">{{ $biicfCounts['jobRoles'] }}</span></span>
                 </a>
-                <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}">
+                <a href="{{ route('admin.biicf.competencies') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.competencies*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $biicfCounts['competencies'] === 1 ? '1 competency is' : $biicfCounts['competencies'].' competencies are' }} available for students to choose from.">
                     <i class="fas fa-tools"></i>
-                    <span>Competencies <span class="badge">{{ \App\Models\BiicfCompetency::count() }}</span></span>
+                    <span>Competencies <span class="badge attn-count">{{ $biicfCounts['competencies'] }}</span></span>
                 </a>
-                
-                <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}">
+                <a href="{{ route('admin.biicf.trainings') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.trainings*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $biicfCounts['trainings'] === 1 ? '1 training programme is' : $biicfCounts['trainings'].' training programmes are' }} available to suggest to students.">
                     <i class="fas fa-graduation-cap"></i>
-                    <span>Trainings</span>
+                    <span>Trainings <span class="badge attn-count">{{ $biicfCounts['trainings'] }}</span></span>
+                </a>
+                {{--
+                    Where a new edition of the reference book is
+                    loaded, reviewed and applied. The count is
+                    what is still waiting on a decision, since an
+                    edition part way through a review is the one
+                    thing here that needs attention.
+                --}}
+                @php
+                    $editionsPending = \App\Models\BiicfEditionChange::query()
+                        ->where('decision', 'pending')
+                        ->count();
+                @endphp
+                <a href="{{ route('admin.biicf.editions.index') }}" class="sidebar-link {{ request()->routeIs('admin.biicf.editions*') ? 'active' : '' }}"
+                   data-attn-tip="{{ $editionsPending === 0 ? 'No uploaded edition is waiting on a decision.' : $editionsPending.' differences from an uploaded edition are waiting on a decision.' }}">
+                    <i class="fas fa-book"></i>
+                    <span>Editions
+                        @if($editionsPending > 0)
+                            <span class="badge attn-count">{{ $editionsPending }}</span>
+                        @endif
+                    </span>
                 </a>
             @endif
             @if(auth()->user()->role === 'admin')
@@ -1074,8 +1387,12 @@
 <div class="sidebar-footer" style="padding:16px 20px;border-top:1px solid rgba(255,255,255,0.06);">
     <div style="display:flex;align-items:center;gap:10px;">
         <!-- Avatar -->
-        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;">
-           {{ substr(auth()->user()->name, 0, 1) }}
+        <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden;">
+            @if(auth()->user()->avatar)
+                <img src="{{ asset('storage/'.ltrim(auth()->user()->avatar, '/')) }}" alt="" style="width:100%;height:100%;object-fit:cover;">
+            @else
+                {{ substr(auth()->user()->name, 0, 1) }}
+            @endif
         </div>
         
         <!-- User Info -->
@@ -1146,6 +1463,15 @@
                         <i class="fas fa-satellite-dish"></i> AITI
                     </a>
                 @endif
+                @if(file_exists(public_path('images/innovation-lab-logo.png')))
+                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-link">
+                        <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="admin-footer-logo is-stacked">
+                    </a>
+                @else
+                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-fallback">
+                        <i class="fas fa-lightbulb"></i> Brunei Innovation Lab
+                    </a>
+                @endif
             </div>
         </footer>
     </main>
@@ -1200,9 +1526,66 @@
 }
     </script>
     
+<script>
+    /*
+     * Popup confirmation for any admin form marked with data-confirm.
+     * Runs before other submit handlers (capture phase), so nothing
+     * starts until the admin says yes.
+     */
+    document.addEventListener('submit', function (event) {
+        var form = event.target;
+
+        if (! form.matches || ! form.matches('form[data-confirm]')) {
+            return;
+        }
+
+        if (form.dataset.confirmApproved === '1') {
+            delete form.dataset.confirmApproved;
+            return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        var message = form.dataset.confirm;
+
+        var approve = function () {
+            form.dataset.confirmApproved = '1';
+
+            if (typeof form.requestSubmit === 'function') {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        };
+
+        if (typeof window.showConfirmModal !== 'function') {
+            if (window.confirm(message)) {
+                approve();
+            }
+
+            return;
+        }
+
+        /* Names come from users, so show them as plain text only. */
+        var safe = document.createElement('div');
+        safe.textContent = message;
+
+        window.showConfirmModal({
+            title: form.dataset.confirmTitle || 'Please Confirm',
+            message: safe.innerHTML,
+            confirmText: form.dataset.confirmOk || 'Yes, Continue',
+            cancelText: 'Cancel',
+            type: form.dataset.confirmType || 'danger',
+            onConfirm: approve,
+        });
+    }, true);
+</script>
+
 <!-- Hidden Logout Form -->
 <form method="POST" action="{{ route('logout') }}" id="logout-form" style="display:none;">
     @csrf
 </form>
+    @include('partials.long-text')
 </body>
 </html>
