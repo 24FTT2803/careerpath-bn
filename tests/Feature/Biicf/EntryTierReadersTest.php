@@ -161,11 +161,38 @@ describe('the admin show page', function () {
 
         $role = multiTierRole();
 
-        $this->actingAs(User::factory()->create(['role' => 'admin']))
+        $response = $this->actingAs(User::factory()->create(['role' => 'admin']))
             ->get(route('admin.biicf.job-roles.show', $role))
             ->assertSuccessful()
-            ->assertSee('This role has 3 tiers')
             ->assertSeeText('Application Development');
+
+        /*
+         * Which tier each proficiency belongs to, by there being
+         * a pane per tier to pick between.
+         *
+         * Not the note that used to say "This role has 3 tiers".
+         * That stood in for the two columns the page could not
+         * show, and went when the panes arrived — its absence is
+         * asserted in AdminCompetencyTableTest, so asking for it
+         * here left the two tests contradicting each other, and
+         * one of them failing whichever way the page behaved.
+         */
+        $response->assertSee('Level 1')
+            ->assertSee('Level 2')
+            ->assertSee('Level 3');
+
+        /*
+         * Once per tier — a pane each — rather than three times
+         * in one list, which is what reading the role's own
+         * competencies relation would give. Counted against the
+         * row's markup rather than the name alone, since the
+         * competency library seeded alongside it holds a
+         * competency by the same name.
+         */
+        expect(substr_count(
+            $response->getContent(),
+            '<span class="comp-name">Application Development</span>'
+        ))->toBe(3);
     });
 
     test('the proficiency badge shows the level, not a question mark', function () {
