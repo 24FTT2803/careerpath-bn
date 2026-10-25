@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\CareerController as AdminCareerController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\GroupMembershipController;
 use App\Http\Controllers\Admin\InnovationLabController;
+use App\Http\Controllers\Admin\LecturerController;
 use App\Http\Controllers\Admin\OrganisationController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
 use App\Http\Controllers\Admin\SponsorshipController;
@@ -31,7 +32,6 @@ use App\Http\Middleware\EnsureEmailIsVerifiedSince;
 use App\Http\Middleware\LecturerMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\LecturerController;
 
 // ============================================
 // HOME ROUTE
@@ -127,6 +127,16 @@ Route::middleware([
             '/innovation-lab',
             [StudentInnovationLabController::class, 'index']
         )->name('innovation-lab');
+
+        Route::post(
+            '/innovation-lab/{note}/reactions',
+            [StudentInnovationLabController::class, 'react']
+        )->name('innovation-lab.react');
+
+        Route::post(
+            '/innovation-lab/{note}/interest',
+            [StudentInnovationLabController::class, 'interest']
+        )->name('innovation-lab.interest');
 
         // Career Adviser
         Route::get(
@@ -732,7 +742,7 @@ Route::middleware(['auth'])
         });
 
         // Admin ONLY routes - Lecturers
-        Route::middleware(\App\Http\Middleware\AdminMiddleware::class)->group(function () {
+        Route::middleware(AdminMiddleware::class)->group(function () {
             Route::get('/lecturers', [LecturerController::class, 'index'])->name('lecturers.index');
             Route::post('/lecturers/{lecturer}/groups', [LecturerController::class, 'assign'])->name('lecturers.assign');
             Route::delete('/lecturers/{lecturer}/groups/{group}', [LecturerController::class, 'unassign'])->name('lecturers.unassign');

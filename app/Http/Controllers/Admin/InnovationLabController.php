@@ -111,12 +111,14 @@ class InnovationLabController extends Controller
                     ->max(self::MAX_IMAGE_KILOBYTES),
             ],
             'is_published' => ['nullable', 'boolean'],
+            'accepts_interest' => ['nullable', 'boolean'],
         ]);
 
         unset($validated['image']);
 
         return $validated + [
             'is_published' => $request->boolean('is_published'),
+            'accepts_interest' => $request->boolean('accepts_interest'),
         ];
     }
 

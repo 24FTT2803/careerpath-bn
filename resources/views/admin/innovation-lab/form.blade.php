@@ -95,6 +95,27 @@
                 @enderror
             </div>
 
+            {{--
+                Whether students can put their hand up for this.
+                A note about a bug fix is not something to join,
+                and the button under one makes the count mean
+                nothing, so it is asked for per post.
+            --}}
+            <div style="margin-bottom:20px;">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);">
+                    <input
+                        type="checkbox"
+                        name="accepts_interest"
+                        value="1"
+                        @checked(old('accepts_interest', $note->accepts_interest))
+                    >
+                    Let students say they are interested in joining
+                </label>
+                <p style="margin:6px 0 0 24px;font-size:12px;color:var(--text-muted);">
+                    Adds a button to the post and shows how many students have pressed it.
+                </p>
+            </div>
+
             <div style="margin-bottom:20px;">
                 <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text);">
                     <input
