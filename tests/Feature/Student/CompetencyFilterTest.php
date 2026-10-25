@@ -83,11 +83,13 @@ describe('narrowing the competencies', function () {
             ->get(route('student.profile.edit'))
             ->assertOk();
 
-        $response->assertSee('cpbn-sector-chip', false)
-            ->assertSee('data-sector="IT Services"', false)
-            ->assertSee('data-sector="ICT Security"', false)
+        $response->assertShows(
+            'cpbn-sector-chip',
+            'data-sector="IT Services"',
+            'data-sector="ICT Security"',
             /* All, and selected to begin with. */
-            ->assertSee('data-sector=""', false);
+            'data-sector=""'
+        );
     });
 
     test('a competency says every sub-sector that wants it', function () {
@@ -102,7 +104,7 @@ describe('narrowing the competencies', function () {
         $this->actingAs(aStudent())
             ->get(route('student.profile.edit'))
             ->assertOk()
-            ->assertSee('data-sectors="ICT Security|IT Services"', false);
+            ->assertShows('data-sectors="ICT Security|IT Services"');
     });
 
     test('a competency no role asks for carries no sub-sector', function () {
@@ -121,8 +123,7 @@ describe('narrowing the competencies', function () {
         $this->actingAs(aStudent())
             ->get(route('student.profile.edit'))
             ->assertOk()
-            ->assertSee('Orphan Competency')
-            ->assertSee('data-sectors=""', false);
+            ->assertShows('Orphan Competency', 'data-sectors=""');
     });
 
     test('the soft skills are left alone', function () {
@@ -130,19 +131,26 @@ describe('narrowing the competencies', function () {
          * Eleven of them, and every role wants most of the
          * eleven. Filtering a list that short would be a control
          * that never changes anything.
+         *
+         * A technical competency is here too, because the chips
+         * only exist once something has a sub-sector to be
+         * filed under — without one there would be no filter to
+         * find, and this test would pass by the technical one
+         * being missing as well.
          */
+        competencyWantedIn('Cloud Computing', ['IT Services']);
+
         BiicfCompetency::create([
             'name' => 'Communication',
             'slug' => 'communication',
             'type' => 'soft_skill',
         ]);
 
-        $response = $this->actingAs(aStudent())
+        $this->actingAs(aStudent())
             ->get(route('student.profile.edit'))
-            ->assertOk();
-
-        $response->assertSee('id="technical-sector-filter"', false)
-            ->assertDontSee('id="soft-sector-filter"', false);
+            ->assertOk()
+            ->assertShows('id="technical-sector-filter"')
+            ->assertHides('id="soft-sector-filter"');
     });
 });
 
@@ -151,8 +159,10 @@ describe('explaining the ladder', function () {
         $this->actingAs(aStudent())
             ->get(route('student.profile.edit'))
             ->assertOk()
-            ->assertSee('What are BDQF levels?')
-            ->assertSee('Brunei Darussalam Qualifications Framework');
+            ->assertShows(
+                'What are BDQF levels?',
+                'Brunei Darussalam Qualifications Framework'
+            );
     });
 
     test('it names the awards at each level, by sector', function () {
@@ -166,11 +176,13 @@ describe('explaining the ladder', function () {
             ->get(route('student.profile.edit'))
             ->assertOk();
 
-        $response->assertSee('Level 8')
-            ->assertSee('Level 1')
-            ->assertSeeText('Doctoral Degree')
-            ->assertSeeText('Higher National Diploma (HND)')
-            ->assertSee('Technical and vocational');
+        $response->assertShows(
+            'Level 8',
+            'Level 1',
+            'Doctoral Degree',
+            'Higher National Diploma (HND)',
+            'Technical and vocational'
+        );
     });
 
     test('it is shut until asked for', function () {
