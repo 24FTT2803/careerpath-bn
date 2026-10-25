@@ -394,6 +394,117 @@
         font-size: 11px;
     }
 
+    .edit-profile .bdqf-help {
+        margin: 0 0 16px;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 6px;
+        background: #fcfbf7;
+    }
+
+    .edit-profile .bdqf-help > summary {
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        color: var(--ink, #0d1a2b);
+        cursor: pointer;
+    }
+
+    .edit-profile .bdqf-help[open] > summary {
+        border-bottom: 1px solid var(--line, #e7e2d4);
+    }
+
+    .edit-profile .bdqf-help-intro {
+        margin: 0;
+        padding: 12px 14px 0;
+        font-size: 12.5px;
+        color: var(--ink-dim, #5b6675);
+        line-height: 1.6;
+    }
+
+    .edit-profile .bdqf-ladder {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 12px 14px 14px;
+    }
+
+    .edit-profile .bdqf-rung {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 8px 0;
+        border-top: 1px solid #efece1;
+    }
+
+    .edit-profile .bdqf-rung:first-child {
+        border-top: 0;
+    }
+
+    .edit-profile .bdqf-rung-level {
+        flex: 0 0 64px;
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--gold, #cf9a3d);
+        white-space: nowrap;
+    }
+
+    .edit-profile .bdqf-rung-body {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .edit-profile .bdqf-sector {
+        font-size: 12.5px;
+        color: var(--ink, #0d1a2b);
+        line-height: 1.6;
+        overflow-wrap: anywhere;
+    }
+
+    .edit-profile .bdqf-sector-name {
+        display: inline-block;
+        min-width: 150px;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .edit-profile .bdqf-note {
+        margin: 4px 0 0;
+        font-size: 11.5px;
+        color: var(--ink-dim, #5b6675);
+        line-height: 1.55;
+    }
+
+    .edit-profile .cpbn-sector-filter {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-bottom: 12px;
+    }
+
+    .edit-profile .cpbn-sector-chip {
+        padding: 5px 11px;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 500;
+        color: var(--ink-dim, #5b6675);
+        background: #fff;
+        border: 1px solid var(--line, #e7e2d4);
+        border-radius: 999px;
+        cursor: pointer;
+        transition: border-color .15s ease, color .15s ease, background .15s ease;
+    }
+
+    .edit-profile .cpbn-sector-chip:hover {
+        border-color: var(--gold, #cf9a3d);
+        color: var(--ink, #0d1a2b);
+    }
+
+    .edit-profile .cpbn-sector-chip.is-on {
+        color: var(--ink, #0d1a2b);
+        background: rgba(207, 154, 61, .12);
+        border-color: var(--gold, #cf9a3d);
+        font-weight: 600;
+    }
+
     .edit-profile .cpbn-competency-grid {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1998,6 +2109,73 @@
                     is what lets the explorer tell you how you compare.
                 </p>
 
+                {{--
+                    The ladder itself, for a student who has never
+                    heard of it.
+
+                    Entry requirements are written in these levels
+                    and nowhere else explained them, so "BDQF Level
+                    4 in IT or related field" was a sentence a
+                    student had to take on trust — and the picker
+                    below asks them to choose one. Shut by default:
+                    anybody who knows their level does not need it
+                    open.
+
+                    Annex 1 of the framework, in the Annex's own
+                    three columns.
+                --}}
+                @if(($bdqfLevels ?? collect())->isNotEmpty())
+                    <details class="bdqf-help">
+                        <summary>
+                            What are BDQF levels?
+                        </summary>
+
+                        <p class="bdqf-help-intro">
+                            The Brunei Darussalam Qualifications Framework puts every
+                            award on one of eight levels, so qualifications from
+                            schools, vocational training and universities can be
+                            compared. Find your award below and use its level.
+                        </p>
+
+                        <div class="bdqf-ladder">
+                            @foreach($bdqfLevels as $level)
+                                <div class="bdqf-rung">
+                                    <span class="bdqf-rung-level">
+                                        Level {{ $level->level }}
+                                    </span>
+
+                                    <div class="bdqf-rung-body">
+                                        @foreach([
+                                            'Schools' => $level->schools_sector,
+                                            'Technical and vocational' => $level->tvet_sector,
+                                            'Higher education' => $level->higher_education_sector,
+                                        ] as $sectorName => $awards)
+                                            @continue(empty($awards))
+
+                                            <div class="bdqf-sector">
+                                                <span class="bdqf-sector-name">{{ $sectorName }}</span>
+                                                <span>{{ implode(', ', $awards) }}</span>
+                                            </div>
+                                        @endforeach
+
+                                        @if(empty($level->schools_sector)
+                                            && empty($level->tvet_sector)
+                                            && empty($level->higher_education_sector))
+                                            <div class="bdqf-sector">
+                                                <span>The framework lists no awards at this level.</span>
+                                            </div>
+                                        @endif
+
+                                        @if($level->notes)
+                                            <p class="bdqf-note">{{ $level->notes }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </details>
+                @endif
+
                 @php
                     $qualificationRows = old('qualifications');
 
@@ -2412,6 +2590,32 @@
                         </small>
                     </div>
 
+                    {{--
+                        Narrowing a hundred and twenty-seven of
+                        them to the forty or so a sub-sector asks
+                        for. A competency is wanted across several
+                        sub-sectors, so these overlap on purpose.
+
+                        Anything already ticked stays on screen
+                        whichever filter is on. Hiding a choice a
+                        student has made looks exactly like losing
+                        it.
+                    --}}
+                    @if(! empty($subSectorOptions))
+                        <div class="cpbn-sector-filter" id="technical-sector-filter">
+                            <button type="button" class="cpbn-sector-chip is-on" data-sector="">
+                                All
+                            </button>
+
+                            @foreach($subSectorOptions as $sector)
+                                <button type="button" class="cpbn-sector-chip"
+                                        data-sector="{{ $sector }}">
+                                    {{ $sector }}
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <div
                         class="cpbn-competency-grid"
                         id="technical-competency-grid"
@@ -2491,6 +2695,7 @@
                                 class="cpbn-competency-item {{ $isSelected ? 'selected' : '' }}"
                                 data-biicf-competency
                                 data-technical-competency
+                                data-sectors="{{ implode('|', $competencySubSectors[$competency->id] ?? []) }}"
                             >
                                 <label class="cpbn-competency-choice">
                                     <input
@@ -4391,21 +4596,39 @@ document.addEventListener('DOMContentLoaded', function () {
             const pageSize =
                 config.pageSize || 10;
 
-            const items =
+            const all =
                 Array.from(
                     grid.querySelectorAll(
                         config.itemSelector
                     )
                 );
 
+            /*
+             * What the sub-sector filter has left in. Paging a
+             * list captured once would count the hidden ones and
+             * leave empty pages behind a filter.
+             */
+            const items =
+                function() {
+                    return all.filter(
+                        function(item) {
+                            return item.dataset
+                                .filteredOut
+                                !== 'true';
+                        }
+                    );
+                };
+
             const totalPages =
-                Math.max(
-                    1,
-                    Math.ceil(
-                        items.length
-                        / pageSize
-                    )
-                );
+                function() {
+                    return Math.max(
+                        1,
+                        Math.ceil(
+                            items().length
+                            / pageSize
+                        )
+                    );
+                };
 
             let currentPage = 0;
             let showingAll = false;
@@ -4413,9 +4636,12 @@ document.addEventListener('DOMContentLoaded', function () {
             const update =
                 function() {
                     if (showingAll) {
-                        items.forEach(
+                        all.forEach(
                             function(item) {
-                                item.hidden = false;
+                                item.hidden =
+                                    item.dataset
+                                        .filteredOut
+                                    === 'true';
                             }
                         );
 
@@ -4423,7 +4649,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         next.hidden = true;
 
                         pageStatus.textContent =
-                            `Showing all ${items.length}`;
+                            `Showing all ${items().length}`;
 
                         toggle.textContent =
                             'Show Less';
@@ -4444,7 +4670,13 @@ document.addEventListener('DOMContentLoaded', function () {
                         start
                         + pageSize;
 
-                    items.forEach(
+                    all.forEach(
+                        function(item) {
+                            item.hidden = true;
+                        }
+                    );
+
+                    items().forEach(
                         function(item, index) {
                             item.hidden =
                                 index < start
@@ -4460,13 +4692,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     next.disabled =
                         currentPage
-                        >= totalPages - 1;
+                        >= totalPages() - 1;
 
                     pageStatus.textContent =
-                        `Page ${currentPage + 1} of ${totalPages}`;
+                        `Page ${currentPage + 1} of ${totalPages()}`;
 
                     toggle.textContent =
-                        `Show All (${items.length})`;
+                        `Show All (${items().length})`;
 
                     toggle.setAttribute(
                         'aria-expanded',
@@ -4492,7 +4724,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 function() {
                     if (
                         currentPage
-                        >= totalPages - 1
+                        >= totalPages() - 1
                     ) {
                         return;
                     }
@@ -4514,30 +4746,119 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
             update();
+
+            /*
+             * How the filter asks for the pages to be counted
+             * again. Back to the first page, since page four of
+             * a longer list is nowhere in a shorter one.
+             */
+            return function() {
+                currentPage = 0;
+
+                update();
+            };
         };
 
-    initialiseCompetencyPagination({
-        gridId:
-            'technical-competency-grid',
+    const repageTechnical =
+        initialiseCompetencyPagination({
+            gridId:
+                'technical-competency-grid',
 
-        itemSelector:
-            '[data-technical-competency]',
+            itemSelector:
+                '[data-technical-competency]',
 
-        previousId:
-            'technical-competency-previous',
+            previousId:
+                'technical-competency-previous',
 
-        nextId:
-            'technical-competency-next',
+            nextId:
+                'technical-competency-next',
 
-        statusId:
-            'technical-competency-page-status',
+            statusId:
+                'technical-competency-page-status',
 
-        toggleId:
-            'technical-competency-toggle',
+            toggleId:
+                'technical-competency-toggle',
 
-        pageSize:
-            10
-    });
+            pageSize:
+                10
+        });
+
+    /*
+     * The sub-sector filter.
+     *
+     * Client-side, because every competency is already on the
+     * page and asking the server to send a shorter list would be
+     * a round trip to hide things we are holding.
+     *
+     * A ticked competency is never hidden. A student who filters
+     * to ICT Security and watches four of their own choices
+     * vanish has every reason to think the page threw them away.
+     */
+    const sectorFilter =
+        document.getElementById(
+            'technical-sector-filter'
+        );
+
+    if (sectorFilter && repageTechnical) {
+        const chips =
+            Array.from(
+                sectorFilter.querySelectorAll(
+                    '[data-sector]'
+                )
+            );
+
+        const apply =
+            function(wanted) {
+                const items =
+                    document.querySelectorAll(
+                        '[data-technical-competency]'
+                    );
+
+                items.forEach(
+                    function(item) {
+                        const ticked =
+                            item.querySelector(
+                                'input[type="checkbox"]'
+                            );
+
+                        const sectors =
+                            (item.dataset.sectors || '')
+                                .split('|')
+                                .filter(Boolean);
+
+                        const keep =
+                            wanted === ''
+                            || sectors.includes(wanted)
+                            || (ticked && ticked.checked);
+
+                        item.dataset.filteredOut =
+                            keep ? 'false' : 'true';
+                    }
+                );
+
+                repageTechnical();
+            };
+
+        chips.forEach(
+            function(chip) {
+                chip.addEventListener(
+                    'click',
+                    function() {
+                        chips.forEach(
+                            function(other) {
+                                other.classList.toggle(
+                                    'is-on',
+                                    other === chip
+                                );
+                            }
+                        );
+
+                        apply(chip.dataset.sector);
+                    }
+                );
+            }
+        );
+    }
 
     initialiseCompetencyPagination({
         gridId:

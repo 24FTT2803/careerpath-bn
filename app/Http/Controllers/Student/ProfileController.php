@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\BiicfBdqfLevel;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
+use App\Models\BiicfSubSector;
 use App\Models\Notification;
 use App\Models\Plan;
 use App\Models\RecommendationGeneration;
@@ -24,6 +25,7 @@ use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -195,6 +197,35 @@ class ProfileController extends Controller
             ->orderByDesc('level')
             ->get();
 
+        /*
+         * Which sub-sectors ask for each competency.
+         *
+         * There are a hundred and twenty-seven technical ones
+         * and a student picking from all of them at once is
+         * reading a list, not choosing from it. Narrowed to
+         * where they are heading it is forty to sixty.
+         *
+         * A list each rather than one name: a competency is
+         * wanted by roles in several sub-sectors, and most of
+         * these are.
+         */
+        $competencySubSectors = DB::table('biicf_job_role_competency as pivot')
+            ->join('biicf_job_roles as roles', 'roles.id', '=', 'pivot.job_role_id')
+            ->join('biicf_sub_sectors as sectors', 'sectors.id', '=', 'roles.sub_sector_id')
+            ->select('pivot.competency_id', 'sectors.name')
+            ->distinct()
+            ->orderBy('sectors.name')
+            ->get()
+            ->groupBy('competency_id')
+            ->map(fn ($rows) => $rows->pluck('name')->unique()->values()->all())
+            ->all();
+
+        $subSectorOptions = BiicfSubSector::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->pluck('name')
+            ->all();
+
         return view(
             'student.profile.edit',
             compact(
@@ -206,7 +237,9 @@ class ProfileController extends Controller
                 'proficiencyLevels',
                 'interestOptions',
                 'interestAliasGroups',
-                'bdqfLevels'
+                'bdqfLevels',
+                'competencySubSectors',
+                'subSectorOptions'
             )
         );
     }
