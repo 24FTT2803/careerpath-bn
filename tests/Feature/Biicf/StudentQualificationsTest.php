@@ -162,7 +162,7 @@ describe('the form', function () {
             ->get(route('student.profile.edit'))
             ->assertSuccessful()
             ->assertSee('cpbn-check-state', escape: false)
-            ->assertSee('Still studying this');
+            ->assertShows('Still studying this');
     });
 });
 

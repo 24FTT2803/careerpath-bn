@@ -37,10 +37,10 @@ describe('the student explorer', function () {
         $this->actingAs(User::factory()->create(['role' => 'student']))
             ->get(route('student.biicf-explorer.index'))
             ->assertSuccessful()
-            ->assertSee('Technical skills')
-            ->assertSee('Soft skills')
-            ->assertSee('Strategise')
-            ->assertSee('Intermediate');
+            ->assertShows('Technical skills')
+            ->assertShows('Soft skills')
+            ->assertShows('Strategise')
+            ->assertShows('Intermediate');
     });
 });
 
@@ -59,8 +59,8 @@ describe('the admin job role form', function () {
         )->get(route('admin.biicf.job-roles.create'));
 
         $response->assertSuccessful()
-            ->assertSee('Level 5 - Strategise')
-            ->assertDontSee('Level 4 - Expert');
+            ->assertShows('Level 5 - Strategise')
+            ->assertHides('Level 4 - Expert');
     });
 
     test('a soft skill is offered only soft levels', function () {
@@ -77,8 +77,8 @@ describe('the admin job role form', function () {
         )->get(route('admin.biicf.job-roles.create'));
 
         $response->assertSuccessful()
-            ->assertSee('Level 4 - Expert')
-            ->assertDontSee('Level 5 - Strategise');
+            ->assertShows('Level 4 - Expert')
+            ->assertHides('Level 5 - Strategise');
     });
 
     test('saving a level from the wrong scale is refused', function () {
@@ -169,7 +169,7 @@ describe('the student profile form', function () {
         )->get(route('student.profile.edit'));
 
         $response->assertSuccessful()
-            ->assertSee('Strategise');
+            ->assertShows('Strategise');
     });
 
     test('a student cannot record a level from the wrong scale', function () {

@@ -187,6 +187,6 @@ test('staff pages show the verification status', function () {
     $this->actingAs($admin)
         ->get(route('admin.students.show', $student->id))
         ->assertOk()
-        ->assertSee('Pending')
+        ->assertShows('Pending')
         ->assertSee(route('staff.student-id.verify', $student));
 });

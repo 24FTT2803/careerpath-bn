@@ -18,6 +18,19 @@
         </include>
     </source>
     <php>
+        <!--
+            The whole suite in one process needs more than PHP's
+            own 128M: it is around nine hundred tests, each with a
+            fresh database and some asserting against pages of a
+            few hundred kilobytes. Set here rather than passed on
+            the command line so the run behaves the same on every
+            machine and nobody has to remember a flag.
+
+            If a run ever exhausts this, raising it again is the
+            wrong answer — at that point something is holding onto
+            memory it should not be.
+        -->
+        <ini name="memory_limit" value="1G"/>
         <env name="APP_ENV" value="testing"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>

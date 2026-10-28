@@ -15,13 +15,13 @@ test('the student profile shows a badge with their personal details', function (
     $this->actingAs($student)
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('Your student badge', false)
-        ->assertSee('Nur Aisyah binti Hassan')
-        ->assertSee('nuraisyah@gmail.com')
-        ->assertSee('24FTT2803')
-        ->assertSee('Pending')
-        ->assertSee('Diploma in ICT (Application Development)')
-        ->assertSee('+673 712 3456')
+        ->assertShows('Your student badge')
+        ->assertShows('Nur Aisyah binti Hassan')
+        ->assertShows('nuraisyah@gmail.com')
+        ->assertShows('24FTT2803')
+        ->assertShows('Pending')
+        ->assertShows('Diploma in ICT (Application Development)')
+        ->assertShows('+673 712 3456')
         ->assertSee('Member since '.$student->created_at->format('F Y'))
         ->assertSee(route('student.profile.edit'), false);
 });
@@ -32,17 +32,17 @@ test('the student profile keeps every section on the page', function () {
     $this->actingAs($student)
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('Profile Completion')
-        ->assertSee('Current Studies')
-        ->assertSee('Latest CGPA')
-        ->assertSee('Personal Details')
-        ->assertSee('Skills &amp; Competencies', false)
-        ->assertSee('Interests')
-        ->assertSee('Projects &amp; Experience', false)
-        ->assertSee('Certifications')
-        ->assertSee('Career Aspirations')
-        ->assertSee('Download PDF')
-        ->assertSee('Edit Profile');
+        ->assertShows('Profile Completion')
+        ->assertShows('Current Studies')
+        ->assertShows('Latest CGPA')
+        ->assertShows('Personal Details')
+        ->assertShows('Skills &amp; Competencies')
+        ->assertShows('Interests')
+        ->assertShows('Projects &amp; Experience')
+        ->assertShows('Certifications')
+        ->assertShows('Career Aspirations')
+        ->assertShows('Download PDF')
+        ->assertShows('Edit Profile');
 });
 
 test('the badge shows initials and a hint when details are missing', function () {
@@ -55,23 +55,33 @@ test('the badge shows initials and a hint when details are missing', function ()
     $this->actingAs($student)
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('MH')
-        ->assertSee('No phone added')
-        ->assertSee('Programme not set');
+        ->assertShows('MH')
+        ->assertShows('No phone added')
+        ->assertShows('Programme not set');
 });
 
-test('the edit page explains the current studies fields', function () {
+test('the edit page asks for the programme among the qualifications', function () {
+    /*
+     * This asked for a Current Studies section, which the form no
+     * longer has. It held the programme a second time beside the
+     * qualification already recording it, and asked a
+     * post-graduate — who has no current studies — to fill in a
+     * section built around having some.
+     *
+     * The programme is now the first qualification, pre-filled
+     * and not removable, and the CGPA sits in it.
+     */
     $student = User::factory()->create(['role' => 'student']);
 
     $this->actingAs($student)
         ->get(route('student.profile.edit'))
         ->assertOk()
-        ->assertSee('Current Studies')
-        ->assertSee('Your current programme at Politeknik Brunei and your latest CGPA.')
-        ->assertSee('Current programme')
-        ->assertSee('Latest CGPA (out of 4.00)')
-        ->assertSee('placeholder="e.g. 3.25"', false)
-        ->assertSee('name="cgpa"', false);
+        ->assertShows('Qualifications')
+        ->assertShows('Your programme')
+        ->assertShows('Politeknik Brunei')
+        ->assertShows('placeholder="e.g. 3.25"')
+        ->assertShows('name="cgpa"')
+        ->assertHides('Current Studies');
 });
 
 test('my profile shows current studies and personal details, with prompts for missing ones', function () {
@@ -84,14 +94,14 @@ test('my profile shows current studies and personal details, with prompts for mi
     $this->actingAs($student)
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('Current programme')
-        ->assertSee('Student ID')
-        ->assertSee('3.50')
-        ->assertSee('out of 4.00')
-        ->assertSee('Date of birth')
-        ->assertSee('Nationality')
-        ->assertSee('Phone')
-        ->assertSee('Not added');
+        ->assertShows('Current programme')
+        ->assertShows('Student ID')
+        ->assertShows('3.50')
+        ->assertShows('out of 4.00')
+        ->assertShows('Date of birth')
+        ->assertShows('Nationality')
+        ->assertShows('Phone')
+        ->assertShows('Not added');
 });
 
 test('the badge shows nationality, or a prompt when it is missing', function () {
@@ -100,14 +110,14 @@ test('the badge shows nationality, or a prompt when it is missing', function () 
     $this->actingAs($student)
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('Nationality not added');
+        ->assertShows('Nationality not added');
 
     $student->profile()->create(['nationality' => 'Brunei Darussalam']);
 
     $this->actingAs($student->fresh())
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('title="Nationality"', false)
-        ->assertSee('Brunei Darussalam')
-        ->assertDontSee('Nationality not added');
+        ->assertShows('title="Nationality"')
+        ->assertShows('Brunei Darussalam')
+        ->assertHides('Nationality not added');
 });

@@ -11,12 +11,12 @@ test('the student and lecturer badges skip the page fade so they do not flash', 
     $this->actingAs($student)
         ->get(route('student.profile'))
         ->assertOk()
-        ->assertSee('aria-label="Your student badge" data-motion-skip', false);
+        ->assertShows('aria-label="Your student badge" data-motion-skip');
 
     $lecturer = User::factory()->create(['role' => 'lecturer']);
 
     $this->actingAs($lecturer)
         ->get(route('lecturer.settings'))
         ->assertOk()
-        ->assertSee('aria-label="Your lecturer badge" data-motion-skip', false);
+        ->assertShows('aria-label="Your lecturer badge" data-motion-skip');
 });

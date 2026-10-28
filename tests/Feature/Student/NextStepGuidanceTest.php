@@ -119,10 +119,10 @@ describe('on the dashboard', function () {
         $this->actingAs($student)
             ->get(route('student.dashboard'))
             ->assertOk()
-            ->assertSee('Finish your profile')
-            ->assertSee('Update my profile')
-            ->assertSee('Competencies')
-            ->assertSee('nextStepPopup', false);
+            ->assertShows('Finish your profile')
+            ->assertShows('Update my profile')
+            ->assertShows('Competencies')
+            ->assertShows('nextStepPopup');
     });
 
     test('a student with a finished profile is pointed at the recommendations', function () {
@@ -134,9 +134,9 @@ describe('on the dashboard', function () {
         $this->actingAs(finishedStudent())
             ->get(route('student.dashboard'))
             ->assertOk()
-            ->assertSee('Your profile is ready')
-            ->assertSee('Generate recommendations')
-            ->assertDontSee('Finish your profile');
+            ->assertShows('Your profile is ready')
+            ->assertShows('Generate recommendations')
+            ->assertHides('Finish your profile');
     });
 
     test('a student who has done both is told nothing', function () {
@@ -161,8 +161,8 @@ describe('on the dashboard', function () {
         $this->actingAs($student)
             ->get(route('student.dashboard'))
             ->assertOk()
-            ->assertDontSee('Finish your profile')
-            ->assertDontSee('Your profile is ready');
+            ->assertHides('Finish your profile')
+            ->assertHides('Your profile is ready');
     });
 });
 
@@ -263,12 +263,12 @@ describe('when a set is generated', function () {
             ->followingRedirects()
             ->post(route('student.recommendations.generate'))
             ->assertOk()
-            ->assertSee('Here are your recommendations');
+            ->assertShows('Here are your recommendations');
 
         /* Opened again, it is yesterday's news and says nothing. */
         $this->actingAs($student)
             ->get(route('student.recommendations.index'))
             ->assertOk()
-            ->assertDontSee('Here are your recommendations');
+            ->assertHides('Here are your recommendations');
     });
 });

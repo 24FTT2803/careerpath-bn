@@ -128,10 +128,10 @@ describe('the admin form and show page agree', function () {
         $this->actingAs($admin)
             ->get(route('admin.biicf.job-roles.show', $role))
             ->assertSuccessful()
-            ->assertSee('Designs systems.')
-            ->assertSee('Supports deployments.')
-            ->assertSee('Plan capacity.')
-            ->assertSee('Patch servers.');
+            ->assertShows('Designs systems.')
+            ->assertShows('Supports deployments.')
+            ->assertShows('Plan capacity.')
+            ->assertShows('Patch servers.');
     });
 
     test('editing replaces what the page shows', function () {
@@ -155,8 +155,8 @@ describe('the admin form and show page agree', function () {
         $this->actingAs($admin)
             ->get(route('admin.biicf.job-roles.show', $role))
             ->assertSuccessful()
-            ->assertSee('Runs the network.')
-            ->assertSee('Configure routers.');
+            ->assertShows('Runs the network.')
+            ->assertShows('Configure routers.');
     });
 });
 

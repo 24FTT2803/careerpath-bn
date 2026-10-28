@@ -66,10 +66,10 @@ test('the profile page shows a single full name field', function () {
     $this->actingAs($student)
         ->get(route('student.profile.edit'))
         ->assertOk()
-        ->assertSee('Full Name (as on IC)')
-        ->assertSee('value="Nur Aisyah binti Hassan"', false)
-        ->assertDontSee('name="first_name"', false)
-        ->assertDontSee('name="last_name"', false);
+        ->assertShows('Full Name (as on IC)')
+        ->assertShows('value="Nur Aisyah binti Hassan"')
+        ->assertHides('name="first_name"')
+        ->assertHides('name="last_name"');
 });
 
 test('the dashboard greets the student by full name', function () {
@@ -78,5 +78,5 @@ test('the dashboard greets the student by full name', function () {
     $this->actingAs($student)
         ->get(route('student.dashboard'))
         ->assertOk()
-        ->assertSee('Nur Aisyah binti Hassan');
+        ->assertShows('Nur Aisyah binti Hassan');
 });

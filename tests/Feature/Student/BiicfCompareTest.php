@@ -116,7 +116,7 @@ test('the explorer page renders', function () {
     $this->actingAs($this->student)
         ->get(route('student.biicf-explorer.index'))
         ->assertOk()
-        ->assertSee('Compare to my profile');
+        ->assertShows('Compare to my profile');
 });
 
 test('a role entered at several levels is compared one level at a time', function () {

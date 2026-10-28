@@ -44,7 +44,7 @@ test('the detail page carries every tier, not just the first', function () {
     /*
      * The note that stood in for the other two columns.
      */
-    $response->assertDontSee('This role has 3 tiers');
+    $response->assertHides('This role has 3 tiers');
 });
 
 test('the form offers a level for each tier', function () {
@@ -58,7 +58,7 @@ test('the form offers a level for each tier', function () {
         $response->assertSee("[levels][{$tier->id}]", false);
     }
 
-    $response->assertSee('Not required');
+    $response->assertShows('Not required');
 });
 
 test('a competency can be saved at a different level per tier', function () {

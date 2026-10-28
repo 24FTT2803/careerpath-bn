@@ -80,9 +80,9 @@ describe('the form', function () {
         $this->actingAs(declaringStudent())
             ->get(route('student.profile.edit'))
             ->assertOk()
-            ->assertSee('Add Project')
-            ->assertSee('Add Certification')
-            ->assertSee('your profile still counts as complete', false);
+            ->assertShows('Add Project')
+            ->assertShows('Add Certification')
+            ->assertShows('your profile still counts as complete');
     });
 
     test('no declaration is asked for or stored', function () {
