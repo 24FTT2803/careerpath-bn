@@ -1434,7 +1434,7 @@
 
                 <!-- Footer -->
         <footer class="admin-footer">
-            <p>&copy; {{ date('Y') }} CareerPath BN &middot; Politeknik Brunei</p>
+            <p>&copy; {{ date('Y') }} CareerPath BN &middot; Politeknik Brunei &middot; <a href="https://www.instagram.com/careerpathbn/" target="_blank" rel="noopener" style="color:inherit;"><i class="fab fa-instagram"></i> @@careerpathbn</a></p>
             <div class="admin-footer-logos">
                 @if(file_exists(public_path('images/politeknik-logo.png')))
                     <a href="https://www.pb.edu.bn" target="_blank" class="admin-footer-logo-link">

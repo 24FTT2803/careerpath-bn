@@ -80,6 +80,13 @@ class CareerReportBuilder
              */
             'snapshotAvailable' => $snapshot !== null,
 
+            /*
+             * Uploaded certificates and milestone proofs. Read live
+             * (snapshots do not hold files), so an archived report
+             * shows the evidence currently on file.
+             */
+            'evidence' => \App\Support\EvidenceFiles::for($student),
+
             'profileCompletion' => $student->profile_completion,
             'readinessScore' => $student->readiness_score ?? 0,
         ];

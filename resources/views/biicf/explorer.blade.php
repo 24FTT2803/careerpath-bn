@@ -830,6 +830,18 @@
 
     .selected-filter .remove:hover { color: var(--danger, #c0392b); }
 
+    .selected-filter .scale-switch {
+        cursor: pointer;
+        white-space: nowrap;
+        color: var(--text-muted);
+        font-weight: 600;
+        margin-left: 6px;
+        padding: 0 6px 0 12px;
+        border-left: 1px solid rgba(201, 168, 76, 0.4);
+    }
+
+    .selected-filter .scale-switch:hover { color: var(--primary); }
+
     /* Sub-sectors */
     .sub-sector-grid {
         display: grid;
@@ -2332,7 +2344,7 @@
                                 Showing
                                 <strong x-text="competencyDetail?.competency?.name || '…'"></strong>
                             </span>
-                            <span class="remove" @click="clearCompetency()">
+                            <span class="scale-switch" @click="clearCompetency()">
                                 <i class="fas fa-times"></i> Show the scales instead
                             </span>
                         </div>

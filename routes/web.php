@@ -410,6 +410,14 @@ Route::middleware(['auth'])
             ->name('milestones.proof')
             ->middleware(LecturerMiddleware::class);
 
+        /*
+         * Certificate evidence. Same access rules as milestone
+         * proofs: admins see all, lecturers only their classes.
+         */
+        Route::get('/students/{studentId}/certifications/{certificationId}/evidence', [ProfileController::class, 'certificationEvidenceStaff'])
+            ->name('certifications.evidence')
+            ->middleware(LecturerMiddleware::class);
+
         // ============================================
         // BUSINESS MANAGEMENT (Admin ONLY)
         // ============================================

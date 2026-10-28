@@ -209,6 +209,41 @@
                 @endif
             </div>
 
+            <!-- Certifications -->
+            <div class="card">
+                <div class="card-header">
+                    <h3><i class="fas fa-certificate"></i> Certifications</h3>
+                </div>
+
+                @if($student->certifications->count() > 0)
+                    <div class="list-rows">
+                        @foreach($student->certifications as $cert)
+                            <div class="list-row">
+                                <div>
+                                    <span class="list-row-title">{{ $cert->certification_name }}</span>
+                                    <span class="list-row-sub">
+                                        {{ $cert->issuing_organization ?? 'Unknown issuer' }}
+                                        @if($cert->issue_date)
+                                            &middot; {{ $cert->issue_date->format('j M Y') }}
+                                        @endif
+                                    </span>
+                                </div>
+                                @if($cert->certificate_file_path)
+                                    <a href="{{ route('admin.certifications.evidence', [$student->id, $cert->id]) }}"
+                                       target="_blank" rel="noopener" class="link">
+                                        <i class="fas fa-paperclip"></i> View certificate
+                                    </a>
+                                @else
+                                    <span class="list-row-sub">No file uploaded</span>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @else
+                    <p class="empty-text-centered">No certifications recorded.</p>
+                @endif
+            </div>
+
             <!-- Milestones -->
             <div class="card">
                 <div class="card-header">
@@ -223,15 +258,23 @@
                                     <span class="list-row-title">{{ $milestone->title }}</span>
                                     <span class="list-row-sub">{{ $milestone->category }}</span>
                                 </div>
-                                @if($milestone->is_completed)
-                                    <span class="status-pill status-pill-green">
-                                        <i class="fas fa-check-circle"></i> Completed
-                                    </span>
-                                @else
-                                    <span class="status-pill status-pill-gold">
-                                        <i class="fas fa-clock"></i> In Progress
-                                    </span>
-                                @endif
+                                <div style="display:flex;align-items:center;gap:12px;">
+                                    @if($milestone->proof_file_path)
+                                        <a href="{{ route('admin.milestones.proof', [$student->id, $milestone->id]) }}"
+                                           target="_blank" rel="noopener" class="link">
+                                            <i class="fas fa-paperclip"></i> View proof
+                                        </a>
+                                    @endif
+                                    @if($milestone->is_completed)
+                                        <span class="status-pill status-pill-green">
+                                            <i class="fas fa-check-circle"></i> Completed
+                                        </span>
+                                    @else
+                                        <span class="status-pill status-pill-gold">
+                                            <i class="fas fa-clock"></i> In Progress
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         @endforeach
                     </div>

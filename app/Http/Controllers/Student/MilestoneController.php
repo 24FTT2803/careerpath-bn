@@ -218,6 +218,6 @@ class MilestoneController extends Controller
         $filePath = $milestone->proof_file_path;
         $fileName = basename($filePath);
 
-        return Storage::disk('local')->download($filePath, $fileName);
+        return Storage::disk('local')->response($filePath, $fileName, [], 'inline');
     }
 }

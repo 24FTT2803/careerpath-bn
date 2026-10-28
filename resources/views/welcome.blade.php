@@ -904,7 +904,13 @@
             color: var(--accent);
         }
 
-        .footer-col .contact-sep {
+        .footer-col .contact-label {
+        display: block;
+        font-size: 11px;
+        color: rgba(255, 255, 255, 0.35);
+    }
+
+    .footer-col .contact-sep {
             margin: 0 4px;
             color: rgba(255, 255, 255, 0.25);
         }
@@ -1608,7 +1614,7 @@
                     </a>
                     <a class="contact-row" href="tel:+6732234630">
                         <i class="fas fa-phone"></i>
-                        <span>+673 2234630</span>
+                        <span>+673 2234630 <small class="contact-label">(Politeknik Brunei official phone)</small></span>
                     </a>
                     <div class="contact-row">
                         <i class="fas fa-envelope"></i>
@@ -1634,6 +1640,10 @@
                     <a class="contact-row" href="https://www.pb.edu.bn" target="_blank" rel="noopener">
                         <i class="fas fa-globe"></i>
                         <span>www.pb.edu.bn</span>
+                    </a>
+                    <a class="contact-row" href="https://www.instagram.com/careerpathbn/" target="_blank" rel="noopener">
+                        <i class="fab fa-instagram"></i>
+                        <span>@@careerpathbn <small class="contact-label">(CareerPath BN on Instagram)</small></span>
                     </a>
                 </div>
             </div>
