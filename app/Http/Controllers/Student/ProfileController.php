@@ -6,6 +6,7 @@ use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
 use App\Models\BiicfBdqfLevel;
 use App\Models\BiicfCompetency;
+use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\Notification;
@@ -37,6 +38,32 @@ use Propaganistas\LaravelPhone\Rules\Phone;
 
 class ProfileController extends Controller
 {
+    /**
+     * Where the programme row's qualification was awarded.
+     *
+     * Not a field on the form: every student on this system is a
+     * Politeknik Brunei student, which is the whole reason the
+     * programme can be pre-filled at all.
+     */
+    public const PROGRAMME_INSTITUTION = 'Politeknik Brunei';
+
+    /**
+     * What a PB programme awards, and where it sits.
+     *
+     * Annex 1 names Advanced Diploma and Higher National Diploma
+     * (HND) as BDQF level 5, and that is what the institution
+     * mostly awards — its programmes are titled "Diploma in ICT
+     * (...)" but the award itself is the advanced one. "Diploma"
+     * was the first guess here and put the award a rung below
+     * what students actually hold.
+     *
+     * Both stay editable, for a student whose award is named
+     * differently or sits elsewhere on the ladder.
+     */
+    public const PROGRAMME_AWARD = 'Advanced Diploma';
+
+    public const PROGRAMME_BDQF_LEVEL = 5;
+
     private const PREDEFINED_SKILLS = [
         'Python',
         'JavaScript',
@@ -226,6 +253,167 @@ class ProfileController extends Controller
             ->pluck('name')
             ->all();
 
+        /*
+         * And at which job levels each competency is asked for.
+         *
+         * A sub-sector on its own still leaves forty to sixty,
+         * which is more than anyone reads at an exhibition stand.
+         * Crossed with a level it is a handful: what a student
+         * entering the sector is actually expected to have.
+         *
+         * Read from two places and merged. A required proficiency
+         * hangs off a tier, and a tier carries the framework's
+         * named level when it is one — the precise answer, since
+         * it says the competency is wanted at that level of that
+         * role. But a tier that is a numbered step inside a level
+         * carries none, so the role's own levels are taken as
+         * well, which is the coarser statement the book's role
+         * pages make.
+         */
+        $levelsByTier = DB::table('biicf_job_role_competency as pivot')
+            ->join(
+                'biicf_job_role_tiers as tiers',
+                'tiers.id',
+                '=',
+                'pivot.job_role_tier_id'
+            )
+            ->join(
+                'biicf_job_levels as levels',
+                'levels.id',
+                '=',
+                'tiers.job_level_id'
+            )
+            ->select(
+                'pivot.competency_id',
+                'levels.name',
+                'levels.sort_order'
+            )
+            ->distinct();
+
+        $levelsByRole = DB::table('biicf_job_role_competency as pivot')
+            ->join(
+                'biicf_job_role_job_level as role_level',
+                'role_level.job_role_id',
+                '=',
+                'pivot.job_role_id'
+            )
+            ->join(
+                'biicf_job_levels as levels',
+                'levels.id',
+                '=',
+                'role_level.job_level_id'
+            )
+            ->select(
+                'pivot.competency_id',
+                'levels.name',
+                'levels.sort_order'
+            )
+            ->distinct();
+
+        $jobLevelRows = $levelsByTier
+            ->union($levelsByRole)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $competencyJobLevels = $jobLevelRows
+            ->groupBy('competency_id')
+            ->map(
+                fn ($rows) => $rows
+                    ->pluck('name')
+                    ->unique()
+                    ->values()
+                    ->all()
+            )
+            ->all();
+
+        /*
+         * Only the levels something is actually filed under. The
+         * framework names seven and its role pages use six, so
+         * offering all seven puts up a chip that can only ever
+         * produce an empty list.
+         *
+         * The query is already in seniority order, so this keeps
+         * it.
+         */
+        $jobLevelOptions = $jobLevelRows
+            ->pluck('name')
+            ->unique()
+            ->values()
+            ->all();
+
+        /*
+         * And which roles ask for each competency.
+         *
+         * A sub-sector crossed with a level is between ten and
+         * thirty-nine, and the combinations a student actually
+         * picks are the large ones: Specialist covers twenty-three
+         * of the framework's thirty-eight roles, so "Data and
+         * Artificial Intelligence at Specialist" is thirty-nine of
+         * the hundred and twenty-seven. One role is between eight
+         * and seventeen, every time.
+         *
+         * Keyed on the role's id rather than its title. The book
+         * prints Chief Technology Officer under two sub-sectors,
+         * and titles are long enough to bloat every row of the
+         * grid.
+         */
+        $competencyJobRoles = DB::table('biicf_job_role_competency')
+            ->select('competency_id', 'job_role_id')
+            ->distinct()
+            ->get()
+            ->groupBy('competency_id')
+            ->map(
+                fn ($rows) => $rows
+                    ->pluck('job_role_id')
+                    ->unique()
+                    ->values()
+                    ->all()
+            )
+            ->all();
+
+        /*
+         * The roles worth offering, each carrying the sub-sector
+         * and levels the rows above filter it by.
+         *
+         * A role's levels are read the same way its competencies'
+         * are — the tier's named level, and the role's own levels
+         * alongside. Read any other way the two could disagree,
+         * and a role offered under a level whose competencies are
+         * filed under another would select to an empty grid.
+         *
+         * Roles nothing is filed against are left out: a chip
+         * that can only produce an empty list is not a filter.
+         */
+        $jobRoleOptions = BiicfJobRole::query()
+            ->whereHas('competencies')
+            ->with([
+                'subSector:id,name',
+                'tiers.jobLevel:id,name,sort_order',
+                'jobLevels:id,name,sort_order',
+            ])
+            ->orderBy('title')
+            ->get(['id', 'sub_sector_id', 'title'])
+            ->map(
+                fn (BiicfJobRole $role) => [
+                    'id' => $role->id,
+                    'title' => $role->title,
+                    'sector' => $role->subSector->name ?? '',
+
+                    'levels' => $role->tiers
+                        ->pluck('jobLevel')
+                        ->filter()
+                        ->concat($role->jobLevels)
+                        ->sortBy('sort_order')
+                        ->pluck('name')
+                        ->unique()
+                        ->values()
+                        ->all(),
+                ]
+            )
+            ->values()
+            ->all();
+
         return view(
             'student.profile.edit',
             compact(
@@ -239,7 +427,11 @@ class ProfileController extends Controller
                 'interestAliasGroups',
                 'bdqfLevels',
                 'competencySubSectors',
-                'subSectorOptions'
+                'subSectorOptions',
+                'competencyJobLevels',
+                'jobLevelOptions',
+                'competencyJobRoles',
+                'jobRoleOptions'
             )
         );
     }
@@ -441,16 +633,36 @@ class ProfileController extends Controller
                 'distinct',
             ],
 
+            /*
+             * The programme row posts neither of these: its
+             * institution is stated on the form rather than
+             * typed, and its name comes from the programme
+             * select. Every other row must carry both.
+             */
             'qualifications.*.institution_name' => [
-                'required',
+                'required_without:qualifications.*.is_programme',
+                'nullable',
                 'string',
                 'max:150',
             ],
 
             'qualifications.*.programme_name' => [
-                'required',
+                'required_without:qualifications.*.is_programme',
+                'nullable',
                 'string',
                 'max:150',
+            ],
+
+            /*
+             * Required on the programme row, because that row is
+             * the only thing excusing the two fields above. A
+             * student who has chosen no programme sends it empty
+             * and gets no record, rather than an error about a
+             * field the form never showed them.
+             */
+            'qualifications.*.is_programme' => [
+                'nullable',
+                'boolean',
             ],
 
             'qualifications.*.level' => [
@@ -471,8 +683,18 @@ class ProfileController extends Controller
                 'max:150',
             ],
 
+            /*
+             * Not required on the programme row either. That row
+             * is on the form from the moment an account exists,
+             * so requiring a date there would stop a student
+             * saving their interests until they had dated their
+             * diploma. Left empty it falls back to the start of
+             * this year, which is what the migration that first
+             * copied programmes in used.
+             */
             'qualifications.*.start_date' => [
-                'required',
+                'required_without:qualifications.*.is_programme',
+                'nullable',
                 'date',
                 'before_or_equal:today',
             ],
@@ -2226,27 +2448,101 @@ class ProfileController extends Controller
         Request $request
     ): void {
         foreach ($request->input('qualifications', []) as $data) {
-            $values = [
-                'institution_name' => $data['institution_name'],
-                'programme_name' => $data['programme_name'],
-                'level' => $data['level'],
-                'bdqf_level' => $data['bdqf_level'] ?? null,
-                'field_of_study' => $data['field_of_study'] ?? null,
-                'start_date' => $data['start_date'],
-                'end_date' => $data['end_date'] ?? null,
-                'is_current' => (bool) ($data['is_current'] ?? false),
-            ];
+            $stillStudying = (bool) ($data['is_current'] ?? false);
 
-            if (! empty($data['id'])) {
-                $user->academicRecords()
-                    ->whereKey($data['id'])
-                    ->firstOrFail()
-                    ->update($values);
+            $isProgramme = (bool) ($data['is_programme'] ?? false);
 
+            /*
+             * The programme row is the student's Politeknik
+             * programme, shown among their qualifications rather
+             * than in a section of its own. Its institution is
+             * not theirs to type and its name comes from the
+             * programme select, which is still what writes
+             * users.programme — the column the rest of the
+             * application reads.
+             */
+            $programmeName = $isProgramme
+                ? $request->input('programme')
+                : ($data['programme_name'] ?? null);
+
+            /*
+             * Nothing to record for a student who has not said
+             * what they study yet. A row with no programme on it
+             * would fail the column and mean nothing if it did
+             * not.
+             */
+            if ($isProgramme && blank($programmeName)) {
                 continue;
             }
 
-            $user->academicRecords()->create($values);
+            $values = [
+                'institution_name' => $isProgramme
+                    ? self::PROGRAMME_INSTITUTION
+                    : $data['institution_name'],
+
+                'programme_name' => $programmeName,
+
+                /*
+                 * The column will not take null, and the
+                 * programme row is allowed to arrive without one.
+                 */
+                'start_date' => $data['start_date']
+                    ?: now()->startOfYear()->format('Y-m-d'),
+
+                'level' => $data['level'],
+                'bdqf_level' => $data['bdqf_level'] ?? null,
+                'field_of_study' => $data['field_of_study'] ?? null,
+
+                /*
+                 * A programme still being studied has not
+                 * finished, so it cannot carry a date saying it
+                 * did. The form hides the field once the box is
+                 * ticked; this is what holds when a request
+                 * arrives without going through it, and what
+                 * clears a date left behind by a student who
+                 * filled it in and then ticked the box.
+                 */
+                'end_date' => $stillStudying
+                    ? null
+                    : ($data['end_date'] ?? null),
+
+                'is_current' => $stillStudying,
+
+                'is_programme_record' => $isProgramme,
+            ];
+
+            if ($isProgramme) {
+                /*
+                 * The CGPA asked for beside the programme is the
+                 * one the rest of the application reads off the
+                 * account, kept on the record as well so the
+                 * qualification carries its own.
+                 */
+                $values['cgpa'] = $request->input('cgpa');
+            }
+
+            if (! empty($data['id'])) {
+                $record = $user->academicRecords()
+                    ->whereKey($data['id'])
+                    ->firstOrFail();
+
+                $record->update($values);
+            } else {
+                $record = $user->academicRecords()->create($values);
+            }
+
+            /*
+             * One record carries the flag. Without this a student
+             * who changes which qualification is their programme
+             * leaves two claiming to be it, and the form would
+             * then pick whichever came back first.
+             */
+            if ($isProgramme) {
+                $user->academicRecords()
+                    ->whereKeyNot($record->id)
+                    ->where('is_programme_record', true)
+                    ->update(['is_programme_record' => false]);
+            }
         }
 
         $removedIds = array_values(

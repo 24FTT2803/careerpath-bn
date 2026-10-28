@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StudentController extends Controller
 {
@@ -97,11 +97,16 @@ class StudentController extends Controller
         $matchedSkills = [];
 
         try {
-            // Check if table exists first
-            $hasTable = DB::table('information_schema.tables')
-                ->where('table_schema', env('DB_DATABASE'))
-                ->where('table_name', 'career_recommendations')
-                ->exists();
+            /*
+             * Asked of the connection rather than of
+             * information_schema, which the old probe searched
+             * using a database name read from env() — null once
+             * config:cache has run, and absent entirely under
+             * SQLite. Either way it reported the table missing
+             * and this student's recommendations were left off
+             * the page.
+             */
+            $hasTable = Schema::hasTable('career_recommendations');
 
             if ($hasTable) {
                 // Load career recommendations

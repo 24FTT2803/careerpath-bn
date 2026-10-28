@@ -32,12 +32,14 @@ class AcademicRecord extends Model
         'grades',
         'achievements',
         'is_current',
+        'is_programme_record',
     ];
 
     protected function casts(): array
     {
         return [
             'bdqf_level' => 'integer',
+            'is_programme_record' => 'boolean',
             'start_date' => 'date',
             'end_date' => 'date',
             'cgpa' => 'float',

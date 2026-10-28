@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Models\BIICFCareer;
 use App\Models\CareerRecommendation;
 use App\Models\Notification;
-use Illuminate\Http\Request;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -51,11 +50,18 @@ class DashboardController extends Controller
         $skillGaps = [];
 
         try {
-            // Check if biicf_careers table exists
-            $hasCareersTable = DB::table('information_schema.tables')
-                ->where('table_schema', env('DB_DATABASE'))
-                ->where('table_name', 'biicf_careers')
-                ->exists();
+            /*
+             * Asked of the connection rather than of
+             * information_schema. The old probe read the database
+             * name from env(), which returns null once
+             * config:cache has run — so on a live server it
+             * compared table_schema against nothing, matched
+             * nothing, and reported the table missing. Under
+             * SQLite there is no information_schema at all, so
+             * the query threw and the catch below reported the
+             * same.
+             */
+            $hasCareersTable = Schema::hasTable('biicf_careers');
 
             if ($hasCareersTable) {
                 $totalCareers = BIICFCareer::count() ?? 0;
@@ -65,11 +71,7 @@ class DashboardController extends Controller
         }
 
         try {
-            // Check if career_recommendations table exists
-            $hasRecommendationsTable = DB::table('information_schema.tables')
-                ->where('table_schema', env('DB_DATABASE'))
-                ->where('table_name', 'career_recommendations')
-                ->exists();
+            $hasRecommendationsTable = Schema::hasTable('career_recommendations');
 
             if ($hasRecommendationsTable) {
                 $totalRecommendations = CareerRecommendation::count() ?? 0;
@@ -123,7 +125,7 @@ class DashboardController extends Controller
         $students = User::where('role', 'student')->get();
 
         // Calculate completion rates
-        $completedProfiles = $students->filter(function($student) {
+        $completedProfiles = $students->filter(function ($student) {
             return ($student->profile_completion ?? 0) >= 70;
         })->count();
 
@@ -132,7 +134,7 @@ class DashboardController extends Controller
             : 0;
 
         // At risk students (readiness < 40%)
-        $atRiskStudents = $students->filter(function($student) {
+        $atRiskStudents = $students->filter(function ($student) {
             return ($student->readiness_score ?? 0) < 40;
         })->count();
 
@@ -172,7 +174,7 @@ class DashboardController extends Controller
                     $skillGaps = json_decode($skillGaps, true);
                 }
 
-                if (!is_array($skillGaps) || empty($skillGaps)) {
+                if (! is_array($skillGaps) || empty($skillGaps)) {
                     continue;
                 }
 
@@ -193,6 +195,7 @@ class DashboardController extends Controller
             }
 
             arsort($gaps);
+
             return array_slice($gaps, 0, 10);
         } catch (\Exception $e) {
             return [];

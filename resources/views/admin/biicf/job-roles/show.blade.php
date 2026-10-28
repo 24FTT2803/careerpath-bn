@@ -43,6 +43,25 @@
                     <span class="label">Career Path Level</span>
                     <span class="value"><span class="badge badge-primary">Level {{ $jobRole->career_path_level }}</span></span>
                 </div>
+                {{--
+                    The progression, so it can be checked without
+                    opening the edit form. An entry point and a
+                    role nobody has connected yet look identical
+                    in the Explorer, and this is where the
+                    difference is visible.
+                --}}
+                <div class="info-row">
+                    <span class="label">Comes From</span>
+                    <span class="value">
+                        {{ $jobRole->progressesFrom->pluck('title')->implode(', ') ?: 'Nothing recorded' }}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Leads To</span>
+                    <span class="value">
+                        {{ $jobRole->progressesTo->pluck('title')->implode(', ') ?: 'Nothing recorded' }}
+                    </span>
+                </div>
                 <div class="info-row">
                     <span class="label">Alternative Titles</span>
                     <span class="value">{{ $jobRole->alternative_titles ? implode(', ', $jobRole->alternative_titles) : '-' }}</span>

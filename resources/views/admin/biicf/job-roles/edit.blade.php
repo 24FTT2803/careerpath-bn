@@ -181,6 +181,12 @@
                     @enderror
                 </div>
 
+                @include('admin.biicf.partials.career-path', [
+                    'candidateRoles' => $candidateRoles,
+                    'selectedFrom' => $selectedFrom,
+                    'selectedTo' => $selectedTo,
+                ])
+
                 <div class="form-divider">Trainings</div>
 
                 <div class="form-group">

@@ -129,7 +129,93 @@ class BiicfController extends Controller
         $proficiencyLevels = BiicfProficiencyLevel::orderBy('level_number')->get();
         $trainings = BiicfTraining::orderBy('name')->get();
 
-        return view('admin.biicf.job-roles.create', compact('subSectors', 'competencies', 'proficiencyLevels', 'trainings'));
+        /*
+         * Nothing is stored yet, so only a resubmitted form has
+         * anything to restore.
+         */
+        $candidateRoles = $this->careerPathCandidates();
+        $selectedFrom = $this->chosenRoleIds('progresses_from');
+        $selectedTo = $this->chosenRoleIds('progresses_to');
+
+        return view('admin.biicf.job-roles.create', compact(
+            'subSectors',
+            'competencies',
+            'proficiencyLevels',
+            'trainings',
+            'candidateRoles',
+            'selectedFrom',
+            'selectedTo'
+        ));
+    }
+
+    /**
+     * The roles a career path may be drawn to or from.
+     *
+     * Everything except the role being edited, which cannot
+     * progress into itself.
+     */
+    private function careerPathCandidates(
+        ?BiicfJobRole $except = null
+    ): Collection {
+        return BiicfJobRole::query()
+            ->with('subSector:id,name')
+            ->when(
+                $except !== null,
+                fn ($query) => $query->whereKeyNot($except->id)
+            )
+            ->orderBy('title')
+            ->get(['id', 'sub_sector_id', 'title', 'career_path_level']);
+    }
+
+    /**
+     * Role ids posted back after a failed validation pass.
+     *
+     * @return array<int, int>
+     */
+    private function chosenRoleIds(string $field): array
+    {
+        return collect(old($field, []))
+            ->map(fn ($id) => (int) $id)
+            ->all();
+    }
+
+    /**
+     * Write this role's progression edges, both directions.
+     *
+     * Edges unchanged by this save are left alone rather than
+     * resynced, because the pivot carries a note — how long the
+     * step usually takes — that this form has no field for and
+     * must not quietly discard.
+     *
+     * The role's own id is dropped from both lists: a self-edge
+     * would draw a role as its own next step, and the unique key
+     * would not catch it.
+     */
+    private function syncCareerPath(
+        BiicfJobRole $jobRole,
+        Request $request
+    ): void {
+        foreach ([
+            'progresses_from' => 'progressesFrom',
+            'progresses_to' => 'progressesTo',
+        ] as $field => $relation) {
+            $wanted = collect($request->input($field, []))
+                ->map(fn ($id) => (int) $id)
+                ->reject(fn (int $id) => $id === $jobRole->id)
+                ->unique()
+                ->values();
+
+            $existing = $jobRole->{$relation}()
+                ->pluck('biicf_job_roles.id');
+
+            $jobRole->{$relation}()->detach(
+                $existing->diff($wanted)->all()
+            );
+
+            $jobRole->{$relation}()->attach(
+                $wanted->diff($existing)->all()
+            );
+        }
     }
 
     /**
@@ -234,6 +320,10 @@ class BiicfController extends Controller
             'competencies.*.is_core' => 'boolean',
             'trainings' => 'nullable|array',
             'trainings.*' => 'exists:biicf_trainings,id',
+            'progresses_from' => 'nullable|array',
+            'progresses_from.*' => 'integer|exists:biicf_job_roles,id',
+            'progresses_to' => 'nullable|array',
+            'progresses_to.*' => 'integer|exists:biicf_job_roles,id',
         ]);
 
         $this->validateCompetencyScales(
@@ -266,6 +356,8 @@ class BiicfController extends Controller
         ]);
 
         $this->syncCompetencyTable($jobRole, $request);
+
+        $this->syncCareerPath($jobRole, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);
@@ -398,6 +490,8 @@ class BiicfController extends Controller
             'specificWorkFunctions.children.children',
             'tiers.competencies',
             'tiers.entryRequirements',
+            'progressesFrom:id,title',
+            'progressesTo:id,title',
         ]);
 
         /*
@@ -459,6 +553,30 @@ class BiicfController extends Controller
 
         $workFunctionTree = $this->workFunctionTree($jobRole);
 
+        $candidateRoles = $this->careerPathCandidates($jobRole);
+
+        /*
+         * What is stored, unless a failed save is being shown
+         * back — in which case the admin's own ticks are, so a
+         * validation error elsewhere on the form does not throw
+         * away the progression they just set.
+         *
+         * Decided by the form's own marker rather than by whether
+         * the lists came back. An admin who clears every tick
+         * submits neither field at all, and reading that as
+         * "nothing posted" would restore the edges they had just
+         * removed.
+         */
+        $resubmitted = old('career_path_submitted') !== null;
+
+        $selectedFrom = $resubmitted
+            ? $this->chosenRoleIds('progresses_from')
+            : $jobRole->progressesFrom()->pluck('biicf_job_roles.id')->all();
+
+        $selectedTo = $resubmitted
+            ? $this->chosenRoleIds('progresses_to')
+            : $jobRole->progressesTo()->pluck('biicf_job_roles.id')->all();
+
         return view('admin.biicf.job-roles.edit', compact(
             'jobRole',
             'subSectors',
@@ -466,7 +584,10 @@ class BiicfController extends Controller
             'proficiencyLevels',
             'trainings',
             'jobFamilies',
-            'workFunctionTree'
+            'workFunctionTree',
+            'candidateRoles',
+            'selectedFrom',
+            'selectedTo'
         ));
     }
 
@@ -531,6 +652,10 @@ class BiicfController extends Controller
             'competencies.*.is_core' => 'boolean',
             'trainings' => 'nullable|array',
             'trainings.*' => 'exists:biicf_trainings,id',
+            'progresses_from' => 'nullable|array',
+            'progresses_from.*' => 'integer|exists:biicf_job_roles,id',
+            'progresses_to' => 'nullable|array',
+            'progresses_to.*' => 'integer|exists:biicf_job_roles,id',
         ]);
 
         $this->validateCompetencyScales(
@@ -564,6 +689,8 @@ class BiicfController extends Controller
         }
 
         $this->syncCompetencyTable($jobRole, $request);
+
+        $this->syncCareerPath($jobRole, $request);
 
         if ($request->has('trainings')) {
             $jobRole->trainings()->sync($request->trainings);

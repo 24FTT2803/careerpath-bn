@@ -1917,7 +1917,7 @@ document.addEventListener(
                                         >
                                     </div>
 
-                                    <div class="cpbn-field">
+                                    <div class="cpbn-field" data-finished-field>
                                         <label>Finished</label>
                                         <input
                                             type="date"
@@ -1936,6 +1936,7 @@ document.addEventListener(
                                                 type="checkbox"
                                                 name="qualifications[${qualificationIndex}][is_current]"
                                                 value="1"
+                                                data-still-studying
                                             >
                                             <span>Still studying this</span>
                                             <span class="cpbn-check-state"></span>
@@ -1965,6 +1966,72 @@ document.addEventListener(
                         }
                     );
             }
+
+            /*
+             * A programme still being studied has no date it
+             * finished, so the field goes away while the box is
+             * ticked — and anything already typed into it goes
+             * with it, rather than being submitted and refused.
+             *
+             * Delegated from the list so a row added above is
+             * covered by the same handler as one that came with
+             * the page, and settled once on load for the rows
+             * already ticked.
+             */
+            const settleFinishedField =
+                function(checkbox) {
+                    const card =
+                        checkbox.closest(
+                            '.cpbn-certification-card'
+                        );
+
+                    if (! card) {
+                        return;
+                    }
+
+                    const field =
+                        card.querySelector(
+                            '[data-finished-field]'
+                        );
+
+                    if (! field) {
+                        return;
+                    }
+
+                    field.hidden = checkbox.checked;
+
+                    if (! checkbox.checked) {
+                        return;
+                    }
+
+                    const date =
+                        field.querySelector(
+                            'input[type="date"]'
+                        );
+
+                    if (date) {
+                        date.value = '';
+                    }
+                };
+
+            qualificationList
+                .querySelectorAll('[data-still-studying]')
+                .forEach(settleFinishedField);
+
+            qualificationList
+                .addEventListener(
+                    'change',
+                    function(event) {
+                        const checkbox =
+                            event.target.closest(
+                                '[data-still-studying]'
+                            );
+
+                        if (checkbox) {
+                            settleFinishedField(checkbox);
+                        }
+                    }
+                );
 
             /*
              * Removal is explicit: an existing record's id is

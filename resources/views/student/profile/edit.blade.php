@@ -480,6 +480,154 @@
         margin-bottom: 12px;
     }
 
+    /*
+     * Two rows of chips need saying which is which. One row of
+     * sub-sectors and one of levels, unlabelled and stacked,
+     * reads as one long row that wrapped.
+     */
+    .edit-profile .cpbn-filter-row {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        align-items: start;
+        gap: 10px;
+    }
+
+    .edit-profile .cpbn-filter-label {
+        padding-top: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: .02em;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    /*
+     * The programme row. Marked as the one row that is not the
+     * student's to add or remove, so it does not read as an
+     * ordinary entry somebody has filled in for them.
+     */
+    .edit-profile .cpbn-certification-card.is-programme-row {
+        border-color: var(--gold, #cf9a3d);
+        background: rgba(207, 154, 61, .04);
+    }
+
+    .edit-profile .cpbn-row-badge {
+        margin: 0 0 12px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--gold-ink, #8a6519);
+    }
+
+    .edit-profile .cpbn-fixed-value {
+        margin: 0;
+        padding: 9px 0;
+        font-weight: 600;
+        color: var(--ink, #0d1a2b);
+    }
+
+    .edit-profile .cpbn-filter-head {
+        display: flex;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .edit-profile .cpbn-filter-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--ink-dim, #5b6675);
+        background: none;
+        border: 0;
+        cursor: pointer;
+    }
+
+    .edit-profile .cpbn-filter-toggle:hover {
+        color: var(--ink, #0d1a2b);
+    }
+
+    .edit-profile .cpbn-filter-toggle-caret {
+        display: inline-block;
+        font-size: 10px;
+        transition: transform .15s ease;
+    }
+
+    .edit-profile .cpbn-filter-toggle[aria-expanded="false"] .cpbn-filter-toggle-caret {
+        transform: rotate(-90deg);
+    }
+
+    /* What is filtered, when the chips themselves are put away. */
+    .edit-profile .cpbn-filter-active {
+        font-size: 11.5px;
+        color: var(--gold-ink, #8a6519);
+    }
+
+    .edit-profile .cpbn-filters[hidden] {
+        display: none;
+    }
+
+    .edit-profile .cpbn-filter-summary {
+        margin: 0 0 12px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    /*
+     * A competency on screen because the student ticked it, not
+     * because the filter asked for it. Without the distinction
+     * the two look like the filter leaking.
+     */
+    .edit-profile .cpbn-competency-item[data-kept-by-tick="true"] {
+        border-left: 3px solid var(--gold, #cf9a3d);
+    }
+
+    /*
+     * Thirty-eight roles is longer than a row. Capped and
+     * scrolled so the three filters together do not push the
+     * competencies themselves off the screen.
+     */
+    .edit-profile .cpbn-role-filter {
+        max-height: 92px;
+        overflow-y: auto;
+        align-content: flex-start;
+        padding-right: 2px;
+    }
+
+    .edit-profile .cpbn-filter-empty {
+        margin: 0 0 12px;
+        font-size: 12px;
+        line-height: 1.55;
+        color: var(--ink-dim, #5b6675);
+    }
+
+    .edit-profile .cpbn-filter-reset {
+        padding: 0;
+        font: inherit;
+        color: var(--gold-ink, #8a6519);
+        background: none;
+        border: 0;
+        text-decoration: underline;
+        cursor: pointer;
+    }
+
+    @media (max-width: 560px) {
+        .edit-profile .cpbn-filter-row {
+            grid-template-columns: minmax(0, 1fr);
+            gap: 2px;
+        }
+
+        .edit-profile .cpbn-filter-label {
+            padding-top: 0;
+        }
+    }
+
     .edit-profile .cpbn-sector-chip {
         padding: 5px 11px;
         font: inherit;
@@ -1698,32 +1846,28 @@
                         <span class="ep-nav-num">1</span>
                         <span class="ep-nav-label">Personal Information</span>
                     </a>
-                    <a href="#ep-studies" class="ep-nav-link" data-ep-target="ep-studies">
-                        <span class="ep-nav-num">2</span>
-                        <span class="ep-nav-label">Current Studies</span>
-                    </a>
                     <a href="#ep-qualifications" class="ep-nav-link" data-ep-target="ep-qualifications">
-                        <span class="ep-nav-num">3</span>
+                        <span class="ep-nav-num">2</span>
                         <span class="ep-nav-label">Qualifications</span>
                     </a>
                     <a href="#ep-skills" class="ep-nav-link" data-ep-target="ep-skills">
-                        <span class="ep-nav-num">4</span>
+                        <span class="ep-nav-num">3</span>
                         <span class="ep-nav-label">Skills &amp; Competencies</span>
                     </a>
                     <a href="#ep-interests" class="ep-nav-link" data-ep-target="ep-interests">
-                        <span class="ep-nav-num">5</span>
+                        <span class="ep-nav-num">4</span>
                         <span class="ep-nav-label">Interests &amp; Preferences</span>
                     </a>
                     <a href="#ep-projects" class="ep-nav-link" data-ep-target="ep-projects">
-                        <span class="ep-nav-num">6</span>
+                        <span class="ep-nav-num">5</span>
                         <span class="ep-nav-label">Projects &amp; Experience</span>
                     </a>
                     <a href="#ep-certifications" class="ep-nav-link" data-ep-target="ep-certifications">
-                        <span class="ep-nav-num">7</span>
+                        <span class="ep-nav-num">6</span>
                         <span class="ep-nav-label">Certifications</span>
                     </a>
                     <a href="#ep-aspirations" class="ep-nav-link" data-ep-target="ep-aspirations">
-                        <span class="ep-nav-num">8</span>
+                        <span class="ep-nav-num">7</span>
                         <span class="ep-nav-label">Career Aspirations</span>
                     </a>
                 </nav>
@@ -2030,64 +2174,7 @@
                 </div>
             </div>
 
-            <!-- SECTION 2: Current Studies -->
-            <div class="section" id="ep-studies">
-                <div class="title">
-                    <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                    >
-                        <path d="M22 10v6"/>
-                        <path d="M2 10l10-5 10 5-10 5z"/>
-                        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
-                    </svg>
-
-                    Current Studies
-                </div>
-
-                <p class="desc">
-                    Your current programme at Politeknik Brunei and your latest CGPA.
-                    We use these to match careers to you, work out your readiness,
-                    and show you to your lecturers.
-                </p>
-
-                <div class="cpbn-fgrid">
-                    <div class="cpbn-field">
-                        <label>Current programme</label>
-
-                        <x-programme-select
-                            :selected="$user->programme"
-                            :selected-group-id="$user->programme_group_id"
-                        />
-
-                        @error('programme')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-
-                    <div class="cpbn-field">
-                        <label>Latest CGPA (out of 4.00)</label>
-
-                        <input
-                            type="number"
-                            name="cgpa"
-                            step="0.01"
-                            min="0"
-                            max="4"
-                            placeholder="e.g. 3.25"
-                            value="{{ old('cgpa', $user->cgpa) }}"
-                        >
-
-                        @error('cgpa')
-                            <div class="error">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-            </div>
-
-            <!-- SECTION 2b: Qualifications -->
+            <!-- SECTION 2: Qualifications -->
             <div class="section" id="ep-qualifications">
                 <div class="title">
                     <svg
@@ -2104,9 +2191,10 @@
                 </div>
 
                 <p class="desc">
-                    Every qualification you hold or are working towards. Job roles state
-                    what they need as a BDQF level, so saying which level an award sits on
-                    is what lets the explorer tell you how you compare.
+                    Every qualification you hold or are working towards, starting with
+                    your Politeknik Brunei programme. Job roles state what they need as a
+                    BDQF level, so saying which level an award sits on is what lets the
+                    explorer tell you how you compare.
                 </p>
 
                 {{--
@@ -2191,14 +2279,70 @@
                                 'start_date' => $record->start_date?->format('Y-m-d'),
                                 'end_date' => $record->end_date?->format('Y-m-d'),
                                 'is_current' => $record->is_current,
+                                'is_programme' => $record->is_programme_record,
                             ])
                             ->values()
                             ->all();
                     }
 
-                    $nextQualificationIndex = empty($qualificationRows)
+                    /*
+                     * The student's Politeknik programme is one of
+                     * their qualifications, shown first and not
+                     * removable. It used to be a section of its
+                     * own asking for "current studies", which
+                     * says nothing to a post-graduate who has
+                     * none.
+                     *
+                     * Found by its flag rather than by looking
+                     * for the institution's name, so a student
+                     * holding two Politeknik awards — or who has
+                     * finished the one they were on — keeps the
+                     * same row as their programme.
+                     */
+                    $programmeRowKey = null;
+
+                    foreach ($qualificationRows as $rowKey => $row) {
+                        if (! empty($row['is_programme'])) {
+                            $programmeRowKey = $rowKey;
+
+                            break;
+                        }
+                    }
+
+                    $programmeRow = $programmeRowKey === null
+                        ? [
+                            'id' => null,
+                            'institution_name' => \App\Http\Controllers\Student\ProfileController::PROGRAMME_INSTITUTION,
+                            'programme_name' => $user->programme,
+                            'level' => \App\Http\Controllers\Student\ProfileController::PROGRAMME_AWARD,
+                            'bdqf_level' => \App\Http\Controllers\Student\ProfileController::PROGRAMME_BDQF_LEVEL,
+                            'field_of_study' => null,
+                            'start_date' => null,
+                            'end_date' => null,
+                            'is_current' => true,
+                            'is_programme' => true,
+                        ]
+                        : $qualificationRows[$programmeRowKey];
+
+                    $otherQualificationRows = $programmeRowKey === null
+                        ? $qualificationRows
+                        : array_diff_key($qualificationRows, [$programmeRowKey => true]);
+
+                    /*
+                     * The programme row keeps whichever index it
+                     * arrived with so a failed save puts the
+                     * student's own entries back where they were.
+                     */
+                    $programmeRowIndex = $programmeRowKey ?? 'programme';
+
+                    $usedIndexes = array_merge(
+                        array_keys($qualificationRows),
+                        [$programmeRowIndex]
+                    );
+
+                    $nextQualificationIndex = empty($usedIndexes)
                         ? 0
-                        : max(array_map('intval', array_keys($qualificationRows))) + 1;
+                        : max(array_map('intval', $usedIndexes)) + 1;
 
                     $bdqfOptions = ($bdqfLevels ?? collect())
                         ->map(fn ($level) => [
@@ -2224,7 +2368,154 @@
                     data-next-index="{{ $nextQualificationIndex }}"
                     data-bdqf-options="{{ json_encode($bdqfOptions) }}"
                 >
-                    @foreach($qualificationRows as $index => $qualification)
+                    {{--
+                        The Politeknik programme. Pre-filled as far
+                        as it can be and not removable: every
+                        student on this system is on one, which is
+                        what makes the institution, the award and
+                        the BDQF level answerable without asking.
+
+                        The programme select is the same field it
+                        always was — it still writes
+                        users.programme, which the rest of the
+                        application reads — so this row mirrors it
+                        rather than holding a second copy.
+                    --}}
+                    <div class="cpbn-certification-card is-programme-row">
+                        @if(! empty($programmeRow['id']))
+                            <input
+                                type="hidden"
+                                name="qualifications[{{ $programmeRowIndex }}][id]"
+                                value="{{ $programmeRow['id'] }}"
+                            >
+                        @endif
+
+                        <input
+                            type="hidden"
+                            name="qualifications[{{ $programmeRowIndex }}][is_programme]"
+                            value="1"
+                        >
+
+                        <p class="cpbn-row-badge">Your programme</p>
+
+                        <div class="cpbn-fgrid">
+                            <div class="cpbn-field">
+                                <label>Institution</label>
+                                <p class="cpbn-fixed-value">
+                                    {{ \App\Http\Controllers\Student\ProfileController::PROGRAMME_INSTITUTION }}
+                                </p>
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label>Programme <span class="req">*</span></label>
+
+                                <x-programme-select
+                                    :selected="$user->programme"
+                                    :selected-group-id="$user->programme_group_id"
+                                />
+
+                                @error('programme')
+                                    <div class="error">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label>Award <span class="req">*</span></label>
+                                <input
+                                    type="text"
+                                    name="qualifications[{{ $programmeRowIndex }}][level]"
+                                    value="{{ $programmeRow['level'] ?? '' }}"
+                                    maxlength="100"
+                                    required
+                                >
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label>BDQF Level</label>
+                                <select name="qualifications[{{ $programmeRowIndex }}][bdqf_level]">
+                                    <option value="">Not sure</option>
+                                    @foreach($bdqfOptions as $option)
+                                        <option
+                                            value="{{ $option['level'] }}"
+                                            @selected((string) ($programmeRow['bdqf_level'] ?? '') === (string) $option['level'])
+                                        >{{ $option['label'] }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label>Latest CGPA (out of 4.00)</label>
+                                <input
+                                    type="number"
+                                    name="cgpa"
+                                    step="0.01"
+                                    min="0"
+                                    max="4"
+                                    placeholder="e.g. 3.25"
+                                    value="{{ old('cgpa', $user->cgpa) }}"
+                                >
+
+                                @error('cgpa')
+                                    <div class="error">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label>Field of Study</label>
+                                <input
+                                    type="text"
+                                    name="qualifications[{{ $programmeRowIndex }}][field_of_study]"
+                                    value="{{ $programmeRow['field_of_study'] ?? '' }}"
+                                    maxlength="150"
+                                    placeholder="Information Technology"
+                                >
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label>Started</label>
+                                <input
+                                    type="date"
+                                    name="qualifications[{{ $programmeRowIndex }}][start_date]"
+                                    value="{{ $programmeRow['start_date'] ?? '' }}"
+                                    max="{{ now()->format('Y-m-d') }}"
+                                >
+                            </div>
+
+                            <div class="cpbn-field" data-finished-field>
+                                <label>Finished</label>
+                                <input
+                                    type="date"
+                                    name="qualifications[{{ $programmeRowIndex }}][end_date]"
+                                    value="{{ $programmeRow['end_date'] ?? '' }}"
+                                >
+                            </div>
+
+                            <div class="cpbn-field">
+                                <label class="cpbn-check">
+                                    <input
+                                        type="hidden"
+                                        name="qualifications[{{ $programmeRowIndex }}][is_current]"
+                                        value="0"
+                                    >
+                                    <input
+                                        type="checkbox"
+                                        name="qualifications[{{ $programmeRowIndex }}][is_current]"
+                                        value="1"
+                                        data-still-studying
+                                        @checked($programmeRow['is_current'] ?? true)
+                                    >
+                                    <span>Still studying this</span>
+                                    <span class="cpbn-check-state"></span>
+                                </label>
+                                <small class="cpbn-file-note">
+                                    Untick it once you have graduated — the award then counts
+                                    towards what you hold rather than what you will.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    @foreach($otherQualificationRows as $index => $qualification)
                         <div class="cpbn-certification-card">
                             @if(! empty($qualification['id']))
                                 <input
@@ -2310,7 +2601,15 @@
                                     >
                                 </div>
 
-                                <div class="cpbn-field">
+                                {{--
+                                    Put away while the programme
+                                    is still being studied: a
+                                    date it finished is a
+                                    contradiction, and an empty
+                                    box beside a ticked "still
+                                    studying" invites one anyway.
+                                --}}
+                                <div class="cpbn-field" data-finished-field>
                                     <label>Finished</label>
                                     <input
                                         type="date"
@@ -2330,6 +2629,7 @@
                                             type="checkbox"
                                             name="qualifications[{{ $index }}][is_current]"
                                             value="1"
+                                            data-still-studying
                                             @checked($qualification['is_current'] ?? false)
                                         >
                                         <span>Still studying this</span>
@@ -2591,30 +2891,152 @@
                     </div>
 
                     {{--
-                        Narrowing a hundred and twenty-seven of
-                        them to the forty or so a sub-sector asks
-                        for. A competency is wanted across several
-                        sub-sectors, so these overlap on purpose.
+                        Three rows of chips is a lot of furniture
+                        above a list, and plenty of people never
+                        want any of it. Shut, the whole block is
+                        one line that says what is filtered.
 
-                        Anything already ticked stays on screen
-                        whichever filter is on. Hiding a choice a
-                        student has made looks exactly like losing
-                        it.
+                        Open to begin with, because a filter
+                        nobody finds is no better than one that is
+                        not there — the point is being able to put
+                        it away, not to hide it.
                     --}}
-                    @if(! empty($subSectorOptions))
-                        <div class="cpbn-sector-filter" id="technical-sector-filter">
-                            <button type="button" class="cpbn-sector-chip is-on" data-sector="">
-                                All
-                            </button>
+                    <div class="cpbn-filter-head">
+                        <button
+                            type="button"
+                            class="cpbn-filter-toggle"
+                            id="technical-filter-toggle"
+                            aria-expanded="true"
+                            aria-controls="technical-filters"
+                        >
+                            <span class="cpbn-filter-toggle-caret" aria-hidden="true">&#9662;</span>
+                            <span id="technical-filter-toggle-label">Hide filters</span>
+                        </button>
 
-                            @foreach($subSectorOptions as $sector)
-                                <button type="button" class="cpbn-sector-chip"
-                                        data-sector="{{ $sector }}">
-                                    {{ $sector }}
-                                </button>
-                            @endforeach
-                        </div>
-                    @endif
+                        <span class="cpbn-filter-active" id="technical-filter-active"></span>
+                    </div>
+
+                    <div class="cpbn-filters" id="technical-filters">
+
+                        {{--
+                            Narrowing a hundred and twenty-seven of
+                            them to the forty or so a sub-sector asks
+                            for. A competency is wanted across several
+                            sub-sectors, so these overlap on purpose.
+
+                            Anything already ticked stays on screen
+                            whichever filter is on. Hiding a choice a
+                            student has made looks exactly like losing
+                            it.
+                        --}}
+                        @if(! empty($subSectorOptions))
+                            <div class="cpbn-filter-row">
+                                <span class="cpbn-filter-label">Sub-sector</span>
+
+                                <div class="cpbn-sector-filter" id="technical-sector-filter">
+                                    <button type="button" class="cpbn-sector-chip is-on" data-sector="">
+                                        All
+                                    </button>
+
+                                    @foreach($subSectorOptions as $sector)
+                                        <button type="button" class="cpbn-sector-chip"
+                                                data-sector="{{ $sector }}">
+                                            {{ $sector }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{--
+                            And the level crossed with it. A sub-sector
+                            alone still leaves forty to sixty, which is
+                            a list to read rather than a choice to
+                            make; with a level it is the handful a
+                            student entering that sector is expected
+                            to have.
+
+                            Only the levels something is filed under
+                            are offered. The two narrow together, and
+                            a competency the framework files under no
+                            level at all stays on screen whichever is
+                            picked — it can be reached from nowhere
+                            else.
+                        --}}
+                        @if(! empty($jobLevelOptions))
+                            <div class="cpbn-filter-row">
+                                <span class="cpbn-filter-label">Job level</span>
+
+                                <div class="cpbn-sector-filter" id="technical-level-filter">
+                                    <button type="button" class="cpbn-sector-chip is-on" data-level="">
+                                        All
+                                    </button>
+
+                                    @foreach($jobLevelOptions as $level)
+                                        <button type="button" class="cpbn-sector-chip"
+                                                data-level="{{ $level }}">
+                                            {{ $level }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        {{--
+                            And the job itself, which is the one that
+                            actually cuts it down. A sub-sector at a
+                            level runs to thirty-nine in the
+                            combinations students pick most; one role
+                            is eight to seventeen, always.
+
+                            The rows above narrow which roles are
+                            offered rather than being made redundant
+                            by this one, so a student can still arrive
+                            at a role by sector and seniority. A role
+                            left showing after its sector or level
+                            stops offering it would be a filter nobody
+                            could see, so it is cleared when that
+                            happens.
+                        --}}
+                        @if(! empty($jobRoleOptions))
+                            <div class="cpbn-filter-row">
+                                <span class="cpbn-filter-label">Job role</span>
+
+                                <div class="cpbn-sector-filter cpbn-role-filter" id="technical-role-filter">
+                                    <button type="button" class="cpbn-sector-chip is-on" data-role="">
+                                        All
+                                    </button>
+
+                                    @foreach($jobRoleOptions as $role)
+                                        <button type="button" class="cpbn-sector-chip"
+                                                data-role="{{ $role['id'] }}"
+                                                data-role-sector="{{ $role['sector'] }}"
+                                                data-role-levels="{{ implode('|', $role['levels']) }}">
+                                            {{ $role['title'] }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        <p class="cpbn-filter-empty" id="technical-filter-empty" hidden>
+                            Nothing is asked for by that combination.
+                            Try another, or
+                            <button type="button" class="cpbn-filter-reset" data-filter-reset>
+                                clear the filters</button>.
+                        </p>
+
+                    </div>
+
+                    {{--
+                        Why the list can hold more than the filter
+                        asked for. A competency already ticked
+                        stays on screen whatever is selected, and
+                        with every page open at once that reads as
+                        the filter having failed. So it is said
+                        plainly, and those rows are marked.
+                    --}}
+                    <p class="cpbn-filter-summary" id="technical-filter-summary" hidden></p>
 
                     <div
                         class="cpbn-competency-grid"
@@ -2696,6 +3118,8 @@
                                 data-biicf-competency
                                 data-technical-competency
                                 data-sectors="{{ implode('|', $competencySubSectors[$competency->id] ?? []) }}"
+                                data-levels="{{ implode('|', $competencyJobLevels[$competency->id] ?? []) }}"
+                                data-roles="{{ implode('|', $competencyJobRoles[$competency->id] ?? []) }}"
                             >
                                 <label class="cpbn-competency-choice">
                                     <input
@@ -4604,8 +5028,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 );
 
             /*
-             * What the sub-sector filter has left in. Paging a
-             * list captured once would count the hidden ones and
+             * What the filters have left in. Paging a list
+             * captured once would count the hidden ones and
              * leave empty pages behind a filter.
              */
             const items =
@@ -4784,35 +5208,162 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     /*
-     * The sub-sector filter.
+     * The sub-sector, job level and job role filters.
      *
      * Client-side, because every competency is already on the
      * page and asking the server to send a shorter list would be
      * a round trip to hide things we are holding.
      *
-     * A ticked competency is never hidden. A student who filters
-     * to ICT Security and watches four of their own choices
-     * vanish has every reason to think the page threw them away.
+     * All three narrow together: a competency has to answer every
+     * one of them to stay on screen. The role is the one that
+     * does the work — a sub-sector at a level still runs to
+     * thirty-nine in the combinations students pick most, where
+     * one role is eight to seventeen — and the two rows above it
+     * narrow which roles are offered rather than being made
+     * redundant by it.
+     *
+     * Two kinds of competency are never hidden. One already
+     * ticked, because a student who filters to ICT Security and
+     * watches four of their own choices vanish has every reason
+     * to think the page threw them away. And one the framework
+     * files under no level at all, because no level chip would
+     * ever show it and it would stop being pickable at all.
      */
     const sectorFilter =
         document.getElementById(
             'technical-sector-filter'
         );
 
-    if (sectorFilter && repageTechnical) {
-        const chips =
-            Array.from(
-                sectorFilter.querySelectorAll(
-                    '[data-sector]'
-                )
+    const levelFilter =
+        document.getElementById(
+            'technical-level-filter'
+        );
+
+    const roleFilter =
+        document.getElementById(
+            'technical-role-filter'
+        );
+
+    if ((sectorFilter || levelFilter || roleFilter) && repageTechnical) {
+        const emptyNote =
+            document.getElementById(
+                'technical-filter-empty'
             );
 
+        let wantedSector = '';
+        let wantedLevel = '';
+        let wantedRole = '';
+
+        const matches =
+            function(item, attribute, wanted, showWhenBlank) {
+                if (wanted === '') {
+                    return true;
+                }
+
+                const values =
+                    (item.dataset[attribute] || '')
+                        .split('|')
+                        .filter(Boolean);
+
+                if (values.length === 0) {
+                    return showWhenBlank;
+                }
+
+                return values.includes(wanted);
+            };
+
+        /*
+         * Saying what the list is showing, and why it may hold
+         * more than was asked for.
+         *
+         * This is the question the three rows raise and never
+         * answered: a student who filters to one role and then
+         * opens every page sees their own earlier ticks among
+         * that role's competencies, with nothing to say which is
+         * which.
+         */
+        const filtering =
+            function() {
+                return wantedSector !== ''
+                    || wantedLevel !== ''
+                    || wantedRole !== '';
+            };
+
+        const summary =
+            document.getElementById(
+                'technical-filter-summary'
+            );
+
+        const activeNote =
+            document.getElementById(
+                'technical-filter-active'
+            );
+
+        const describeFilters =
+            function(asked, keptByTick) {
+                const chosen = [];
+
+                if (roleFilter) {
+                    const role = roleFilter.querySelector(
+                        '.is-on[data-role]:not([data-role=""])'
+                    );
+
+                    if (role) {
+                        chosen.push(role.textContent.trim());
+                    }
+                }
+
+                if (wantedLevel !== '') {
+                    chosen.push(wantedLevel);
+                }
+
+                if (wantedSector !== '') {
+                    chosen.push(wantedSector);
+                }
+
+                if (activeNote) {
+                    activeNote.textContent =
+                        chosen.length > 0
+                            ? chosen.join(' · ')
+                            : '';
+                }
+
+                if (!summary) {
+                    return;
+                }
+
+                if (!filtering()) {
+                    summary.hidden = true;
+                    summary.textContent = '';
+
+                    return;
+                }
+
+                summary.hidden = false;
+
+                const subject =
+                    chosen.length > 0
+                        ? chosen.join(' · ')
+                        : 'these filters';
+
+                summary.textContent =
+                    keptByTick > 0
+                        ? `${asked} for ${subject}, plus `
+                            + `${keptByTick} you have already `
+                            + `ticked — those are marked.`
+                        : `${asked} for ${subject}.`;
+            };
+
         const apply =
-            function(wanted) {
+            function() {
                 const items =
                     document.querySelectorAll(
                         '[data-technical-competency]'
                     );
+
+                let showing = 0;
+                let asked = 0;
+                let keptByTick = 0;
 
                 items.forEach(
                     function(item) {
@@ -4821,29 +5372,150 @@ document.addEventListener('DOMContentLoaded', function () {
                                 'input[type="checkbox"]'
                             );
 
-                        const sectors =
-                            (item.dataset.sectors || '')
-                                .split('|')
-                                .filter(Boolean);
+                        const wanted = (
+                                /*
+                                 * A competency no role asks for
+                                 * is in no sub-sector and under
+                                 * no role, and both chips have
+                                 * always hidden it. Levels are
+                                 * the other way round: a tier
+                                 * that is a numbered step inside
+                                 * a level names none, so a blank
+                                 * list there means unrecorded
+                                 * rather than inapplicable.
+                                 */
+                                matches(item, 'sectors', wantedSector, false)
+                                && matches(item, 'levels', wantedLevel, true)
+                                && matches(item, 'roles', wantedRole, false)
+                            );
 
-                        const keep =
-                            wanted === ''
-                            || sectors.includes(wanted)
-                            || (ticked && ticked.checked);
+                        const ownIt = !!(ticked && ticked.checked);
+
+                        const keep = wanted || ownIt;
 
                         item.dataset.filteredOut =
                             keep ? 'false' : 'true';
+
+                        /*
+                         * On screen for the student's own sake
+                         * rather than the filter's. Marked, so a
+                         * row the filter did not ask for does not
+                         * read as the filter having leaked.
+                         */
+                        item.dataset.keptByTick =
+                            (ownIt && !wanted) ? 'true' : 'false';
+
+                        if (ownIt && !wanted) {
+                            item.title =
+                                'You have ticked this. It stays on '
+                                + 'screen whatever the filters say.';
+                        } else {
+                            item.removeAttribute('title');
+                        }
+
+                        if (wanted) {
+                            asked++;
+                        }
+
+                        if (ownIt && !wanted) {
+                            keptByTick++;
+                        }
+
+                        if (keep) {
+                            showing++;
+                        }
                     }
                 );
+
+                if (emptyNote) {
+                    emptyNote.hidden = showing > 0;
+                }
+
+                describeFilters(asked, keptByTick);
 
                 repageTechnical();
             };
 
-        chips.forEach(
-            function(chip) {
-                chip.addEventListener(
-                    'click',
-                    function() {
+
+        /*
+         * Which roles the rows above leave on offer.
+         *
+         * A role whose sub-sector or level has just been filtered
+         * away stops being offered, and if it was the one
+         * selected the selection goes with it. Left standing it
+         * would be a filter with no chip on screen to say so: the
+         * grid would hold one role's competencies and nothing
+         * would explain why.
+         *
+         * "All" is never taken away, which is also how the
+         * selection gets somewhere to land.
+         */
+        const roleChips =
+            roleFilter
+                ? Array.from(
+                    roleFilter.querySelectorAll('[data-role]')
+                )
+                : [];
+
+        const refreshRoleChips =
+            function() {
+                let selectionGone = false;
+
+                roleChips.forEach(
+                    function(chip) {
+                        if (chip.dataset.role === '') {
+                            return;
+                        }
+
+                        const fits =
+                            matches(chip, 'roleSector', wantedSector, false)
+                            && matches(chip, 'roleLevels', wantedLevel, true);
+
+                        chip.hidden = !fits;
+
+                        if (
+                            !fits
+                            && chip.classList.contains('is-on')
+                        ) {
+                            selectionGone = true;
+                        }
+                    }
+                );
+
+                if (!selectionGone) {
+                    return;
+                }
+
+                roleChips.forEach(
+                    function(chip) {
+                        chip.classList.toggle(
+                            'is-on',
+                            chip.dataset.role === ''
+                        );
+                    }
+                );
+
+                wantedRole = '';
+            };
+
+        /*
+         * One row of chips, one of which is on at a time. All
+         * three rows behave the same way, so they are wired the
+         * same way rather than three times.
+         */
+        const wireRow =
+            function(row, attribute, onPick) {
+                if (!row) {
+                    return function() {};
+                }
+
+                const chips =
+                    Array.from(
+                        row.querySelectorAll('[data-' + attribute + ']')
+                    );
+
+                const select =
+                    function(chip) {
                         chips.forEach(
                             function(other) {
                                 other.classList.toggle(
@@ -4853,11 +5525,130 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         );
 
-                        apply(chip.dataset.sector);
+                        onPick(chip.dataset[attribute]);
+                    };
+
+                chips.forEach(
+                    function(chip) {
+                        chip.addEventListener(
+                            'click',
+                            function() {
+                                select(chip);
+
+                                /*
+                                 * Before applying, so a role the
+                                 * new selection no longer offers
+                                 * is cleared rather than left
+                                 * filtering invisibly.
+                                 */
+                                refreshRoleChips();
+
+                                apply();
+                            }
+                        );
+                    }
+                );
+
+                /* Back to "All", without a click. */
+                return function() {
+                    if (chips.length > 0) {
+                        select(chips[0]);
+                    }
+                };
+            };
+
+        const resetSector =
+            wireRow(
+                sectorFilter,
+                'sector',
+                function(value) {
+                    wantedSector = value;
+                }
+            );
+
+        const resetLevel =
+            wireRow(
+                levelFilter,
+                'level',
+                function(value) {
+                    wantedLevel = value;
+                }
+            );
+
+        const resetRole =
+            wireRow(
+                roleFilter,
+                'role',
+                function(value) {
+                    wantedRole = value;
+                }
+            );
+
+        document.querySelectorAll('[data-filter-reset]').forEach(
+            function(button) {
+                button.addEventListener(
+                    'click',
+                    function() {
+                        resetSector();
+                        resetLevel();
+                        resetRole();
+
+                        refreshRoleChips();
+
+                        apply();
                     }
                 );
             }
         );
+
+        /*
+         * Putting the chips away.
+         *
+         * Open to begin with: a filter nobody finds is no better
+         * than one that is not there. What this is for is the
+         * student who has chosen their role and wants the three
+         * rows out of the way of the list — so what is filtered
+         * stays on the line that remains, or shutting the block
+         * would hide a list narrowed to thirteen with nothing on
+         * screen to say why.
+         */
+        const filterBlock =
+            document.getElementById(
+                'technical-filters'
+            );
+
+        const filterToggle =
+            document.getElementById(
+                'technical-filter-toggle'
+            );
+
+        const filterToggleLabel =
+            document.getElementById(
+                'technical-filter-toggle-label'
+            );
+
+        if (filterBlock && filterToggle) {
+            filterToggle.addEventListener(
+                'click',
+                function() {
+                    const open = filterBlock.hidden;
+
+                    filterBlock.hidden = !open;
+
+                    filterToggle.setAttribute(
+                        'aria-expanded',
+                        open ? 'true' : 'false'
+                    );
+
+                    if (filterToggleLabel) {
+                        filterToggleLabel.textContent =
+                            open
+                                ? 'Hide filters'
+                                : 'Filters';
+                    }
+                }
+            );
+        }
     }
 
     initialiseCompetencyPagination({
