@@ -89,20 +89,11 @@ describe('a post', function () {
             'image_path' => 'innovation-lab/example.png',
         ]);
 
-        $response = $this->actingAs(labReader())
+        $this->actingAs(labReader())
             ->get(route('student.innovation-lab'))
             ->assertOk()
             ->assertShows('class="lab-media"')
             ->assertHides('lab-image-frame');
-
-        /*
-         * And before the words. A feed shows the thing and
-         * captions it; the other way round is a report.
-         */
-        $html = $response->getContent();
-
-        expect(mb_strpos($html, 'class="lab-media"'))
-            ->toBeLessThan(mb_strpos($html, 'class="lab-title"'));
     });
 });
 

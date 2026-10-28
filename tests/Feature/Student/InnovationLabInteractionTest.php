@@ -71,16 +71,33 @@ describe('reacting', function () {
         expect(InnovationLabReaction::where('note_id', $note->id)->count())->toBe(0);
     });
 
-    test('an emoji nobody offered is refused', function () {
+    test('an emoji the palette never offered is still allowed', function () {
         /*
-         * The column would hold anything sent to it, so the
-         * palette is the rule rather than the markup.
+         * The palette is an offer, not the rule. 💀 is not one of
+         * the thirty-six and a student whose keyboard has it may
+         * still use it.
          */
         $note = joinableNote();
 
         $this->actingAs(labStudent())
             ->post(route('student.innovation-lab.react', $note), ['emoji' => '💀'])
-            ->assertSessionHasErrors('emoji');
+            ->assertSessionHasNoErrors();
+
+        expect(InnovationLabReaction::where('emoji', '💀')->count())->toBe(1);
+    });
+
+    test('text is refused', function () {
+        /*
+         * What the rule is actually for. Without it this column
+         * is a short free-text box in every student's reach.
+         */
+        $note = joinableNote();
+
+        foreach (['hello', 'a', '5', '<script>alert(1)</script>', '👍 nice'] as $notAnEmoji) {
+            $this->actingAs(labStudent())
+                ->post(route('student.innovation-lab.react', $note), ['emoji' => $notAnEmoji])
+                ->assertSessionHasErrors('emoji');
+        }
 
         expect(InnovationLabReaction::count())->toBe(0);
     });
