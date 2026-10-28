@@ -139,3 +139,34 @@ test(
             ->toContain('Please wait');
     }
 );
+
+test(
+    'the pause counts itself down in front of the student',
+    function () {
+        /*
+         * The countdown sat below @endsection, and Blade throws
+         * away everything after it. So the label read "Please
+         * wait 30s" and stayed there: the pause expired on the
+         * server while the button in front of the student stayed
+         * dead until they thought to reload the page.
+         *
+         * Asserted on a line of the script itself rather than on
+         * the wording, which the server also prints onto the
+         * button and which would therefore pass with the script
+         * discarded.
+         */
+        seedPlansForCooldown();
+
+        $student = studentWithGeneration(
+            now()->toDateTimeString()
+        );
+
+        $student->profile()->create([]);
+
+        $this->actingAs($student)
+            ->get(route('student.recommendations.index'))
+            ->assertOk()
+            ->assertShows('button.dataset.cooldown')
+            ->assertHides('data-cooldown="0"');
+    }
+);

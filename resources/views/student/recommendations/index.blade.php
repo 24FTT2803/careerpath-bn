@@ -970,48 +970,47 @@
     </script>
 @endif
 
-@endsection
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var button = document.getElementById('generateButton');
+            var label = document.getElementById('generateButtonLabel');
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var button = document.getElementById('generateButton');
-        var label = document.getElementById('generateButtonLabel');
-
-        if (!button || !label) {
-            return;
-        }
-
-        var remaining = parseInt(button.dataset.cooldown, 10) || 0;
-
-        if (remaining < 1) {
-            return;
-        }
-
-        /*
-         * The server decides whether a generation is allowed.
-         * This only counts the same pause down in front of the
-         * student so the button does not sit dead with no
-         * explanation of when it will work again.
-         */
-        var ready = @js(
-            $hasRecommendations
-                ? 'Refresh Recommendations'
-                : 'Generate Recommendations'
-        );
-
-        var timer = window.setInterval(function () {
-            remaining -= 1;
-
-            if (remaining > 0) {
-                label.textContent = 'Please wait ' + remaining + 's';
-
+            if (!button || !label) {
                 return;
             }
 
-            window.clearInterval(timer);
+            var remaining = parseInt(button.dataset.cooldown, 10) || 0;
 
-            label.textContent = ready;
-            button.disabled = false;
-        }, 1000);
-    });
-</script>
+            if (remaining < 1) {
+                return;
+            }
+
+            /*
+             * The server decides whether a generation is allowed.
+             * This only counts the same pause down in front of the
+             * student so the button does not sit dead with no
+             * explanation of when it will work again.
+             */
+            var ready = @js(
+                $hasRecommendations
+                    ? 'Refresh Recommendations'
+                    : 'Generate Recommendations'
+            );
+
+            var timer = window.setInterval(function () {
+                remaining -= 1;
+
+                if (remaining > 0) {
+                    label.textContent = 'Please wait ' + remaining + 's';
+
+                    return;
+                }
+
+                window.clearInterval(timer);
+
+                label.textContent = ready;
+                button.disabled = false;
+            }, 1000);
+        });
+    </script>
+@endsection
