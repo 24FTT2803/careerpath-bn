@@ -20,6 +20,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Which Response Schema Each Driver Speaks
+    |--------------------------------------------------------------------------
+    |
+    | "2.0" is the current contract: the client picks BIICF job
+    | roles, and Laravel computes the competency comparison from the
+    | framework. "1.0" is the original contract against the five
+    | careers in biicf_careers, kept for the generic HTTP client and
+    | for the recommendations students already have.
+    |
+    | This was read off the driver name — anything that was not
+    | "groq" was treated as 1.0 — which made the dataset a student's
+    | recommendations were drawn from depend on an environment
+    | variable, silently. Adding a driver means adding it here.
+    |
+    */
+
+    'schemas' => [
+        'mock' => '2.0',
+        'groq' => '2.0',
+        'http' => '1.0',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Career Adviser Driver
     |--------------------------------------------------------------------------
     |

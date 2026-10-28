@@ -23,6 +23,16 @@
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>
         <env name="CACHE_STORE" value="array"/>
+        <!--
+            Pinned so the suite does not depend on a developer's
+            own .env. Left to the environment, a machine set to
+            groq ran the generation tests against the live model —
+            slow, chargeable, and failing with no network — while a
+            machine set to mock exercised an entirely different
+            code path. Either way the result differed by machine.
+        -->
+        <env name="CAREER_AI_DRIVER" value="mock"/>
+        <env name="CAREER_ADVISER_DRIVER" value="mock"/>
         <env name="DB_CONNECTION" value="sqlite"/>
         <env name="DB_DATABASE" value=":memory:"/>
         <env name="DB_URL" value=""/>

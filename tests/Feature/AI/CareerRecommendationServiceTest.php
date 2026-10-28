@@ -77,12 +77,20 @@ function makeCareerRecommendationService(
     CareerAiClient $careerAi
 ): CareerRecommendationService {
     /*
-     * These tests exercise the existing legacy/mock
-     * recommendation contract, regardless of the
-     * developer's local CAREER_AI_DRIVER setting.
+     * These tests exercise the schema 1.0 contract — the five
+     * careers in biicf_careers — which the generic HTTP client
+     * still speaks and which every recommendation generated
+     * before the job-role schema was stored under.
+     *
+     * The driver is named rather than left to the environment
+     * because it is what selects the payload, the validator and
+     * the column the career id is written to. It was "mock",
+     * which spoke 1.0 at the time; the mock now answers in 2.0
+     * against job roles, so naming it here would test the
+     * opposite of what these tests are for.
      */
     config([
-        'career-ai.driver' => 'mock',
+        'career-ai.driver' => 'http',
     ]);
 
     $payloadBuilder =

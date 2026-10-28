@@ -35,14 +35,15 @@ class CareerRecommendationService
             'mock'
         );
 
+        $current = $this->speaksCurrentSchema($driver);
+
         /*
-         * The real Groq integration needs current BIICF role
-         * requirements in addition to the student profile.
-         *
-         * Legacy/mock clients keep receiving the original
-         * profile-only payload.
+         * A client answering in schema 2.0 needs the current BIICF
+         * role requirements as well as the student profile; one
+         * answering in 1.0 is choosing between the five legacy
+         * careers and gets the profile on its own.
          */
-        $payload = $driver === 'groq'
+        $payload = $current
             ? $this->contextBuilder->build($student)
             : $this->payloadBuilder->build($student);
 
@@ -50,7 +51,7 @@ class CareerRecommendationService
             $payload
         );
 
-        $validated = $driver === 'groq'
+        $validated = $current
             ? $this->validateAndEnrichCurrentResponse(
                 $student,
                 $response
@@ -67,7 +68,8 @@ class CareerRecommendationService
         $generation = DB::transaction(function () use (
             $student,
             $validated,
-            $driver
+            $driver,
+            $current
         ): RecommendationGeneration {
             $generation = $this->openGeneration(
                 $student,
@@ -82,7 +84,7 @@ class CareerRecommendationService
                     $this->recommendationAttributes(
                         $student,
                         $recommendation,
-                        $driver
+                        $current
                     )
                 );
             }
@@ -92,7 +94,7 @@ class CareerRecommendationService
 
         $query = $generation->recommendations();
 
-        if ($driver === 'groq') {
+        if ($current) {
             return $query
                 ->with('jobRole')
                 ->get();
@@ -101,6 +103,22 @@ class CareerRecommendationService
         return $query
             ->with('career')
             ->get();
+    }
+
+    /**
+     * Whether the configured driver answers in schema 2.0.
+     *
+     * Unknown drivers are treated as legacy, which is the safe
+     * way round: a 1.0 response checked against the 2.0 rules is
+     * refused outright, where the reverse would store a
+     * recommendation pointing at nothing.
+     */
+    private function speaksCurrentSchema(string $driver): bool
+    {
+        return config(
+            "career-ai.schemas.{$driver}",
+            '1.0'
+        ) === '2.0';
     }
 
     /**
@@ -169,10 +187,8 @@ class CareerRecommendationService
     private function recommendationAttributes(
         User $student,
         array $recommendation,
-        string $driver
+        bool $isCurrentSchema
     ): array {
-        $isCurrentSchema = $driver === 'groq';
-
         return [
             'user_id' => $student->id,
 
