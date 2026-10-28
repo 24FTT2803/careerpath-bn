@@ -376,6 +376,20 @@
             content: counter(page) " of " counter(pages);
         }
 
+        .evidence-image {
+            display: block;
+            max-width: 100%;
+            max-height: 520px;
+            margin-top: 6px;
+            border: 1px solid #e1e6eb;
+        }
+
+        .evidence-note {
+            margin-top: 5px;
+            font-size: 9px;
+            color: #667085;
+        }
+
         .avoid-break {
             page-break-inside: avoid;
         }
@@ -1102,6 +1116,46 @@
         <div class="empty-note">
             No career recommendations have been generated for this student yet.
         </div>
+    </div>
+@endif
+
+
+<!-- Supporting Evidence -->
+@if(! empty($evidence))
+    <div class="section" style="page-break-before: always;">
+        <div class="section-title">Appendix: Supporting Evidence</div>
+
+        <p class="item-meta" style="margin-bottom: 8px;">
+            Files uploaded by the student as proof of certifications and
+            completed milestones. PDF and Word files cannot be shown here and
+            are listed by name; they can be opened on CareerPath BN.
+        </p>
+
+        @foreach($evidence as $item)
+            <div class="item-card avoid-break">
+                <div class="item-title">{{ $item['title'] }}</div>
+
+                <div class="item-meta">
+                    {{ $item['kind'] }}
+                    @if($item['detail'])
+                        | {{ $item['detail'] }}
+                    @endif
+                </div>
+
+                @if($item['missing'])
+                    <div class="evidence-note">
+                        The uploaded file ({{ $item['name'] }}) is no longer available.
+                    </div>
+                @elseif($item['image'])
+                    <img src="{{ $item['image'] }}" class="evidence-image" alt="{{ $item['title'] }}">
+                @else
+                    <div class="evidence-note">
+                        Attached file: {{ $item['name'] }}
+                        ({{ strtoupper($item['extension']) }}, not shown in this report)
+                    </div>
+                @endif
+            </div>
+        @endforeach
     </div>
 @endif
 

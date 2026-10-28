@@ -830,6 +830,57 @@ class ProfileController extends Controller
     }
 
     /**
+     * Certification evidence for admin or lecturer.
+     *
+     * Admins see every file. Lecturers only see files belonging
+     * to students in the classes they teach; anything else is a
+     * 404 so existence is not revealed.
+     */
+    public function certificationEvidenceStaff(
+        int $studentId,
+        int $certificationId
+    ) {
+        /** @var User $staff */
+        $staff = Auth::user();
+
+        abort_unless(
+            in_array($staff->role, ['admin', 'lecturer'], true),
+            403
+        );
+
+        if ($staff->role === 'lecturer') {
+            $target = User::find($studentId);
+
+            abort_unless(
+                $target !== null
+                    && $target->role === 'student'
+                    && app(LecturerScopeResolver::class)
+                        ->canSeeStudent($staff, $target),
+                404
+            );
+        }
+
+        $certification = \App\Models\StudentCertification::where(
+            'user_id',
+            $studentId
+        )->findOrFail($certificationId);
+
+        $filePath = $certification->certificate_file_path;
+
+        abort_unless(
+            $filePath && Storage::disk('local')->exists($filePath),
+            404
+        );
+
+        return Storage::disk('local')->response(
+            $filePath,
+            $certification->certificate_original_name ?: basename($filePath),
+            [],
+            'inline'
+        );
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request)

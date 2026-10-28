@@ -227,6 +227,7 @@
                         <th>Certification</th>
                         <th>Issuer</th>
                         <th>Issued</th>
+                        <th>Evidence</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -238,6 +239,16 @@
                             </td>
                             <td class="cell-sub">
                                 {{ $cert->issue_date?->format('j M Y') ?? '—' }}
+                            </td>
+                            <td class="cell-sub">
+                                @if($cert->certificate_file_path)
+                                    <a href="{{ route('admin.certifications.evidence', [$student->id, $cert->id]) }}"
+                                       target="_blank" rel="noopener">
+                                        <i class="fas fa-paperclip"></i> View
+                                    </a>
+                                @else
+                                    —
+                                @endif
                             </td>
                         </tr>
                     @endforeach
@@ -317,6 +328,12 @@
                                 {{ $milestone->title }}
                             </td>
                             <td class="cell-sub" style="text-align:right;">
+                                @if($milestone->proof_file_path)
+                                    <a href="{{ route('admin.milestones.proof', [$student->id, $milestone->id]) }}"
+                                       target="_blank" rel="noopener" style="margin-right:12px;">
+                                        <i class="fas fa-paperclip"></i> View proof
+                                    </a>
+                                @endif
                                 {{ ucfirst($milestone->category) }}
                             </td>
                         </tr>
