@@ -412,12 +412,14 @@
                         <label>Email <span class="required">*</span></label>
                         <div class="input-wrapper">
                             <input type="email" name="email" value="{{ old('email') }}"
-                                   placeholder="you@pb.edu.bn" required
+                                   placeholder="24FTT2803@student.pb.edu.bn" required
                                    class="{{ $errors->has('email') ? 'error-input' : '' }}">
                         </div>
                         <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
                             <i class="fas fa-info-circle"></i>
-                            Use your gmail.com, pb.edu.bn, or student.pb.edu.bn email
+                            Use your Politeknik Brunei email. A student.pb.edu.bn
+                            address becomes your verified Student ID. We will email
+                            you a link to authenticate before your account is created.
                         </div>
                         @error('email')
                             <div class="error">{{ $message }}</div>

@@ -2,23 +2,41 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
-use App\Models\StudentAspiration;
-use App\Models\StudentProfile;
+use App\Models\PendingRegistration;
 use App\Models\User;
-use App\Services\Business\ProgrammeEnrolmentService;
-use Illuminate\Auth\Events\Registered;
+use App\Notifications\AuthenticateRegistrationNotification;
+use App\Rules\NoProfanity;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\Validator;
 use Illuminate\View\View;
-use App\Rules\NoProfanity;
 
+/**
+ * Signing up.
+ *
+ * Only Politeknik Brunei addresses are accepted. The account is
+ * not created here: the details wait as a pending sign-up, and
+ * an email to the address asks its owner to authenticate (which
+ * creates the account) or say it was not them (which discards
+ * it). See PendingRegistrationController.
+ */
 class RegisteredUserController extends Controller
 {
+    /**
+     * Addresses a student may sign up with.
+     */
+    public const SIGN_UP_DOMAINS = [
+        User::STUDENT_EMAIL_DOMAIN,
+        'pb.edu.bn',
+    ];
+
+    public const PENDING_EMAIL_KEY = 'registration.pending_email';
+
     public function create(): View
     {
         return view('auth.register');
@@ -26,15 +44,19 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $request->merge([
+            'email' => Str::lower(trim((string) $request->input('email'))),
+        ]);
+
+        $validator = validator($request->all(), [
             'name' => ['required', 'string', 'max:255', new NoProfanity],
             'email' => [
                 'required',
                 'string',
                 'email',
                 'max:255',
-                'unique:users,email', // This ensures email is unique
-                'regex:/^[a-zA-Z0-9._%+-]+@(gmail\.com|pb\.edu\.bn|student\.pb\.edu\.bn)$/',
+                'unique:users,email',
+                'regex:/^[a-z0-9._%+-]+@(student\.pb\.edu\.bn|pb\.edu\.bn)$/',
             ],
             'programme' => [
                 'required',
@@ -45,53 +67,155 @@ class RegisteredUserController extends Controller
             'terms' => ['required', 'accepted'],
         ], [
             'name.required' => 'Please enter your full name.',
-            'email.unique' => 'This email is already registered. Please use a different email address.',
-            'email.regex' => 'Please use a valid email address from gmail.com, pb.edu.bn, or student.pb.edu.bn',
+            'email.unique' => 'This email is already registered. Please sign in instead.',
+            'email.regex' => 'Please use your Politeknik Brunei email address, ending in @student.pb.edu.bn or @pb.edu.bn.',
             'email.required' => 'Email address is required.',
             'password.required' => 'Password is required.',
             'password.min' => 'Password must be at least 8 characters.',
             'terms.required' => 'You must agree to the Terms of Service.',
-            'programme.in' => 'Please select a valid programme.',
+            'programme.exists' => 'Please select a valid programme.',
         ]);
 
-            $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'programme' => $request->programme,
-            'password' => Hash::make($request->password),
-            'role' => 'student',
-        ]);
+        $validator->after(function (Validator $validator) use ($request): void {
+            if ($validator->errors()->has('email')) {
+                return;
+            }
 
-        app(ProgrammeEnrolmentService::class)->syncFor(
-            $user->fresh(),
-            $user->programme
-        );
+            if (! self::isStudentAddress($request->input('email'))) {
+                return;
+            }
 
-        // Create default student profile
-        StudentProfile::create([
-            'user_id' => $user->id,
-        ]);
+            $studentId = self::studentIdFromEmail($request->input('email'));
 
-        // Create default aspirations
-        StudentAspiration::create([
-            'user_id' => $user->id,
-        ]);
+            if ($studentId === null) {
+                $validator->errors()->add(
+                    'email',
+                    'A student.pb.edu.bn address must be your Student ID, like 24FTT2803@student.pb.edu.bn.'
+                );
 
-        // Log activity - New student registration
-        NotificationHelper::logStudentRegistration($user->id, $user->name);
+                return;
+            }
 
-                event(new Registered($user));
+            if (User::where('student_id', $studentId)->exists()) {
+                $validator->errors()->add(
+                    'email',
+                    "An account with Student ID {$studentId} already exists. If it is yours, please contact an administrator."
+                );
+            }
+        });
 
-        Auth::login($user);
+        $validated = $validator->validate();
+
+        PendingRegistration::expired()->delete();
+
+        $token = Str::random(64);
 
         /*
-         * Marks the redirect that follows as the student's
-         * first view of the dashboard, so the header can
-         * greet them without saying "Welcome back" to an
-         * account they created seconds ago.
+         * One sign-up per address. Signing up again replaces the
+         * earlier one, and the new token leaves the earlier
+         * email's links unusable.
          */
-        $request->session()->flash('first_visit', true);
+        $pending = PendingRegistration::updateOrCreate(
+            ['email' => $validated['email']],
+            [
+                'name' => $validated['name'],
+                'programme' => $validated['programme'],
+                'password' => Hash::make($validated['password']),
+                'student_id' => self::studentIdFromEmail($validated['email']),
+                'token_hash' => PendingRegistration::hashToken($token),
+                'expires_at' => now()->addMinutes(self::expiryMinutes()),
+            ]
+        );
 
-        return redirect()->route('student.dashboard');
+        self::sendAuthenticationEmail($pending, $token);
+
+        $request->session()->put(self::PENDING_EMAIL_KEY, $pending->email);
+
+        return redirect()->route('register.sent');
+    }
+
+    /**
+     * "Check your email", after signing up.
+     */
+    public function sent(Request $request): View|RedirectResponse
+    {
+        $email = $request->session()->get(self::PENDING_EMAIL_KEY);
+
+        if (! $email) {
+            return redirect()->route('register');
+        }
+
+        return view('auth.registration-status', [
+            'state' => 'sent',
+            'email' => $email,
+        ]);
+    }
+
+    /**
+     * Send the authentication email again, with fresh links.
+     */
+    public function resend(Request $request): RedirectResponse
+    {
+        $email = $request->session()->get(self::PENDING_EMAIL_KEY);
+
+        $pending = $email
+            ? PendingRegistration::where('email', $email)->first()
+            : null;
+
+        if ($pending === null || $pending->hasExpired()) {
+            $request->session()->forget(self::PENDING_EMAIL_KEY);
+
+            return redirect()
+                ->route('register')
+                ->withErrors([
+                    'email' => 'That sign-up has expired. Please register again.',
+                ]);
+        }
+
+        $token = Str::random(64);
+
+        $pending->update([
+            'token_hash' => PendingRegistration::hashToken($token),
+            'expires_at' => now()->addMinutes(self::expiryMinutes()),
+        ]);
+
+        self::sendAuthenticationEmail($pending, $token);
+
+        return redirect()
+            ->route('register.sent')
+            ->with('status', 'registration-link-sent');
+    }
+
+    /**
+     * The Student ID a student.pb.edu.bn mailbox names, or null
+     * when the address is not one or its mailbox is not an ID.
+     */
+    public static function studentIdFromEmail(?string $email): ?string
+    {
+        if (! self::isStudentAddress($email)) {
+            return null;
+        }
+
+        $studentId = User::normaliseStudentId(Str::before((string) $email, '@'));
+
+        return $studentId !== null && preg_match(User::STUDENT_ID_PATTERN, $studentId)
+            ? $studentId
+            : null;
+    }
+
+    private static function isStudentAddress(?string $email): bool
+    {
+        return Str::lower(Str::after((string) $email, '@')) === User::STUDENT_EMAIL_DOMAIN;
+    }
+
+    private static function expiryMinutes(): int
+    {
+        return (int) config('auth.verification.expire', 60);
+    }
+
+    private static function sendAuthenticationEmail(PendingRegistration $pending, string $token): void
+    {
+        Notification::route('mail', $pending->email)
+            ->notify(new AuthenticateRegistrationNotification($pending, $token));
     }
 }

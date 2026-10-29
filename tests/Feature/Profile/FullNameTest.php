@@ -1,13 +1,15 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\AuthenticateRegistrationNotification;
 use Database\Seeders\OrganisationGroupSeeder;
+use Illuminate\Support\Facades\Notification;
 
 function registrationPayload(array $overrides = []): array
 {
     return array_merge([
         'name' => 'Nur Aisyah binti Hassan',
-        'email' => 'nuraisyah@gmail.com',
+        'email' => 'nuraisyah@pb.edu.bn',
         'programme' => 'Diploma in ICT (Application Development)',
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
@@ -16,12 +18,26 @@ function registrationPayload(array $overrides = []): array
 }
 
 test('students sign up with one full name', function () {
+    Notification::fake();
+
     $this->seed(OrganisationGroupSeeder::class);
 
     $this->post(route('register'), registrationPayload())
         ->assertSessionHasNoErrors();
 
-    $user = User::where('email', 'nuraisyah@gmail.com')->firstOrFail();
+    /*
+     * The account is created when the emailed link is used.
+     */
+    Notification::assertSentOnDemand(
+        AuthenticateRegistrationNotification::class,
+        function (AuthenticateRegistrationNotification $notification) {
+            $this->post($notification->linkTo('register.authenticate'));
+
+            return true;
+        }
+    );
+
+    $user = User::where('email', 'nuraisyah@pb.edu.bn')->firstOrFail();
 
     expect($user->name)->toBe('Nur Aisyah binti Hassan');
     $this->assertAuthenticatedAs($user);
@@ -33,7 +49,7 @@ test('sign up requires a full name', function () {
     $this->post(route('register'), registrationPayload(['name' => '']))
         ->assertSessionHasErrors(['name' => 'Please enter your full name.']);
 
-    expect(User::where('email', 'nuraisyah@gmail.com')->exists())->toBeFalse();
+    expect(User::where('email', 'nuraisyah@pb.edu.bn')->exists())->toBeFalse();
 });
 
 test('extra spaces in a full name are tidied', function () {

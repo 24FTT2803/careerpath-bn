@@ -7,6 +7,7 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\PendingRegistrationController;
 use App\Http\Controllers\Auth\RegisteredUserController;
 use App\Http\Controllers\Auth\VerifyEmailController;
 use Illuminate\Support\Facades\Route;
@@ -15,7 +16,15 @@ Route::middleware('guest')->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store'])
+        ->middleware('throttle:10,1');
+
+    Route::get('register/sent', [RegisteredUserController::class, 'sent'])
+        ->name('register.sent');
+
+    Route::post('register/resend', [RegisteredUserController::class, 'resend'])
+        ->middleware('throttle:3,1')
+        ->name('register.resend');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
@@ -34,6 +43,26 @@ Route::middleware('guest')->group(function () {
     Route::post('reset-password', [NewPasswordController::class, 'store'])
         ->name('password.store');
 });
+
+/*
+ * The links in the sign-up email. Not limited to guests: the
+ * owner of an address may open one while someone else is signed
+ * in on the same browser.
+ */
+Route::prefix('register/{pending}/{token}')
+    ->whereNumber('pending')
+    ->middleware('throttle:12,1')
+    ->group(function () {
+        Route::get('authenticate', [PendingRegistrationController::class, 'showAuthenticate'])
+            ->name('register.authenticate');
+
+        Route::post('authenticate', [PendingRegistrationController::class, 'authenticate']);
+
+        Route::get('not-me', [PendingRegistrationController::class, 'showDecline'])
+            ->name('register.decline');
+
+        Route::post('not-me', [PendingRegistrationController::class, 'decline']);
+    });
 
 Route::middleware('auth')->group(function () {
     Route::get('verify-email', EmailVerificationPromptController::class)
