@@ -149,3 +149,54 @@ test(
         });
     }
 );
+
+test(
+    'the adviser is told what the BDQF is and how to use the milestones',
+    function () {
+        /*
+         * The data alone is not enough. Told to state nothing the
+         * context does not hold, and handed a ladder it was never
+         * told the name or purpose of, the adviser would still
+         * answer "what is BDQF?" with "I don't know".
+         */
+        fakeGroqReply();
+
+        app(GroqCareerAdviserClient::class)->ask(
+            ['profile' => []],
+            'What is BDQF?'
+        );
+
+        Http::assertSent(function ($request) {
+            $system = collect($request['messages'] ?? [])
+                ->firstWhere('role', 'system')['content'] ?? '';
+
+            return str_contains($system, 'Brunei Darussalam Qualifications Framework')
+                && str_contains($system, 'student_milestones')
+                && str_contains($system, 'student_qualification_summary')
+                && str_contains($system, 'leads_to and comes_from');
+        });
+    }
+);
+
+test(
+    'the adviser is asked to put parallel items on their own lines',
+    function () {
+        /*
+         * Eight BDQF levels written as one paragraph are correct
+         * and unreadable.
+         */
+        fakeGroqReply();
+
+        app(GroqCareerAdviserClient::class)->ask(
+            ['profile' => []],
+            'What are the BDQF levels?'
+        );
+
+        Http::assertSent(function ($request) {
+            $system = collect($request['messages'] ?? [])
+                ->firstWhere('role', 'system')['content'] ?? '';
+
+            return str_contains($system, 'put each item on its own line');
+        });
+    }
+);

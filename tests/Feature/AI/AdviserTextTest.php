@@ -94,3 +94,55 @@ test('bullets buried inside a line get their own line', function () {
 
     expect(substr_count($html, '<li>'))->toBe(3);
 });
+
+test('a sentence ending on a number is not mistaken for a list', function () {
+    /*
+     * Asked for the BDQF levels, the adviser wrote "...and
+     * Skills Certificate 1. Level 2 includes...", Skills
+     * Certificate 1 being a level 1 award. Any space, number,
+     * full stop, space and capital used to start a list item, so
+     * the line was cut there, the "1" became the item's number,
+     * and levels 2 to 8 landed inside a single item.
+     */
+    $html = AdviserText::toHtml(
+        'Level 1 covers the BTEC Level Introductory Certificate and '
+        .'Skills Certificate 1. Level 2 includes Skills Certificate 2. '
+        .'Level 3 covers Skills Certificate 3.'
+    );
+
+    expect($html)
+        ->not->toContain('<ol')
+        ->toContain('Skills Certificate 1. Level 2');
+});
+
+test('a sentence ending on a score or a level is left whole', function () {
+    foreach ([
+        'You need BDQF Level 5. Then you can apply.',
+        'Your readiness is 60. That leaves room to grow.',
+    ] as $sentence) {
+        expect(AdviserText::toHtml($sentence))->not->toContain('<ol');
+    }
+});
+
+test('numbered points run onto one line still each get an item', function () {
+    /*
+     * What the rule is for: the model writes a run of points on
+     * one line. A point counts when a sentence has just ended
+     * before it, or when it carries on a run already begun.
+     */
+    foreach ([
+        'Next steps: 1. Ask your college. 2. Look for workshops. 3. Speak to your adviser.',
+        '1. Ask your college 2. Look for workshops 3. Speak to your adviser',
+    ] as $line) {
+        expect(substr_count(AdviserText::toHtml($line), '<li>'))->toBe(3);
+    }
+});
+
+test('a number inside a point does not start another', function () {
+    $html = AdviserText::toHtml(
+        'Steps: 1. Reach Level 5. 2. Apply to the role. 3. Record it as a milestone.'
+    );
+
+    expect(substr_count($html, '<li>'))->toBe(3)
+        ->and($html)->toContain('Reach Level 5.');
+});
