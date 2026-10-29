@@ -572,35 +572,68 @@
                         </div>
                     @endif
 
+                    @if($subscription)
+                        <div class="info-row">
+                            <span class="label">Subscription ends</span>
+                            <span class="value">{{ $subscription->ends_at?->timezone(config('app.business_timezone'))->format('j M Y') }}</span>
+                        </div>
+                    @endif
+
                     @if(($plan?->code ?? 'free') !== 'premium')
                         <p class="hint" style="margin:16px 0;">
                             Premium lets you switch advertising off
                             and lifts the limit on generating
-                            recommendations.
+                            recommendations. A subscription lasts
+                            one month.
                             <strong>No payment is taken.</strong>
                             This stands in for a subscription so the
                             platform can be demonstrated.
                         </p>
 
-                    <form
-                    method="POST"
-                    action="{{ route('student.settings.upgrade') }}"
-                    id="upgradeForm"
-                >
-                    @csrf
+                        <form
+                            method="POST"
+                            action="{{ route('student.settings.upgrade') }}"
+                            id="upgradeForm"
+                        >
+                            @csrf
 
-                    <button
-                        type="button"
-                        class="btn btn-primary"
-                        onclick="confirmUpgrade()"
-                    >
-                        <i class="fas fa-arrow-up"></i> Upgrade to Premium
-                    </button>
-                </form>
+                            <button
+                                type="button"
+                                class="btn btn-primary"
+                                onclick="confirmUpgrade()"
+                            >
+                                <i class="fas fa-arrow-up"></i> Upgrade to Premium
+                            </button>
+                        </form>
+                    @elseif($subscription)
+                        <p class="hint" style="margin:16px 0;">
+                            Your monthly subscription is running.
+                            Cancelling ends Premium straight away,
+                            not at the end of the month.
+                            No payment was taken —
+                            this is a demonstration of the upgrade.
+                        </p>
+
+                        <form
+                            method="POST"
+                            action="{{ route('student.settings.cancel-subscription') }}"
+                            id="cancelSubscriptionForm"
+                        >
+                            @csrf
+
+                            <button
+                                type="button"
+                                class="btn btn-danger"
+                                onclick="confirmCancelSubscription()"
+                            >
+                                <i class="fas fa-times"></i> Cancel Subscription
+                            </button>
+                        </form>
                     @else
                         <p class="hint" style="margin-top:16px;">
-                            You are on Premium. No payment was taken —
-                            this is a demonstration of the upgrade.
+                            You are on Premium, given to your
+                            account rather than subscribed to, so
+                            there is no subscription to cancel.
                         </p>
                     @endif
                 </div>
@@ -819,11 +852,30 @@
     </div>
 </div>
 <script>
+function confirmCancelSubscription() {
+    if (typeof showConfirmModal === 'function') {
+        showConfirmModal({
+            title: 'Cancel Subscription',
+            message: 'Your Premium subscription will end now, not at the end of the month, and your account will return to the free plan. Are you sure?',
+            confirmText: 'Yes, Cancel',
+            cancelText: 'Keep Premium',
+            type: 'danger',
+            onConfirm: function () {
+                document.getElementById('cancelSubscriptionForm').submit();
+            }
+        });
+    } else {
+        if (confirm('Cancel your Premium subscription now?')) {
+            document.getElementById('cancelSubscriptionForm').submit();
+        }
+    }
+}
+
 function confirmUpgrade() {
     if (typeof showConfirmModal === 'function') {
         showConfirmModal({
             title: 'Upgrade to Premium',
-            message: 'This will upgrade your account to Premium. No payment will be taken \u2014 this is a demonstration of the upgrade, not a purchase. Are you sure you want to continue?',
+            message: 'This will upgrade your account to Premium for one month. No payment will be taken \u2014 this is a demonstration of the upgrade, not a purchase. Are you sure you want to continue?',
             confirmText: 'Yes, Upgrade',
             cancelText: 'Cancel',
             type: 'info',

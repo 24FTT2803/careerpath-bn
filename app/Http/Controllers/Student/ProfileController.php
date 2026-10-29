@@ -18,6 +18,7 @@ use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
 use App\Models\StudentProject;
 use App\Models\User;
+use App\Models\UserPlanGrant;
 use App\Rules\NoProfanity;
 use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
@@ -25,6 +26,7 @@ use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
 use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -1188,6 +1190,7 @@ class ProfileController extends Controller
             [
                 'user' => $user,
                 'plan' => $entitlements->planFor($user),
+                'subscription' => $this->ownSubscription($user),
                 'adsAvailable' => $entitlements->adsAvailable($user),
                 'canChooseAds' => $entitlements->canChooseAds($user),
                 'showsAds' => $entitlements->shouldShowAds($user),
@@ -1242,9 +1245,16 @@ class ProfileController extends Controller
                 'ends_at' => now(),
             ]);
 
-        $user->planGrants()->create([
+        /*
+         * A subscription runs for one month. It is not renewed:
+         * when it ends the student is told and returns to the
+         * free plan, and may subscribe again.
+         */
+        $grant = $user->planGrants()->create([
             'plan_id' => $premium->id,
             'source' => 'self',
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
             'is_active' => true,
         ]);
 
@@ -1258,9 +1268,82 @@ class ProfileController extends Controller
             ->route('student.settings')
             ->with(
                 'success',
-                'You are now on Premium. No payment was taken — '
+                'You are now on Premium until '
+                .$this->subscriptionDay($grant->ends_at)
+                .'. No payment was taken — '
                 .'this is a demonstration of the upgrade, not a purchase.'
             );
+    }
+
+    /**
+     * End the student's own Premium subscription now.
+     *
+     * Cancelling takes effect at once rather than at the end of
+     * the month. Only a subscription the student took out
+     * themselves can be cancelled here: Premium given by an
+     * administrator, a sponsor or a trial is not theirs to end.
+     */
+    public function cancelSubscription(EntitlementService $entitlements)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user && $user->isStudent(),
+            403
+        );
+
+        $subscription = $this->ownSubscription($user);
+
+        if ($subscription === null) {
+            return redirect()
+                ->route('student.settings')
+                ->withErrors([
+                    'subscription' => 'You have no subscription to cancel.',
+                ]);
+        }
+
+        /*
+         * Marked inactive as well as ended, so the expiry check
+         * does not later announce an ending the student chose.
+         */
+        $subscription->update([
+            'is_active' => false,
+            'ends_at' => now(),
+        ]);
+
+        $plan = $entitlements->planFor($user->fresh());
+
+        $message = ($plan?->code ?? 'free') === 'premium'
+            ? 'Your subscription has been cancelled. You still have Premium from another source.'
+            : 'Your subscription has been cancelled and has ended. '
+                .'Your account is now on the '.($plan?->name ?? 'Free').' plan.';
+
+        return redirect()
+            ->route('student.settings')
+            ->with('success', $message);
+    }
+
+    /**
+     * The Premium subscription the student took out themselves,
+     * if one is running.
+     */
+    private function ownSubscription(User $user): ?UserPlanGrant
+    {
+        return $user->planGrants()
+            ->currentlyActive()
+            ->where('source', 'self')
+            ->latest('id')
+            ->first();
+    }
+
+    private function subscriptionDay(?CarbonInterface $date): string
+    {
+        return $date === null
+            ? 'further notice'
+            : $date->copy()
+                ->setTimezone(config('app.business_timezone'))
+                ->format('j M Y');
     }
 
     /**

@@ -226,6 +226,11 @@ Route::middleware([
             [ProfileController::class, 'upgrade']
         )->name('settings.upgrade');
 
+        Route::post(
+            '/settings/subscription/cancel',
+            [ProfileController::class, 'cancelSubscription']
+        )->name('settings.cancel-subscription');
+
         Route::put(
             '/settings/preferences',
             [ProfileController::class, 'updatePreferences']
