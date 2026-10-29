@@ -12,6 +12,7 @@ use App\Models\BiicfSubSector;
 use App\Models\Notification;
 use App\Models\Plan;
 use App\Models\RecommendationGeneration;
+use App\Models\StudentCertification;
 use App\Models\StudentCompetency;
 use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
@@ -254,104 +255,15 @@ class ProfileController extends Controller
             ->all();
 
         /*
-         * And at which job levels each competency is asked for.
-         *
-         * A sub-sector on its own still leaves forty to sixty,
-         * which is more than anyone reads at an exhibition stand.
-         * Crossed with a level it is a handful: what a student
-         * entering the sector is actually expected to have.
-         *
-         * Read from two places and merged. A required proficiency
-         * hangs off a tier, and a tier carries the framework's
-         * named level when it is one — the precise answer, since
-         * it says the competency is wanted at that level of that
-         * role. But a tier that is a numbered step inside a level
-         * carries none, so the role's own levels are taken as
-         * well, which is the coarser statement the book's role
-         * pages make.
-         */
-        $levelsByTier = DB::table('biicf_job_role_competency as pivot')
-            ->join(
-                'biicf_job_role_tiers as tiers',
-                'tiers.id',
-                '=',
-                'pivot.job_role_tier_id'
-            )
-            ->join(
-                'biicf_job_levels as levels',
-                'levels.id',
-                '=',
-                'tiers.job_level_id'
-            )
-            ->select(
-                'pivot.competency_id',
-                'levels.name',
-                'levels.sort_order'
-            )
-            ->distinct();
-
-        $levelsByRole = DB::table('biicf_job_role_competency as pivot')
-            ->join(
-                'biicf_job_role_job_level as role_level',
-                'role_level.job_role_id',
-                '=',
-                'pivot.job_role_id'
-            )
-            ->join(
-                'biicf_job_levels as levels',
-                'levels.id',
-                '=',
-                'role_level.job_level_id'
-            )
-            ->select(
-                'pivot.competency_id',
-                'levels.name',
-                'levels.sort_order'
-            )
-            ->distinct();
-
-        $jobLevelRows = $levelsByTier
-            ->union($levelsByRole)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
-        $competencyJobLevels = $jobLevelRows
-            ->groupBy('competency_id')
-            ->map(
-                fn ($rows) => $rows
-                    ->pluck('name')
-                    ->unique()
-                    ->values()
-                    ->all()
-            )
-            ->all();
-
-        /*
-         * Only the levels something is actually filed under. The
-         * framework names seven and its role pages use six, so
-         * offering all seven puts up a chip that can only ever
-         * produce an empty list.
-         *
-         * The query is already in seniority order, so this keeps
-         * it.
-         */
-        $jobLevelOptions = $jobLevelRows
-            ->pluck('name')
-            ->unique()
-            ->values()
-            ->all();
-
-        /*
          * And which roles ask for each competency.
          *
-         * A sub-sector crossed with a level is between ten and
-         * thirty-nine, and the combinations a student actually
-         * picks are the large ones: Specialist covers twenty-three
-         * of the framework's thirty-eight roles, so "Data and
-         * Artificial Intelligence at Specialist" is thirty-nine of
-         * the hundred and twenty-seven. One role is between eight
-         * and seventeen, every time.
+         * A sub-sector leaves twenty-seven to forty-six of the
+         * hundred and twenty-seven. One role is between eight and
+         * seventeen, every time. A job level filter sat between
+         * the two for a while and was taken out: Specialist covers
+         * twenty-three of the thirty-eight roles, so crossing a
+         * sub-sector with it barely narrowed anything, and the
+         * role row does the work.
          *
          * Keyed on the role's id rather than its title. The book
          * prints Chief Technology Officer under two sub-sectors,
@@ -374,24 +286,14 @@ class ProfileController extends Controller
 
         /*
          * The roles worth offering, each carrying the sub-sector
-         * and levels the rows above filter it by.
-         *
-         * A role's levels are read the same way its competencies'
-         * are — the tier's named level, and the role's own levels
-         * alongside. Read any other way the two could disagree,
-         * and a role offered under a level whose competencies are
-         * filed under another would select to an empty grid.
+         * the row above filters it by.
          *
          * Roles nothing is filed against are left out: a chip
          * that can only produce an empty list is not a filter.
          */
         $jobRoleOptions = BiicfJobRole::query()
             ->whereHas('competencies')
-            ->with([
-                'subSector:id,name',
-                'tiers.jobLevel:id,name,sort_order',
-                'jobLevels:id,name,sort_order',
-            ])
+            ->with('subSector:id,name')
             ->orderBy('title')
             ->get(['id', 'sub_sector_id', 'title'])
             ->map(
@@ -399,16 +301,6 @@ class ProfileController extends Controller
                     'id' => $role->id,
                     'title' => $role->title,
                     'sector' => $role->subSector->name ?? '',
-
-                    'levels' => $role->tiers
-                        ->pluck('jobLevel')
-                        ->filter()
-                        ->concat($role->jobLevels)
-                        ->sortBy('sort_order')
-                        ->pluck('name')
-                        ->unique()
-                        ->values()
-                        ->all(),
                 ]
             )
             ->values()
@@ -428,8 +320,6 @@ class ProfileController extends Controller
                 'bdqfLevels',
                 'competencySubSectors',
                 'subSectorOptions',
-                'competencyJobLevels',
-                'jobLevelOptions',
                 'competencyJobRoles',
                 'jobRoleOptions'
             )
@@ -1115,7 +1005,7 @@ class ProfileController extends Controller
             );
         }
 
-        $certification = \App\Models\StudentCertification::where(
+        $certification = StudentCertification::where(
             'user_id',
             $studentId
         )->findOrFail($certificationId);

@@ -42,13 +42,6 @@
                 <a href="{{ route('student.biicf-explorer.index') }}">BIICF Explorer</a>
             </div>
             <div class="footer-col">
-                <h4>Resources</h4>
-                <a href="{{ route('student.biicf-explorer.index') }}">BIICF Framework</a>
-                <a href="{{ route('student.biicf-explorer.index') }}">ICT Sub-Sectors</a>
-                <a href="{{ route('student.biicf-explorer.index') }}">Competencies</a>
-                <a href="#">Career Guide</a>
-            </div>
-            <div class="footer-col">
                 <h4>Contact</h4>
                 <a class="contact-row" href="https://www.google.com/maps/search/?api=1&query=Politeknik+Brunei+Ong+Sum+Ping" target="_blank" rel="noopener">
                     <i class="fas fa-map-marker-alt"></i>
@@ -85,7 +78,7 @@
                 </a>
                 <a class="contact-row" href="https://www.instagram.com/careerpathbn/" target="_blank" rel="noopener">
                     <i class="fab fa-instagram"></i>
-                    <span>@@careerpathbn <small class="contact-label">(CareerPath BN on Instagram)</small></span>
+                    <span>@@careerpathbn</span>
                 </a>
             </div>
         </div>
@@ -115,7 +108,7 @@
 
     .footer-grid {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr;
+        grid-template-columns: 2fr 1fr 1fr;
         gap: 40px;
         margin-bottom: 32px;
     }
@@ -259,6 +252,10 @@
             grid-template-columns: 1fr 1fr;
             gap: 30px;
         }
+
+        .footer-grid > .footer-brand {
+            grid-column: 1 / -1;
+        }
     }
 
     @media (max-width: 768px) {
@@ -363,7 +360,7 @@
 
     @media (min-width: 1025px) {
         .footer-grid {
-            grid-template-columns: 1.7fr 0.9fr 0.9fr 1.5fr;
+            grid-template-columns: 1.7fr 0.9fr 1.5fr;
         }
     }
 

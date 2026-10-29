@@ -271,93 +271,15 @@ function competencyAtLevels(
     return $competency;
 }
 
-describe('narrowing by job level as well', function () {
-    test('the form offers a chip for every level in use', function () {
+describe('the job level filter', function () {
+    test('is gone, and the other two rows are not', function () {
         /*
-         * In use, not every level the framework names. It names
-         * seven and its role pages use six, so a chip for the
-         * seventh could only ever produce an empty list.
-         */
-        competencyAtLevels('Cloud Computing', 'IT Services', ['Entrant']);
-        competencyAtLevels('Enterprise Architecture', 'IT Services', ['C-Suite']);
-
-        $response = $this->actingAs(aStudent())
-            ->get(route('student.profile.edit'))
-            ->assertOk();
-
-        $response->assertShows(
-            'id="technical-level-filter"',
-            'data-level="Entrant"',
-            'data-level="C-Suite"',
-            /* All, and on to begin with. */
-            'data-level=""'
-        );
-
-        $response->assertHides('data-level="Senior Management"');
-    });
-
-    test('a competency says every level it is asked for at', function () {
-        /*
-         * In seniority order rather than the order the rows came
-         * back in, so the chips and the attribute agree.
-         */
-        competencyAtLevels(
-            'Cloud Computing',
-            'IT Services',
-            ['Specialist', 'Entrant']
-        );
-
-        $this->actingAs(aStudent())
-            ->get(route('student.profile.edit'))
-            ->assertOk()
-            ->assertShows('data-levels="Entrant|Specialist"');
-    });
-
-    test('a tier with no level of its own falls back to the role', function () {
-        /*
-         * The case the merge exists for. A tier that is a
-         * numbered step inside a level carries no job level, and
-         * reading tiers alone would leave the competency filed
-         * under nothing — hidden behind every level chip, which
-         * is to say unpickable.
-         */
-        competencyAtLevels(
-            'Systems Monitoring',
-            'IT Services',
-            [],
-            ['Specialist']
-        );
-
-        $this->actingAs(aStudent())
-            ->get(route('student.profile.edit'))
-            ->assertOk()
-            ->assertShows('data-levels="Specialist"');
-    });
-
-    test('a competency no role asks for carries no level', function () {
-        /*
-         * It stays on offer. The filter has nothing to file it
-         * under, and the page keeps it on screen whichever level
-         * is picked rather than putting a competency out of reach
-         * for want of a row in the book.
-         */
-        BiicfCompetency::create([
-            'name' => 'Orphan Competency',
-            'slug' => 'orphan-competency',
-            'type' => 'technical',
-        ]);
-
-        $this->actingAs(aStudent())
-            ->get(route('student.profile.edit'))
-            ->assertOk()
-            ->assertShows('Orphan Competency', 'data-levels=""');
-    });
-
-    test('both rows of chips say which they are', function () {
-        /*
-         * Two unlabelled rows of chips read as one row that
-         * wrapped, and the second is a different question
-         * entirely.
+         * It sat between the sub-sector and the role and barely
+         * narrowed anything: Specialist covers twenty-three of the
+         * thirty-eight roles, so crossing a sub-sector with it
+         * still left as many as thirty-nine competencies. The role
+         * row does the work, and the level row was taking a line
+         * of screen for nothing.
          */
         competencyAtLevels('Cloud Computing', 'IT Services', ['Entrant']);
 
@@ -365,35 +287,23 @@ describe('narrowing by job level as well', function () {
             ->get(route('student.profile.edit'))
             ->assertOk()
             ->assertShows(
-                '<span class="cpbn-filter-label">Sub-sector</span>',
+                'id="technical-sector-filter"',
+                'id="technical-role-filter"'
+            )
+            ->assertHides(
+                'id="technical-level-filter"',
+                'data-levels=',
+                'data-role-levels=',
                 '<span class="cpbn-filter-label">Job level</span>'
             );
-    });
-
-    test('the level row stays away when nothing records a level', function () {
-        /*
-         * A deployment that has not imported the framework's job
-         * levels gets the sub-sector filter on its own rather
-         * than a row holding nothing but "All".
-         */
-        competencyWantedIn('Cloud Computing', ['IT Services']);
-
-        $this->actingAs(aStudent())
-            ->get(route('student.profile.edit'))
-            ->assertOk()
-            ->assertShows('id="technical-sector-filter"')
-            ->assertHides('id="technical-level-filter"');
     });
 });
 
 describe('narrowing by the job itself', function () {
     test('the form offers a chip per role, carrying what filters it', function () {
         /*
-         * The sub-sector and level on the chip are what the two
-         * rows above it narrow the role row by. Read any other
-         * way the three could disagree, and a role offered under
-         * a level whose competencies are filed under another
-         * would select to an empty grid.
+         * The sub-sector on the chip is what the row above it
+         * narrows the role row by.
          */
         competencyAtLevels('Cloud Computing', 'IT Services', ['Entrant']);
 
@@ -405,14 +315,13 @@ describe('narrowing by the job itself', function () {
 
         /*
          * One attribute at a time: the chip is written an
-         * attribute per line, so the three never appear as one
-         * run of text.
+         * attribute per line, so the two never appear as one run
+         * of text.
          */
         $response->assertShows(
             'id="technical-role-filter"',
             'data-role="'.$role->id.'"',
             'data-role-sector="IT Services"',
-            'data-role-levels="Entrant"',
             'Cloud Computing Role',
             /* All, and on to begin with. */
             'data-role=""'
@@ -471,27 +380,7 @@ describe('narrowing by the job itself', function () {
             ->assertShows('Orphan Competency', 'data-roles=""');
     });
 
-    test('a role whose tier names no level still carries the role levels', function () {
-        /*
-         * So the role row and the level row agree. The chip has
-         * to be offered under the same level its competencies are
-         * filed under, and for a tier that is a numbered step
-         * that level only exists on the role.
-         */
-        competencyAtLevels(
-            'Systems Monitoring',
-            'IT Services',
-            [],
-            ['Specialist']
-        );
-
-        $this->actingAs(aStudent())
-            ->get(route('student.profile.edit'))
-            ->assertOk()
-            ->assertShows('data-role-levels="Specialist"');
-    });
-
-    test('all three rows are labelled', function () {
+    test('both rows are labelled', function () {
         competencyAtLevels('Cloud Computing', 'IT Services', ['Entrant']);
 
         $this->actingAs(aStudent())
@@ -499,7 +388,6 @@ describe('narrowing by the job itself', function () {
             ->assertOk()
             ->assertShows(
                 '<span class="cpbn-filter-label">Sub-sector</span>',
-                '<span class="cpbn-filter-label">Job level</span>',
                 '<span class="cpbn-filter-label">Job role</span>'
             );
     });
