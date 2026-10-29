@@ -12,6 +12,7 @@ use App\Models\BiicfSubSector;
 use App\Models\Notification;
 use App\Models\Plan;
 use App\Models\RecommendationGeneration;
+use App\Models\StudentCertification;
 use App\Models\StudentCompetency;
 use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
@@ -22,6 +23,7 @@ use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
+use App\Services\Business\StudentPlanSummary;
 use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
@@ -1115,7 +1117,7 @@ class ProfileController extends Controller
             );
         }
 
-        $certification = \App\Models\StudentCertification::where(
+        $certification = StudentCertification::where(
             'user_id',
             $studentId
         )->findOrFail($certificationId);
@@ -1288,7 +1290,7 @@ class ProfileController extends Controller
     /**
      * Show settings page.
      */
-    public function settings(EntitlementService $entitlements)
+    public function settings(EntitlementService $entitlements, StudentPlanSummary $summary)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -1298,6 +1300,7 @@ class ProfileController extends Controller
             [
                 'user' => $user,
                 'plan' => $entitlements->planFor($user),
+                'planSummary' => $summary->for($user),
                 'adsAvailable' => $entitlements->adsAvailable($user),
                 'canChooseAds' => $entitlements->canChooseAds($user),
                 'showsAds' => $entitlements->shouldShowAds($user),

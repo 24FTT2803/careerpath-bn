@@ -49,6 +49,11 @@ class CareerRecommendationController extends Controller
                     'career_recommendations.enabled'
                 );
 
+        $detailedAnalysisAccess = $this->entitlements->featureAccess(
+            $student,
+            'career_recommendations.detailed_analysis.enabled'
+        );
+
         $generationQuota =
             $this->featureUsage
                 ->status(
@@ -85,6 +90,7 @@ class CareerRecommendationController extends Controller
                 'recommendations',
                 'currentGeneration',
                 'generationAccess',
+                'detailedAnalysisAccess',
                 'generationQuota',
                 'cooldownSeconds'
             )
@@ -101,20 +107,20 @@ class CareerRecommendationController extends Controller
         /** @var User $student */
         $student = Auth::user();
 
-        $generationAccess =
+        $detailedAnalysisAccess =
             $this->entitlements
                 ->featureAccess(
                     $student,
-                    'career_recommendations.enabled'
+                    'career_recommendations.detailed_analysis.enabled'
                 );
 
-        if (! $generationAccess['allowed']) {
+        if (! $detailedAnalysisAccess['allowed']) {
             return redirect()
                 ->route('student.recommendations.index')
                 ->with(
                     'warning',
-                    'Career recommendation generation is unavailable. '
-                    .$generationAccess['message']
+                    'Detailed career analysis is unavailable. '
+                    .$detailedAnalysisAccess['message']
                 );
         }
 
@@ -129,6 +135,7 @@ class CareerRecommendationController extends Controller
             ->with([
                 'career',
                 'jobRole.subSector',
+                'jobRole.descriptionPoints',
                 'jobRole.entryRequirement',
                 'jobRole.trainings',
             ])
@@ -139,6 +146,31 @@ class CareerRecommendationController extends Controller
 
         $jobRole =
             $careerRecommendation->jobRole;
+
+        $description = $jobRole?->descriptionPoints
+            ->pluck('text')->filter()->implode("\n\n");
+
+        if (blank($description)) {
+            $description = $jobRole?->job_description
+                ?: $legacyCareer?->job_description;
+        }
+
+        $analysisSections = [];
+
+        foreach ([
+            'match_score',
+            'matched_competencies',
+            'competency_gaps',
+            'entry_requirements',
+            'certification_suggestions',
+            'training_suggestions',
+            'development_roadmap',
+        ] as $section) {
+            $analysisSections[$section] = $this->entitlements->allows(
+                $student,
+                "career_recommendations.detailed_analysis.{$section}.enabled"
+            );
+        }
 
         /*
          * Present both the legacy recommendation model and
@@ -154,9 +186,9 @@ class CareerRecommendationController extends Controller
                 ?? $legacyCareer?->subsector
                 ?? 'Sub-sector unavailable',
 
-            'job_description' => $jobRole?->job_description
-                ?? $legacyCareer?->job_description
-                ?? 'Job description is currently unavailable.',
+            'job_description' => filled($description)
+                ? $description
+                : 'Job description is currently unavailable.',
         ];
 
         if ($jobRole) {
@@ -236,7 +268,8 @@ class CareerRecommendationController extends Controller
             compact(
                 'careerRecommendation',
                 'careerPresentation',
-                'careerDetails'
+                'careerDetails',
+                'analysisSections'
             )
         );
     }
