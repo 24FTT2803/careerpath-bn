@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\InnovationLabController;
 use App\Http\Controllers\Admin\LecturerController;
 use App\Http\Controllers\Admin\OrganisationController;
 use App\Http\Controllers\Admin\OrganisationGroupController;
+use App\Http\Controllers\Admin\SectionGuideController;
 use App\Http\Controllers\Admin\SponsorshipController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
@@ -225,6 +226,11 @@ Route::middleware([
             '/settings/upgrade',
             [ProfileController::class, 'upgrade']
         )->name('settings.upgrade');
+
+        Route::post(
+            '/settings/subscription/cancel',
+            [ProfileController::class, 'cancelSubscription']
+        )->name('settings.cancel-subscription');
 
         Route::put(
             '/settings/preferences',
@@ -678,6 +684,31 @@ Route::middleware(['auth'])
                     'innovation-lab',
                     InnovationLabController::class
                 )->except(['show']);
+
+                /*
+                 * The help behind the '?' icons on Edit Profile
+                 * and Career Analysis. Edited only: each guide
+                 * belongs to a section of a page.
+                 */
+                Route::get(
+                    '/guides',
+                    [SectionGuideController::class, 'index']
+                )->name('guides.index');
+
+                Route::get(
+                    '/guides/{guide}/edit',
+                    [SectionGuideController::class, 'edit']
+                )->name('guides.edit');
+
+                Route::put(
+                    '/guides/{guide}',
+                    [SectionGuideController::class, 'update']
+                )->name('guides.update');
+
+                Route::post(
+                    '/guides/{guide}/restore',
+                    [SectionGuideController::class, 'restore']
+                )->name('guides.restore');
             });
 
         // ============================================

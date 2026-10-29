@@ -18,6 +18,7 @@ use App\Models\StudentInterest;
 use App\Models\StudentMilestone;
 use App\Models\StudentProject;
 use App\Models\User;
+use App\Models\UserPlanGrant;
 use App\Rules\NoProfanity;
 use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
@@ -26,6 +27,7 @@ use App\Services\Business\ProgrammeEnrolmentService;
 use App\Services\Business\StudentPlanSummary;
 use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -256,104 +258,15 @@ class ProfileController extends Controller
             ->all();
 
         /*
-         * And at which job levels each competency is asked for.
-         *
-         * A sub-sector on its own still leaves forty to sixty,
-         * which is more than anyone reads at an exhibition stand.
-         * Crossed with a level it is a handful: what a student
-         * entering the sector is actually expected to have.
-         *
-         * Read from two places and merged. A required proficiency
-         * hangs off a tier, and a tier carries the framework's
-         * named level when it is one — the precise answer, since
-         * it says the competency is wanted at that level of that
-         * role. But a tier that is a numbered step inside a level
-         * carries none, so the role's own levels are taken as
-         * well, which is the coarser statement the book's role
-         * pages make.
-         */
-        $levelsByTier = DB::table('biicf_job_role_competency as pivot')
-            ->join(
-                'biicf_job_role_tiers as tiers',
-                'tiers.id',
-                '=',
-                'pivot.job_role_tier_id'
-            )
-            ->join(
-                'biicf_job_levels as levels',
-                'levels.id',
-                '=',
-                'tiers.job_level_id'
-            )
-            ->select(
-                'pivot.competency_id',
-                'levels.name',
-                'levels.sort_order'
-            )
-            ->distinct();
-
-        $levelsByRole = DB::table('biicf_job_role_competency as pivot')
-            ->join(
-                'biicf_job_role_job_level as role_level',
-                'role_level.job_role_id',
-                '=',
-                'pivot.job_role_id'
-            )
-            ->join(
-                'biicf_job_levels as levels',
-                'levels.id',
-                '=',
-                'role_level.job_level_id'
-            )
-            ->select(
-                'pivot.competency_id',
-                'levels.name',
-                'levels.sort_order'
-            )
-            ->distinct();
-
-        $jobLevelRows = $levelsByTier
-            ->union($levelsByRole)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get();
-
-        $competencyJobLevels = $jobLevelRows
-            ->groupBy('competency_id')
-            ->map(
-                fn ($rows) => $rows
-                    ->pluck('name')
-                    ->unique()
-                    ->values()
-                    ->all()
-            )
-            ->all();
-
-        /*
-         * Only the levels something is actually filed under. The
-         * framework names seven and its role pages use six, so
-         * offering all seven puts up a chip that can only ever
-         * produce an empty list.
-         *
-         * The query is already in seniority order, so this keeps
-         * it.
-         */
-        $jobLevelOptions = $jobLevelRows
-            ->pluck('name')
-            ->unique()
-            ->values()
-            ->all();
-
-        /*
          * And which roles ask for each competency.
          *
-         * A sub-sector crossed with a level is between ten and
-         * thirty-nine, and the combinations a student actually
-         * picks are the large ones: Specialist covers twenty-three
-         * of the framework's thirty-eight roles, so "Data and
-         * Artificial Intelligence at Specialist" is thirty-nine of
-         * the hundred and twenty-seven. One role is between eight
-         * and seventeen, every time.
+         * A sub-sector leaves twenty-seven to forty-six of the
+         * hundred and twenty-seven. One role is between eight and
+         * seventeen, every time. A job level filter sat between
+         * the two for a while and was taken out: Specialist covers
+         * twenty-three of the thirty-eight roles, so crossing a
+         * sub-sector with it barely narrowed anything, and the
+         * role row does the work.
          *
          * Keyed on the role's id rather than its title. The book
          * prints Chief Technology Officer under two sub-sectors,
@@ -376,24 +289,14 @@ class ProfileController extends Controller
 
         /*
          * The roles worth offering, each carrying the sub-sector
-         * and levels the rows above filter it by.
-         *
-         * A role's levels are read the same way its competencies'
-         * are — the tier's named level, and the role's own levels
-         * alongside. Read any other way the two could disagree,
-         * and a role offered under a level whose competencies are
-         * filed under another would select to an empty grid.
+         * the row above filters it by.
          *
          * Roles nothing is filed against are left out: a chip
          * that can only produce an empty list is not a filter.
          */
         $jobRoleOptions = BiicfJobRole::query()
             ->whereHas('competencies')
-            ->with([
-                'subSector:id,name',
-                'tiers.jobLevel:id,name,sort_order',
-                'jobLevels:id,name,sort_order',
-            ])
+            ->with('subSector:id,name')
             ->orderBy('title')
             ->get(['id', 'sub_sector_id', 'title'])
             ->map(
@@ -401,16 +304,6 @@ class ProfileController extends Controller
                     'id' => $role->id,
                     'title' => $role->title,
                     'sector' => $role->subSector->name ?? '',
-
-                    'levels' => $role->tiers
-                        ->pluck('jobLevel')
-                        ->filter()
-                        ->concat($role->jobLevels)
-                        ->sortBy('sort_order')
-                        ->pluck('name')
-                        ->unique()
-                        ->values()
-                        ->all(),
                 ]
             )
             ->values()
@@ -430,8 +323,6 @@ class ProfileController extends Controller
                 'bdqfLevels',
                 'competencySubSectors',
                 'subSectorOptions',
-                'competencyJobLevels',
-                'jobLevelOptions',
                 'competencyJobRoles',
                 'jobRoleOptions'
             )
@@ -1301,6 +1192,7 @@ class ProfileController extends Controller
                 'user' => $user,
                 'plan' => $entitlements->planFor($user),
                 'planSummary' => $summary->for($user),
+                'subscription' => $this->ownSubscription($user),
                 'adsAvailable' => $entitlements->adsAvailable($user),
                 'canChooseAds' => $entitlements->canChooseAds($user),
                 'showsAds' => $entitlements->shouldShowAds($user),
@@ -1355,9 +1247,16 @@ class ProfileController extends Controller
                 'ends_at' => now(),
             ]);
 
-        $user->planGrants()->create([
+        /*
+         * A subscription runs for one month. It is not renewed:
+         * when it ends the student is told and returns to the
+         * free plan, and may subscribe again.
+         */
+        $grant = $user->planGrants()->create([
             'plan_id' => $premium->id,
             'source' => 'self',
+            'starts_at' => now(),
+            'ends_at' => now()->addMonth(),
             'is_active' => true,
         ]);
 
@@ -1371,9 +1270,82 @@ class ProfileController extends Controller
             ->route('student.settings')
             ->with(
                 'success',
-                'You are now on Premium. No payment was taken — '
+                'You are now on Premium until '
+                .$this->subscriptionDay($grant->ends_at)
+                .'. No payment was taken — '
                 .'this is a demonstration of the upgrade, not a purchase.'
             );
+    }
+
+    /**
+     * End the student's own Premium subscription now.
+     *
+     * Cancelling takes effect at once rather than at the end of
+     * the month. Only a subscription the student took out
+     * themselves can be cancelled here: Premium given by an
+     * administrator, a sponsor or a trial is not theirs to end.
+     */
+    public function cancelSubscription(EntitlementService $entitlements)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user && $user->isStudent(),
+            403
+        );
+
+        $subscription = $this->ownSubscription($user);
+
+        if ($subscription === null) {
+            return redirect()
+                ->route('student.settings')
+                ->withErrors([
+                    'subscription' => 'You have no subscription to cancel.',
+                ]);
+        }
+
+        /*
+         * Marked inactive as well as ended, so the expiry check
+         * does not later announce an ending the student chose.
+         */
+        $subscription->update([
+            'is_active' => false,
+            'ends_at' => now(),
+        ]);
+
+        $plan = $entitlements->planFor($user->fresh());
+
+        $message = ($plan?->code ?? 'free') === 'premium'
+            ? 'Your subscription has been cancelled. You still have Premium from another source.'
+            : 'Your subscription has been cancelled and has ended. '
+                .'Your account is now on the '.($plan?->name ?? 'Free').' plan.';
+
+        return redirect()
+            ->route('student.settings')
+            ->with('success', $message);
+    }
+
+    /**
+     * The Premium subscription the student took out themselves,
+     * if one is running.
+     */
+    private function ownSubscription(User $user): ?UserPlanGrant
+    {
+        return $user->planGrants()
+            ->currentlyActive()
+            ->where('source', 'self')
+            ->latest('id')
+            ->first();
+    }
+
+    private function subscriptionDay(?CarbonInterface $date): string
+    {
+        return $date === null
+            ? 'further notice'
+            : $date->copy()
+                ->setTimezone(config('app.business_timezone'))
+                ->format('j M Y');
     }
 
     /**

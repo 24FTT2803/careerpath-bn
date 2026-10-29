@@ -84,12 +84,17 @@ test('disabled detailed analysis sections do not expose their content', function
     FeatureDefinition::where('key', "career_recommendations.detailed_analysis.{$section}.enabled")
         ->update(['global_enabled' => false]);
 
-    $this->actingAs($this->student)
+    $response = $this->actingAs($this->student)
         ->get(route('student.recommendations.analysis', $this->recommendation))
         ->assertOk()
         ->assertDontSee($hidden);
+
+    if ($section === 'match_score') {
+        $response->assertDontSee('class="cpbn-metrics"', false)
+            ->assertDontSee('data-guide-open="analysis.readiness"', false);
+    }
 })->with([
-    ['match_score', 'Career Readiness'],
+    ['match_score', 'Current readiness:'],
     ['matched_competencies', 'Software Testing'],
     ['competency_gaps', 'Secure Programming'],
     ['entry_requirements', 'Entry Requirements'],

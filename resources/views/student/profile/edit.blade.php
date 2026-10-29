@@ -1896,6 +1896,7 @@
                         <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
                     </svg>
                     Personal Information
+                    <x-section-guide guide="profile.personal" />
                 </div>
 
                 @php
@@ -2188,6 +2189,8 @@
                     </svg>
 
                     Qualifications
+
+                    <x-section-guide guide="profile.qualifications" />
                 </div>
 
                 <p class="desc">
@@ -2669,6 +2672,8 @@
                     </svg>
 
                     Skills &amp; Competencies
+
+                    <x-section-guide guide="profile.skills" />
                 </div>
 
                 <p class="desc">
@@ -2949,54 +2954,17 @@
                         @endif
 
                         {{--
-                            And the level crossed with it. A sub-sector
-                            alone still leaves forty to sixty, which is
-                            a list to read rather than a choice to
-                            make; with a level it is the handful a
-                            student entering that sector is expected
-                            to have.
-
-                            Only the levels something is filed under
-                            are offered. The two narrow together, and
-                            a competency the framework files under no
-                            level at all stays on screen whichever is
-                            picked — it can be reached from nowhere
-                            else.
-                        --}}
-                        @if(! empty($jobLevelOptions))
-                            <div class="cpbn-filter-row">
-                                <span class="cpbn-filter-label">Job level</span>
-
-                                <div class="cpbn-sector-filter" id="technical-level-filter">
-                                    <button type="button" class="cpbn-sector-chip is-on" data-level="">
-                                        All
-                                    </button>
-
-                                    @foreach($jobLevelOptions as $level)
-                                        <button type="button" class="cpbn-sector-chip"
-                                                data-level="{{ $level }}">
-                                            {{ $level }}
-                                        </button>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endif
-
-                        {{--
                             And the job itself, which is the one that
-                            actually cuts it down. A sub-sector at a
-                            level runs to thirty-nine in the
-                            combinations students pick most; one role
-                            is eight to seventeen, always.
+                            actually cuts it down: one role is eight to
+                            seventeen competencies, always.
 
-                            The rows above narrow which roles are
+                            The sub-sector row narrows which roles are
                             offered rather than being made redundant
                             by this one, so a student can still arrive
-                            at a role by sector and seniority. A role
-                            left showing after its sector or level
-                            stops offering it would be a filter nobody
-                            could see, so it is cleared when that
-                            happens.
+                            at a role by sector. A role left showing
+                            after its sector stops offering it would
+                            be a filter nobody could see, so it is
+                            cleared when that happens.
                         --}}
                         @if(! empty($jobRoleOptions))
                             <div class="cpbn-filter-row">
@@ -3010,8 +2978,7 @@
                                     @foreach($jobRoleOptions as $role)
                                         <button type="button" class="cpbn-sector-chip"
                                                 data-role="{{ $role['id'] }}"
-                                                data-role-sector="{{ $role['sector'] }}"
-                                                data-role-levels="{{ implode('|', $role['levels']) }}">
+                                                data-role-sector="{{ $role['sector'] }}">
                                             {{ $role['title'] }}
                                         </button>
                                     @endforeach
@@ -3118,7 +3085,6 @@
                                 data-biicf-competency
                                 data-technical-competency
                                 data-sectors="{{ implode('|', $competencySubSectors[$competency->id] ?? []) }}"
-                                data-levels="{{ implode('|', $competencyJobLevels[$competency->id] ?? []) }}"
                                 data-roles="{{ implode('|', $competencyJobRoles[$competency->id] ?? []) }}"
                             >
                                 <label class="cpbn-competency-choice">
@@ -3611,6 +3577,7 @@
                         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
                     </svg>
                     Interests &amp; Preferences
+                    <x-section-guide guide="profile.interests" />
                 </div>
 
                 <p class="desc">What are you interested in?</p>
@@ -3810,6 +3777,7 @@
                         <rect x="14" y="14" width="7" height="7" rx="1"/>
                     </svg>
                     Projects &amp; Experience
+                    <x-section-guide guide="profile.projects" />
                 </div>
 
                 <p class="desc">
@@ -4008,6 +3976,7 @@
                         <path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>
                     </svg>
                     Certifications
+                    <x-section-guide guide="profile.certifications" />
                 </div>
 
                 <p class="desc">
@@ -4228,6 +4197,7 @@
                         <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/>
                     </svg>
                     Career Aspirations
+                    <x-section-guide guide="profile.aspirations" />
                 </div>
 
                 <div class="cpbn-fgrid">
@@ -5208,35 +5178,26 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
     /*
-     * The sub-sector, job level and job role filters.
+     * The sub-sector and job role filters.
      *
      * Client-side, because every competency is already on the
      * page and asking the server to send a shorter list would be
      * a round trip to hide things we are holding.
      *
-     * All three narrow together: a competency has to answer every
-     * one of them to stay on screen. The role is the one that
-     * does the work — a sub-sector at a level still runs to
-     * thirty-nine in the combinations students pick most, where
-     * one role is eight to seventeen — and the two rows above it
-     * narrow which roles are offered rather than being made
-     * redundant by it.
+     * Both narrow together: a competency has to answer each of
+     * them to stay on screen. The role is the one that does the
+     * work — one role is eight to seventeen competencies — and
+     * the sub-sector row narrows which roles are offered rather
+     * than being made redundant by it.
      *
      * Two kinds of competency are never hidden. One already
      * ticked, because a student who filters to ICT Security and
      * watches four of their own choices vanish has every reason
-     * to think the page threw them away. And one the framework
-     * files under no level at all, because no level chip would
-     * ever show it and it would stop being pickable at all.
+     * to think the page threw them away.
      */
     const sectorFilter =
         document.getElementById(
             'technical-sector-filter'
-        );
-
-    const levelFilter =
-        document.getElementById(
-            'technical-level-filter'
         );
 
     const roleFilter =
@@ -5244,14 +5205,13 @@ document.addEventListener('DOMContentLoaded', function () {
             'technical-role-filter'
         );
 
-    if ((sectorFilter || levelFilter || roleFilter) && repageTechnical) {
+    if ((sectorFilter || roleFilter) && repageTechnical) {
         const emptyNote =
             document.getElementById(
                 'technical-filter-empty'
             );
 
         let wantedSector = '';
-        let wantedLevel = '';
         let wantedRole = '';
 
         const matches =
@@ -5285,7 +5245,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const filtering =
             function() {
                 return wantedSector !== ''
-                    || wantedLevel !== ''
                     || wantedRole !== '';
             };
 
@@ -5311,10 +5270,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (role) {
                         chosen.push(role.textContent.trim());
                     }
-                }
-
-                if (wantedLevel !== '') {
-                    chosen.push(wantedLevel);
                 }
 
                 if (wantedSector !== '') {
@@ -5376,16 +5331,9 @@ document.addEventListener('DOMContentLoaded', function () {
                                 /*
                                  * A competency no role asks for
                                  * is in no sub-sector and under
-                                 * no role, and both chips have
-                                 * always hidden it. Levels are
-                                 * the other way round: a tier
-                                 * that is a numbered step inside
-                                 * a level names none, so a blank
-                                 * list there means unrecorded
-                                 * rather than inapplicable.
+                                 * no role, so both rows hide it.
                                  */
                                 matches(item, 'sectors', wantedSector, false)
-                                && matches(item, 'levels', wantedLevel, true)
                                 && matches(item, 'roles', wantedRole, false)
                             );
 
@@ -5438,10 +5386,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
         /*
-         * Which roles the rows above leave on offer.
+         * Which roles the sub-sector row leaves on offer.
          *
-         * A role whose sub-sector or level has just been filtered
-         * away stops being offered, and if it was the one
+         * A role whose sub-sector has just been filtered away
+         * stops being offered, and if it was the one
          * selected the selection goes with it. Left standing it
          * would be a filter with no chip on screen to say so: the
          * grid would hold one role's competencies and nothing
@@ -5468,8 +5416,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         }
 
                         const fits =
-                            matches(chip, 'roleSector', wantedSector, false)
-                            && matches(chip, 'roleLevels', wantedLevel, true);
+                            matches(chip, 'roleSector', wantedSector, false);
 
                         chip.hidden = !fits;
 
@@ -5566,15 +5513,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             );
 
-        const resetLevel =
-            wireRow(
-                levelFilter,
-                'level',
-                function(value) {
-                    wantedLevel = value;
-                }
-            );
-
         const resetRole =
             wireRow(
                 roleFilter,
@@ -5590,7 +5528,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     'click',
                     function() {
                         resetSector();
-                        resetLevel();
                         resetRole();
 
                         refreshRoleChips();

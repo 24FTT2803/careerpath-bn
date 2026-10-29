@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Notifications\AuthenticateRegistrationNotification;
 use App\Notifications\VerifyEmailNotification;
 use Carbon\Carbon;
 use Database\Seeders\OrganisationGroupSeeder;
@@ -41,24 +42,40 @@ function unverifiedStudent($createdAt = null): User
     ]);
 }
 
-test('signing up sends a confirmation email', function () {
+test('signing up sends no confirmation email to an account', function () {
+    /*
+     * The account is created only once its address has been
+     * authenticated, so it starts confirmed and the old
+     * confirmation email has nothing left to confirm.
+     * RegistrationTest covers the email that is sent instead.
+     */
     Notification::fake();
 
     $this->seed(OrganisationGroupSeeder::class);
 
     $this->post('/register', [
         'name' => 'Test User',
-        'email' => 'test.user@student.pb.edu.bn',
+        'email' => 'test.user@pb.edu.bn',
         'programme' => 'Diploma in ICT (Application Development)',
         'password' => 'Password123!',
         'password_confirmation' => 'Password123!',
         'terms' => 'on',
     ]);
 
-    $user = User::where('email', 'test.user@student.pb.edu.bn')
-        ->firstOrFail();
+    Notification::assertSentOnDemand(
+        AuthenticateRegistrationNotification::class,
+        function (AuthenticateRegistrationNotification $notification) {
+            $this->post($notification->linkTo('register.authenticate'));
 
-    Notification::assertSentTo($user, VerifyEmailNotification::class);
+            return true;
+        }
+    );
+
+    $user = User::where('email', 'test.user@pb.edu.bn')->sole();
+
+    expect($user->hasVerifiedEmail())->toBeTrue();
+
+    Notification::assertNotSentTo($user, VerifyEmailNotification::class);
 });
 
 test(

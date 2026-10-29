@@ -1380,6 +1380,14 @@
                         Innovation Lab
                     </span>
                 </a>
+
+                <a
+                    href="{{ route('admin.business.guides.index') }}"
+                    class="sidebar-link {{ request()->routeIs('admin.business.guides.*') ? 'active' : '' }}"
+                >
+                    <i class="fas fa-circle-question"></i>
+                    <span>Section Guides</span>
+                </a>
             @endif
         </nav>
 

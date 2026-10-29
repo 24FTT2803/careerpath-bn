@@ -505,7 +505,7 @@
         <div class="cpbn-grid">
 
             <section class="cpbn-section">
-                <h2>Career Overview</h2>
+                <h2>Career Overview <x-section-guide guide="analysis.overview" /></h2>
 
                 <h3>Job Description</h3>
 
@@ -514,7 +514,7 @@
                 </p>
 
                 @if($analysisSections['entry_requirements'])
-                <h3>Entry Requirements</h3>
+                <h3>Entry Requirements <x-section-guide guide="analysis.entry" /></h3>
 
                 @if(count($careerDetails['entry_requirements']) > 0)
                     <ul class="cpbn-list">
@@ -536,7 +536,7 @@
             </section>
 
             <section class="cpbn-section">
-                <h2>Why This Career Matches You</h2>
+                <h2>Why This Career Matches You <x-section-guide guide="analysis.match" /></h2>
 
                 <p class="cpbn-copy">
                     {{ $careerRecommendation->explanation
@@ -546,7 +546,7 @@
 
             @if($analysisSections['matched_competencies'])
             <section class="cpbn-section">
-                <h2>Matching Competencies</h2>
+                <h2>Matching Competencies <x-section-guide guide="analysis.competencies" /></h2>
 
                 @if(! empty($careerRecommendation->matched_skills))
                     <div class="cpbn-skills">
@@ -569,7 +569,7 @@
 
             @if($analysisSections['match_score'])
             <section class="cpbn-section">
-                <h2>Career Readiness</h2>
+                <h2>Career Readiness <x-section-guide guide="analysis.readiness" /></h2>
 
                 <p class="cpbn-copy">
                     Your career readiness score estimates how closely your
@@ -594,7 +594,7 @@
 
             @if($analysisSections['competency_gaps'])
             <section class="cpbn-section cpbn-section-full">
-                <h2>Skill Gaps</h2>
+                <h2>Skill Gaps <x-section-guide guide="analysis.gaps" /></h2>
 
                 @if($skillGaps->isNotEmpty())
 
@@ -727,7 +727,7 @@
 
             @if($analysisSections['training_suggestions'])
             <section class="cpbn-section">
-                <h2>Recommended Training</h2>
+                <h2>Recommended Training <x-section-guide guide="analysis.training" /></h2>
 
                 @if(
                     count(
@@ -754,7 +754,7 @@
 
             @if($analysisSections['certification_suggestions'])
             <section class="cpbn-section">
-                <h2>Recommended Certifications</h2>
+                <h2>Recommended Certifications <x-section-guide guide="analysis.certifications" /></h2>
 
                 @if(
                     count(
@@ -781,7 +781,7 @@
 
             @if($analysisSections['development_roadmap'])
             <section class="cpbn-section cpbn-section-full">
-                <h2>Development Plan</h2>
+                <h2>Development Plan <x-section-guide guide="analysis.plan" /></h2>
 
                 @if(! empty($careerRecommendation->development_plan))
                     <ol class="cpbn-plan">

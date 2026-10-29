@@ -229,11 +229,14 @@ class PremiumNotifier
         }
 
         $isTrial = $grant->source === 'trial';
+        $isSubscription = $grant->source === 'self';
         $ended = $grant->ends_at ? ' on '.$this->day($grant->ends_at) : '';
 
-        $lead = $isTrial
-            ? "Your Premium trial ended{$ended}."
-            : "Your Premium access ended{$ended}.";
+        $lead = match (true) {
+            $isTrial => "Your Premium trial ended{$ended}.",
+            $isSubscription => "Your monthly Premium subscription ended{$ended}.",
+            default => "Your Premium access ended{$ended}.",
+        };
 
         $access = $this->entitlements->accessFor($student);
 
@@ -255,6 +258,7 @@ class PremiumNotifier
             [$student->id],
             $isTrial ? 'Premium trial ended' : 'Premium ended',
             $lead.' '.$this->nowOnPlan($access['plan']?->name)
+                .($isSubscription ? ' You can subscribe again from Settings.' : '')
         );
     }
 

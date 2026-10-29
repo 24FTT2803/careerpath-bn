@@ -44,11 +44,7 @@ class AdviserText
             $prepared
         ) ?? $prepared;
 
-        $prepared = preg_replace(
-            '/(?<!^)(?<!\n)'.$space.'+(\d+)\.'.$space.'+(?=[A-Z])/u',
-            "\n$1. ",
-            $prepared
-        ) ?? $prepared;
+        $prepared = self::splitInlineNumbering($prepared, $space);
 
         $lines = explode("\n", $prepared);
 
@@ -226,6 +222,70 @@ class AdviserText
         $flushList();
 
         return $html;
+    }
+
+    /**
+     * Give numbered points the model ran onto one line a line each.
+     *
+     * The model writes "Next steps: 1. Ask your college. 2. Look
+     * for workshops." as a single line, and without this the
+     * points stay buried in a paragraph.
+     *
+     * It used to split at any space, number, full stop, space and
+     * capital — which is also how a sentence reads when it ends on
+     * a number. Asked for the BDQF levels, the adviser wrote
+     * "...and Skills Certificate 1. Level 2 includes...", because
+     * Skills Certificate 1 is a level 1 award; the line was cut
+     * there, the "1" was taken as a list number, and every level
+     * from 2 to 8 landed inside one list item.
+     *
+     * So a number mid-line now starts a point only when it
+     * plainly is one: a sentence has just ended before it, or it
+     * carries on a run already begun on the same line — "1. Ask
+     * your college 2. Look for workshops", written without full
+     * stops, still splits. A number that merely ends a sentence
+     * does neither.
+     */
+    private static function splitInlineNumbering(string $text, string $space): string
+    {
+        $lines = explode("\n", $text);
+
+        foreach ($lines as $index => $line) {
+            /*
+             * A line that opens with a number has begun a run, so
+             * the next number on it can carry that run on.
+             */
+            $last = preg_match('/^'.$space.'*(\d+)\.'.$space.'/u', $line, $opening) === 1
+                ? (int) $opening[1]
+                : null;
+
+            $lines[$index] = preg_replace_callback(
+                '/(?<=(.))'.$space.'+(\d+)\.'.$space.'+(?=[A-Z])/u',
+                function (array $match) use (&$last) {
+                    $number = (int) $match[2];
+
+                    /*
+                     * The ; is there for &quot; and &#039;: the
+                     * text has been escaped by now, so a sentence
+                     * ending in a closing quote ends in an entity.
+                     */
+                    $sentenceEnded = preg_match('/[.:;!?)]/', $match[1]) === 1;
+
+                    $continuesRun = $last !== null && $number === $last + 1;
+
+                    if (! $sentenceEnded && ! $continuesRun) {
+                        return $match[0];
+                    }
+
+                    $last = $number;
+
+                    return "\n{$number}. ";
+                },
+                $line
+            ) ?? $line;
+        }
+
+        return implode("\n", $lines);
     }
 
     private static function looksLikeHeading(string $line): bool
