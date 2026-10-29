@@ -397,7 +397,7 @@ test('recommendation analysis is blocked during maintenance', function () {
         )
         ->assertSessionHas(
             'warning',
-            'Career recommendation generation is unavailable. Temporarily unavailable due to maintenance.'
+            'Detailed career analysis is unavailable. Temporarily unavailable because Career Recommendations is under maintenance.'
         );
 });
 
