@@ -1896,6 +1896,7 @@
                         <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
                     </svg>
                     Personal Information
+                    <x-section-guide guide="profile.personal" />
                 </div>
 
                 @php
@@ -2188,6 +2189,8 @@
                     </svg>
 
                     Qualifications
+
+                    <x-section-guide guide="profile.qualifications" />
                 </div>
 
                 <p class="desc">
@@ -2669,6 +2672,8 @@
                     </svg>
 
                     Skills &amp; Competencies
+
+                    <x-section-guide guide="profile.skills" />
                 </div>
 
                 <p class="desc">
@@ -3572,6 +3577,7 @@
                         <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.8 1-1a5.5 5.5 0 0 0 0-7.6z"/>
                     </svg>
                     Interests &amp; Preferences
+                    <x-section-guide guide="profile.interests" />
                 </div>
 
                 <p class="desc">What are you interested in?</p>
@@ -3771,6 +3777,7 @@
                         <rect x="14" y="14" width="7" height="7" rx="1"/>
                     </svg>
                     Projects &amp; Experience
+                    <x-section-guide guide="profile.projects" />
                 </div>
 
                 <p class="desc">
@@ -3969,6 +3976,7 @@
                         <path d="M9 14.5 7 22l5-3 5 3-2-7.5"/>
                     </svg>
                     Certifications
+                    <x-section-guide guide="profile.certifications" />
                 </div>
 
                 <p class="desc">
@@ -4189,6 +4197,7 @@
                         <path d="M12 2l2.9 6.6 7.1.7-5.4 4.7 1.7 7-6.3-3.8L5.7 21l1.7-7-5.4-4.7 7.1-.7z"/>
                     </svg>
                     Career Aspirations
+                    <x-section-guide guide="profile.aspirations" />
                 </div>
 
                 <div class="cpbn-fgrid">
