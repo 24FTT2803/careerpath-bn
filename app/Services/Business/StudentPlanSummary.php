@@ -71,10 +71,20 @@ class StudentPlanSummary
                 : (string) $value;
         }
 
+        /*
+         * A token allowance is an amount of AI tokens, not a number
+         * of uses, so it is described in tokens.
+         */
+        $unit = str_ends_with($key, 'token_quota') ? 'tokens' : 'uses';
+
+        $amount = isset($value['amount']) && is_numeric($value['amount'])
+            ? number_format((int) $value['amount'])
+            : null;
+
         return match ($value['mode'] ?? null) {
             'unlimited' => 'Unlimited',
-            'total' => $value['amount'].' total uses',
-            'recurring' => $value['amount'].' uses every '.$value['period_value'].' '.$value['period_unit'].'(s)',
+            'total' => $amount.' total '.$unit,
+            'recurring' => $amount.' '.$unit.' every '.$value['period_value'].' '.$value['period_unit'].'(s)',
             default => 'Not configured',
         };
     }

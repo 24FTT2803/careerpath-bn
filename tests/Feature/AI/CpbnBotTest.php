@@ -400,3 +400,10 @@ test('the button is the badge alone', function () {
         ->assertSee('class="cpbn-bot-fab"', false)
         ->assertDontSee('<span>CPBN Bot</span>', false);
 });
+
+test('the plan summary describes the token limit in tokens', function () {
+    $this->actingAs(cpbnStudent())
+        ->get(route('student.settings'))
+        ->assertOk()
+        ->assertSeeText('50,000 tokens every 1 day(s)');
+});
