@@ -664,3 +664,11 @@ test('the mock bot takes the student where they ask', function () {
         ->assertOk()
         ->assertJsonPath('navigate', null);
 });
+
+test('the panel checks for unsaved changes before taking the student away', function () {
+    $this->actingAs(cpbnStudent())
+        ->get(route('student.dashboard'))
+        ->assertOk()
+        ->assertSee('function hasUnsavedChanges()', false)
+        ->assertSee('leaveWithConfirmation(place, target)', false);
+});

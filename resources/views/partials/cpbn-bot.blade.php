@@ -854,11 +854,21 @@
      * with a way to stay, so a misread request costs nothing. The
      * panel stays open on the next page, and the conversation
      * carries on there.
+     *
+     * Never over unsaved work: if a form on the page has been
+     * changed, the student is asked first, exactly as when they
+     * click a link away from it.
      */
     function goTo(place) {
         const target = new URL(place.url, window.location.origin);
 
         if (target.pathname + target.search === window.location.pathname + window.location.search) {
+            return;
+        }
+
+        if (hasUnsavedChanges()) {
+            leaveWithConfirmation(place, target);
+
             return;
         }
 
@@ -869,6 +879,14 @@
         );
 
         const timer = setTimeout(() => {
+            /* Checked again: the student may have typed meanwhile. */
+            if (hasUnsavedChanges()) {
+                note.remove();
+                leaveWithConfirmation(place, target);
+
+                return;
+            }
+
             remember({ open: true });
             window.location.href = target.href;
         }, 1200);
@@ -878,6 +896,108 @@
             note.remove();
             input.focus();
         });
+    }
+
+    /*
+     * The profile form keeps its own record of whether it has
+     * changed, and its own warning on leaving. Any other form is
+     * compared with how the page first drew it.
+     */
+    function hasUnsavedChanges() {
+        if (window.formChanged === true) {
+            return true;
+        }
+
+        return Array.from(document.querySelectorAll('form')).some((form) => {
+            if (form.id === 'profile-form'
+                || form.closest('#cpbnBot')
+                || form.hasAttribute('data-unsaved-ignore')
+                || (form.getAttribute('method') || 'get').toLowerCase() === 'get') {
+                return false;
+            }
+
+            return Array.from(form.elements).some(fieldChanged);
+        });
+    }
+
+    function fieldChanged(field) {
+        const type = (field.type || '').toLowerCase();
+
+        if (field.disabled || ['hidden', 'submit', 'button', 'reset', 'image'].includes(type)) {
+            return false;
+        }
+
+        if (type === 'checkbox' || type === 'radio') {
+            return field.checked !== field.defaultChecked;
+        }
+
+        if (type === 'file') {
+            return field.files && field.files.length > 0;
+        }
+
+        if (field.tagName === 'SELECT') {
+            const options = Array.from(field.options);
+
+            if (field.multiple) {
+                return options.some((option) => option.selected !== option.defaultSelected);
+            }
+
+            /* With nothing marked, a list starts on its first option. */
+            const initial = Math.max(0, options.findIndex((option) => option.defaultSelected));
+
+            return options.length > 0 && field.selectedIndex !== initial;
+        }
+
+        if (field.tagName === 'TEXTAREA' || field.tagName === 'INPUT') {
+            return field.value !== field.defaultValue;
+        }
+
+        return false;
+    }
+
+    function leaveWithConfirmation(place, target) {
+        const note = addMessage(
+            'assistant',
+            '<span>You have unsaved changes here, so I\'ve asked before opening ' + escapeHtml(place.label) + '.</span>',
+            'is-going'
+        );
+
+        const leave = () => {
+            remember({ open: true });
+            window.location.href = target.href;
+        };
+
+        /*
+         * On the profile form, its own warning handles leaving, so
+         * the student is asked once, the way they always are there.
+         */
+        if (document.getElementById('profile-form') && window.formChanged === true) {
+            const link = document.createElement('a');
+            link.href = target.href;
+            link.hidden = true;
+            document.body.appendChild(link);
+            remember({ open: true });
+            link.click();
+            link.remove();
+
+            return;
+        }
+
+        if (typeof window.showConfirmModal === 'function') {
+            window.showConfirmModal({
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes on this page. If you leave it, those changes will be lost.',
+                confirmText: 'Leave Page',
+                cancelText: 'Stay Here',
+                type: 'warning',
+                onConfirm: leave,
+                onCancel: () => note.remove(),
+            });
+        } else if (window.confirm('You have unsaved changes on this page. Leave anyway?')) {
+            leave();
+        } else {
+            note.remove();
+        }
     }
 
     function confirmDelete(conversation, row) {
