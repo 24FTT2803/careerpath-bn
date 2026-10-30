@@ -37,6 +37,32 @@ class MockCpbnBotClient implements CpbnBotClient
         $question = Str::lower($message);
         $pages = CpbnBotKnowledge::pages();
 
+        /*
+         * Profile filling, for interests only: offered as choices,
+         * and the picked ones filled in.
+         */
+        $options = $context['profile_form']['interest_options'] ?? [];
+
+        if (Str::contains($question, 'fill') && Str::contains($question, 'interest')) {
+            return $this->reply('Which of these interest you? Pick any, then send.', [], '', [
+                'options' => $options,
+                'multiple' => true,
+            ]);
+        }
+
+        $picked = collect(preg_split('/\s*,\s*/', trim($message)))
+            ->filter(fn ($item) => in_array(Str::lower($item), array_map([Str::class, 'lower'], $options), true));
+
+        if ($picked->isNotEmpty() && $picked->count() === count(preg_split('/\s*,\s*/', trim($message)))) {
+            return $this->reply(
+                'I have ticked '.$picked->implode(', ').' in Interests & Preferences. Check them and press Save Changes.',
+                [],
+                '',
+                null,
+                ['interests' => $picked->values()->all()]
+            );
+        }
+
         $key = collect(self::KEYWORDS)
             ->keys()
             ->first(fn (string $key) => Str::contains($question, Str::lower($pages[$key]['name']))
@@ -69,7 +95,7 @@ class MockCpbnBotClient implements CpbnBotClient
      * @param  array<int, string>  $links
      * @return array<string, mixed>
      */
-    private function reply(string $message, array $links, string $navigate = ''): array
+    private function reply(string $message, array $links, string $navigate = '', ?array $choices = null, ?array $fill = null): array
     {
         return [
             'schema_version' => '1.0',
@@ -77,6 +103,8 @@ class MockCpbnBotClient implements CpbnBotClient
             'message' => $message,
             'links' => $links,
             'navigate' => $navigate === '' ? null : $navigate,
+            'choices' => $choices,
+            'fill' => $fill,
             'usage' => null,
         ];
     }

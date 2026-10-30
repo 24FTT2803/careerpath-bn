@@ -87,6 +87,9 @@
                 For career advice, use the Career Adviser.
             </p>
             <div class="cpbn-bot-chips">
+                @if($cpbnBotCurrentPage === 'profile_edit')
+                    <button type="button" data-bot-suggest>Help me fill in my profile</button>
+                @endif
                 <button type="button" data-bot-suggest>What should I do next?</button>
                 <button type="button" data-bot-suggest>How do I generate career recommendations?</button>
                 <button type="button" data-bot-suggest>How do I upgrade or cancel Premium?</button>
@@ -393,6 +396,50 @@
         color: var(--text, #1a1a2e);
         border: 1px solid var(--border, #e5e7eb);
         border-bottom-left-radius: 4px;
+    }
+
+    .cpbn-bot-choices {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+    }
+
+    .cpbn-bot-choices button {
+        padding: 6px 11px;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 100px;
+        background: var(--bg, #f4f6f9);
+        color: var(--primary, #1a3a5c);
+        font-family: inherit;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .cpbn-bot-choices button:hover,
+    .cpbn-bot-choices button.is-picked {
+        border-color: var(--primary, #1a3a5c);
+        background: var(--primary, #1a3a5c);
+        color: #ffffff;
+    }
+
+    .cpbn-bot-choices .cpbn-bot-choices-send {
+        border-color: var(--accent, #c9a84c);
+        background: var(--accent, #c9a84c);
+        color: #ffffff;
+        font-weight: 600;
+    }
+
+    .cpbn-bot-choices [hidden] {
+        display: none;
+    }
+
+    /* Fields the bot has just filled in, so the student can check them. */
+    .cpbn-bot-filled {
+        outline: 3px solid var(--accent, #c9a84c) !important;
+        outline-offset: 2px;
+        border-radius: 6px;
+        transition: outline-color 0.4s ease;
     }
 
     .cpbn-bot-msg.is-going {
@@ -1068,10 +1115,234 @@
         historyButton.classList.remove('is-active');
     }
 
+    /*
+     * Answers to click instead of type. One click sends a single
+     * answer; with several allowed, they are ticked and sent
+     * together. Older choices stop working once anything is sent.
+     */
+    function showChoices(bubble, choices) {
+        const box = document.createElement('div');
+        box.className = 'cpbn-bot-choices';
+
+        const picked = new Set();
+
+        choices.options.forEach((option) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = option;
+            button.addEventListener('click', () => {
+                if (! choices.multiple) {
+                    ask(option);
+
+                    return;
+                }
+
+                picked.has(option) ? picked.delete(option) : picked.add(option);
+                button.classList.toggle('is-picked', picked.has(option));
+                button.setAttribute('aria-pressed', picked.has(option) ? 'true' : 'false');
+                send.hidden = picked.size === 0;
+            });
+            box.appendChild(button);
+        });
+
+        const send = document.createElement('button');
+        send.type = 'button';
+        send.className = 'cpbn-bot-choices-send';
+        send.textContent = 'Send';
+        send.hidden = true;
+        send.addEventListener('click', () => ask(Array.from(picked).join(', ')));
+
+        if (choices.multiple) {
+            box.appendChild(send);
+        }
+
+        bubble.appendChild(box);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    /*
+     * Writes what the bot collected into the Edit Profile form. It
+     * only ticks, chooses and adds: nothing is unticked or removed,
+     * and nothing is saved. The student checks the form and presses
+     * Save Changes, so the form's own rules and warnings still apply.
+     */
+    function applyFill(fill) {
+        const form = document.getElementById('profile-form');
+
+        if (! form) {
+            return;
+        }
+
+        const changed = [];
+        const done = [];
+
+        const set = (field, value) => {
+            if (! field || value === undefined || value === null || value === '') {
+                return false;
+            }
+
+            field.value = value;
+            field.dispatchEvent(new Event('input', { bubbles: true }));
+            field.dispatchEvent(new Event('change', { bubbles: true }));
+            changed.push(field);
+
+            return true;
+        };
+
+        const tick = (box) => {
+            if (box && ! box.checked) {
+                box.checked = true;
+                box.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            if (box) {
+                changed.push(box.closest('label') || box);
+            }
+        };
+
+        (fill.competencies || []).forEach((item) => {
+            const box = form.querySelector('input[name="biicf_competencies[' + item.id + '][selected]"]');
+            const level = form.querySelector('select[name="biicf_competencies[' + item.id + '][proficiency_level_id]"]');
+
+            if (! box) {
+                return;
+            }
+
+            tick(box);
+
+            if (level && item.level_id) {
+                level.disabled = false;
+                set(level, String(item.level_id));
+            }
+
+            changed.push(box.closest('[data-biicf-competency]') || box);
+        });
+
+        if ((fill.competencies || []).length) {
+            done.push('Skills & Competencies');
+        }
+
+        (fill.interests || []).forEach((item) => {
+            if (item.listed) {
+                const box = Array.from(form.querySelectorAll('input[name="interests[]"]')).find((input) => input.value === item.name);
+                tick(box);
+
+                return;
+            }
+
+            const toggle = document.getElementById('additional-interests-toggle');
+            const input = document.getElementById('additional-interest-input');
+            const add = document.getElementById('add-additional-interest');
+
+            if (! input || ! add) {
+                return;
+            }
+
+            if (toggle && ! toggle.checked) {
+                tick(toggle);
+            }
+
+            input.value = item.name;
+            add.click();
+            changed.push(input);
+        });
+
+        if ((fill.interests || []).length) {
+            done.push('Interests & Preferences');
+        }
+
+        const aspirations = fill.aspirations || {};
+        const aspirationFields = {
+            dream_career: 'career_goals_text',
+            vision_statement: 'vision_statement',
+            long_term_goals: 'long_term_goals',
+        };
+
+        if (Object.keys(aspirationFields).some((key) => set(form.querySelector('[name="' + aspirationFields[key] + '"]'), aspirations[key]))) {
+            done.push('Career Aspirations');
+        }
+
+        const personal = fill.personal || {};
+        let personalDone = set(form.querySelector('[name="date_of_birth"]'), personal.date_of_birth);
+
+        if (personal.phone) {
+            const phone = form.querySelector('#phone');
+            personalDone = set(phone, personal.phone) || personalDone;
+            phone?.dispatchEvent(new Event('blur'));
+        }
+
+        if (personal.nationality) {
+            const select = form.querySelector('select[name="nationality"]');
+            const wanted = personal.nationality.toLowerCase();
+            const option = select
+                ? Array.from(select.options).find((o) => o.value.toLowerCase() === wanted || o.text.trim().toLowerCase() === wanted)
+                : null;
+
+            if (option) {
+                personalDone = set(select, option.value) || personalDone;
+            }
+        }
+
+        if (personalDone) {
+            done.push('Personal Information');
+        }
+
+        const addRows = (rows, listId, buttonId, label) => {
+            const list = document.getElementById(listId);
+            const button = document.getElementById(buttonId);
+
+            if (! rows || ! rows.length || ! list || ! button) {
+                return;
+            }
+
+            rows.forEach((row) => {
+                button.click();
+
+                const card = list.lastElementChild;
+
+                Object.entries(row).forEach(([field, value]) => {
+                    set(card?.querySelector('[name$="[' + field + ']"]'), value);
+                });
+
+                if (card) {
+                    changed.push(card);
+                }
+            });
+
+            done.push(label);
+        };
+
+        addRows(fill.projects, 'project-list', 'add-project', 'Projects & Experience');
+        addRows(fill.certifications, 'certification-list', 'add-certification', 'Certifications');
+
+        if (typeof window.setFormChanged === 'function') {
+            window.setFormChanged(true);
+        }
+
+        changed.filter(Boolean).forEach((element) => {
+            element.classList.add('cpbn-bot-filled');
+            setTimeout(() => element.classList.remove('cpbn-bot-filled'), 6000);
+        });
+
+        const first = changed.find((element) => element && element.offsetParent !== null);
+        first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (done.length) {
+            addMessage(
+                'assistant',
+                '<strong>Filled in on the form:</strong> ' + escapeHtml(done.join(', ')) + '. Check it, then press <strong>Save Changes</strong> at the bottom of Edit Profile. Nothing is saved until you do.',
+                'is-going'
+            );
+        }
+    }
+
     async function ask(question) {
         if (state.busy || ! state.available) {
             return;
         }
+
+        /* Choices offered earlier no longer apply. */
+        messages.querySelectorAll('.cpbn-bot-choices').forEach((box) => box.remove());
 
         question = question.trim();
 
@@ -1130,7 +1401,11 @@
                 return;
             }
 
-            addMessage('assistant', (data.message_html || escapeHtml(data.message || '')) + linksHtml(data.links));
+            const reply = addMessage('assistant', (data.message_html || escapeHtml(data.message || '')) + linksHtml(data.links));
+
+            if (data.choices && data.choices.options && data.choices.options.length) {
+                showChoices(reply, data.choices);
+            }
 
             if (data.conversation_id) {
                 state.conversationId = data.conversation_id;
@@ -1139,6 +1414,15 @@
             state.newConversation = false;
             remember({ conversationId: state.conversationId, newConversation: false });
             saveSessionMessages();
+
+            if (data.fill) {
+                if (document.getElementById('profile-form')) {
+                    applyFill(data.fill);
+                } else {
+                    /* Filled in once Edit Profile has opened. */
+                    remember({ pendingFill: data.fill });
+                }
+            }
 
             if (data.navigate && data.navigate.url) {
                 goTo(data.navigate);
@@ -1190,6 +1474,28 @@
             close();
         }
     });
+
+    /*
+     * Lets the rest of the page hand the bot a question, as the '?'
+     * guides on Edit Profile do with "Help me fill this in".
+     */
+    window.cpbnBotAsk = async function (text) {
+        open();
+        await load();
+        ask(text);
+    };
+
+    document.body.classList.add('has-cpbn-bot');
+
+    /* A fill asked for on another page, now that Edit Profile is open. */
+    const pendingFill = recall().pendingFill;
+
+    if (pendingFill && document.getElementById('profile-form')) {
+        remember({ pendingFill: null });
+
+        /* After the form's own scripts have set up its baseline. */
+        window.addEventListener('load', () => setTimeout(() => applyFill(pendingFill), 300));
+    }
 
     /* Stay open across pages if it was open. */
     if (recall().open) {

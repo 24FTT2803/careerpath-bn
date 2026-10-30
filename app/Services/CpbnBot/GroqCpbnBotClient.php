@@ -108,6 +108,20 @@ class GroqCpbnBotClient implements CpbnBotClient
             '',
             'navigate takes the student to a place straight away, without them pressing anything. Fill it in, the same way as a link, only when they ask to be taken somewhere: "take me to my milestones", "open settings", "go to IT Technician\'s competencies", "show me the proficiency levels". A question about how to do something ("how do I add a milestone?") is not a request to go there: answer it and leave navigate empty. When navigating, keep the message to one short sentence saying where you are taking them, and do not repeat the same place in links. If they ask to go to the page they are already on, say they are already there and leave navigate empty. Otherwise leave page as an empty string.',
             '',
+            'FILLING IN THE PROFILE',
+            '',
+            'When the student asks for help filling in part of their profile, help them fill it in from the chat. You can fill: '.implode(', ', array_column(CpbnBotProfileFill::sections(), 'title')).'. Qualifications and file uploads (profile picture, certificate files) are done on the form itself; say so if asked.',
+            'profile_form shows what the student already has. Do not ask again for what is there; build on it.',
+            'Ask one thing at a time, and offer choices wherever there are set answers, so the student can click rather than type:',
+            '- Skills & Competencies: ask what kind of work or role they do or want, then offer up to ten competency names from biicf.competencies that fit (choices, multiple true). For each one chosen, offer that competency\'s scale as choices, for example "Level 3 — Apply", one competency at a time, explaining the levels briefly from biicf.proficiency_scales.',
+            '- Interests & Preferences: offer profile_form.interest_options as choices (multiple true); they may also type their own.',
+            '- Career Aspirations: dream career, vision statement and long-term goals are their own words; ask for each, and you may offer to tidy their wording.',
+            '- Personal Information: phone, date of birth (ask for it as a date) and nationality.',
+            '- Projects & Experience and Certifications: ask for the title first, then the other details one by one; any can be skipped.',
+            'Before filling, show a short summary of exactly what will go into the form and offer the choices "Yes, fill them in" and "Change something". Fill only after they say yes.',
+            'To fill, put the values in fill and leave every part you are not filling empty. Competency names must be exactly as in biicf.competencies, and level is the level number as a string. Dates are YYYY-MM-DD. You only add or change; never suggest removing anything. Then tell them the form has been filled in and they must check it and press Save Changes at the bottom of Edit Profile; nothing is saved until they do.',
+            'Leave choices.options empty when there is nothing to pick from, and leave fill empty until the student has confirmed.',
+            '',
             'MANNER',
             '',
             'UK English. Short and practical: a sentence or two, then numbered steps when there are steps. Put each step on its own line.',
@@ -141,11 +155,61 @@ class GroqCpbnBotClient implements CpbnBotClient
                          * empty page means stay put.
                          */
                         'navigate' => $this->placeSchema(array_merge([''], CpbnBotKnowledge::pageKeys())),
+
+                        /* Answers the student can click instead of typing. */
+                        'choices' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'options' => ['type' => 'array', 'items' => ['type' => 'string']],
+                                'multiple' => ['type' => 'boolean'],
+                            ],
+                            'required' => ['options', 'multiple'],
+                            'additionalProperties' => false,
+                        ],
+
+                        /* What to write into the Edit Profile form. */
+                        'fill' => $this->fillSchema(),
                     ],
-                    'required' => ['schema_version', 'status', 'message', 'links', 'navigate'],
+                    'required' => ['schema_version', 'status', 'message', 'links', 'navigate', 'choices', 'fill'],
                     'additionalProperties' => false,
                 ],
             ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function fillSchema(): array
+    {
+        $object = fn (array $fields) => [
+            'type' => 'object',
+            'properties' => collect($fields)->mapWithKeys(fn ($field) => [$field => ['type' => 'string']])->all(),
+            'required' => $fields,
+            'additionalProperties' => false,
+        ];
+
+        return [
+            'type' => 'object',
+            'properties' => [
+                'competencies' => [
+                    'type' => 'array',
+                    'items' => $object(['name', 'level']),
+                ],
+                'interests' => ['type' => 'array', 'items' => ['type' => 'string']],
+                'aspirations' => $object(['dream_career', 'vision_statement', 'long_term_goals']),
+                'personal' => $object(['phone', 'date_of_birth', 'nationality']),
+                'projects' => [
+                    'type' => 'array',
+                    'items' => $object(['title', 'role', 'project_url', 'description', 'technologies_used', 'start_date', 'end_date', 'achievements']),
+                ],
+                'certifications' => [
+                    'type' => 'array',
+                    'items' => $object(['certification_name', 'issuing_organization', 'issue_date']),
+                ],
+            ],
+            'required' => ['competencies', 'interests', 'aspirations', 'personal', 'projects', 'certifications'],
+            'additionalProperties' => false,
         ];
     }
 

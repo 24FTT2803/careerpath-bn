@@ -52,6 +52,23 @@
                 </a>
             </p>
         @endif
+
+        {{-- Where the CPBN Bot can fill this section in from a chat. --}}
+        @if(\App\Services\CpbnBot\CpbnBotProfileFill::sectionForGuide($guide))
+            <div class="cpbn-guide-bot">
+                <img
+                    src="{{ asset('images/careerpath-badge.png') }}"
+                    alt=""
+                >
+                <div>
+                    <strong>Want a hand?</strong>
+                    <span>The CPBN Bot can ask you a few questions and fill this section in for you to check.</span>
+                </div>
+                <button type="button" data-guide-bot="Help me fill in my {{ $sectionGuide->title }}">
+                    Fill it in with the CPBN Bot
+                </button>
+            </div>
+        @endif
     </template>
 
     @once
@@ -191,6 +208,52 @@
                 border: 0;
             }
 
+            /* Shown only where the CPBN Bot is on the page. */
+            .cpbn-guide-bot {
+                display: none;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 12px;
+                margin-top: 18px;
+                padding: 14px;
+                border: 1px solid var(--border, #e5e7eb);
+                border-radius: 10px;
+                background: var(--bg, #f4f6f9);
+            }
+
+            .has-cpbn-bot .cpbn-guide-bot {
+                display: flex;
+            }
+
+            .cpbn-guide-bot img {
+                width: 36px;
+                height: 36px;
+                flex-shrink: 0;
+            }
+
+            .cpbn-guide-bot div {
+                flex: 1;
+                min-width: 180px;
+                display: flex;
+                flex-direction: column;
+                gap: 2px;
+                font-size: 13px;
+                line-height: 1.5;
+                color: var(--text, #1a1a2e);
+            }
+
+            .cpbn-guide-bot button {
+                padding: 9px 14px;
+                border: none;
+                border-radius: 8px;
+                background: var(--primary, #1a3a5c);
+                color: #ffffff;
+                font-family: inherit;
+                font-size: 13px;
+                font-weight: 600;
+                cursor: pointer;
+            }
+
             @media (max-width: 480px) {
                 .cpbn-guide-dialog {
                     padding: 24px 18px 18px;
@@ -243,6 +306,17 @@
                 }
 
                 document.addEventListener('click', function (event) {
+                    const helper = event.target.closest('[data-guide-bot]');
+
+                    if (helper && typeof window.cpbnBotAsk === 'function') {
+                        event.preventDefault();
+                        const question = helper.dataset.guideBot;
+                        close();
+                        window.cpbnBotAsk(question);
+
+                        return;
+                    }
+
                     const button = event.target.closest('[data-guide-open]');
 
                     if (button) {

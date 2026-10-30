@@ -157,6 +157,10 @@ class CpbnBotController extends Controller
 
             /* Where the panel should take the student, straight away. */
             'navigate' => $answer['navigate'] ? $this->linkResolver->present($answer['navigate']) : null,
+
+            /* Answers to pick from, and what to write into Edit Profile. */
+            'choices' => $answer['choices'],
+            'fill' => $answer['fill'],
             'conversation_id' => $answer['conversation']->id,
             'tokens_used' => $answer['tokens'],
             'tokens' => $this->tokenPayload($this->featureUsage->status($student, self::TOKEN_QUOTA)),

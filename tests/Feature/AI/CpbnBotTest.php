@@ -30,9 +30,14 @@ const CPBN_TOKENS = 'cpbn_bot.token_quota';
  * A bot that answers at once and reports the tokens it used, as
  * Groq does. Records what it was given.
  */
-function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit'], string|array|null $navigate = null): CpbnBotClient
-{
-    $client = new class($tokens, $links, $navigate) implements CpbnBotClient
+function cpbnClient(
+    ?int $tokens = 1234,
+    array $links = ['profile_edit'],
+    string|array|null $navigate = null,
+    ?array $choices = null,
+    ?array $fill = null,
+): CpbnBotClient {
+    $client = new class($tokens, $links, $navigate, $choices, $fill) implements CpbnBotClient
     {
         public int $calls = 0;
 
@@ -40,7 +45,7 @@ function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit'], string
 
         public array $lastHistory = [];
 
-        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate) {}
+        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, private ?array $fill) {}
 
         public function ask(array $context, array $history, string $message): array
         {
@@ -54,6 +59,8 @@ function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit'], string
                 'message' => 'Open Edit Profile and fill in Qualifications.',
                 'links' => $this->links,
                 'navigate' => $this->navigate,
+                'choices' => $this->choices,
+                'fill' => $this->fill,
                 'usage' => $this->tokens === null ? null : ['total_tokens' => $this->tokens],
             ];
         }
@@ -729,4 +736,129 @@ test('a competency the student names comes with its meaning', function () {
         'name' => 'Business Agility',
         'in_short' => 'Responding quickly to change.',
     ])->and($client->lastContext['focus']['job_roles'])->toBe([]);
+});
+
+test('the bot knows what it can fill in and what is there already', function () {
+    $student = cpbnStudent();
+    $student->interests()->create(['interest_name' => 'Teamwork']);
+    $client = cpbnClient();
+
+    askCpbn($student, 'Help me fill in my interests')->assertOk();
+
+    expect($client->lastContext['profile_form']['interest_options'])->toContain('Programming')
+        ->and($client->lastContext['profile_form']['interests'])->toBe(['Teamwork'])
+        ->and($client->lastContext['profile_form']['fillable_sections'])->toContain('Skills & Competencies');
+});
+
+test('choices come back for the student to click', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], choices: ['options' => ['Programming', 'Teamwork', ''], 'multiple' => true]);
+
+    askCpbn($student, 'Help me fill in my interests', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('choices.options', ['Programming', 'Teamwork'])
+        ->assertJsonPath('choices.multiple', true);
+});
+
+test('a fill is checked against the framework and the form', function () {
+    $student = cpbnStudent();
+    $this->seed(BiicfReferenceDataSeeder::class);
+    [, , $competency] = cpbnExplorerFixture();
+
+    $apply = BiicfProficiencyLevel::where('scale', 'technical')->where('level_number', 3)->sole();
+
+    cpbnClient(links: [], fill: [
+        'competencies' => [
+            ['name' => 'business agility', 'level' => '3'],
+            ['name' => 'Telepathy', 'level' => '2'],
+        ],
+        'interests' => ['programming', 'Robotics', ''],
+        'aspirations' => ['dream_career' => 'Software Engineer', 'vision_statement' => '', 'long_term_goals' => ''],
+        'personal' => ['phone' => 'not a number', 'date_of_birth' => '2999-01-01', 'nationality' => 'Bruneian'],
+        'projects' => [['title' => 'Hobbee Apps', 'role' => 'Developer', 'project_url' => 'nope', 'description' => '', 'technologies_used' => 'Laravel', 'start_date' => '2025-01-10', 'end_date' => '', 'achievements' => '']],
+        'certifications' => [['certification_name' => '', 'issuing_organization' => 'Nobody', 'issue_date' => '']],
+    ]);
+
+    $fill = askCpbn($student, 'Yes, fill them in', ['current_page' => 'profile_edit'])->assertOk()->json('fill');
+
+    expect($fill['competencies'])->toBe([[
+        'id' => $competency->id,
+        'name' => 'Business Agility',
+        'level_id' => $apply->id,
+        'level' => 'Level 3 — '.$apply->name,
+    ]])
+        ->and($fill['interests'])->toBe([
+            ['name' => 'Programming', 'listed' => true],
+            ['name' => 'Robotics', 'listed' => false],
+        ])
+        ->and($fill['aspirations'])->toBe(['dream_career' => 'Software Engineer'])
+        ->and($fill['personal'])->toBe(['nationality' => 'Bruneian'])
+        ->and($fill['projects'])->toBe([[
+            'title' => 'Hobbee Apps',
+            'role' => 'Developer',
+            'technologies_used' => 'Laravel',
+            'start_date' => '2025-01-10',
+        ]])
+        ->and($fill)->not->toHaveKey('certifications');
+});
+
+test('nothing is saved by a fill: the form is only filled in', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], fill: ['interests' => ['Programming']]);
+
+    askCpbn($student, 'Yes, fill them in', ['current_page' => 'profile_edit'])->assertOk();
+
+    expect($student->interests()->count())->toBe(0);
+});
+
+test('a fill asked for on another page takes the student to Edit Profile', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], fill: ['interests' => ['Programming']]);
+
+    askCpbn($student, 'Yes, fill them in', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('navigate.key', 'profile_edit')
+        ->assertJsonPath('fill.interests.0.name', 'Programming');
+});
+
+test('an empty fill fills nothing', function () {
+    $student = cpbnStudent();
+    cpbnClient(fill: [
+        'competencies' => [],
+        'interests' => [],
+        'aspirations' => ['dream_career' => '', 'vision_statement' => '', 'long_term_goals' => ''],
+        'personal' => ['phone' => '', 'date_of_birth' => '', 'nationality' => ''],
+        'projects' => [],
+        'certifications' => [],
+    ]);
+
+    askCpbn($student, 'Help me with interests', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('fill', null)
+        ->assertJsonPath('navigate', null);
+});
+
+test('the profile guides offer the bot\'s help where it can fill the section', function () {
+    $student = cpbnStudent();
+
+    $html = $this->actingAs($student)->get(route('student.profile.edit'))->assertOk()->getContent();
+
+    expect($html)
+        ->toContain('data-guide-bot="Help me fill in my Skills &amp; Competencies"')
+        ->toContain('data-guide-bot="Help me fill in my Career Aspirations"')
+        ->not->toContain('data-guide-bot="Help me fill in my Qualifications"')
+        ->toContain('Help me fill in my profile');
+});
+
+test('the mock bot offers interests and fills the ones picked', function () {
+    $student = cpbnStudent();
+
+    askCpbn($student, 'Help me fill in my interests', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('choices.multiple', true);
+
+    askCpbn($student, 'Programming, Teamwork', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill.interests.0.name', 'Programming')
+        ->assertJsonPath('fill.interests.1.name', 'Teamwork');
 });

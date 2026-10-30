@@ -98,7 +98,7 @@ class ProfileController extends Controller
         ['C#', 'C Sharp'],
     ];
 
-    private const PREDEFINED_INTERESTS = [
+    public const PREDEFINED_INTERESTS = [
         'Problem Solving',
         'Teamwork',
         'Communication',

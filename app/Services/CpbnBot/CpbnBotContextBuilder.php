@@ -29,6 +29,7 @@ class CpbnBotContextBuilder
     public function __construct(
         private EntitlementService $entitlements,
         private FeatureUsageService $featureUsage,
+        private CpbnBotProfileFill $profileFill,
     ) {}
 
     /**
@@ -71,6 +72,9 @@ class CpbnBotContextBuilder
             'rules' => CpbnBotKnowledge::rules(),
             'biicf' => $this->framework(),
             'focus' => $this->focus($recentText),
+
+            /* What the bot can fill in on Edit Profile, and what is there already. */
+            'profile_form' => $this->profileFill->current($student),
             'student' => $this->progress($student),
         ];
     }

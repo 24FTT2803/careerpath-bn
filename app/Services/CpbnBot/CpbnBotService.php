@@ -28,6 +28,7 @@ class CpbnBotService
         private CpbnBotClient $client,
         private CpbnBotContextBuilder $contextBuilder,
         private CpbnBotLinks $linkResolver,
+        private CpbnBotProfileFill $profileFill,
     ) {}
 
     /**
@@ -37,7 +38,7 @@ class CpbnBotService
      * has an exchange to hold, so a failed request leaves nothing
      * behind.
      *
-     * @return array{message: string, links: array<int, array<string, mixed>>, navigate: array<string, mixed>|null, tokens: int, conversation: CpbnBotConversation}
+     * @return array{message: string, links: array<int, array<string, mixed>>, navigate: array<string, mixed>|null, choices: array<string, mixed>|null, fill: array<string, mixed>|null, tokens: int, conversation: CpbnBotConversation}
      */
     public function ask(
         User $student,
@@ -70,7 +71,21 @@ class CpbnBotService
             'message' => ['required', 'string', 'max:5000'],
             'links' => ['nullable', 'array'],
             'navigate' => ['nullable'],
+            'choices' => ['nullable'],
+            'fill' => ['nullable'],
         ])->validate();
+
+        $choices = $this->choices($validated['choices'] ?? null);
+        $fill = $this->profileFill->normalise($validated['fill'] ?? null);
+
+        /*
+         * Filling happens on Edit Profile. Asked from anywhere else,
+         * the student is taken there and the form is filled on
+         * arrival.
+         */
+        if ($fill !== null && $currentPage !== 'profile_edit') {
+            $validated['navigate'] = 'profile_edit';
+        }
 
         /*
          * Where to take the student straight away, if they asked
@@ -117,9 +132,35 @@ class CpbnBotService
             'message' => $validated['message'],
             'links' => $links,
             'navigate' => $navigate,
+            'choices' => $choices,
+            'fill' => $fill,
             'tokens' => $tokens,
             'conversation' => $conversation,
         ];
+    }
+
+    /**
+     * Answers the student can pick instead of typing.
+     *
+     * @return array{options: array<int, string>, multiple: bool}|null
+     */
+    private function choices(mixed $choices): ?array
+    {
+        if (! is_array($choices)) {
+            return null;
+        }
+
+        $options = collect($choices['options'] ?? [])
+            ->filter(fn ($option) => is_string($option) && trim($option) !== '')
+            ->map(fn (string $option) => Str::limit(trim($option), 60, ''))
+            ->unique()
+            ->take(12)
+            ->values()
+            ->all();
+
+        return $options === []
+            ? null
+            : ['options' => $options, 'multiple' => (bool) ($choices['multiple'] ?? false)];
     }
 
     /**
