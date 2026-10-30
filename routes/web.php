@@ -23,6 +23,7 @@ use App\Http\Controllers\Staff\StudentIdVerificationController;
 use App\Http\Controllers\Student\BiicfExplorerController;
 use App\Http\Controllers\Student\CareerAdviserController;
 use App\Http\Controllers\Student\CareerRecommendationController;
+use App\Http\Controllers\Student\CpbnBotController;
 use App\Http\Controllers\Student\DashboardController;
 use App\Http\Controllers\Student\HistoryController;
 use App\Http\Controllers\Student\InnovationLabController as StudentInnovationLabController;
@@ -149,6 +150,27 @@ Route::middleware([
             '/career-adviser/ask',
             [CareerAdviserController::class, 'ask']
         )->name('career-adviser.ask');
+
+        /*
+         * The CPBN Bot, the guide to the website, opened from the
+         * button on every student page. Separate from the Career
+         * Adviser above.
+         */
+        Route::prefix('cpbn-bot')
+            ->name('cpbn-bot.')
+            ->group(function () {
+                Route::get('/panel', [CpbnBotController::class, 'panel'])->name('panel');
+
+                Route::post('/ask', [CpbnBotController::class, 'ask'])
+                    ->middleware('throttle:20,1')
+                    ->name('ask');
+
+                Route::get('/conversations', [CpbnBotController::class, 'conversations'])->name('conversations');
+
+                Route::get('/conversations/{conversation}', [CpbnBotController::class, 'conversation'])
+                    ->whereNumber('conversation')
+                    ->name('conversation');
+            });
 
         // Dashboard
         Route::get(

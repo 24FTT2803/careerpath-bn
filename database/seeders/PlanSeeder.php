@@ -113,6 +113,17 @@ class PlanSeeder extends Seeder
 
                 'career_adviser.history.enabled' => false,
 
+                'cpbn_bot.enabled' => true,
+
+                'cpbn_bot.token_quota' => [
+                    'mode' => 'recurring',
+                    'amount' => 50000,
+                    'period_value' => 1,
+                    'period_unit' => 'day',
+                ],
+
+                'cpbn_bot.history.enabled' => false,
+
                 'planning.milestones.enabled' => true,
 
                 'planning.development_plan.enabled' => true,
@@ -179,6 +190,17 @@ class PlanSeeder extends Seeder
                 'recommendation_history.enabled' => true,
 
                 'career_adviser.history.enabled' => true,
+
+                'cpbn_bot.enabled' => true,
+
+                'cpbn_bot.token_quota' => [
+                    'mode' => 'recurring',
+                    'amount' => 200000,
+                    'period_value' => 1,
+                    'period_unit' => 'day',
+                ],
+
+                'cpbn_bot.history.enabled' => true,
 
                 'planning.milestones.enabled' => true,
 

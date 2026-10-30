@@ -59,6 +59,21 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | CPBN Bot Driver
+    |--------------------------------------------------------------------------
+    |
+    | The website guide. It follows the Career Adviser's driver unless
+    | set on its own, so one switch turns both on in development.
+    |
+    */
+
+    'cpbn_bot_driver' => env(
+        'CPBN_BOT_DRIVER',
+        env('CAREER_ADVISER_DRIVER', 'mock')
+    ),
+
+    /*
+    |--------------------------------------------------------------------------
     | Inference Transport
     |--------------------------------------------------------------------------
     |

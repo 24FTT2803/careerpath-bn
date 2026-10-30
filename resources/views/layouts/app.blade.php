@@ -1296,15 +1296,9 @@
         && Auth::user()->role === 'student'
         && !request()->routeIs('student.career-adviser')
     )
-        <a
-            href="{{ route('student.career-adviser') }}"
-            class="career-adviser-fab"
-            aria-label="Open Career Adviser"
-            title="Career Adviser"
-        >
-            <i class="fas fa-comments"></i>
-            <span>Career Adviser</span>
-        </a>
+        {{-- The CPBN Bot, the website guide. Left off the Career
+             Adviser's page so two chats never share one screen. --}}
+        @include('partials.cpbn-bot')
     @endif
 
     @include('layouts.footer')

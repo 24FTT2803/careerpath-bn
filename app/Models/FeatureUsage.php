@@ -10,6 +10,7 @@ class FeatureUsage extends Model
     protected $fillable = [
         'user_id',
         'feature_key',
+        'quantity',
         'access_source',
         'plan_id',
         'grant_id',
@@ -20,6 +21,7 @@ class FeatureUsage extends Model
     {
         return [
             'used_at' => 'datetime',
+            'quantity' => 'integer',
         ];
     }
 

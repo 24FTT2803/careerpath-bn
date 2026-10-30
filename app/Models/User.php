@@ -556,6 +556,15 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
+     * Every conversation the student has had with the CPBN Bot,
+     * the website guide.
+     */
+    public function cpbnBotConversations(): HasMany
+    {
+        return $this->hasMany(CpbnBotConversation::class);
+    }
+
+    /**
      * Get the user's recommendation generations.
      *
      * Intentionally unordered. The relation is also used for

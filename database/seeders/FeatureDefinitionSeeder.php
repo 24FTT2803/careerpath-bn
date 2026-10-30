@@ -147,6 +147,26 @@ class FeatureDefinitionSeeder extends Seeder
                 'sort_order' => 210,
             ],
             [
+                'key' => 'cpbn_bot.enabled',
+                'name' => 'CPBN Bot',
+                'category' => 'CPBN Bot',
+                'value_type' => 'boolean',
+                'parent_key' => null,
+                'sort_order' => 250,
+            ],
+            [
+                /*
+                 * Measured in AI tokens rather than questions,
+                 * since questions differ a great deal in cost.
+                 */
+                'key' => 'cpbn_bot.token_quota',
+                'name' => 'CPBN Bot Token Limit',
+                'category' => 'CPBN Bot',
+                'value_type' => 'quota',
+                'parent_key' => 'cpbn_bot.enabled',
+                'sort_order' => 260,
+            ],
+            [
                 'key' => 'recommendation_history.enabled',
                 'name' => 'Recommendation History',
                 'category' => 'History',
@@ -161,6 +181,14 @@ class FeatureDefinitionSeeder extends Seeder
                 'value_type' => 'boolean',
                 'parent_key' => 'career_adviser.enabled',
                 'sort_order' => 310,
+            ],
+            [
+                'key' => 'cpbn_bot.history.enabled',
+                'name' => 'CPBN Bot History',
+                'category' => 'History',
+                'value_type' => 'boolean',
+                'parent_key' => 'cpbn_bot.enabled',
+                'sort_order' => 320,
             ],
             [
                 'key' => 'planning.milestones.enabled',

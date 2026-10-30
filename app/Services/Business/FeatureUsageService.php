@@ -12,8 +12,7 @@ class FeatureUsageService
 {
     public function __construct(
         private EntitlementService $entitlements
-    ) {
-    }
+    ) {}
 
     /**
      * Resolve the user's current quota state.
@@ -51,10 +50,8 @@ class FeatureUsageService
         if (! $quotaAccess['allowed']) {
             return [
                 'allowed' => false,
-                'reason' =>
-                    $quotaAccess['reason'],
-                'message' =>
-                    $quotaAccess['message'],
+                'reason' => $quotaAccess['reason'],
+                'message' => $quotaAccess['message'],
                 'mode' => 'unavailable',
                 'amount' => null,
                 'used' => 0,
@@ -84,11 +81,10 @@ class FeatureUsageService
                 'message' => null,
                 'mode' => 'unlimited',
                 'amount' => null,
-                'used' =>
-                    $this->usageQuery(
-                        $user,
-                        $featureKey
-                    )->count(),
+                'used' => (int) $this->usageQuery(
+                    $user,
+                    $featureKey
+                )->sum('quantity'),
                 'remaining' => null,
                 'next_available_at' => null,
                 'period_value' => null,
@@ -116,34 +112,34 @@ class FeatureUsageService
     }
 
     /**
-     * Record one successful use of a quota-controlled
-     * feature.
+     * Record a successful use of a quota-controlled feature.
+     *
+     * Most features count one per use. A feature measured in
+     * amounts, such as the AI tokens a reply used, passes how
+     * much this use was.
      */
     public function recordUsage(
         User $user,
-        string $featureKey
+        string $featureKey,
+        int $quantity = 1
     ): FeatureUsage {
         $access = $this->entitlements
             ->accessFor($user);
 
         return FeatureUsage::create([
-            'user_id' =>
-                $user->id,
+            'user_id' => $user->id,
 
-            'feature_key' =>
-                $featureKey,
+            'feature_key' => $featureKey,
 
-            'access_source' =>
-                $access['source'],
+            'quantity' => max(0, $quantity),
 
-            'plan_id' =>
-                $access['plan']?->id,
+            'access_source' => $access['source'],
 
-            'grant_id' =>
-                $access['grant']?->id,
+            'plan_id' => $access['plan']?->id,
 
-            'used_at' =>
-                now(),
+            'grant_id' => $access['grant']?->id,
+
+            'used_at' => now(),
         ]);
     }
 
@@ -160,10 +156,10 @@ class FeatureUsageService
             return $this->invalidQuotaStatus();
         }
 
-        $used = $this->usageQuery(
+        $used = (int) $this->usageQuery(
             $user,
             $featureKey
-        )->count();
+        )->sum('quantity');
 
         $remaining = max(
             0,
@@ -174,13 +170,11 @@ class FeatureUsageService
 
         return [
             'allowed' => $allowed,
-            'reason' =>
-                $allowed
+            'reason' => $allowed
                     ? null
                     : 'quota_exceeded',
 
-            'message' =>
-                $allowed
+            'message' => $allowed
                     ? null
                     : 'You have reached the total usage limit for this feature.',
 
@@ -246,7 +240,7 @@ class FeatureUsageService
             $windowStart
         );
 
-        $used = (clone $query)->count();
+        $used = (int) (clone $query)->sum('quantity');
 
         $remaining = max(
             0,
@@ -259,42 +253,43 @@ class FeatureUsageService
 
         if (! $allowed) {
             /*
-             * If the quota was reduced after additional
-             * uses had already occurred, more than one
-             * old usage may need to expire before another
-             * use becomes available.
+             * Uses leave the window oldest first. Another use
+             * becomes possible once enough of them have left to
+             * bring the total below the limit: more than one
+             * when the limit was lowered after they were made,
+             * or when a single use counted for a large amount.
              */
-            $offset =
-                max(
-                    0,
-                    $used - $amount
-                );
+            $excess = $used - $amount;
+            $expired = 0;
 
-            $blockingUsage =
+            foreach (
                 (clone $query)
                     ->orderBy('used_at')
-                    ->skip($offset)
-                    ->first();
+                    ->orderBy('id')
+                    ->get(['id', 'used_at', 'quantity']) as $usage
+            ) {
+                $expired += $usage->quantity;
 
-            if ($blockingUsage) {
-                $nextAvailableAt =
-                    $this->addPeriod(
-                        $blockingUsage->used_at,
-                        $periodValue,
-                        $periodUnit
-                    );
+                if ($expired > $excess) {
+                    $nextAvailableAt =
+                        $this->addPeriod(
+                            $usage->used_at,
+                            $periodValue,
+                            $periodUnit
+                        );
+
+                    break;
+                }
             }
         }
 
         return [
             'allowed' => $allowed,
-            'reason' =>
-                $allowed
+            'reason' => $allowed
                     ? null
                     : 'quota_exceeded',
 
-            'message' =>
-                $allowed
+            'message' => $allowed
                     ? null
                     : 'You have reached the usage limit for this feature. Please try again after your usage window allows another request.',
 
@@ -302,14 +297,11 @@ class FeatureUsageService
             'amount' => $amount,
             'used' => $used,
             'remaining' => $remaining,
-            'next_available_at' =>
-                $nextAvailableAt,
+            'next_available_at' => $nextAvailableAt,
 
-            'period_value' =>
-                $periodValue,
+            'period_value' => $periodValue,
 
-            'period_unit' =>
-                $periodUnit,
+            'period_unit' => $periodUnit,
         ];
     }
 
@@ -382,34 +374,27 @@ class FeatureUsageService
         string $unit
     ): Carbon {
         return match ($unit) {
-            'minute' =>
-                $time->copy()
-                    ->subMinutes($value),
+            'minute' => $time->copy()
+                ->subMinutes($value),
 
-            'hour' =>
-                $time->copy()
-                    ->subHours($value),
+            'hour' => $time->copy()
+                ->subHours($value),
 
-            'day' =>
-                $time->copy()
-                    ->subDays($value),
+            'day' => $time->copy()
+                ->subDays($value),
 
-            'week' =>
-                $time->copy()
-                    ->subWeeks($value),
+            'week' => $time->copy()
+                ->subWeeks($value),
 
-            'month' =>
-                $time->copy()
-                    ->subMonthsNoOverflow($value),
+            'month' => $time->copy()
+                ->subMonthsNoOverflow($value),
 
-            'year' =>
-                $time->copy()
-                    ->subYearsNoOverflow($value),
+            'year' => $time->copy()
+                ->subYearsNoOverflow($value),
 
-            default =>
-                throw new InvalidArgumentException(
-                    'Unsupported quota period unit.'
-                ),
+            default => throw new InvalidArgumentException(
+                'Unsupported quota period unit.'
+            ),
         };
     }
 
@@ -419,34 +404,27 @@ class FeatureUsageService
         string $unit
     ): Carbon {
         return match ($unit) {
-            'minute' =>
-                $time->copy()
-                    ->addMinutes($value),
+            'minute' => $time->copy()
+                ->addMinutes($value),
 
-            'hour' =>
-                $time->copy()
-                    ->addHours($value),
+            'hour' => $time->copy()
+                ->addHours($value),
 
-            'day' =>
-                $time->copy()
-                    ->addDays($value),
+            'day' => $time->copy()
+                ->addDays($value),
 
-            'week' =>
-                $time->copy()
-                    ->addWeeks($value),
+            'week' => $time->copy()
+                ->addWeeks($value),
 
-            'month' =>
-                $time->copy()
-                    ->addMonthsNoOverflow($value),
+            'month' => $time->copy()
+                ->addMonthsNoOverflow($value),
 
-            'year' =>
-                $time->copy()
-                    ->addYearsNoOverflow($value),
+            'year' => $time->copy()
+                ->addYearsNoOverflow($value),
 
-            default =>
-                throw new InvalidArgumentException(
-                    'Unsupported quota period unit.'
-                ),
+            default => throw new InvalidArgumentException(
+                'Unsupported quota period unit.'
+            ),
         };
     }
 
@@ -454,11 +432,9 @@ class FeatureUsageService
     {
         return [
             'allowed' => false,
-            'reason' =>
-                'invalid_quota',
+            'reason' => 'invalid_quota',
 
-            'message' =>
-                'This feature is temporarily unavailable because its usage limit is not configured correctly.',
+            'message' => 'This feature is temporarily unavailable because its usage limit is not configured correctly.',
 
             'mode' => 'invalid',
             'amount' => null,

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Contracts\CareerAdviserClient;
 use App\Contracts\CareerAiClient;
 use App\Contracts\ChatTransport;
+use App\Contracts\CpbnBotClient;
 use App\Models\AdvertisementSlot;
 use App\Services\AI\GroqCareerAdviserClient;
 use App\Services\AI\GroqCareerAiClient;
@@ -19,6 +20,8 @@ use App\Services\Biicf\EditionExtractors;
 use App\Services\Biicf\JsonEditionExtractor;
 use App\Services\Biicf\PdfEditionExtractor;
 use App\Services\Business\AdvertisementService;
+use App\Services\CpbnBot\GroqCpbnBotClient;
+use App\Services\CpbnBot\MockCpbnBotClient;
 use App\Services\Student\StudentAttention;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
@@ -120,6 +123,17 @@ class AppServiceProvider extends ServiceProvider
                         .config('career-ai.adviser_driver')
                     ),
                 };
+            }
+        );
+
+        $this->app->bind(
+            CpbnBotClient::class,
+            fn ($app) => match (config('career-ai.cpbn_bot_driver')) {
+                'mock' => $app->make(MockCpbnBotClient::class),
+                'groq' => $app->make(GroqCpbnBotClient::class),
+                default => throw new \RuntimeException(
+                    'Unsupported CPBN Bot driver: '.config('career-ai.cpbn_bot_driver')
+                ),
             }
         );
     }
