@@ -3,7 +3,7 @@
 @section('title', 'Privacy Policy')
 @section('eyebrow', 'Your data')
 @section('icon', 'fa-shield-halved')
-@section('updated', '10 October 2026')
+@section('updated', '30 October 2026')
 @section('lead', 'What CareerPath BN collects about you, why we need it, who can see it, and how you stay in control of it.')
 
 @section('summary')
@@ -84,10 +84,6 @@
             <div class="legal-item">
                 <strong><i class="fas fa-comments"></i> Career Adviser</strong>
                 The questions you ask the Career Adviser and the answers it gives, saved to your account.
-            </div>
-            <div class="legal-item">
-                <strong><i class="fas fa-rectangle-ad"></i> Preferences</strong>
-                Your advertising choice, where your plan lets you choose.
             </div>
         </div>
 
@@ -328,7 +324,7 @@
                 </div>
                 <div class="legal-contact-row">
                     <i class="fas fa-phone"></i>
-                    <span><strong>+673 2234630</strong></span>
+                    <span><strong>+673 2234630</strong> (Politeknik Brunei official contact number)</span>
                 </div>
             </div>
         </div>

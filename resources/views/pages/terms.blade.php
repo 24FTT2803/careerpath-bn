@@ -3,13 +3,13 @@
 @section('title', 'Terms of Service')
 @section('eyebrow', 'The rules')
 @section('icon', 'fa-file-contract')
-@section('updated', '10 October 2026')
+@section('updated', '30 October 2026')
 @section('lead', 'The agreement between you and CareerPath BN: what the Platform offers, what we ask of you, and what to expect from us.')
 
 @section('summary')
     <div class="legal-point">
         <i class="fas fa-graduation-cap"></i>
-        <div><strong>For Politeknik Brunei</strong>Open to current students and staff with an approved email address.</div>
+        <div><strong>For Politeknik Brunei</strong>Open to current students, graduates (alumni), postgraduate students and staff with an approved email address.</div>
     </div>
     <div class="legal-point">
         <i class="fas fa-lightbulb"></i>
@@ -21,7 +21,7 @@
     </div>
     <div class="legal-point">
         <i class="fas fa-crown"></i>
-        <div><strong>No payments are taken</strong>Premium comes from a sponsor, an administrator, a trial, or the demonstration upgrade.</div>
+        <div><strong>No payments for the demo</strong>Premium access demonstrates the features. We do not accept payments, collect payment details or charge you for activating it.</div>
     </div>
 @endsection
 
@@ -42,8 +42,8 @@
     <section>
         <h2 id="the-service">The Service</h2>
         <p>
-            CareerPath BN is an AI-assisted career guidance platform for students of Politeknik
-            Brunei. It helps you find ICT career pathways that suit your academic background,
+            CareerPath BN is an AI-assisted career guidance platform for students and graduates of
+            Politeknik Brunei, with access for staff. It helps you find ICT career pathways that suit your academic background,
             competencies, interests, projects and goals, aligned with the Brunei ICT Industry
             Competency Framework (BIICF). It includes:
         </p>
@@ -86,8 +86,8 @@
     <section>
         <h2 id="accounts">Eligibility and Accounts</h2>
         <ul>
-            <li>You must be a current student or member of staff of Politeknik Brunei.</li>
-            <li>Students sign up themselves with an email address from <strong>gmail.com</strong>, <strong>student.pb.edu.bn</strong> or <strong>pb.edu.bn</strong>, and must confirm it before using the Platform.</li>
+            <li>You must be a current student, graduate (alumnus/alumna), postgraduate student or member of staff of Politeknik Brunei.</li>
+            <li>Students, including graduates and postgraduate students, sign up themselves using an email address ending in <strong>@student.pb.edu.bn</strong> or <strong>@pb.edu.bn</strong>, and must confirm it before using the Platform. Personal Gmail addresses are not accepted for student registration.</li>
             <li>Lecturer and administrator accounts are created by an administrator, using a <strong>gmail.com</strong> or <strong>pb.edu.bn</strong> address.</li>
             <li>Keep your password private. You are responsible for everything done through your account, so sign out on shared computers.</li>
             <li>Your profile must be accurate and your own. Lecturers or administrators may check your Student ID; once it is verified it is locked, and staff can unlock it if it needs correcting.</li>
@@ -143,7 +143,7 @@
         <ul>
             <li><strong>Sponsorship:</strong> an organisation may fund Premium for a group of students. Sponsored access is always Premium, and sponsors never receive your individual data.</li>
             <li><strong>Administrator grants and trials:</strong> an administrator may give you Premium or a trial, for a set period or with no end date.</li>
-            <li><strong>Demonstration upgrade:</strong> the upgrade button in Settings is a demonstration. <strong>No payment is requested or taken</strong> on CareerPath BN.</li>
+            <li><strong>Demonstration upgrade:</strong> CareerPath BN currently provides Premium for demonstration and evaluation. The upgrade button in Settings simulates a monthly subscription so you can try the Premium features. <strong>No payment is requested or taken</strong>: we do not accept payments or collect payment details for this demonstration. Activating Premium does not charge you or create a paid subscription.</li>
             <li><strong>When Premium ends</strong> (it expires, is withdrawn, or a sponsor stops), your account returns to the Free plan and you are notified. Your saved data is kept, but Premium-only features close.</li>
         </ul>
         <p>Plan features and limits may be changed by administrators as the Platform develops.</p>
@@ -173,7 +173,7 @@
         <h2 id="suspension">Suspension and Removal</h2>
         <p>
             Administrators may suspend or remove an account that breaks these Terms, is used to
-            harm others, or no longer belongs to a current student or staff member. Where
+            harm others, or does not meet the eligibility requirements above. Where
             reasonable, we will tell you why.
         </p>
     </section>
@@ -222,7 +222,7 @@
                 </div>
                 <div class="legal-contact-row">
                     <i class="fas fa-phone"></i>
-                    <span><strong>+673 2234630</strong></span>
+                    <span><strong>+673 2234630</strong> (Politeknik Brunei official contact number)</span>
                 </div>
             </div>
         </div>
