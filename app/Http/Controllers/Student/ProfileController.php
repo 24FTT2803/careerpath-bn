@@ -24,6 +24,7 @@ use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
+use App\Services\Business\StudentPlanSummary;
 use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\CarbonInterface;
@@ -1180,7 +1181,7 @@ class ProfileController extends Controller
     /**
      * Show settings page.
      */
-    public function settings(EntitlementService $entitlements)
+    public function settings(EntitlementService $entitlements, StudentPlanSummary $summary)
     {
         /** @var User $user */
         $user = Auth::user();
@@ -1190,6 +1191,7 @@ class ProfileController extends Controller
             [
                 'user' => $user,
                 'plan' => $entitlements->planFor($user),
+                'planSummary' => $summary->for($user),
                 'subscription' => $this->ownSubscription($user),
                 'adsAvailable' => $entitlements->adsAvailable($user),
                 'canChooseAds' => $entitlements->canChooseAds($user),

@@ -466,15 +466,15 @@
             <div class="cpbn-hero-top">
                 <div>
                     <h1>
-                        {{ $careerRecommendation->career->job_title ?? 'Career' }}
+                        {{ $careerPresentation['title'] }}
                     </h1>
 
                     <p class="cpbn-subsector">
-                        {{ $careerRecommendation->career->subsector
-                            ?? 'Sub-sector unavailable' }}
+                        {{ $careerPresentation['subsector'] }}
                     </p>
                 </div>
 
+                @if($analysisSections['match_score'])
                 <div class="cpbn-metrics">
                     <div class="cpbn-metric">
                         <strong>
@@ -498,6 +498,7 @@
                         <span>Career Readiness</span>
                     </div>
                 </div>
+                @endif
             </div>
         </div>
 
@@ -509,10 +510,10 @@
                 <h3>Job Description</h3>
 
                 <p class="cpbn-copy">
-                    {{ $careerRecommendation->career->job_description
-                        ?? 'Job description is currently unavailable.' }}
+                    {{ $careerPresentation['job_description'] }}
                 </p>
 
+                @if($analysisSections['entry_requirements'])
                 <h3>Entry Requirements <x-section-guide guide="analysis.entry" /></h3>
 
                 @if(count($careerDetails['entry_requirements']) > 0)
@@ -531,6 +532,7 @@
                         Entry requirements are currently unavailable.
                     </p>
                 @endif
+                @endif
             </section>
 
             <section class="cpbn-section">
@@ -542,6 +544,7 @@
                 </p>
             </section>
 
+            @if($analysisSections['matched_competencies'])
             <section class="cpbn-section">
                 <h2>Matching Competencies <x-section-guide guide="analysis.competencies" /></h2>
 
@@ -562,7 +565,9 @@
                     </p>
                 @endif
             </section>
+            @endif
 
+            @if($analysisSections['match_score'])
             <section class="cpbn-section">
                 <h2>Career Readiness <x-section-guide guide="analysis.readiness" /></h2>
 
@@ -585,14 +590,32 @@
                     </strong>
                 </p>
             </section>
+            @endif
 
+            @if($analysisSections['competency_gaps'])
             <section class="cpbn-section cpbn-section-full">
                 <h2>Skill Gaps <x-section-guide guide="analysis.gaps" /></h2>
 
                 @if($skillGaps->isNotEmpty())
 
-                    <div class="cpbn-gap-chart-wrap" style="height: {{ max(220, $skillGaps->count() * 55 + 60) }}px;">
+                    <div id="cpbnGapChartWrap" class="cpbn-gap-chart-wrap" hidden style="height: {{ max(220, $skillGaps->count() * 55 + 60) }}px;">
                         <canvas id="cpbnGapChart"></canvas>
+                    </div>
+
+                    <div id="cpbnGapChartFallback" role="status">
+                        <p class="cpbn-empty-text">
+                            The chart couldn’t load. Please refresh the page.
+                            Your competency gaps are listed below.
+                        </p>
+                        <ul class="cpbn-list">
+                            @foreach($skillGaps as $gap)
+                                <li>
+                                    {{ $gap['skill_name'] ?? 'Competency' }}:
+                                    Current: {{ $gap['current_level'] ?? 'Not recorded' }};
+                                    Required: {{ $gap['required_label'] ?? $gap['recommended_level'] ?? 'Not specified' }}
+                                </li>
+                            @endforeach
+                        </ul>
                     </div>
 
                     @if($uncategorisedGaps->isNotEmpty())
@@ -690,9 +713,8 @@
                     @endif
 
                     <div class="cpbn-gap-note">
-                        Competency levels currently use temporary mock values
-                        while the Career AI and authoritative career
-                        requirement data are still being integrated.
+                        Competency gaps compare your recorded levels with the
+                        requirements used for this recommendation.
                     </div>
 
                 @else
@@ -701,7 +723,9 @@
                     </p>
                 @endif
             </section>
+            @endif
 
+            @if($analysisSections['training_suggestions'])
             <section class="cpbn-section">
                 <h2>Recommended Training <x-section-guide guide="analysis.training" /></h2>
 
@@ -726,7 +750,9 @@
                     </p>
                 @endif
             </section>
+            @endif
 
+            @if($analysisSections['certification_suggestions'])
             <section class="cpbn-section">
                 <h2>Recommended Certifications <x-section-guide guide="analysis.certifications" /></h2>
 
@@ -751,7 +777,9 @@
                     </p>
                 @endif
             </section>
+            @endif
 
+            @if($analysisSections['development_roadmap'])
             <section class="cpbn-section cpbn-section-full">
                 <h2>Development Plan <x-section-guide guide="analysis.plan" /></h2>
 
@@ -772,16 +800,19 @@
                     </p>
                 @endif
             </section>
+            @endif
 
         </div>
     </div>
 </div>
 
-@if($skillGaps->isNotEmpty())
+@if($analysisSections['competency_gaps'] && $skillGaps->isNotEmpty())
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const canvas = document.getElementById('cpbnGapChart');
-            if (!canvas || typeof Chart === 'undefined') {
+            const chartWrap = document.getElementById('cpbnGapChartWrap');
+            const fallback = document.getElementById('cpbnGapChartFallback');
+            if (!canvas || !chartWrap || !fallback || typeof Chart === 'undefined') {
                 return;
             }
 
@@ -814,61 +845,69 @@
                 },
             };
 
-            new Chart(canvas.getContext('2d'), {
-                type: 'bar',
-                plugins: [gapValueLabels],
-                data: {
-                    labels: gaps.map(g => g.name),
-                    datasets: [
-                        {
-                            label: 'Your Current Level',
-                            data: gaps.map(g => g.current),
-                            backgroundColor: '#cf9a3d',
-                            borderRadius: 4,
-                        },
-                        {
-                            label: 'Required Level',
-                            data: gaps.map(g => g.required),
-                            backgroundColor: '#0d1a2b',
-                            borderRadius: 4,
-                        },
-                    ],
-                },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    layout: {
-                        padding: { right: 24 },
+            try {
+                chartWrap.hidden = false;
+                new Chart(canvas.getContext('2d'), {
+                    type: 'bar',
+                    plugins: [gapValueLabels],
+                    data: {
+                        labels: gaps.map(g => g.name),
+                        datasets: [
+                            {
+                                label: 'Your Current Level',
+                                data: gaps.map(g => g.current),
+                                backgroundColor: '#cf9a3d',
+                                borderRadius: 4,
+                            },
+                            {
+                                label: 'Required Level',
+                                data: gaps.map(g => g.required),
+                                backgroundColor: '#0d1a2b',
+                                borderRadius: 4,
+                            },
+                        ],
                     },
-                    scales: {
-                        x: {
-                            min: 0,
-                            max: 5,
-                            ticks: { stepSize: 1 },
-                            grid: { color: '#e7e2d4' },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        layout: {
+                            padding: { right: 24 },
                         },
-                        y: {
-                            grid: { display: false },
+                        scales: {
+                            x: {
+                                min: 0,
+                                max: 5,
+                                ticks: { stepSize: 1 },
+                                grid: { color: '#e7e2d4' },
+                            },
+                            y: {
+                                grid: { display: false },
+                            },
                         },
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: { font: { family: 'IBM Plex Sans, sans-serif' } },
-                        },
-                        tooltip: {
-                            callbacks: {
-                                afterBody: function (items) {
-                                    const idx = items[0].dataIndex;
-                                    const gap = gaps[idx].required - gaps[idx].current;
-                                    return gap > 0 ? `Gap: ${gap} level${gap === 1 ? '' : 's'}` : 'Requirement met';
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                                labels: { font: { family: 'IBM Plex Sans, sans-serif' } },
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterBody: function (items) {
+                                        const idx = items[0].dataIndex;
+                                        const gap = gaps[idx].required - gaps[idx].current;
+                                        return gap > 0 ? `Gap: ${gap} level${gap === 1 ? '' : 's'}` : 'Requirement met';
+                                    },
                                 },
                             },
                         },
                     },
-                },
-            });
+                });
+                fallback.hidden = true;
+            } catch (error) {
+                chartWrap.hidden = true;
+                fallback.hidden = false;
+                console.error('Career analysis chart could not be rendered.', error);
+            }
         });
     </script>
 @endif

@@ -155,10 +155,16 @@
     }
 
     /* ---------- Press feedback on buttons ---------- */
-    html.motion-on :is(button, .btn, [role="button"], input[type="submit"], input[type="button"]):not(:disabled):active {
+    html.motion-on :is(button, .btn, [role="button"], input[type="submit"], input[type="button"]):not(:disabled):not(.toggle-password):active {
         transform: scale(0.97);
         transition-duration: 0.08s;
     }
+    
+    /* Keep password eyes centered during the press animation */
+html.motion-on .field .input-wrapper .toggle-password:not(:disabled):active {
+    transform: translateY(-50%) scale(0.97);
+    transition-duration: 0.08s;
+}
 
     /* ---------- Form fields ease into focus ---------- */
     :where(input, select, textarea) {

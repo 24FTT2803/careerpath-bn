@@ -434,6 +434,18 @@
         text-decoration: underline;
     }
 
+    .analysis-link[aria-disabled="true"] {
+        color: var(--rec-muted);
+        cursor: not-allowed;
+        text-decoration: none;
+    }
+
+    .analysis-access-message {
+        display: block;
+        margin-top: 6px;
+        color: var(--rec-muted);
+    }
+
     .empty-recommendations {
         padding: 42px 20px;
         border: 1px dashed var(--rec-border);
@@ -852,6 +864,7 @@
                                 match
                             </div>
 
+                            @if($detailedAnalysisAccess['allowed'])
                             <a
                                 href="{{
                                     route(
@@ -866,6 +879,15 @@
                                     class="fas fa-arrow-right"
                                 ></i>
                             </a>
+                            @else
+                                <span class="analysis-link" role="link" aria-disabled="true">
+                                    <i class="fas fa-lock" aria-hidden="true"></i>
+                                    View Career Analysis — Locked
+                                </span>
+                                <small class="analysis-access-message">
+                                    {{ $detailedAnalysisAccess['message'] }}
+                                </small>
+                            @endif
 
                         </article>
 

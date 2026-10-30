@@ -6,9 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\FeatureDefinition;
 use App\Models\Plan;
 use App\Models\PlanFeature;
+use App\Services\Business\FeatureChangeNotifier;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
@@ -77,7 +78,8 @@ class BusinessPlanController extends Controller
      */
     public function updatePlan(
         Request $request,
-        Plan $plan
+        Plan $plan,
+        FeatureChangeNotifier $notifier
     ): RedirectResponse {
         $request->validate([
             'features' => [
@@ -243,7 +245,14 @@ class BusinessPlanController extends Controller
                 $rules
             );
 
-        DB::transaction(
+        $changedDefinitions = $definitions->filter(
+            fn (FeatureDefinition $definition) => $plan->features
+                ->firstWhere('key', $definition->key)?->value
+                !== $this->normaliseValue($definition, $validated['features'][$definition->id])
+        );
+
+        $notifier->during(
+            $changedDefinitions,
             function () use (
                 $plan,
                 $definitions,
@@ -300,7 +309,8 @@ class BusinessPlanController extends Controller
      */
     public function updateGlobalFeature(
         Request $request,
-        FeatureDefinition $feature
+        FeatureDefinition $feature,
+        FeatureChangeNotifier $notifier
     ): RedirectResponse {
         $validated =
             $request->validate([
@@ -310,12 +320,17 @@ class BusinessPlanController extends Controller
                 ],
             ]);
 
-        $feature->update([
-            'global_enabled' => (bool)
-                $validated[
-                    'global_enabled'
-                ],
-        ]);
+        $notifier->during(
+            new Collection($feature->global_enabled === (bool) $validated['global_enabled'] ? [] : [$feature]),
+            function () use ($feature, $validated): void {
+                $feature->update([
+                    'global_enabled' => (bool)
+                        $validated[
+                            'global_enabled'
+                        ],
+                ]);
+            }
+        );
 
         return redirect()
             ->route(

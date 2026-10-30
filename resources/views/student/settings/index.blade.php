@@ -457,6 +457,102 @@
             gap: 4px;
         }
     }
+
+    /* Match the existing Settings typography and keep long access messages readable. */
+    #your-plan .plan-section-title,
+    #your-plan .plan-disclosure > summary {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.5;
+        color: var(--primary);
+    }
+
+    #your-plan .plan-section-title {
+        margin: 20px 0 6px;
+    }
+
+    #your-plan .hint {
+        margin: 10px 0 16px;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 400;
+        line-height: 1.6;
+        color: var(--text-muted);
+    }
+
+    #your-plan .info-row {
+        gap: 20px;
+        align-items: flex-start;
+    }
+
+    #your-plan .info-row .label {
+        flex: 1;
+        min-width: 0;
+    }
+
+    #your-plan .info-row .value {
+        flex: 1;
+        min-width: 0;
+        text-align: right;
+        overflow-wrap: anywhere;
+    }
+
+    #your-plan .plan-disclosure {
+        margin-top: 16px;
+        border-top: 1px solid var(--border);
+    }
+
+    #your-plan .plan-disclosure > summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 14px 0;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    #your-plan .plan-disclosure > summary::-webkit-details-marker {
+        display: none;
+    }
+
+    #your-plan .plan-disclosure > summary::after {
+        content: '+';
+        flex-shrink: 0;
+        font-size: 18px;
+        color: var(--text-muted);
+    }
+
+    #your-plan .plan-disclosure[open] > summary::after {
+        content: '−';
+    }
+
+    #your-plan .plan-feature-group {
+        margin-top: 0;
+    }
+
+    #your-plan .plan-feature-group > summary {
+        font-size: 13px;
+    }
+
+    #your-plan .plan-grant-record + .plan-grant-record {
+        margin-top: 16px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 520px) {
+        #your-plan .info-row {
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        #your-plan .info-row .value {
+            text-align: left;
+        }
+    }
+
 </style>
 
 <div class="settings-page">
@@ -555,7 +651,7 @@
                 </div>
 
                 <!-- Plan -->
-                <div class="panel">
+                <div class="panel" id="your-plan">
                     <div class="panel-title">
                         <i class="fas fa-star"></i> Your Plan
                     </div>
@@ -565,11 +661,81 @@
                         <span class="value">{{ $plan?->name ?? 'Free' }}</span>
                     </div>
 
+                    <div class="info-row">
+                        <span class="label">Access provided through</span>
+                        <span class="value">{{ $planSummary['source'] }}</span>
+                    </div>
+
                     @if($adsAvailable)
                         <div class="info-row">
                             <span class="label">Advertising</span>
                             <span class="value">{{ $showsAds ? 'Shown' : 'Not shown' }}</span>
                         </div>
+                    @endif
+
+                    @php
+                        $currentGrant = $planSummary['access']['grant'];
+                        $planDate = fn ($date) => $date?->copy()->timezone(config('app.business_timezone'))->format('d M Y, h:i A');
+                    @endphp
+
+                    @if($currentGrant)
+                        <h3 class="plan-section-title">Premium access dates</h3>
+                        <div class="info-row">
+                            <span class="label">Access status</span>
+                            <span class="value">Active</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Granted on</span>
+                            <span class="value">{{ $planDate($currentGrant->created_at) ?? 'Not recorded' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">{{ $currentGrant->starts_at ? 'Start date' : 'Start date (grant created)' }}</span>
+                            <span class="value">{{ $planDate($currentGrant->starts_at ?? $currentGrant->created_at) ?? 'Not recorded' }}</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="label">Scheduled end date</span>
+                            <span class="value">{{ $planDate($currentGrant->ends_at) ?? 'No scheduled end date' }}</span>
+                        </div>
+                        <p class="hint">Dates are shown in {{ config('app.business_timezone') }}. When no start date was recorded, the grant creation date is shown. Access may change if an administrator updates your grant or feature settings.</p>
+                    @endif
+
+                    <details class="plan-disclosure" open>
+                        <summary>Your feature access</summary>
+                        <p class="hint">These are your current permissions, including plan restrictions, sponsorship overrides, and temporary maintenance.</p>
+                        @foreach($planSummary['features'] as $category => $features)
+                            <details class="plan-disclosure plan-feature-group">
+                                <summary>{{ $category }}</summary>
+                                @foreach($features as $feature)
+                                    <div class="info-row">
+                                        <span class="label">{{ $feature['name'] }}</span>
+                                        <span class="value">{{ $feature['status'] }}</span>
+                                    </div>
+                                @endforeach
+                            </details>
+                        @endforeach
+                    </details>
+
+                    @if($planSummary['history']->isNotEmpty())
+                        <details class="plan-disclosure">
+                            <summary>Premium Access History</summary>
+                            <p class="hint">Past and upcoming Premium access. Your active access is shown in Your Plan above. This list shows up to five direct account grants; past sponsorships are not included. When no start date was recorded, the grant creation date is shown.</p>
+                            @foreach($planSummary['history'] as $grant)
+                                <div class="plan-grant-record">
+                                    <div class="info-row">
+                                        <span class="label">Granted on</span>
+                                        <span class="value">{{ $planDate($grant['granted_at']) ?? 'Not recorded' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">{{ $grant['starts_at'] ? 'Recorded start date' : 'Start date (grant created)' }}</span>
+                                        <span class="value">{{ $planDate($grant['starts_at'] ?? $grant['granted_at']) ?? 'Not recorded' }}</span>
+                                    </div>
+                                    <div class="info-row">
+                                        <span class="label">Recorded end date</span>
+                                        <span class="value">{{ $planDate($grant['ends_at']) ?? 'No scheduled end date' }}</span>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </details>
                     @endif
 
                     @if($subscription)
@@ -581,10 +747,9 @@
 
                     @if(($plan?->code ?? 'free') !== 'premium')
                         <p class="hint" style="margin:16px 0;">
-                            Premium lets you switch advertising off
-                            and lifts the limit on generating
-                            recommendations. A subscription lasts
-                            one month.
+                            Your feature access follows the current plan settings shown above.
+                            Upgrading applies the current Premium settings.
+                            A subscription lasts one month.
                             <strong>No payment is taken.</strong>
                             This stands in for a subscription so the
                             platform can be demonstrated.
