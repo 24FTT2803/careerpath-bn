@@ -102,10 +102,16 @@ class CpbnBotKnowledge
                 'name' => 'BIICF Explorer',
                 'route' => 'student.biicf-explorer.index',
                 'also' => ['student.biicf-explorer.*'],
-                'purpose' => 'Browse the Brunei ICT Industry Competency Framework: sub-sectors, job roles, their tiers and entry requirements, and competencies.',
+                'purpose' => 'Browse the Brunei ICT Industry Competency Framework. A side menu on the left switches between its tabs: under Explore, ICT Sub-sectors and Job Roles; under About the role, Career Paths, Competencies, Entry Requirements and Training & Certifications; under Reference, Proficiency Levels. A "Selected role" box above the menu shows the role being looked at.',
                 'how_to' => [
-                    'Pick a sub-sector to see its job roles, or search for a role.',
-                    'Open a role to see what each tier requires, and compare roles side by side.',
+                    'ICT Sub-sectors: cards for the six sub-sectors. Clicking one opens Job Roles filtered to it.',
+                    'Job Roles: every role, ordered by career level. Its search box, "Search job roles by title...", matches role titles and sub-sector names. A sub-sector filter shows as a tag with an × to clear it.',
+                    'Clicking a role selects it and opens Career Paths: what the role involves and where it leads. Career Paths, Entry Requirements and Training & Certifications need a role selected first.',
+                    'Competencies with no role selected: the whole glossary, with its own search box, "Search competencies by name...", and All / Technical / Soft Skill filters.',
+                    'Competencies with a role selected: only that role\'s competencies, each with the level it is required at. Where the role has several tiers, "Required at" buttons switch between them. "Compare to my profile" checks each against the levels on the student\'s profile. To see the competencies of one area of work, select a role in that sub-sector and open Competencies.',
+                    'Clicking a competency opens it under Proficiency Levels, showing what it asks at each level, with the level the role requires marked.',
+                    'Entry Requirements: the qualifications and experience the selected role expects, per tier where it has several, written in BDQF levels.',
+                    'Proficiency Levels with nothing opened: both scales, technical (five levels) and soft skills (four).',
                 ],
             ],
             'innovation_lab' => [
@@ -178,6 +184,34 @@ class CpbnBotKnowledge
                 'Plans with CPBN Bot History can reopen past conversations.',
             ],
         ];
+    }
+
+    /**
+     * The BIICF Explorer's tabs, by the key its links use.
+     *
+     * @return array<string, string>
+     */
+    public static function explorerSections(): array
+    {
+        return [
+            'sub-sectors' => 'ICT Sub-sectors',
+            'job-roles' => 'Job Roles',
+            'career-paths' => 'Career Paths',
+            'competencies' => 'Competencies',
+            'entry-requirements' => 'Entry Requirements',
+            'training' => 'Training & Certifications',
+            'proficiency-levels' => 'Proficiency Levels',
+        ];
+    }
+
+    /**
+     * Explorer tabs that show nothing until a role is selected.
+     *
+     * @return array<int, string>
+     */
+    public static function roleSections(): array
+    {
+        return ['career-paths', 'entry-requirements', 'training'];
     }
 
     /**

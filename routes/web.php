@@ -170,6 +170,10 @@ Route::middleware([
                 Route::get('/conversations/{conversation}', [CpbnBotController::class, 'conversation'])
                     ->whereNumber('conversation')
                     ->name('conversation');
+
+                Route::delete('/conversations/{conversation}', [CpbnBotController::class, 'destroy'])
+                    ->whereNumber('conversation')
+                    ->name('conversation.destroy');
             });
 
         // Dashboard

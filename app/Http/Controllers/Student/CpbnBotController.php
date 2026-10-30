@@ -8,6 +8,7 @@ use App\Models\CpbnBotMessage;
 use App\Models\User;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
+use App\Services\CpbnBot\CpbnBotLinks;
 use App\Services\CpbnBot\CpbnBotService;
 use App\Support\AdviserText;
 use App\Support\CpbnBotKnowledge;
@@ -40,6 +41,7 @@ class CpbnBotController extends Controller
         private EntitlementService $entitlements,
         private FeatureUsageService $featureUsage,
         private CpbnBotService $bot,
+        private CpbnBotLinks $linkResolver,
     ) {}
 
     /**
@@ -196,6 +198,21 @@ class CpbnBotController extends Controller
         ]);
     }
 
+    /**
+     * Delete one of the student's conversations for good.
+     *
+     * Its tokens stay spent: deleting a conversation removes what
+     * was said, not what it cost.
+     */
+    public function destroy(int $conversation): JsonResponse
+    {
+        $student = $this->student();
+
+        $student->cpbnBotConversations()->findOrFail($conversation)->delete();
+
+        return response()->json(['status' => 'deleted']);
+    }
+
     private function student(): User
     {
         /** @var User|null $student */
@@ -220,22 +237,17 @@ class CpbnBotController extends Controller
     }
 
     /**
-     * Page keys as buttons the panel can show.
+     * Stored links as buttons the panel can show.
      *
-     * @param  array<int, string>|null  $keys
+     * @param  array<int, string|array<string, mixed>>|null  $links
      * @return array<int, array{key: string, label: string, url: string}>
      */
-    private function links(?array $keys): array
+    private function links(?array $links): array
     {
-        $pages = CpbnBotKnowledge::pages();
-
-        return collect($keys ?? [])
-            ->filter(fn ($key) => isset($pages[$key]))
-            ->map(fn (string $key) => [
-                'key' => $key,
-                'label' => $pages[$key]['name'],
-                'url' => route($pages[$key]['route']),
-            ])
+        return collect($links ?? [])
+            ->filter(fn ($link) => is_string($link) || is_array($link))
+            ->map(fn ($link) => $this->linkResolver->present($link))
+            ->filter()
             ->values()
             ->all();
     }

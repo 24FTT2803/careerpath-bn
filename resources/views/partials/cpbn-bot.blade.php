@@ -317,10 +317,34 @@
         letter-spacing: 0.04em;
     }
 
+    .cpbn-bot-list-row {
+        display: flex;
+        align-items: stretch;
+        gap: 6px;
+        margin-bottom: 8px;
+    }
+
+    .cpbn-bot-list-delete {
+        flex-shrink: 0;
+        width: 36px;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 10px;
+        background: var(--card, #ffffff);
+        color: var(--text-muted, #6b7280);
+        cursor: pointer;
+    }
+
+    .cpbn-bot-list-delete:hover,
+    .cpbn-bot-list-delete.is-failed {
+        border-color: #fca5a5;
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
     .cpbn-bot-list-item {
         display: block;
-        width: 100%;
-        margin-bottom: 8px;
+        flex: 1;
+        min-width: 0;
         padding: 10px 12px;
         border: 1px solid var(--border, #e5e7eb);
         border-radius: 10px;
@@ -775,6 +799,9 @@
             }
 
             data.conversations.forEach((conversation) => {
+                const row = document.createElement('div');
+                row.className = 'cpbn-bot-list-row';
+
                 const item = document.createElement('button');
                 item.type = 'button';
                 item.className = 'cpbn-bot-list-item' + (conversation.id === state.conversationId ? ' is-current' : '');
@@ -782,10 +809,71 @@
                 item.querySelector('strong').textContent = conversation.title;
                 item.querySelector('span').textContent = (conversation.last_message_label || '') + ' · ' + conversation.message_count + ' messages';
                 item.addEventListener('click', () => reopen(conversation.id));
-                listItems.appendChild(item);
+
+                const remove = document.createElement('button');
+                remove.type = 'button';
+                remove.className = 'cpbn-bot-list-delete';
+                remove.title = 'Delete this conversation';
+                remove.setAttribute('aria-label', 'Delete conversation: ' + conversation.title);
+                remove.innerHTML = '<i class="fas fa-trash-can"></i>';
+                remove.addEventListener('click', () => confirmDelete(conversation, row));
+
+                row.append(item, remove);
+                listItems.appendChild(row);
             });
         } catch (error) {
             listItems.innerHTML = '<p class="cpbn-bot-list-title" style="text-transform:none;">Could not load past conversations.</p>';
+        }
+    }
+
+    function confirmDelete(conversation, row) {
+        const go = () => deleteConversation(conversation.id, row);
+
+        if (typeof window.showConfirmModal === 'function') {
+            window.showConfirmModal({
+                title: 'Delete conversation',
+                message: 'Delete "' + conversation.title + '"? It cannot be recovered.',
+                confirmText: 'Delete',
+                cancelText: 'Keep',
+                type: 'danger',
+                onConfirm: go,
+            });
+        } else if (window.confirm('Delete this conversation? It cannot be recovered.')) {
+            go();
+        }
+    }
+
+    async function deleteConversation(id, row) {
+        try {
+            const response = await fetch(panel.dataset.conversationsUrl + '/' + id, {
+                method: 'DELETE',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            });
+
+            if (! response.ok) {
+                throw new Error('Delete failed');
+            }
+
+            row.remove();
+
+            /* The one on screen is gone, so start afresh. */
+            if (id === state.conversationId) {
+                state.conversationId = null;
+                state.newConversation = true;
+                clearMessages();
+                remember({ conversationId: null, newConversation: true });
+            }
+
+            if (! listItems.querySelector('.cpbn-bot-list-row')) {
+                listItems.innerHTML = '<p class="cpbn-bot-list-title" style="text-transform:none;">No past conversations yet.</p>';
+            }
+        } catch (error) {
+            row.querySelector('.cpbn-bot-list-delete')?.classList.add('is-failed');
         }
     }
 

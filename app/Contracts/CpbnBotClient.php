@@ -9,7 +9,7 @@ interface CpbnBotClient
      *
      * @param  array<string, mixed>  $context  From CpbnBotContextBuilder.
      * @param  array<int, array{role: string, content: string}>  $history  Earlier messages, oldest first.
-     * @return array{schema_version: string, status: string, message: string, links: array<int, string>, usage?: array<string, mixed>|null}
+     * @return array{schema_version: string, status: string, message: string, links: array<int, string|array<string, string>>, usage?: array<string, mixed>|null}
      */
     public function ask(array $context, array $history, string $message): array;
 }

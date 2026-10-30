@@ -105,12 +105,23 @@ class CpbnBotContextBuilder
                 ])->values())
                 ->all(),
             'sub_sectors' => BiicfSubSector::query()
-                ->with('jobRoles:id,sub_sector_id,title,career_path_level')
+                ->with([
+                    'jobRoles:id,sub_sector_id,title,career_path_level',
+                    'jobRoles.tiers:id,job_role_id,label,sort_order',
+                ])
                 ->orderBy('sort_order')
                 ->get()
                 ->map(fn (BiicfSubSector $subSector) => [
                     'name' => $subSector->name,
-                    'job_roles' => $subSector->jobRoles->pluck('title')->values()->all(),
+                    'job_roles' => $subSector->jobRoles
+                        ->map(fn ($role) => [
+                            'title' => $role->title,
+
+                            /* The "Required at" buttons a link can open. */
+                            'tiers' => $role->tiers->pluck('label')->filter()->values()->all(),
+                        ])
+                        ->values()
+                        ->all(),
                 ])
                 ->all(),
             'competencies' => BiicfCompetency::query()

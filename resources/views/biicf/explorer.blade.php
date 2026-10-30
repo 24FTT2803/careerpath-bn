@@ -2709,6 +2709,9 @@
 <script>
 const BIICF_LEVELS = @json($levelsForScript);
 
+/* Sub-sector names by slug, for opening one from a link. */
+const BIICF_SUB_SECTORS = @json($subSectors->pluck('name', 'slug'));
+
 function biicfExplorer() {
     return {
         activeSection: 'sub-sectors',
@@ -2747,6 +2750,72 @@ function biicfExplorer() {
                     this.loadGlossary();
                 }
             });
+
+            this.$nextTick(() => this.openFromLink());
+        },
+
+        /*
+         * Opens the place a link names, so the CPBN Bot can send a
+         * student straight to a role's competencies at one tier, a
+         * role's entry requirements, or one competency's levels.
+         *
+         * ?section=  a tab
+         * ?sub_sector=  a sub-sector's roles
+         * ?role=  a job role, by slug
+         * ?tier=  that role's "Required at" button, by label
+         * ?competency=  a competency, by id
+         * ?level=  the level of it to mark
+         */
+        async openFromLink() {
+            const params = new URLSearchParams(window.location.search);
+
+            if ([...params.keys()].length === 0) {
+                return;
+            }
+
+            const sections = ['sub-sectors', 'job-roles', 'career-paths', 'competencies', 'entry-requirements', 'training', 'proficiency-levels'];
+            const section = sections.includes(params.get('section')) ? params.get('section') : null;
+            const subSector = params.get('sub_sector');
+            const role = params.get('role');
+            const tier = (params.get('tier') || '').toLowerCase();
+            const competency = Number(params.get('competency')) || null;
+            const level = Number(params.get('level')) || null;
+
+            if (subSector && BIICF_SUB_SECTORS[subSector]) {
+                await this.selectSubSector(subSector, BIICF_SUB_SECTORS[subSector]);
+            }
+
+            if (role) {
+                await this.selectJobRole(role);
+
+                const match = this.roleTiers.find((t) => (t.label || '').toLowerCase() === tier);
+
+                if (match) {
+                    this.activeTierId = match.id;
+                }
+            }
+
+            if (section) {
+                this.activeSection = section;
+            }
+
+            if (competency) {
+                /* The level the role asks for, when the link came from one. */
+                const fromRole = this.selectedRole
+                    ? ['technical', 'soft_skill']
+                        .flatMap((type) => this.filteredRoleCompetencies(type))
+                        .find((comp) => comp.id === competency)
+                    : null;
+
+                const required = level
+                    ? { number: level }
+                    : (fromRole?.level ?? null);
+
+                await this.openCompetency(competency, required);
+            }
+
+            /* Scrolled into view, since on a phone the tabs sit above it. */
+            document.querySelector('.biicf-content')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         },
 
         get filteredRoles() {

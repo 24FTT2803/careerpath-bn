@@ -6,7 +6,6 @@ use App\Contracts\CpbnBotClient;
 use App\Models\CpbnBotConversation;
 use App\Models\CpbnBotMessage;
 use App\Models\User;
-use App\Support\CpbnBotKnowledge;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -28,6 +27,7 @@ class CpbnBotService
     public function __construct(
         private CpbnBotClient $client,
         private CpbnBotContextBuilder $contextBuilder,
+        private CpbnBotLinks $linkResolver,
     ) {}
 
     /**
@@ -37,7 +37,7 @@ class CpbnBotService
      * has an exchange to hold, so a failed request leaves nothing
      * behind.
      *
-     * @return array{message: string, links: array<int, string>, tokens: int, conversation: CpbnBotConversation}
+     * @return array{message: string, links: array<int, array<string, mixed>>, tokens: int, conversation: CpbnBotConversation}
      */
     public function ask(
         User $student,
@@ -58,13 +58,18 @@ class CpbnBotService
         ])->validate();
 
         /*
-         * Only pages the bot knows, and never the page the student
-         * is already on: a button back to where they are is noise.
+         * Only links that resolve to something real, and never a
+         * plain link to the page the student is already on: a
+         * button back to where they are is noise. A link deeper
+         * into the page they are on (a role's competencies, say)
+         * is kept.
          */
         $links = collect($validated['links'] ?? [])
-            ->filter(fn ($key) => is_string($key) && in_array($key, CpbnBotKnowledge::pageKeys(), true))
-            ->reject(fn (string $key) => $key === $currentPage)
-            ->unique()
+            ->filter(fn ($link) => is_string($link) || is_array($link))
+            ->map(fn ($link) => $this->linkResolver->normalise($link))
+            ->filter()
+            ->reject(fn (array $link) => $this->linkResolver->isOnlyThePage($link, $currentPage))
+            ->unique(fn (array $link) => json_encode($link))
             ->take(2)
             ->values()
             ->all();
@@ -143,7 +148,7 @@ class CpbnBotService
     }
 
     /**
-     * @param  array<int, string>  $links
+     * @param  array<int, array<string, mixed>>  $links
      */
     private function recordExchange(
         CpbnBotConversation $conversation,

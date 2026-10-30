@@ -1,8 +1,13 @@
 <?php
 
 use App\Contracts\CpbnBotClient;
+use App\Models\BiicfCompetency;
+use App\Models\BiicfJobRole;
+use App\Models\BiicfJobRoleTier;
+use App\Models\BiicfSubSector;
 use App\Models\CareerAdviserConversation;
 use App\Models\CpbnBotConversation;
+use App\Models\CpbnBotMessage;
 use App\Models\FeatureUsage;
 use App\Models\Plan;
 use App\Models\User;
@@ -406,4 +411,173 @@ test('the plan summary describes the token limit in tokens', function () {
         ->get(route('student.settings'))
         ->assertOk()
         ->assertSeeText('50,000 tokens every 1 day(s)');
+});
+
+/**
+ * A small slice of the framework to link into: IT Technician in
+ * IT Services, with two tiers, and one competency.
+ */
+function cpbnExplorerFixture(): array
+{
+    $subSector = BiicfSubSector::create(['name' => 'IT Services', 'slug' => 'it-services']);
+
+    $role = BiicfJobRole::create([
+        'title' => 'IT Technician',
+        'slug' => 'it-technician',
+        'sub_sector_id' => $subSector->id,
+    ]);
+
+    foreach (['Associate', 'Expert/Management'] as $order => $label) {
+        BiicfJobRoleTier::create(['job_role_id' => $role->id, 'label' => $label, 'sort_order' => $order + 1]);
+    }
+
+    $competency = BiicfCompetency::create([
+        'name' => 'Business Agility',
+        'slug' => 'business-agility',
+        'type' => 'technical',
+    ]);
+
+    return [$subSector, $role, $competency];
+}
+
+function explorerLink(array $fields): array
+{
+    return array_merge([
+        'page' => 'biicf_explorer',
+        'explorer_section' => '',
+        'sub_sector' => '',
+        'job_role' => '',
+        'tier' => '',
+        'competency' => '',
+        'proficiency_level' => '',
+    ], $fields);
+}
+
+test('a link can open a role\'s competencies at one tier', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+
+    cpbnClient(links: [explorerLink([
+        'explorer_section' => 'competencies',
+        'job_role' => 'IT Technician',
+        'tier' => 'expert',
+    ])]);
+
+    $link = askCpbn($student, 'IT Technician competencies at expert level?')->assertOk()->json('links.0');
+
+    expect($link['label'])->toBe('IT Technician › Competencies › Expert/Management')
+        ->and($link['url'])->toBe(route('student.biicf-explorer.index', [
+            'section' => 'competencies',
+            'role' => 'it-technician',
+            'tier' => 'Expert/Management',
+        ]));
+});
+
+test('a link can open one competency, at a level', function () {
+    $student = cpbnStudent();
+    [, , $competency] = cpbnExplorerFixture();
+
+    cpbnClient(links: [explorerLink(['competency' => 'business agility', 'proficiency_level' => '3'])]);
+
+    askCpbn($student, 'Where is Business Agility?')
+        ->assertOk()
+        ->assertJsonPath('links.0.label', 'Business Agility › Level 3')
+        ->assertJsonPath('links.0.url', route('student.biicf-explorer.index', ['competency' => $competency->id, 'level' => 3]));
+});
+
+test('a role\'s entry requirements and a sub-sector\'s roles can be linked', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+
+    cpbnClient(links: [
+        explorerLink(['explorer_section' => 'entry-requirements', 'job_role' => 'IT Technician']),
+        explorerLink(['explorer_section' => 'job-roles', 'sub_sector' => 'IT Services']),
+    ]);
+
+    askCpbn($student)
+        ->assertOk()
+        ->assertJsonPath('links.0.label', 'IT Technician › Entry Requirements')
+        ->assertJsonPath('links.1.label', 'IT Services › Job Roles')
+        ->assertJsonPath('links.1.url', route('student.biicf-explorer.index', ['section' => 'job-roles', 'sub_sector' => 'it-services']));
+});
+
+test('anything a link names that does not exist is dropped, not guessed', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+
+    cpbnClient(links: [explorerLink([
+        'explorer_section' => 'competencies',
+        'job_role' => 'Chief Wizard',
+        'tier' => 'Grandmaster',
+        'competency' => 'Telepathy',
+    ])]);
+
+    /* No role, so the role-only tab falls away too: the glossary. */
+    askCpbn($student)
+        ->assertOk()
+        ->assertJsonPath('links.0.label', 'Competencies')
+        ->assertJsonPath('links.0.url', route('student.biicf-explorer.index', ['section' => 'competencies']));
+});
+
+test('a deep link is kept even on the BIICF Explorer itself', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+
+    cpbnClient(links: [
+        'biicf_explorer',
+        explorerLink(['explorer_section' => 'competencies', 'job_role' => 'IT Technician']),
+    ]);
+
+    askCpbn($student, 'Show me its competencies', ['current_page' => 'biicf_explorer'])
+        ->assertOk()
+        ->assertJsonCount(1, 'links')
+        ->assertJsonPath('links.0.label', 'IT Technician › Competencies');
+});
+
+test('the bot knows each role\'s tiers', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+    $client = cpbnClient();
+
+    askCpbn($student)->assertOk();
+
+    $role = collect($client->lastContext['biicf']['sub_sectors'])->firstWhere('name', 'IT Services')['job_roles'][0];
+
+    expect($role)->toBe(['title' => 'IT Technician', 'tiers' => ['Associate', 'Expert/Management']]);
+});
+
+test('the explorer opens the place a link names', function () {
+    $this->actingAs(cpbnStudent())
+        ->get(route('student.biicf-explorer.index', ['section' => 'competencies', 'role' => 'it-technician']))
+        ->assertOk()
+        ->assertSee('openFromLink()', false)
+        ->assertSee('BIICF_SUB_SECTORS', false);
+});
+
+test('a student can delete one of their conversations', function () {
+    $student = cpbnStudent(withHistory: true);
+    cpbnClient();
+
+    $id = askCpbn($student, 'Delete me?')->json('conversation_id');
+
+    $this->actingAs($student)
+        ->deleteJson(route('student.cpbn-bot.conversation.destroy', $id))
+        ->assertOk();
+
+    expect(CpbnBotConversation::find($id))->toBeNull()
+        ->and(CpbnBotMessage::where('cpbn_bot_conversation_id', $id)->count())->toBe(0)
+        ->and((int) FeatureUsage::where('feature_key', CPBN_TOKENS)->sum('quantity'))->toBe(1234);
+});
+
+test('a student cannot delete someone else\'s conversation', function () {
+    $owner = cpbnStudent(withHistory: true);
+    cpbnClient();
+
+    $id = askCpbn($owner, 'Mine?')->json('conversation_id');
+
+    $this->actingAs(User::factory()->create(['role' => 'student']))
+        ->deleteJson(route('student.cpbn-bot.conversation.destroy', $id))
+        ->assertNotFound();
+
+    expect(CpbnBotConversation::find($id))->not->toBeNull();
 });
