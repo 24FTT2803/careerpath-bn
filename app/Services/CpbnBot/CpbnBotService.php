@@ -92,6 +92,14 @@ class CpbnBotService
 
             /* What the bot last asked about or filled, so "change it" means that. */
             'last_field' => $startsNow ? null : $conversation->fill_field,
+
+            /*
+             * "ok", "that's good", "nope that's good": the student is
+             * happy with what was just shown and wants to carry on.
+             * Said plainly, so the bot moves on instead of asking
+             * again.
+             */
+            'student_is_moving_on' => ! $startsNow && $active !== null && $this->isMovingOn($question),
             'form_now' => $formState,
         ];
 
@@ -398,6 +406,20 @@ class CpbnBotService
             'messages' => $remembered->count(),
             'tokens' => (int) ceil($remembered->sum(fn (array $message) => strlen($message['content'])) / 4),
         ];
+    }
+
+    /**
+     * Whether a short reply just accepts what was shown and asks to
+     * carry on, rather than answering or changing anything.
+     */
+    private function isMovingOn(string $question): bool
+    {
+        $text = trim($question);
+
+        return mb_strlen($text) <= 60 && (bool) preg_match(
+            "/^(i said )?(ok|okay|k|yes|yeah|yep|yup|ya|sure|fine|good|great|perfect|cool|nice|alright|done|next|continue|carry on|go on|move on|(nope|no),? (that['’]?s|it['’]?s|its) (good|fine|ok|okay)|let['’]?s (go|move on|continue|get a move on)|that['’]?s (good|fine|great|ok|okay|it)|looks good|sounds good|use (it|that|this))\\b/iu",
+            $text
+        );
     }
 
     /**

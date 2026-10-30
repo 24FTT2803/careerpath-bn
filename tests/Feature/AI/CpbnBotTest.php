@@ -1183,3 +1183,22 @@ test('the bot is told which field its last reply was about', function () {
 
     expect($client->lastContext['fill_session']['last_field'])->toBe('vision_statement');
 });
+
+test('the bot is told plainly when the student is happy and wants to move on', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my career aspirations');
+
+    askCpbn($student, 'ok thats good');
+    expect($client->lastContext['fill_session']['student_is_moving_on'])->toBeTrue();
+
+    askCpbn($student, 'nope thats good');
+    expect($client->lastContext['fill_session']['student_is_moving_on'])->toBeTrue();
+
+    askCpbn($student, 'no, I want to change it to something else');
+    expect($client->lastContext['fill_session']['student_is_moving_on'])->toBeFalse();
+
+    askCpbn($student, 'my long term goal is a game company in Brunei');
+    expect($client->lastContext['fill_session']['student_is_moving_on'])->toBeFalse();
+});
