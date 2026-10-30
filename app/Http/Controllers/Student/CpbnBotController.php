@@ -154,6 +154,9 @@ class CpbnBotController extends Controller
             'message' => $answer['message'],
             'message_html' => AdviserText::toHtml($answer['message']),
             'links' => $this->links($answer['links']),
+
+            /* Where the panel should take the student, straight away. */
+            'navigate' => $answer['navigate'] ? $this->linkResolver->present($answer['navigate']) : null,
             'conversation_id' => $answer['conversation']->id,
             'tokens_used' => $answer['tokens'],
             'tokens' => $this->tokenPayload($this->featureUsage->status($student, self::TOKEN_QUOTA)),

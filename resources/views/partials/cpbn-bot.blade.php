@@ -395,6 +395,29 @@
         border-bottom-left-radius: 4px;
     }
 
+    .cpbn-bot-msg.is-going {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: #f0fdf4;
+        border-color: #bbf7d0;
+        color: #166534;
+        font-weight: 600;
+    }
+
+    .cpbn-bot-stay {
+        flex-shrink: 0;
+        padding: 4px 10px;
+        border: 1px solid #86efac;
+        border-radius: 100px;
+        background: #ffffff;
+        color: #166534;
+        font-family: inherit;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
     .cpbn-bot-msg.is-error {
         border-color: #fca5a5;
         background: #fef2f2;
@@ -616,7 +639,7 @@
 
         const saved = [];
 
-        messages.querySelectorAll('.cpbn-bot-msg:not(.is-error):not(.cpbn-bot-typing)').forEach((node) => {
+        messages.querySelectorAll('.cpbn-bot-msg:not(.is-error):not(.cpbn-bot-typing):not(.is-going)').forEach((node) => {
             saved.push({
                 role: node.classList.contains('from-student') ? 'user' : 'assistant',
                 html: node.innerHTML,
@@ -826,6 +849,37 @@
         }
     }
 
+    /*
+     * Takes the student where they asked to go. A moment's pause,
+     * with a way to stay, so a misread request costs nothing. The
+     * panel stays open on the next page, and the conversation
+     * carries on there.
+     */
+    function goTo(place) {
+        const target = new URL(place.url, window.location.origin);
+
+        if (target.pathname + target.search === window.location.pathname + window.location.search) {
+            return;
+        }
+
+        const note = addMessage(
+            'assistant',
+            '<span>Opening ' + escapeHtml(place.label) + '…</span> <button type="button" class="cpbn-bot-stay">Stay here</button>',
+            'is-going'
+        );
+
+        const timer = setTimeout(() => {
+            remember({ open: true });
+            window.location.href = target.href;
+        }, 1200);
+
+        note.querySelector('.cpbn-bot-stay').addEventListener('click', () => {
+            clearTimeout(timer);
+            note.remove();
+            input.focus();
+        });
+    }
+
     function confirmDelete(conversation, row) {
         const go = () => deleteConversation(conversation.id, row);
 
@@ -965,6 +1019,10 @@
             state.newConversation = false;
             remember({ conversationId: state.conversationId, newConversation: false });
             saveSessionMessages();
+
+            if (data.navigate && data.navigate.url) {
+                goTo(data.navigate);
+            }
         } catch (error) {
             typing.remove();
             addMessage('assistant', 'The CPBN Bot could not be reached. Check your connection and try again.', 'is-error');

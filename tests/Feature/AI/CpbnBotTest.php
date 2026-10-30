@@ -28,9 +28,9 @@ const CPBN_TOKENS = 'cpbn_bot.token_quota';
  * A bot that answers at once and reports the tokens it used, as
  * Groq does. Records what it was given.
  */
-function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit']): CpbnBotClient
+function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit'], string|array|null $navigate = null): CpbnBotClient
 {
-    $client = new class($tokens, $links) implements CpbnBotClient
+    $client = new class($tokens, $links, $navigate) implements CpbnBotClient
     {
         public int $calls = 0;
 
@@ -38,7 +38,7 @@ function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit']): CpbnB
 
         public array $lastHistory = [];
 
-        public function __construct(private ?int $tokens, private array $links) {}
+        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate) {}
 
         public function ask(array $context, array $history, string $message): array
         {
@@ -51,6 +51,7 @@ function cpbnClient(?int $tokens = 1234, array $links = ['profile_edit']): CpbnB
                 'status' => 'completed',
                 'message' => 'Open Edit Profile and fill in Qualifications.',
                 'links' => $this->links,
+                'navigate' => $this->navigate,
                 'usage' => $this->tokens === null ? null : ['total_tokens' => $this->tokens],
             ];
         }
@@ -580,4 +581,86 @@ test('a student cannot delete someone else\'s conversation', function () {
         ->assertNotFound();
 
     expect(CpbnBotConversation::find($id))->not->toBeNull();
+});
+
+test('asking to go somewhere returns where to take the student', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], navigate: 'milestones');
+
+    askCpbn($student, 'Take me to my milestones')
+        ->assertOk()
+        ->assertJsonPath('navigate.label', 'Milestones')
+        ->assertJsonPath('navigate.url', route('student.milestones'))
+        ->assertJsonPath('links.0.key', 'milestones');
+});
+
+test('the bot can take the student to an exact place in the explorer', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+
+    cpbnClient(links: [], navigate: explorerLink([
+        'explorer_section' => 'competencies',
+        'job_role' => 'IT Technician',
+        'tier' => 'Expert/Management',
+    ]));
+
+    askCpbn($student, 'Open IT Technician competencies at expert level', ['current_page' => 'biicf_explorer'])
+        ->assertOk()
+        ->assertJsonPath('navigate.label', 'IT Technician › Competencies › Expert/Management')
+        ->assertJsonPath('navigate.url', route('student.biicf-explorer.index', [
+            'section' => 'competencies',
+            'role' => 'it-technician',
+            'tier' => 'Expert/Management',
+        ]));
+});
+
+test('a how-to answer does not move the student', function () {
+    $student = cpbnStudent();
+    cpbnClient(navigate: explorerLink(['page' => '']));
+
+    askCpbn($student, 'How do I add a milestone?')
+        ->assertOk()
+        ->assertJsonPath('navigate', null);
+});
+
+test('the student is not sent to the page they are already on', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], navigate: 'settings');
+
+    askCpbn($student, 'Open settings', ['current_page' => 'settings'])
+        ->assertOk()
+        ->assertJsonPath('navigate', null)
+        ->assertJsonCount(0, 'links');
+});
+
+test('a place that does not exist is not navigated to', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], navigate: ['page' => 'secret_admin_page']);
+
+    askCpbn($student, 'Take me to the secret page')
+        ->assertOk()
+        ->assertJsonPath('navigate', null);
+});
+
+test('the way there stays in the conversation as a button', function () {
+    $student = cpbnStudent(withHistory: true);
+    cpbnClient(links: [], navigate: 'milestones');
+
+    $id = askCpbn($student, 'Take me to my milestones')->json('conversation_id');
+
+    $this->actingAs($student)
+        ->getJson(route('student.cpbn-bot.conversation', $id))
+        ->assertJsonPath('conversation.messages.1.links.0.key', 'milestones');
+});
+
+test('the mock bot takes the student where they ask', function () {
+    $student = cpbnStudent();
+
+    askCpbn($student, 'Take me to my milestones')
+        ->assertOk()
+        ->assertJsonPath('navigate.url', route('student.milestones'));
+
+    askCpbn($student, 'How do I add a milestone?')
+        ->assertOk()
+        ->assertJsonPath('navigate', null);
 });

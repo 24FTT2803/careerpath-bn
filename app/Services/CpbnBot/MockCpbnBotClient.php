@@ -51,6 +51,10 @@ class MockCpbnBotClient implements CpbnBotClient
 
         $page = $pages[$key];
 
+        if (preg_match('/\b(take me|go to|open|navigate|bring me|show me)\b/', $question)) {
+            return $this->reply('Taking you to '.$page['name'].'.', [], $key);
+        }
+
         $steps = collect($page['how_to'])
             ->map(fn (string $step, int $index) => ($index + 1).'. '.$step)
             ->implode("\n");
@@ -65,13 +69,14 @@ class MockCpbnBotClient implements CpbnBotClient
      * @param  array<int, string>  $links
      * @return array<string, mixed>
      */
-    private function reply(string $message, array $links): array
+    private function reply(string $message, array $links, string $navigate = ''): array
     {
         return [
             'schema_version' => '1.0',
             'status' => 'completed',
             'message' => $message,
             'links' => $links,
+            'navigate' => $navigate === '' ? null : $navigate,
             'usage' => null,
         ];
     }

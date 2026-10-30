@@ -98,6 +98,10 @@ class GroqCpbnBotClient implements CpbnBotClient
             '',
             'When describing the BIICF Explorer, name the tab and the exact search box: Job Roles has "Search job roles by title...", Competencies has "Search competencies by name...". Never say just "the search bar".',
             '',
+            'TAKING THE STUDENT THERE',
+            '',
+            'navigate takes the student to a place straight away, without them pressing anything. Fill it in, the same way as a link, only when they ask to be taken somewhere: "take me to my milestones", "open settings", "go to IT Technician\'s competencies", "show me the proficiency levels". A question about how to do something ("how do I add a milestone?") is not a request to go there: answer it and leave navigate empty. When navigating, keep the message to one short sentence saying where you are taking them, and do not repeat the same place in links. If they ask to go to the page they are already on, say they are already there and leave navigate empty. Otherwise leave page as an empty string.',
+            '',
             'MANNER',
             '',
             'UK English. Short and practical: a sentence or two, then numbered steps when there are steps. Put each step on its own line.',
@@ -122,29 +126,48 @@ class GroqCpbnBotClient implements CpbnBotClient
                         'message' => ['type' => 'string'],
                         'links' => [
                             'type' => 'array',
-                            'items' => [
-                                'type' => 'object',
-                                'properties' => [
-                                    'page' => ['type' => 'string', 'enum' => CpbnBotKnowledge::pageKeys()],
-                                    'explorer_section' => [
-                                        'type' => 'string',
-                                        'enum' => array_merge([''], array_keys(CpbnBotKnowledge::explorerSections())),
-                                    ],
-                                    'sub_sector' => ['type' => 'string'],
-                                    'job_role' => ['type' => 'string'],
-                                    'tier' => ['type' => 'string'],
-                                    'competency' => ['type' => 'string'],
-                                    'proficiency_level' => ['type' => 'string'],
-                                ],
-                                'required' => ['page', 'explorer_section', 'sub_sector', 'job_role', 'tier', 'competency', 'proficiency_level'],
-                                'additionalProperties' => false,
-                            ],
+                            'items' => $this->placeSchema(CpbnBotKnowledge::pageKeys()),
                         ],
+
+                        /*
+                         * Where to take the student straight away,
+                         * when they asked to be taken somewhere. An
+                         * empty page means stay put.
+                         */
+                        'navigate' => $this->placeSchema(array_merge([''], CpbnBotKnowledge::pageKeys())),
                     ],
-                    'required' => ['schema_version', 'status', 'message', 'links'],
+                    'required' => ['schema_version', 'status', 'message', 'links', 'navigate'],
                     'additionalProperties' => false,
                 ],
             ],
+        ];
+    }
+
+    /**
+     * A place on the site: a page, and for the BIICF Explorer how
+     * far into it.
+     *
+     * @param  array<int, string>  $pages
+     * @return array<string, mixed>
+     */
+    private function placeSchema(array $pages): array
+    {
+        return [
+            'type' => 'object',
+            'properties' => [
+                'page' => ['type' => 'string', 'enum' => $pages],
+                'explorer_section' => [
+                    'type' => 'string',
+                    'enum' => array_merge([''], array_keys(CpbnBotKnowledge::explorerSections())),
+                ],
+                'sub_sector' => ['type' => 'string'],
+                'job_role' => ['type' => 'string'],
+                'tier' => ['type' => 'string'],
+                'competency' => ['type' => 'string'],
+                'proficiency_level' => ['type' => 'string'],
+            ],
+            'required' => ['page', 'explorer_section', 'sub_sector', 'job_role', 'tier', 'competency', 'proficiency_level'],
+            'additionalProperties' => false,
         ];
     }
 }

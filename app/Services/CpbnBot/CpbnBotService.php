@@ -37,7 +37,7 @@ class CpbnBotService
      * has an exchange to hold, so a failed request leaves nothing
      * behind.
      *
-     * @return array{message: string, links: array<int, array<string, mixed>>, tokens: int, conversation: CpbnBotConversation}
+     * @return array{message: string, links: array<int, array<string, mixed>>, navigate: array<string, mixed>|null, tokens: int, conversation: CpbnBotConversation}
      */
     public function ask(
         User $student,
@@ -55,7 +55,15 @@ class CpbnBotService
             'status' => ['required', 'in:completed'],
             'message' => ['required', 'string', 'max:5000'],
             'links' => ['nullable', 'array'],
+            'navigate' => ['nullable'],
         ])->validate();
+
+        /*
+         * Where to take the student straight away, if they asked
+         * to go somewhere. Never a plain trip to the page they are
+         * on, which would only reload it.
+         */
+        $navigate = $this->destination($validated['navigate'] ?? null, $currentPage);
 
         /*
          * Only links that resolve to something real, and never a
@@ -74,6 +82,19 @@ class CpbnBotService
             ->values()
             ->all();
 
+        /*
+         * Kept as the reply's first button too, so the way there is
+         * still in the conversation when it is reopened later.
+         */
+        if ($navigate !== null) {
+            $links = collect([$navigate])
+                ->merge($links)
+                ->unique(fn (array $link) => json_encode($link))
+                ->take(2)
+                ->values()
+                ->all();
+        }
+
         $tokens = $this->tokensUsed($response, $context, $history, $question, $validated['message']);
 
         $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens);
@@ -81,9 +102,32 @@ class CpbnBotService
         return [
             'message' => $validated['message'],
             'links' => $links,
+            'navigate' => $navigate,
             'tokens' => $tokens,
             'conversation' => $conversation,
         ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function destination(mixed $navigate, ?string $currentPage): ?array
+    {
+        if (! is_string($navigate) && ! is_array($navigate)) {
+            return null;
+        }
+
+        if (is_array($navigate) && blank($navigate['page'] ?? null)) {
+            return null;
+        }
+
+        $place = $this->linkResolver->normalise($navigate);
+
+        if ($place === null || $this->linkResolver->isOnlyThePage($place, $currentPage)) {
+            return null;
+        }
+
+        return $place;
     }
 
     /**
