@@ -11,6 +11,12 @@ class CpbnBotMessage extends Model
 
     public const ROLE_ASSISTANT = 'assistant';
 
+    /**
+     * A marker where the bot's memory starts or ends, shown to the
+     * student and never sent to the bot.
+     */
+    public const ROLE_DIVIDER = 'divider';
+
     protected $fillable = [
         'role',
         'content',
@@ -29,6 +35,11 @@ class CpbnBotMessage extends Model
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(CpbnBotConversation::class, 'cpbn_bot_conversation_id');
+    }
+
+    public function isDivider(): bool
+    {
+        return $this->role === self::ROLE_DIVIDER;
     }
 
     public function isFromStudent(): bool

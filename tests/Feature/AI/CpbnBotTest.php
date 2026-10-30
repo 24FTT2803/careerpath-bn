@@ -15,7 +15,6 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\Business\FeatureUsageService;
 use App\Services\CpbnBot\CpbnBotContextBuilder;
-use App\Services\CpbnBot\CpbnBotService;
 use App\Services\CpbnBot\GroqCpbnBotClient;
 use Database\Seeders\BiicfReferenceDataSeeder;
 use Database\Seeders\FeatureDefinitionSeeder;
@@ -949,16 +948,77 @@ test('a filling session remembers everything since it began', function () {
         ->and($client->lastContext['fill_session']['section'])->toBe('projects');
 });
 
-test('outside a session only the last few messages are sent', function () {
+test('starting a section leaves everything before it behind', function () {
     $student = cpbnStudent();
     $client = cpbnClient(links: []);
 
-    foreach (range(1, 6) as $turn) {
-        askCpbn($student, 'Question '.$turn);
+    foreach (range(1, 3) as $turn) {
+        askCpbn($student, 'General question '.$turn);
     }
 
-    expect($client->lastHistory)->toHaveCount(CpbnBotService::HISTORY_LIMIT)
-        ->and(collect($client->lastHistory)->pluck('content'))->not->toContain('Question 1');
+    askCpbn($student, 'Help me fill in my interests')
+        ->assertJsonPath('memory.before.0', ['type' => 'start', 'section' => 'interests', 'title' => 'Interests & Preferences'])
+        ->assertJsonPath('fill_section', 'interests');
+
+    expect($client->lastHistory)->toBe([]);
+
+    askCpbn($student, 'Programming and teamwork');
+
+    expect(collect($client->lastHistory)->pluck('content')->all())
+        ->toBe(['Help me fill in my interests', 'Open Edit Profile and fill in Qualifications.']);
+});
+
+test('a section chosen from a guide starts a session even without asking in words', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: []);
+
+    askCpbn($student, 'Let us do this', ['start_section' => 'qualifications'])
+        ->assertJsonPath('memory.before.0.section', 'qualifications')
+        ->assertJsonPath('fill_section', 'qualifications');
+});
+
+test('switching to another section ends the one before', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my projects');
+
+    askCpbn($student, 'Now help me fill in my certifications')
+        ->assertJsonPath('memory.before.0', ['type' => 'end', 'section' => 'projects', 'title' => 'Projects & Experience'])
+        ->assertJsonPath('memory.before.1.type', 'start')
+        ->assertJsonPath('memory.before.1.section', 'certifications');
+});
+
+test('a student can finish a section themselves', function () {
+    $student = cpbnStudent(withHistory: true);
+    $client = cpbnClient(links: []);
+
+    $id = askCpbn($student, 'Help me fill in my projects')->json('conversation_id');
+
+    $this->actingAs($student)
+        ->postJson(route('student.cpbn-bot.conversation.finish-section', $id))
+        ->assertOk()
+        ->assertJsonPath('memory.after.0.type', 'end');
+
+    expect(CpbnBotConversation::find($id)->fill_section)->toBeNull();
+
+    askCpbn($student, 'What is BDQF?');
+
+    expect($client->lastHistory)->toBe([]);
+});
+
+test('the markers stay in a reopened conversation', function () {
+    $student = cpbnStudent(withHistory: true);
+    cpbnClient(links: []);
+
+    $id = askCpbn($student, 'Help me fill in my projects')->json('conversation_id');
+
+    $this->actingAs($student)
+        ->getJson(route('student.cpbn-bot.conversation', $id))
+        ->assertJsonPath('conversation.fill_section', 'projects')
+        ->assertJsonPath('conversation.messages.0.role', 'divider')
+        ->assertJsonPath('conversation.messages.0.marker.type', 'start')
+        ->assertJsonPath('conversation.messages.1.role', 'user');
 });
 
 test('a session ends when the student confirms the section is done', function () {
@@ -971,7 +1031,9 @@ test('a session ends when the student confirms the section is done', function ()
 
     $client->fillSection = 'done';
 
-    askCpbn($student, "Yes, that's everything")->assertJsonPath('fill_section', null);
+    askCpbn($student, "Yes, that's everything")
+        ->assertJsonPath('fill_section', null)
+        ->assertJsonPath('memory.after.0.type', 'end');
 
     expect(CpbnBotConversation::find($id)->fill_section)->toBeNull();
 
@@ -980,7 +1042,7 @@ test('a session ends when the student confirms the section is done', function ()
     askCpbn($student, 'What is BDQF?');
 
     expect($client->lastContext['fill_session']['section'])->toBeNull()
-        ->and($client->lastHistory)->toHaveCount(4);
+        ->and($client->lastHistory)->toBe([]);
 });
 
 test('the form as it stands reaches the bot', function () {

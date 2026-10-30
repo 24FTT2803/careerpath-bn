@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
 use App\Services\CpbnBot\CpbnBotLinks;
+use App\Services\CpbnBot\CpbnBotProfileFill;
 use App\Services\CpbnBot\CpbnBotService;
 use App\Support\AdviserText;
 use App\Support\CpbnBotKnowledge;
@@ -66,6 +67,9 @@ class CpbnBotController extends Controller
             'conversation' => $conversation?->exists
                 ? $this->conversationPayload($conversation, true)
                 : null,
+
+            /* The section being filled in, so the panel can say so. */
+            'fill_section' => $this->bot->currentConversation($student)->fill_section,
         ]);
     }
 
@@ -87,6 +91,9 @@ class CpbnBotController extends Controller
 
             /* What the Edit Profile form holds for the section being filled. */
             'form_state' => ['nullable', 'array'],
+
+            /* A section the student chose to fill, from a '?' guide. */
+            'start_section' => ['nullable', 'string', Rule::in(array_keys(CpbnBotProfileFill::sections()))],
         ], [
             'message.required' => 'Please type a question for the CPBN Bot.',
             'message.max' => 'Your question may not be longer than 500 characters.',
@@ -133,7 +140,8 @@ class CpbnBotController extends Controller
                 $validated['message'],
                 $conversation,
                 $validated['current_page'] ?? null,
-                $this->formState($validated['form_state'] ?? null)
+                $this->formState($validated['form_state'] ?? null),
+                $validated['start_section'] ?? null
             );
         } catch (ConnectionException $exception) {
             report($exception);
@@ -168,6 +176,9 @@ class CpbnBotController extends Controller
 
             /* The section being filled in, so the panel sends its form next time. */
             'fill_section' => $answer['fill_section'],
+
+            /* Where the bot's memory started or ended around this exchange. */
+            'memory' => $answer['memory'],
             'conversation_id' => $answer['conversation']->id,
             'tokens_used' => $answer['tokens'],
             'tokens' => $this->tokenPayload($this->featureUsage->status($student, self::TOKEN_QUOTA)),
@@ -210,6 +221,21 @@ class CpbnBotController extends Controller
                 true
             ),
         ]);
+    }
+
+    /**
+     * Finish the section being filled in, so the bot lets go of
+     * that part of the conversation.
+     */
+    public function finishSection(int $conversation): JsonResponse
+    {
+        $student = $this->student();
+
+        $marker = $this->bot->finishSection(
+            $student->cpbnBotConversations()->findOrFail($conversation)
+        );
+
+        return response()->json(['memory' => ['after' => $marker ? [$marker] : []]]);
     }
 
     /**
@@ -290,6 +316,7 @@ class CpbnBotController extends Controller
         $payload = [
             'id' => $conversation->id,
             'title' => $conversation->title ?: 'Conversation',
+            'fill_section' => $conversation->fill_section,
             'message_count' => $conversation->message_count,
             'last_message_label' => $conversation->last_message_at
                 ?->timezone(config('app.business_timezone'))
@@ -299,7 +326,10 @@ class CpbnBotController extends Controller
         if ($withMessages) {
             $payload['messages'] = $conversation->messages()
                 ->get()
-                ->map(fn (CpbnBotMessage $message) => [
+                ->map(fn (CpbnBotMessage $message) => $message->isDivider() ? [
+                    'role' => 'divider',
+                    'marker' => json_decode($message->content, true),
+                ] : [
                     'role' => $message->role,
                     'html' => $message->isFromStudent()
                         ? nl2br(e($message->content))

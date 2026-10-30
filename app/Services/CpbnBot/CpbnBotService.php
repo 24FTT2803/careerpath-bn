@@ -13,17 +13,11 @@ use Illuminate\Support\Str;
 class CpbnBotService
 {
     /**
-     * Earlier messages replayed outside a profile-filling session:
-     * enough for a follow-up such as "and then?", and no more, so
-     * an ordinary question stays cheap.
+     * The most messages one part of a conversation replays, as a
+     * safeguard against a part that never ends. A filling session
+     * normally finishes long before this.
      */
-    public const HISTORY_LIMIT = 6;
-
-    /**
-     * The most messages a single filling session replays, as a
-     * safeguard. A session normally ends long before this.
-     */
-    public const SESSION_LIMIT = 80;
+    public const MEMORY_LIMIT = 80;
 
     /**
      * Roughly what the bot's instructions cost, added to an
@@ -52,10 +46,25 @@ class CpbnBotService
         string $message,
         CpbnBotConversation $conversation,
         ?string $currentPage = null,
-        ?array $formState = null
+        ?array $formState = null,
+        ?string $startSection = null
     ): array {
         $question = trim($message);
-        $history = $conversation->exists ? $this->history($conversation) : [];
+        $active = $conversation->fill_section;
+
+        /*
+         * A section asked for outright starts a session here, and
+         * memory with it: the '?' guides name the section, and a
+         * typed "help me fill in my projects" is recognised. Nothing
+         * said before it is shown to the bot.
+         */
+        $asked = array_key_exists((string) $startSection, CpbnBotProfileFill::sections())
+            ? $startSection
+            : $this->sectionAskedFor($question);
+
+        $startsNow = $asked !== null && $asked !== $active;
+
+        $history = $conversation->exists && ! $startsNow ? $this->history($conversation) : [];
 
         /*
          * The question and the student's last two messages, so a
@@ -78,7 +87,7 @@ class CpbnBotService
          * pieced together from the chat.
          */
         $context['fill_session'] = [
-            'section' => $conversation->fill_section,
+            'section' => $startsNow ? $asked : $active,
             'form_now' => $formState,
         ];
 
@@ -94,16 +103,11 @@ class CpbnBotService
             'fill_section' => ['nullable', 'string'],
         ])->validate();
 
-        $fillSection = $validated['fill_section'] ?? '';
-
-        /*
-         * Asked outright to fill a section ("Help me fill in my
-         * Projects & Experience", as the '?' guides send), the
-         * session starts even if the bot did not say so.
-         */
-        if ($fillSection === '' && ! $conversation->fill_section) {
-            $fillSection = $this->sectionAskedFor($question) ?? '';
-        }
+        $memory = $this->memoryChanges(
+            $active,
+            $startsNow ? $asked : null,
+            (string) ($validated['fill_section'] ?? '')
+        );
 
         $choices = $this->choices($validated['choices'] ?? null);
         $fill = $this->profileFill->normalise($validated['fill'] ?? null);
@@ -156,7 +160,7 @@ class CpbnBotService
 
         $tokens = $this->tokensUsed($response, $context, $history, $question, $validated['message']);
 
-        $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens, $fillSection);
+        $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens, $memory);
 
         return [
             'message' => $validated['message'],
@@ -165,6 +169,10 @@ class CpbnBotService
             'choices' => $choices,
             'fill' => $fill,
             'fill_section' => $conversation->fill_section,
+            'memory' => [
+                'before' => $memory['before'],
+                'after' => $memory['after'],
+            ],
             'tokens' => $tokens,
             'conversation' => $conversation,
         ];
@@ -235,27 +243,30 @@ class CpbnBotService
     }
 
     /**
-     * What the bot is shown of the conversation so far.
+     * What the bot is shown of the conversation so far: everything
+     * since its memory last began, and nothing before.
      *
-     * While a profile section is being filled in, everything said
-     * since that began, so no answer is forgotten however long it
-     * takes. Otherwise only the last few messages.
+     * Memory begins when a section starts being filled in, and
+     * begins afresh once that section is finished. The student sees
+     * a marker in the chat at each of those points, so it is always
+     * plain what the bot remembers. Never a count of recent
+     * messages, which would forget the start of a long session and
+     * remember an unrelated one.
      *
      * @return array<int, array{role: string, content: string}>
      */
     private function history(CpbnBotConversation $conversation): array
     {
-        $query = $conversation->messages()->reorder();
-
-        if ($conversation->fill_section && $conversation->fill_started_message_id) {
-            $query->where('id', '>=', $conversation->fill_started_message_id)
-                ->orderBy('id')
-                ->limit(self::SESSION_LIMIT);
-        } else {
-            $query->latest('id')->limit(self::HISTORY_LIMIT);
-        }
-
-        return $query->get()
+        return $conversation->messages()
+            ->reorder()
+            ->where('role', '!=', CpbnBotMessage::ROLE_DIVIDER)
+            ->when(
+                $conversation->memory_from_message_id,
+                fn ($query, $from) => $query->where('id', '>=', $from)
+            )
+            ->latest('id')
+            ->limit(self::MEMORY_LIMIT)
+            ->get()
             ->sortBy('id')
             ->map(fn (CpbnBotMessage $message) => [
                 'role' => $message->role,
@@ -263,6 +274,96 @@ class CpbnBotService
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * How this exchange moves the conversation's memory.
+     *
+     * A session starts when the student asks for a section, or when
+     * the bot takes one up; switching sections ends the one before.
+     * "done", which the bot sends only once the student has
+     * confirmed the section is finished, ends it after this reply.
+     * Each start and end is a marker in the conversation.
+     *
+     * @return array{before: array<int, array<string, string>>, after: array<int, array<string, string>>, section: string|null}
+     */
+    private function memoryChanges(?string $active, ?string $asked, string $declared): array
+    {
+        $sections = CpbnBotProfileFill::sections();
+
+        $start = $asked
+            ?? (array_key_exists($declared, $sections) && $declared !== $active ? $declared : null);
+
+        $before = [];
+
+        if ($start !== null) {
+            if ($active !== null && isset($sections[$active])) {
+                $before[] = $this->marker('end', $active);
+            }
+
+            $before[] = $this->marker('start', $start);
+        }
+
+        $section = $start ?? $active;
+        $after = [];
+
+        if ($declared === 'done' && $section !== null && isset($sections[$section])) {
+            $after[] = $this->marker('end', $section);
+            $section = null;
+        }
+
+        return ['before' => $before, 'after' => $after, 'section' => $section];
+    }
+
+    /**
+     * @return array{type: string, section: string, title: string}
+     */
+    private function marker(string $type, string $section): array
+    {
+        return [
+            'type' => $type,
+            'section' => $section,
+            'title' => CpbnBotProfileFill::sections()[$section]['title'],
+        ];
+    }
+
+    /**
+     * Finish the section being filled in without asking the bot, and
+     * let go of what was said about it.
+     *
+     * @return array{type: string, section: string, title: string}|null
+     */
+    public function finishSection(CpbnBotConversation $conversation): ?array
+    {
+        $section = $conversation->fill_section;
+
+        if ($section === null || ! isset(CpbnBotProfileFill::sections()[$section])) {
+            return null;
+        }
+
+        $marker = $this->marker('end', $section);
+
+        DB::transaction(function () use ($conversation, $marker): void {
+            $divider = $this->recordMarker($conversation, $marker);
+
+            $conversation->forceFill([
+                'fill_section' => null,
+                'memory_from_message_id' => $divider->id,
+            ])->save();
+        });
+
+        return $marker;
+    }
+
+    /**
+     * @param  array<string, string>  $marker
+     */
+    private function recordMarker(CpbnBotConversation $conversation, array $marker): CpbnBotMessage
+    {
+        return $conversation->messages()->create([
+            'role' => CpbnBotMessage::ROLE_DIVIDER,
+            'content' => json_encode($marker),
+        ]);
     }
 
     /**
@@ -291,6 +392,7 @@ class CpbnBotService
 
     /**
      * @param  array<int, array<string, mixed>>  $links
+     * @param  array{before: array<int, array<string, string>>, after: array<int, array<string, string>>, section: string|null}  $memory
      */
     private function recordExchange(
         CpbnBotConversation $conversation,
@@ -298,9 +400,9 @@ class CpbnBotService
         string $answer,
         array $links,
         int $tokens,
-        string $fillSection = ''
+        array $memory
     ): void {
-        DB::transaction(function () use ($conversation, $question, $answer, $links, $tokens, $fillSection): void {
+        DB::transaction(function () use ($conversation, $question, $answer, $links, $tokens, $memory): void {
             if (! $conversation->exists) {
                 /* Titled after its first question, so a list of past
                  * conversations says what each was about. */
@@ -311,7 +413,18 @@ class CpbnBotService
                 ])->save();
             }
 
-            $asked = $conversation->messages()->create([
+            $memoryFrom = $conversation->memory_from_message_id;
+
+            /* A session starting here: its marker comes first, and memory begins at it. */
+            foreach ($memory['before'] as $marker) {
+                $divider = $this->recordMarker($conversation, $marker);
+
+                if ($marker['type'] === 'start') {
+                    $memoryFrom = $divider->id;
+                }
+            }
+
+            $conversation->messages()->create([
                 'role' => CpbnBotMessage::ROLE_USER,
                 'content' => $question,
             ]);
@@ -323,10 +436,17 @@ class CpbnBotService
                 'tokens' => $tokens,
             ]);
 
+            /* A section finished: memory begins again after its marker. */
+            foreach ($memory['after'] as $marker) {
+                $memoryFrom = $this->recordMarker($conversation, $marker)->id;
+            }
+
             $conversation->forceFill([
                 'message_count' => $conversation->message_count + 2,
                 'last_message_at' => now(),
-            ] + $this->sessionAfter($conversation, $fillSection, $asked->id))->save();
+                'fill_section' => $memory['section'],
+                'memory_from_message_id' => $memoryFrom,
+            ])->save();
         });
     }
 
@@ -358,31 +478,5 @@ class CpbnBotService
         }
 
         return null;
-    }
-
-    /**
-     * Where the filling session stands after this reply.
-     *
-     * A section the bot says it is working on starts a session at
-     * this question, unless that section's session is already
-     * running. "done", which the bot says only once the student has
-     * confirmed the section is finished, ends it. Anything else,
-     * such as a question about something unrelated partway through,
-     * leaves it as it was.
-     *
-     * @return array<string, mixed>
-     */
-    private function sessionAfter(CpbnBotConversation $conversation, string $fillSection, int $questionId): array
-    {
-        if ($fillSection === 'done') {
-            return ['fill_section' => null, 'fill_started_message_id' => null];
-        }
-
-        if (array_key_exists($fillSection, CpbnBotProfileFill::sections())
-            && $fillSection !== $conversation->fill_section) {
-            return ['fill_section' => $fillSection, 'fill_started_message_id' => $questionId];
-        }
-
-        return [];
     }
 }

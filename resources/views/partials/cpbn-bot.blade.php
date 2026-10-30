@@ -74,6 +74,16 @@
         </div>
     </header>
 
+    {{-- Which section is being filled in, and so what the bot remembers. --}}
+    <div class="cpbn-bot-session" id="cpbnBotSession" hidden>
+        <i class="fas fa-brain"></i>
+        <span>
+            Filling in <strong id="cpbnBotSessionTitle"></strong>.
+            The bot remembers this part until you finish it.
+        </span>
+        <button type="button" id="cpbnBotSessionFinish">Finish</button>
+    </div>
+
     <div class="cpbn-bot-list" id="cpbnBotList" hidden>
         <p class="cpbn-bot-list-title">Past conversations</p>
         <div id="cpbnBotListItems"></div>
@@ -318,6 +328,61 @@
         color: var(--text-muted, #6b7280);
         text-transform: uppercase;
         letter-spacing: 0.04em;
+    }
+
+    .cpbn-bot-session {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-bottom: 1px solid #fde68a;
+        background: #fffbeb;
+        color: #92400e;
+        font-size: 12px;
+        line-height: 1.4;
+    }
+
+    .cpbn-bot-session[hidden] {
+        display: none;
+    }
+
+    .cpbn-bot-session span {
+        flex: 1;
+    }
+
+    .cpbn-bot-session button {
+        flex-shrink: 0;
+        padding: 4px 10px;
+        border: 1px solid #f59e0b;
+        border-radius: 100px;
+        background: #ffffff;
+        color: #92400e;
+        font-family: inherit;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .cpbn-bot-divider {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 12px 0;
+        color: var(--text-muted, #6b7280);
+        font-size: 11px;
+        text-align: center;
+    }
+
+    .cpbn-bot-divider::before,
+    .cpbn-bot-divider::after {
+        content: '';
+        flex: 1;
+        border-top: 1px dashed currentColor;
+        opacity: 0.5;
+    }
+
+    .cpbn-bot-divider.is-start {
+        color: #b45309;
     }
 
     .cpbn-bot-list-row {
@@ -624,7 +689,14 @@
     const storeKey = 'cpbnBot:' + panel.dataset.user;
     const RING_LENGTH = 97.4;
 
+    const sessionStrip = document.getElementById('cpbnBotSession');
+    const sessionTitle = document.getElementById('cpbnBotSessionTitle');
+
+    /* Section titles, for the markers and the strip. */
+    const SECTION_TITLES = @json(collect(\App\Services\CpbnBot\CpbnBotProfileFill::sections())->map(fn ($section) => $section['title']));
+
     const state = {
+        startSection: null,
         loaded: false,
         busy: false,
         available: true,
@@ -686,8 +758,40 @@
     }
 
     function clearMessages() {
-        messages.querySelectorAll('.cpbn-bot-msg').forEach((node) => node.remove());
+        messages.querySelectorAll('.cpbn-bot-msg, .cpbn-bot-divider').forEach((node) => node.remove());
         empty.hidden = false;
+    }
+
+    /*
+     * A line in the chat where the bot's memory starts or ends, so
+     * the student can always see what it remembers.
+     */
+    function markerElement(marker) {
+        const line = document.createElement('div');
+        line.className = 'cpbn-bot-divider is-' + marker.type;
+        line.innerHTML = '<span></span>';
+        line.querySelector('span').textContent = marker.type === 'start'
+            ? 'Filling in ' + marker.title + ' · the bot remembers from here'
+            : marker.title + ' finished · the bot has let go of this part';
+
+        return line;
+    }
+
+    function addMarker(marker, before) {
+        empty.hidden = true;
+
+        const line = markerElement(marker);
+
+        before ? messages.insertBefore(line, before) : messages.appendChild(line);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function showSession(section) {
+        state.fillSection = section || null;
+        remember({ fillSection: state.fillSection });
+
+        sessionStrip.hidden = ! state.fillSection;
+        sessionTitle.textContent = SECTION_TITLES[state.fillSection] || '';
     }
 
     function saveSessionMessages() {
@@ -697,11 +801,13 @@
 
         const saved = [];
 
-        messages.querySelectorAll('.cpbn-bot-msg:not(.is-error):not(.cpbn-bot-typing):not(.is-going):not(.is-filled-note)').forEach((node) => {
-            saved.push({
-                role: node.classList.contains('from-student') ? 'user' : 'assistant',
-                html: node.innerHTML,
-            });
+        messages.querySelectorAll('.cpbn-bot-divider, .cpbn-bot-msg:not(.is-error):not(.cpbn-bot-typing):not(.is-going):not(.is-filled-note)').forEach((node) => {
+            saved.push(node.classList.contains('cpbn-bot-divider')
+                ? { role: 'divider', html: node.outerHTML }
+                : {
+                    role: node.classList.contains('from-student') ? 'user' : 'assistant',
+                    html: node.innerHTML,
+                });
         });
 
         remember({ messages: saved.slice(-30) });
@@ -710,7 +816,9 @@
     function renderConversation(conversation) {
         clearMessages();
 
-        (conversation?.messages || []).forEach((message) => addMessage(message.role, message.html + linksHtml(message.links)));
+        (conversation?.messages || []).forEach((message) => message.role === 'divider'
+            ? addMarker(message.marker)
+            : addMessage(message.role, message.html + linksHtml(message.links)));
     }
 
     function formatNumber(value) {
@@ -792,6 +900,7 @@
             state.available = data.available;
             state.historyEnabled = data.history_enabled;
             historyButton.hidden = ! data.history_enabled;
+            showSession(data.fill_section);
             renderTokens(data.tokens);
 
             if (! data.available) {
@@ -814,7 +923,16 @@
                     renderConversation(shown);
                 }
             } else {
-                (saved.messages || []).forEach((message) => addMessage(message.role, message.html));
+                (saved.messages || []).forEach((message) => {
+                    if (message.role === 'divider') {
+                        empty.hidden = true;
+                        messages.insertAdjacentHTML('beforeend', message.html);
+
+                        return;
+                    }
+
+                    addMessage(message.role, message.html);
+                });
 
                 /* Without history, each browser session starts its own
                  * conversation, so the bot never carries on from one
@@ -1097,6 +1215,7 @@
             if (id === state.conversationId) {
                 state.conversationId = null;
                 state.newConversation = true;
+                showSession(null);
                 clearMessages();
                 remember({ conversationId: null, newConversation: true });
             }
@@ -1117,6 +1236,7 @@
             state.newConversation = false;
             remember({ conversationId: state.conversationId, newConversation: false });
             renderConversation(data.conversation);
+            showSession(data.conversation.fill_section);
         } catch (error) {
             addMessage('assistant', 'That conversation could not be opened.', 'is-error');
         }
@@ -1483,7 +1603,7 @@
         messages.hidden = false;
         historyButton.classList.remove('is-active');
 
-        addMessage('user', escapeHtml(question));
+        const asked = addMessage('user', escapeHtml(question));
         input.value = '';
         input.style.height = '';
         saveSessionMessages();
@@ -1503,9 +1623,16 @@
             body.conversation_id = state.conversationId;
         }
 
+        /* A section chosen from a '?' guide starts a session here. */
+        if (state.startSection) {
+            body.start_section = state.startSection;
+        }
+
         /* What the form holds right now for the section being filled. */
-        const section = state.fillSection || recall().fillSection;
+        const section = state.startSection || state.fillSection;
         const formNow = section ? readSection(section) : null;
+
+        state.startSection = null;
 
         if (formNow) {
             body.form_state = formNow;
@@ -1552,9 +1679,12 @@
             remember({ conversationId: state.conversationId, newConversation: false });
             saveSessionMessages();
 
+            /* Where memory started or ended, shown around this exchange. */
+            (data.memory?.before || []).forEach((marker) => addMarker(marker, asked));
+            (data.memory?.after || []).forEach((marker) => addMarker(marker));
+
             /* The section in progress, so its form is sent next time. */
-            state.fillSection = data.fill_section || null;
-            remember({ fillSection: state.fillSection });
+            showSession(data.fill_section);
 
             if (data.fill) {
                 if (document.getElementById('profile-form')) {
@@ -1579,7 +1709,31 @@
 
     toggle.addEventListener('click', () => (panel.hidden ? open() : close()));
     el('cpbnBotClose').addEventListener('click', close);
-    el('cpbnBotNew').addEventListener('click', startNewConversation);
+    el('cpbnBotNew').addEventListener('click', () => {
+        showSession(null);
+        startNewConversation();
+    });
+
+    /* Finishing a section by hand: the bot lets go of that part. */
+    el('cpbnBotSessionFinish').addEventListener('click', async () => {
+        if (state.conversationId) {
+            try {
+                const response = await fetch(panel.dataset.conversationsUrl + '/' + state.conversationId + '/finish-section', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrf, 'X-Requested-With': 'XMLHttpRequest' },
+                    credentials: 'same-origin',
+                });
+                const data = await response.json();
+
+                (data.memory?.after || []).forEach((marker) => addMarker(marker));
+            } catch (error) {
+                /* The strip still clears; the next question carries on as normal. */
+            }
+        }
+
+        showSession(null);
+        saveSessionMessages();
+    });
     historyButton.addEventListener('click', showHistory);
 
     form.addEventListener('submit', (event) => {
@@ -1625,7 +1779,7 @@
         await load();
 
         if (section) {
-            state.fillSection = section;
+            state.startSection = section;
         }
 
         ask(text);
