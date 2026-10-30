@@ -89,6 +89,9 @@ class CpbnBotService
          */
         $context['fill_session'] = [
             'section' => $startsNow ? $asked : $active,
+
+            /* What the bot last asked about or filled, so "change it" means that. */
+            'last_field' => $startsNow ? null : $conversation->fill_field,
             'form_now' => $formState,
         ];
 
@@ -102,6 +105,7 @@ class CpbnBotService
             'choices' => ['nullable'],
             'fill' => ['nullable'],
             'fill_section' => ['nullable', 'string'],
+            'asking_field' => ['nullable', 'string'],
         ])->validate();
 
         $declared = (string) ($validated['fill_section'] ?? '');
@@ -112,7 +116,9 @@ class CpbnBotService
          * bot deciding on its own that it is done, partway through,
          * is not enough.
          */
-        if ($declared === 'done' && ! $confirmedFinished && ! $this->saysFinished($question)) {
+        if ($declared === 'done'
+            && ! $confirmedFinished
+            && ! $this->saysFinished($question, $conversation->fill_field === 'finish')) {
             $declared = '';
         }
 
@@ -172,6 +178,10 @@ class CpbnBotService
         }
 
         $tokens = $this->tokensUsed($response, $context, $history, $question, $validated['message']);
+
+        $memory['field'] = $memory['section'] !== null
+            ? Str::limit(trim((string) ($validated['asking_field'] ?? '')), 60, '') ?: null
+            : null;
 
         $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens, $memory);
 
@@ -361,6 +371,7 @@ class CpbnBotService
 
             $conversation->forceFill([
                 'fill_section' => null,
+                'fill_field' => null,
                 'memory_from_message_id' => $divider->id,
             ])->save();
         });
@@ -391,9 +402,18 @@ class CpbnBotService
 
     /**
      * Whether the student is saying the section is finished.
+     *
+     * A plain yes ("yes", "yes that's good", "ok") counts only as the
+     * answer to the bot's own "are you done with this section?", which
+     * it marks by asking about the field "finish". Anywhere else a
+     * yes is accepting a suggestion, not finishing.
      */
-    private function saysFinished(string $question): bool
+    private function saysFinished(string $question, bool $wasAsked): bool
     {
+        if ($wasAsked && preg_match('/^\\s*(yes|yeah|yep|yup|ya|ok|okay|sure|correct|perfect|great|good|done|all good)\\b/iu', $question)) {
+            return true;
+        }
+
         return (bool) preg_match(
             "/\\b(that['’]?s (it|everything|all)|i['’]?m done|all done|finish(ed)?|we['’]?re done|looks good|nothing else)\\b/iu",
             $question
@@ -490,6 +510,7 @@ class CpbnBotService
                 'message_count' => $conversation->message_count + 2,
                 'last_message_at' => now(),
                 'fill_section' => $memory['section'],
+                'fill_field' => $memory['field'] ?? null,
                 'memory_from_message_id' => $memoryFrom,
             ])->save();
         });

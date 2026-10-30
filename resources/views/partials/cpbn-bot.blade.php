@@ -357,25 +357,22 @@
 
     .cpbn-bot-session > span {
         flex: 1;
+        min-width: 0;
         display: flex;
-        flex-direction: column;
-        gap: 2px;
+        align-items: baseline;
+        flex-wrap: wrap;
+        gap: 0 6px;
     }
 
     .cpbn-bot-session small {
         font-size: 11px;
-        opacity: 0.85;
+        opacity: 0.8;
     }
 
-    .cpbn-bot-session.is-long {
-        border-bottom-color: #fca5a5;
-        background: #fef2f2;
-        color: #991b1b;
-    }
-
-    .cpbn-bot-session.is-long button {
-        border-color: #f87171;
-        color: #991b1b;
+    .cpbn-bot-session.is-long small {
+        color: #b91c1c;
+        opacity: 1;
+        font-weight: 600;
     }
 
     .cpbn-bot-session button {
@@ -521,6 +518,12 @@
         background: var(--accent, #c9a84c);
         color: #ffffff;
         font-weight: 600;
+    }
+
+    .cpbn-bot-polish span {
+        width: 100%;
+        font-size: 11px;
+        color: var(--text-muted, #6b7280);
     }
 
     .cpbn-bot-choices [hidden] {
@@ -842,20 +845,22 @@
         sessionText.innerHTML = '';
 
         if (state.fillSection) {
-            sessionText.append('Filling in ');
             const title = document.createElement('strong');
             title.textContent = SECTION_TITLES[state.fillSection] || '';
-            sessionText.append(title, '. Remembered until you finish it.');
+            sessionText.append('Filling in ', title);
             sessionFinish.textContent = 'Finish';
         } else {
-            sessionText.append('The bot remembers this conversation.');
-            sessionFinish.textContent = 'Clear memory';
+            sessionText.append('Remembering this chat');
+            sessionFinish.textContent = 'Clear';
         }
 
+        /* Kept to a few words; the full reason is in the tooltip. */
         sessionCost.textContent = memory.messages
-            ? memory.messages + ' messages, about ' + formatNumber(memory.tokens) + ' tokens added to every question.'
-                + (long ? ' That is a lot: finish this part when you are done so questions cost less.' : '')
+            ? memory.messages + ' msgs · ~' + compactNumber(memory.tokens) + ' tokens a question' + (long ? ' · long' : '')
             : '';
+
+        sessionStrip.title = 'Every question sends everything the bot remembers again, so a longer memory uses more of your allowance.'
+            + (long ? ' Finish this part when you are done to clear it.' : '');
     }
 
     function saveSessionMessages() {
@@ -883,6 +888,12 @@
         (conversation?.messages || []).forEach((message) => message.role === 'divider'
             ? addMarker(message.marker)
             : addMessage(message.role, message.html + linksHtml(message.links)));
+    }
+
+    function compactNumber(value) {
+        const number = Number(value || 0);
+
+        return number >= 1000 ? (number / 1000).toFixed(1).replace(/\.0$/, '') + 'k' : String(number);
     }
 
     function formatNumber(value) {
@@ -1328,7 +1339,7 @@
             button.addEventListener('click', () => {
                 if (! choices.multiple) {
                     /* The bot's own "Yes, that's everything" ends the section. */
-                    ask(option, { confirmFinish: /that['’]?s everything/i.test(option) });
+                    ask(option, { confirmFinish: /that['’]?s everything|i['’]?m done/i.test(option) });
 
                     return;
                 }
@@ -1351,6 +1362,56 @@
         if (choices.multiple) {
             box.appendChild(send);
         }
+
+        bubble.appendChild(box);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    /*
+     * Buttons to rework the wording the bot just wrote. Each sends a
+     * plain request naming the field and quoting its text, so there
+     * is no doubt which one is meant.
+     */
+    function showPolish(bubble, fill) {
+        const texts = [];
+        const aspirations = fill.aspirations || {};
+
+        [['vision_statement', 'vision statement'], ['long_term_goals', 'long-term goals']].forEach(([key, label]) => {
+            if (aspirations[key]) {
+                texts.push({ label, text: aspirations[key] });
+            }
+        });
+
+        (fill.projects || []).forEach((project) => {
+            [['description', 'description'], ['achievements', 'achievements'], ['role', 'role']].forEach(([key, label]) => {
+                if (project[key]) {
+                    texts.push({ label: label + ' for ' + project.title, text: project[key] });
+                }
+            });
+        });
+
+        const latest = texts[texts.length - 1];
+
+        if (! latest) {
+            return;
+        }
+
+        const box = document.createElement('div');
+        box.className = 'cpbn-bot-choices cpbn-bot-polish';
+
+        const heading = document.createElement('span');
+        heading.textContent = 'Reword the ' + latest.label + ':';
+        box.appendChild(heading);
+
+        [['More formal', 'more formal'], ['Shorter', 'shorter'], ['Say it differently', 'worded differently']].forEach(([label, how]) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = label;
+            button.addEventListener('click', () => ask(
+                'Rewrite my ' + latest.label + ' to be ' + how + '. It currently says: "' + latest.text + '"'
+            ));
+            box.appendChild(button);
+        });
 
         bubble.appendChild(box);
         messages.scrollTop = messages.scrollHeight;
@@ -1738,6 +1799,10 @@
 
             if (data.choices && data.choices.options && data.choices.options.length) {
                 showChoices(reply, data.choices);
+            }
+
+            if (data.fill) {
+                showPolish(reply, data.fill);
             }
 
             if (data.conversation_id) {

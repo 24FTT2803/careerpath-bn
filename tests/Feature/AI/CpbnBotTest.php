@@ -48,6 +48,8 @@ function cpbnClient(
 
         public array $lastHistory = [];
 
+        public string $askingField = '';
+
         public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, private ?array $fill, public string $fillSection) {}
 
         public function ask(array $context, array $history, string $message): array
@@ -65,6 +67,7 @@ function cpbnClient(
                 'choices' => $this->choices,
                 'fill' => $this->fill,
                 'fill_section' => $this->fillSection,
+                'asking_field' => $this->askingField,
                 'usage' => $this->tokens === null ? null : ['total_tokens' => $this->tokens],
             ];
         }
@@ -1140,4 +1143,43 @@ test('the student is told how much the bot remembers', function () {
     askCpbn($student, 'Second question')
         ->assertJsonPath('memory.size.messages', 4)
         ->assertJsonPath('memory.size.tokens', fn ($tokens) => $tokens > 0);
+});
+
+test('a plain yes finishes a section only when the bot asked whether they are done', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my career aspirations');
+
+    /* A yes to a suggestion, with the bot wrongly saying done. */
+    $client->askingField = 'vision_statement';
+    $client->fillSection = 'done';
+
+    askCpbn($student, 'yes use this')->assertJsonPath('fill_section', 'aspirations');
+
+    /* The bot asks whether they are done. */
+    $client->askingField = 'finish';
+    $client->fillSection = 'aspirations';
+
+    askCpbn($student, 'I want to own a gaming company');
+
+    $client->fillSection = 'done';
+
+    askCpbn($student, "yes that's good")
+        ->assertJsonPath('fill_section', null)
+        ->assertJsonPath('memory.after.0.type', 'end');
+});
+
+test('the bot is told which field its last reply was about', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my career aspirations');
+
+    $client->askingField = 'vision_statement';
+
+    askCpbn($student, 'I want to make games with my friends');
+    askCpbn($student, 'change it into something more formal');
+
+    expect($client->lastContext['fill_session']['last_field'])->toBe('vision_statement');
 });
