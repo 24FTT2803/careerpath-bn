@@ -46,8 +46,22 @@ class CpbnBotService
         ?string $currentPage = null
     ): array {
         $question = trim($message);
-        $context = $this->contextBuilder->build($student, $currentPage);
         $history = $conversation->exists ? $this->recentHistory($conversation) : [];
+
+        /*
+         * The question and the student's last two messages, so a
+         * follow-up such as "take me there" still finds the role
+         * the conversation is about.
+         */
+        $recentText = collect($history)
+            ->where('role', CpbnBotMessage::ROLE_USER)
+            ->pluck('content')
+            ->take(-2)
+            ->push($question)
+            ->values()
+            ->all();
+
+        $context = $this->contextBuilder->build($student, $currentPage, $recentText);
 
         $response = $this->client->ask($context, $history, $question);
 

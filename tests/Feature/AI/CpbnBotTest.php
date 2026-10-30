@@ -4,6 +4,7 @@ use App\Contracts\CpbnBotClient;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfJobRole;
 use App\Models\BiicfJobRoleTier;
+use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\CareerAdviserConversation;
 use App\Models\CpbnBotConversation;
@@ -13,6 +14,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\Business\FeatureUsageService;
 use App\Services\CpbnBot\CpbnBotContextBuilder;
+use Database\Seeders\BiicfReferenceDataSeeder;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
 
@@ -671,4 +673,60 @@ test('the panel checks for unsaved changes before taking the student away', func
         ->assertOk()
         ->assertSee('function hasUnsavedChanges()', false)
         ->assertSee('leaveWithConfirmation(place, target)', false);
+});
+
+test('a role the student names comes with its competencies per tier', function () {
+    $student = cpbnStudent();
+    $this->seed(BiicfReferenceDataSeeder::class);
+    [, $role, $competency] = cpbnExplorerFixture();
+
+    $tier = $role->tiers()->where('label', 'Expert/Management')->sole();
+    $level = BiicfProficiencyLevel::where('scale', 'technical')->where('level_number', 4)->sole();
+
+    $tier->competencies()->attach($competency->id, [
+        'job_role_id' => $role->id,
+        'proficiency_level_id' => $level->id,
+        'is_core' => true,
+    ]);
+
+    $client = cpbnClient();
+
+    askCpbn($student, 'What are all the IT Technician competencies?')->assertOk();
+
+    $focus = $client->lastContext['focus'];
+
+    expect($focus['job_roles'])->toHaveCount(1)
+        ->and($focus['job_roles'][0]['title'])->toBe('IT Technician')
+        ->and($focus['job_roles'][0]['tiers'][1]['label'])->toBe('Expert/Management')
+        ->and($focus['job_roles'][0]['tiers'][1]['competencies'][0])->toBe([
+            'name' => 'Business Agility',
+            'type' => 'technical',
+            'required_level' => $level->name.' (4 of 5)',
+        ]);
+});
+
+test('a follow-up still finds the role named earlier', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+    $client = cpbnClient();
+
+    askCpbn($student, 'What does an IT Technician need?');
+    askCpbn($student, 'Can you take me there?');
+
+    expect(collect($client->lastContext['focus']['job_roles'])->pluck('title')->all())->toBe(['IT Technician']);
+});
+
+test('a competency the student names comes with its meaning', function () {
+    $student = cpbnStudent();
+    [, , $competency] = cpbnExplorerFixture();
+    $competency->update(['short_definition' => 'Responding quickly to change.']);
+
+    $client = cpbnClient();
+
+    askCpbn($student, 'what is business agility?')->assertOk();
+
+    expect($client->lastContext['focus']['competencies'][0])->toMatchArray([
+        'name' => 'Business Agility',
+        'in_short' => 'Responding quickly to change.',
+    ])->and($client->lastContext['focus']['job_roles'])->toBe([]);
 });

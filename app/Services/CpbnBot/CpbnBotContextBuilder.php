@@ -4,6 +4,7 @@ namespace App\Services\CpbnBot;
 
 use App\Models\BiicfBdqfLevel;
 use App\Models\BiicfCompetency;
+use App\Models\BiicfJobRole;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\BiicfSubSector;
 use App\Models\SectionGuide;
@@ -13,6 +14,7 @@ use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
 use App\Support\CpbnBotKnowledge;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Str;
 
 /**
  * Everything the CPBN Bot is given to answer a question.
@@ -32,7 +34,10 @@ class CpbnBotContextBuilder
     /**
      * @return array<string, mixed>
      */
-    public function build(User $student, ?string $currentPage = null): array
+    /**
+     * @param  array<int, string>  $recentText  The question and the student's last few messages, to find what they are asking about.
+     */
+    public function build(User $student, ?string $currentPage = null, array $recentText = []): array
     {
         $pages = CpbnBotKnowledge::pages();
 
@@ -65,6 +70,7 @@ class CpbnBotContextBuilder
                 ->all(),
             'rules' => CpbnBotKnowledge::rules(),
             'biicf' => $this->framework(),
+            'focus' => $this->focus($recentText),
             'student' => $this->progress($student),
         ];
     }
@@ -212,5 +218,110 @@ class CpbnBotContextBuilder
     private function day(?CarbonInterface $date): ?string
     {
         return $date?->copy()->timezone(config('app.business_timezone'))->format('j M Y');
+    }
+
+    /**
+     * Full detail of any role or competency the student has named.
+     *
+     * Every role's competencies would be far too much to send with
+     * each question, so only what was asked about comes in full:
+     * a role's tiers, with what each needs and at which level, and
+     * its entry requirements; a competency's meaning.
+     *
+     * @param  array<int, string>  $recentText
+     * @return array<string, mixed>
+     */
+    private function focus(array $recentText): array
+    {
+        $text = Str::lower(implode(' ', $recentText));
+
+        if (trim($text) === '') {
+            return ['job_roles' => [], 'competencies' => []];
+        }
+
+        $roles = BiicfJobRole::query()
+            ->get(['id', 'title', 'alternative_titles'])
+            ->filter(fn (BiicfJobRole $role) => collect([$role->title])
+                ->merge($role->alternative_titles ?? [])
+                ->filter(fn ($name) => is_string($name) && mb_strlen($name) >= 4)
+                ->contains(fn (string $name) => $this->mentions($text, $name)))
+            ->sortByDesc(fn (BiicfJobRole $role) => mb_strlen($role->title))
+            ->take(2)
+            ->pluck('id');
+
+        $competencies = BiicfCompetency::query()
+            ->get(['id', 'name'])
+            ->filter(fn (BiicfCompetency $competency) => mb_strlen($competency->name) >= 5
+                && $this->mentions($text, $competency->name))
+            ->take(3)
+            ->pluck('id');
+
+        $levels = BiicfProficiencyLevel::all()->keyBy('id');
+
+        return [
+            'job_roles' => BiicfJobRole::query()
+                ->whereKey($roles->all())
+                ->with([
+                    'subSector:id,name',
+                    'tiers.entryRequirements',
+                    'tiers.competencies:id,name,type',
+                    'trainings:id,name',
+                    'progressesTo:id,title',
+                    'progressesFrom:id,title',
+                ])
+                ->get()
+                ->map(fn (BiicfJobRole $role) => [
+                    'title' => $role->title,
+                    'sub_sector' => $role->subSector?->name,
+                    'tiers' => $role->tiers->map(fn ($tier) => [
+                        'label' => $tier->label,
+                        'entry_requirements' => $tier->entryRequirements
+                            ->sortBy('alternative_number')
+                            ->pluck('raw_text')
+                            ->filter()
+                            ->values()
+                            ->all(),
+                        'competencies' => $tier->competencies
+                            ->sortBy(['type', 'name'])
+                            ->map(function ($competency) use ($levels) {
+                                $level = $levels->get($competency->pivot->proficiency_level_id);
+
+                                return [
+                                    'name' => $competency->name,
+                                    'type' => $competency->type,
+                                    'required_level' => $level
+                                        ? $level->name.' ('.$level->level_number.' of '.$level->scaleLength().')'
+                                        : null,
+                                ];
+                            })
+                            ->values()
+                            ->all(),
+                    ])->values()->all(),
+                    'trainings' => $role->trainings->pluck('name')->values()->all(),
+                    'leads_to' => $role->progressesTo->pluck('title')->values()->all(),
+                    'comes_from' => $role->progressesFrom->pluck('title')->values()->all(),
+                ])
+                ->values()
+                ->all(),
+            'competencies' => BiicfCompetency::query()
+                ->whereKey($competencies->all())
+                ->get(['id', 'name', 'type', 'description', 'short_definition'])
+                ->map(fn (BiicfCompetency $competency) => array_filter([
+                    'name' => $competency->name,
+                    'type' => $competency->type,
+                    'in_short' => $competency->short_definition,
+                    'description' => $competency->description,
+                ]))
+                ->values()
+                ->all(),
+        ];
+    }
+
+    /**
+     * Whether the text names this, as whole words.
+     */
+    private function mentions(string $text, string $name): bool
+    {
+        return (bool) preg_match('/\b'.preg_quote(Str::lower($name), '/').'s?\b/u', $text);
     }
 }
