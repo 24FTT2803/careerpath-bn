@@ -1054,10 +1054,11 @@ test('the form as it stands reaches the bot', function () {
         'form_state' => ['dream_career' => 'Game Developer', 'vision_statement' => '', 'long_term_goals' => ''],
     ])->assertOk();
 
+    /* Empty fields arrive as null, as every request's do. */
     expect($client->lastContext['fill_session']['form_now'])->toBe([
         'dream_career' => 'Game Developer',
-        'vision_statement' => '',
-        'long_term_goals' => '',
+        'vision_statement' => null,
+        'long_term_goals' => null,
     ]);
 });
 
@@ -1085,4 +1086,58 @@ test('qualifications can be filled, never the Politeknik programme', function ()
         'start_date' => '2022-01-10',
         'end_date' => '2023-11-30',
     ]);
+});
+
+test('the bot cannot end a section the student has not confirmed', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my career aspirations');
+
+    $client->fillSection = 'done';
+
+    askCpbn($student, 'I want to have my own game company')
+        ->assertJsonPath('fill_section', 'aspirations')
+        ->assertJsonPath('memory.after', []);
+});
+
+test('pressing the confirmation ends the section', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my career aspirations');
+
+    $client->fillSection = 'done';
+
+    askCpbn($student, 'Yes', ['confirm_finish' => true])
+        ->assertJsonPath('fill_section', null)
+        ->assertJsonPath('memory.after.0.type', 'end');
+});
+
+test('memory can be cleared when no section is being filled', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    $id = askCpbn($student, 'What is BDQF?')->json('conversation_id');
+
+    $this->actingAs($student)
+        ->postJson(route('student.cpbn-bot.conversation.finish-section', $id))
+        ->assertOk()
+        ->assertJsonPath('memory.after.0.type', 'clear')
+        ->assertJsonPath('memory.size.messages', 0);
+
+    askCpbn($student, 'And competencies?');
+
+    expect($client->lastHistory)->toBe([]);
+});
+
+test('the student is told how much the bot remembers', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: []);
+
+    askCpbn($student, 'First question');
+
+    askCpbn($student, 'Second question')
+        ->assertJsonPath('memory.size.messages', 4)
+        ->assertJsonPath('memory.size.tokens', fn ($tokens) => $tokens > 0);
 });

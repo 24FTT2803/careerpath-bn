@@ -74,14 +74,23 @@
         </div>
     </header>
 
-    {{-- Which section is being filled in, and so what the bot remembers. --}}
+    {{--
+        What the bot remembers, and what that costs. Every question
+        sends all of it again, so a long memory makes each question
+        use more of the allowance; the strip says so and offers the
+        way to end it.
+    --}}
     <div class="cpbn-bot-session" id="cpbnBotSession" hidden>
         <i class="fas fa-brain"></i>
         <span>
-            Filling in <strong id="cpbnBotSessionTitle"></strong>.
-            The bot remembers this part until you finish it.
+            <span id="cpbnBotSessionText"></span>
+            <small id="cpbnBotSessionCost"></small>
         </span>
-        <button type="button" id="cpbnBotSessionFinish">Finish</button>
+        <button
+            type="button"
+            id="cpbnBotSessionFinish"
+            title="The bot forgets this part, so later questions cost less. What is on the form stays."
+        >Finish</button>
     </div>
 
     <div class="cpbn-bot-list" id="cpbnBotList" hidden>
@@ -346,8 +355,27 @@
         display: none;
     }
 
-    .cpbn-bot-session span {
+    .cpbn-bot-session > span {
         flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .cpbn-bot-session small {
+        font-size: 11px;
+        opacity: 0.85;
+    }
+
+    .cpbn-bot-session.is-long {
+        border-bottom-color: #fca5a5;
+        background: #fef2f2;
+        color: #991b1b;
+    }
+
+    .cpbn-bot-session.is-long button {
+        border-color: #f87171;
+        color: #991b1b;
     }
 
     .cpbn-bot-session button {
@@ -690,7 +718,16 @@
     const RING_LENGTH = 97.4;
 
     const sessionStrip = document.getElementById('cpbnBotSession');
-    const sessionTitle = document.getElementById('cpbnBotSessionTitle');
+    const sessionText = document.getElementById('cpbnBotSessionText');
+    const sessionCost = document.getElementById('cpbnBotSessionCost');
+    const sessionFinish = document.getElementById('cpbnBotSessionFinish');
+
+    /* Past these, the strip warns that memory is making questions dear. */
+    const LONG_MEMORY_MESSAGES = 20;
+    const LONG_MEMORY_TOKENS = 3000;
+
+    /* Below this, general chat is too short to be worth a strip. */
+    const SHOW_MEMORY_FROM = 6;
 
     /* Section titles, for the markers and the strip. */
     const SECTION_TITLES = @json(collect(\App\Services\CpbnBot\CpbnBotProfileFill::sections())->map(fn ($section) => $section['title']));
@@ -770,9 +807,11 @@
         const line = document.createElement('div');
         line.className = 'cpbn-bot-divider is-' + marker.type;
         line.innerHTML = '<span></span>';
-        line.querySelector('span').textContent = marker.type === 'start'
-            ? 'Filling in ' + marker.title + ' · the bot remembers from here'
-            : marker.title + ' finished · the bot has let go of this part';
+        line.querySelector('span').textContent = {
+            start: 'Filling in ' + marker.title + ' · the bot remembers from here',
+            end: marker.title + ' finished · the bot has let go of this part',
+            clear: 'Memory cleared · the bot starts afresh from here',
+        }[marker.type] || '';
 
         return line;
     }
@@ -786,12 +825,37 @@
         messages.scrollTop = messages.scrollHeight;
     }
 
-    function showSession(section) {
+    function showSession(section, size) {
         state.fillSection = section || null;
         remember({ fillSection: state.fillSection });
 
-        sessionStrip.hidden = ! state.fillSection;
-        sessionTitle.textContent = SECTION_TITLES[state.fillSection] || '';
+        if (size) {
+            state.memorySize = size;
+        }
+
+        const memory = state.memorySize || { messages: 0, tokens: 0 };
+        const long = memory.messages >= LONG_MEMORY_MESSAGES || memory.tokens >= LONG_MEMORY_TOKENS;
+
+        sessionStrip.hidden = ! state.fillSection && memory.messages < SHOW_MEMORY_FROM;
+        sessionStrip.classList.toggle('is-long', long);
+
+        sessionText.innerHTML = '';
+
+        if (state.fillSection) {
+            sessionText.append('Filling in ');
+            const title = document.createElement('strong');
+            title.textContent = SECTION_TITLES[state.fillSection] || '';
+            sessionText.append(title, '. Remembered until you finish it.');
+            sessionFinish.textContent = 'Finish';
+        } else {
+            sessionText.append('The bot remembers this conversation.');
+            sessionFinish.textContent = 'Clear memory';
+        }
+
+        sessionCost.textContent = memory.messages
+            ? memory.messages + ' messages, about ' + formatNumber(memory.tokens) + ' tokens added to every question.'
+                + (long ? ' That is a lot: finish this part when you are done so questions cost less.' : '')
+            : '';
     }
 
     function saveSessionMessages() {
@@ -900,7 +964,7 @@
             state.available = data.available;
             state.historyEnabled = data.history_enabled;
             historyButton.hidden = ! data.history_enabled;
-            showSession(data.fill_section);
+            showSession(data.fill_section, data.memory_size);
             renderTokens(data.tokens);
 
             if (! data.available) {
@@ -1236,7 +1300,7 @@
             state.newConversation = false;
             remember({ conversationId: state.conversationId, newConversation: false });
             renderConversation(data.conversation);
-            showSession(data.conversation.fill_section);
+            showSession(data.conversation.fill_section, data.conversation.memory_size);
         } catch (error) {
             addMessage('assistant', 'That conversation could not be opened.', 'is-error');
         }
@@ -1263,7 +1327,8 @@
             button.textContent = option;
             button.addEventListener('click', () => {
                 if (! choices.multiple) {
-                    ask(option);
+                    /* The bot's own "Yes, that's everything" ends the section. */
+                    ask(option, { confirmFinish: /that['’]?s everything/i.test(option) });
 
                     return;
                 }
@@ -1585,7 +1650,7 @@
         }
     }
 
-    async function ask(question) {
+    async function ask(question, options = {}) {
         if (state.busy || ! state.available) {
             return;
         }
@@ -1621,6 +1686,10 @@
             body.new_conversation = true;
         } else if (state.conversationId) {
             body.conversation_id = state.conversationId;
+        }
+
+        if (options.confirmFinish) {
+            body.confirm_finish = true;
         }
 
         /* A section chosen from a '?' guide starts a session here. */
@@ -1684,7 +1753,7 @@
             (data.memory?.after || []).forEach((marker) => addMarker(marker));
 
             /* The section in progress, so its form is sent next time. */
-            showSession(data.fill_section);
+            showSession(data.fill_section, data.memory?.size);
 
             if (data.fill) {
                 if (document.getElementById('profile-form')) {
@@ -1710,6 +1779,7 @@
     toggle.addEventListener('click', () => (panel.hidden ? open() : close()));
     el('cpbnBotClose').addEventListener('click', close);
     el('cpbnBotNew').addEventListener('click', () => {
+        state.memorySize = { messages: 0, tokens: 0 };
         showSession(null);
         startNewConversation();
     });
@@ -1726,6 +1796,7 @@
                 const data = await response.json();
 
                 (data.memory?.after || []).forEach((marker) => addMarker(marker));
+                state.memorySize = data.memory?.size || { messages: 0, tokens: 0 };
             } catch (error) {
                 /* The strip still clears; the next question carries on as normal. */
             }

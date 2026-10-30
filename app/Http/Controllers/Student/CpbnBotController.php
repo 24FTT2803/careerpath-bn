@@ -68,8 +68,9 @@ class CpbnBotController extends Controller
                 ? $this->conversationPayload($conversation, true)
                 : null,
 
-            /* The section being filled in, so the panel can say so. */
+            /* The section being filled in, and how much the bot remembers. */
             'fill_section' => $this->bot->currentConversation($student)->fill_section,
+            'memory_size' => $this->bot->memorySize($this->bot->currentConversation($student)),
         ]);
     }
 
@@ -94,6 +95,9 @@ class CpbnBotController extends Controller
 
             /* A section the student chose to fill, from a '?' guide. */
             'start_section' => ['nullable', 'string', Rule::in(array_keys(CpbnBotProfileFill::sections()))],
+
+            /* Pressed "Yes, that's everything" to finish the section. */
+            'confirm_finish' => ['nullable', 'boolean'],
         ], [
             'message.required' => 'Please type a question for the CPBN Bot.',
             'message.max' => 'Your question may not be longer than 500 characters.',
@@ -141,7 +145,8 @@ class CpbnBotController extends Controller
                 $conversation,
                 $validated['current_page'] ?? null,
                 $this->formState($validated['form_state'] ?? null),
-                $validated['start_section'] ?? null
+                $validated['start_section'] ?? null,
+                (bool) ($validated['confirm_finish'] ?? false)
             );
         } catch (ConnectionException $exception) {
             report($exception);
@@ -231,11 +236,14 @@ class CpbnBotController extends Controller
     {
         $student = $this->student();
 
-        $marker = $this->bot->finishSection(
-            $student->cpbnBotConversations()->findOrFail($conversation)
-        );
+        $found = $student->cpbnBotConversations()->findOrFail($conversation);
 
-        return response()->json(['memory' => ['after' => $marker ? [$marker] : []]]);
+        $marker = $this->bot->endMemory($found);
+
+        return response()->json(['memory' => [
+            'after' => [$marker],
+            'size' => $this->bot->memorySize($found),
+        ]]);
     }
 
     /**
@@ -317,6 +325,7 @@ class CpbnBotController extends Controller
             'id' => $conversation->id,
             'title' => $conversation->title ?: 'Conversation',
             'fill_section' => $conversation->fill_section,
+            'memory_size' => $this->bot->memorySize($conversation),
             'message_count' => $conversation->message_count,
             'last_message_label' => $conversation->last_message_at
                 ?->timezone(config('app.business_timezone'))

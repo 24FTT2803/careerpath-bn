@@ -47,7 +47,8 @@ class CpbnBotService
         CpbnBotConversation $conversation,
         ?string $currentPage = null,
         ?array $formState = null,
-        ?string $startSection = null
+        ?string $startSection = null,
+        bool $confirmedFinished = false
     ): array {
         $question = trim($message);
         $active = $conversation->fill_section;
@@ -103,10 +104,22 @@ class CpbnBotService
             'fill_section' => ['nullable', 'string'],
         ])->validate();
 
+        $declared = (string) ($validated['fill_section'] ?? '');
+
+        /*
+         * A section ends only when the student says it is finished:
+         * by pressing "Yes, that's everything", or saying so. The
+         * bot deciding on its own that it is done, partway through,
+         * is not enough.
+         */
+        if ($declared === 'done' && ! $confirmedFinished && ! $this->saysFinished($question)) {
+            $declared = '';
+        }
+
         $memory = $this->memoryChanges(
             $active,
             $startsNow ? $asked : null,
-            (string) ($validated['fill_section'] ?? '')
+            $declared
         );
 
         $choices = $this->choices($validated['choices'] ?? null);
@@ -172,6 +185,7 @@ class CpbnBotService
             'memory' => [
                 'before' => $memory['before'],
                 'after' => $memory['after'],
+                'size' => $this->memorySize($conversation),
             ],
             'tokens' => $tokens,
             'conversation' => $conversation,
@@ -328,20 +342,19 @@ class CpbnBotService
     }
 
     /**
-     * Finish the section being filled in without asking the bot, and
-     * let go of what was said about it.
+     * End the part of the conversation the bot remembers, without
+     * asking it: finishing the section being filled in, or simply
+     * clearing its memory when no section is.
      *
      * @return array{type: string, section: string, title: string}|null
      */
-    public function finishSection(CpbnBotConversation $conversation): ?array
+    public function endMemory(CpbnBotConversation $conversation): ?array
     {
         $section = $conversation->fill_section;
 
-        if ($section === null || ! isset(CpbnBotProfileFill::sections()[$section])) {
-            return null;
-        }
-
-        $marker = $this->marker('end', $section);
+        $marker = $section !== null && isset(CpbnBotProfileFill::sections()[$section])
+            ? $this->marker('end', $section)
+            : ['type' => 'clear', 'section' => '', 'title' => ''];
 
         DB::transaction(function () use ($conversation, $marker): void {
             $divider = $this->recordMarker($conversation, $marker);
@@ -353,6 +366,38 @@ class CpbnBotService
         });
 
         return $marker;
+    }
+
+    /**
+     * How much the bot is carrying, so the student can see it: every
+     * question sends all of it again, so a long memory makes every
+     * question cost more of their allowance.
+     *
+     * @return array{messages: int, tokens: int}
+     */
+    public function memorySize(CpbnBotConversation $conversation): array
+    {
+        if (! $conversation->exists) {
+            return ['messages' => 0, 'tokens' => 0];
+        }
+
+        $remembered = collect($this->history($conversation));
+
+        return [
+            'messages' => $remembered->count(),
+            'tokens' => (int) ceil($remembered->sum(fn (array $message) => strlen($message['content'])) / 4),
+        ];
+    }
+
+    /**
+     * Whether the student is saying the section is finished.
+     */
+    private function saysFinished(string $question): bool
+    {
+        return (bool) preg_match(
+            "/\\b(that['’]?s (it|everything|all)|i['’]?m done|all done|finish(ed)?|we['’]?re done|looks good|nothing else)\\b/iu",
+            $question
+        );
     }
 
     /**
