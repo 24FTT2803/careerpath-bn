@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\ChatTransport;
 use App\Contracts\CpbnBotClient;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfJobRole;
@@ -14,6 +15,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\Business\FeatureUsageService;
 use App\Services\CpbnBot\CpbnBotContextBuilder;
+use App\Services\CpbnBot\GroqCpbnBotClient;
 use Database\Seeders\BiicfReferenceDataSeeder;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
@@ -740,7 +742,7 @@ test('a competency the student names comes with its meaning', function () {
 
 test('the bot knows what it can fill in and what is there already', function () {
     $student = cpbnStudent();
-    $student->interests()->create(['interest_name' => 'Teamwork']);
+    $student->interests()->create(['interest_name' => 'Teamwork', 'category' => 'career']);
     $client = cpbnClient();
 
     askCpbn($student, 'Help me fill in my interests')->assertOk();
@@ -861,4 +863,68 @@ test('the mock bot offers interests and fills the ones picked', function () {
         ->assertOk()
         ->assertJsonPath('fill.interests.0.name', 'Programming')
         ->assertJsonPath('fill.interests.1.name', 'Teamwork');
+});
+
+/**
+ * A provider that fails the first request, as Groq does when held
+ * to the full schema, then answers. Records what was asked for.
+ */
+function flakyTransport(array $reply, bool $failFirst = true): ChatTransport
+{
+    return new class($reply, $failFirst) implements ChatTransport
+    {
+        public array $formats = [];
+
+        public function __construct(private array $reply, private bool $failFirst) {}
+
+        public function chat(array $messages, ?array $responseFormat = null, ?float $temperature = null): array
+        {
+            $this->formats[] = $responseFormat['type'] ?? null;
+
+            if ($this->failFirst && count($this->formats) === 1) {
+                throw new UnexpectedValueException('OpenRouter returned no message content (finish_reason: error).');
+            }
+
+            return ['content' => json_encode($this->reply), 'usage' => ['total_tokens' => 900]];
+        }
+    };
+}
+
+test('the bot asks again for plain JSON when the provider stops mid-reply', function () {
+    $transport = flakyTransport([
+        'schema_version' => '1.0',
+        'status' => 'completed',
+        'message' => 'Which of these interest you?',
+        'links' => [],
+        'navigate' => ['page' => ''],
+        'choice_options' => ['Programming', 'Teamwork'],
+        'choices_multiple' => true,
+        'fill_json' => '',
+    ]);
+
+    $reply = (new GroqCpbnBotClient($transport))->ask([], [], 'Help me fill in my interests');
+
+    expect($transport->formats)->toBe(['json_schema', 'json_object'])
+        ->and($reply['choices'])->toBe(['options' => ['Programming', 'Teamwork'], 'multiple' => true])
+        ->and($reply['fill'])->toBeNull()
+        ->and($reply['usage']['total_tokens'])->toBe(900);
+});
+
+test('the form fill arrives as JSON in a string and is read back', function () {
+    $transport = flakyTransport([
+        'schema_version' => '1.0',
+        'status' => 'completed',
+        'message' => 'Done.',
+        'links' => [],
+        'navigate' => ['page' => ''],
+        'choice_options' => [],
+        'choices_multiple' => false,
+        'fill_json' => '{"interests":["Programming"]}',
+    ], failFirst: false);
+
+    $reply = (new GroqCpbnBotClient($transport))->ask([], [], 'Yes, fill them in');
+
+    expect($transport->formats)->toBe(['json_schema'])
+        ->and($reply['fill'])->toBe(['interests' => ['Programming']])
+        ->and($reply['choices']['options'])->toBe([]);
 });

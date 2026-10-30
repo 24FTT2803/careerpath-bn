@@ -35,14 +35,34 @@ class GroqCpbnBotClient implements CpbnBotClient
 
         $messages[] = ['role' => 'user', 'content' => trim($message)];
 
-        $result = $this->transport->chat(
-            $messages,
-            $this->responseFormat(),
-            0.3
-        );
-
+        /*
+         * The provider sometimes stops mid-reply when held to the
+         * full schema ("finish_reason: error"). Asked once more for
+         * plain JSON, which the instructions describe field by field,
+         * it answers; anything still wrong is dropped further on.
+         */
         try {
-            $decoded = json_decode($result['content'], true, 512, JSON_THROW_ON_ERROR);
+            $result = $this->transport->chat($messages, $this->responseFormat(), 0.3);
+            $decoded = $this->decode($result['content'] ?? null);
+        } catch (UnexpectedValueException $exception) {
+            report($exception);
+
+            $result = $this->transport->chat($messages, ['type' => 'json_object'], 0.3);
+            $decoded = $this->decode($result['content'] ?? null);
+        }
+
+        $decoded['usage'] = is_array($result['usage'] ?? null) ? $result['usage'] : null;
+
+        return $this->unflatten($decoded);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decode(mixed $content): array
+    {
+        try {
+            $decoded = json_decode((string) $content, true, 512, JSON_THROW_ON_ERROR);
         } catch (JsonException $exception) {
             throw new UnexpectedValueException('Groq returned invalid CPBN Bot JSON.', previous: $exception);
         }
@@ -51,7 +71,31 @@ class GroqCpbnBotClient implements CpbnBotClient
             throw new UnexpectedValueException('Groq returned an invalid CPBN Bot response.');
         }
 
-        $decoded['usage'] = is_array($result['usage'] ?? null) ? $result['usage'] : null;
+        return $decoded;
+    }
+
+    /**
+     * Choices and the form fill travel flat, because a deeply
+     * nested schema is what made the provider stop mid-reply. They
+     * are put back into the shape the rest of the bot reads here.
+     *
+     * @param  array<string, mixed>  $decoded
+     * @return array<string, mixed>
+     */
+    private function unflatten(array $decoded): array
+    {
+        $decoded['choices'] = [
+            'options' => is_array($decoded['choice_options'] ?? null) ? $decoded['choice_options'] : [],
+            'multiple' => (bool) ($decoded['choices_multiple'] ?? false),
+        ];
+
+        $fill = $decoded['fill_json'] ?? null;
+
+        $decoded['fill'] = is_string($fill) && trim($fill) !== ''
+            ? json_decode($fill, true)
+            : (is_array($fill) ? $fill : null);
+
+        unset($decoded['choice_options'], $decoded['choices_multiple'], $decoded['fill_json']);
 
         return $decoded;
     }
@@ -113,14 +157,18 @@ class GroqCpbnBotClient implements CpbnBotClient
             'When the student asks for help filling in part of their profile, help them fill it in from the chat. You can fill: '.implode(', ', array_column(CpbnBotProfileFill::sections(), 'title')).'. Qualifications and file uploads (profile picture, certificate files) are done on the form itself; say so if asked.',
             'profile_form shows what the student already has. Do not ask again for what is there; build on it.',
             'Ask one thing at a time, and offer choices wherever there are set answers, so the student can click rather than type:',
-            '- Skills & Competencies: ask what kind of work or role they do or want, then offer up to ten competency names from biicf.competencies that fit (choices, multiple true). For each one chosen, offer that competency\'s scale as choices, for example "Level 3 — Apply", one competency at a time, explaining the levels briefly from biicf.proficiency_scales.',
-            '- Interests & Preferences: offer profile_form.interest_options as choices (multiple true); they may also type their own.',
+            '- Skills & Competencies: ask what kind of work or role they do or want, then offer up to ten competency names from biicf.competencies that fit (choice_options, choices_multiple true). For each one chosen, offer that competency\'s scale in choice_options, for example "Level 3 — Apply", one competency at a time, explaining the levels briefly from biicf.proficiency_scales.',
+            '- Interests & Preferences: offer profile_form.interest_options in choice_options (choices_multiple true); they may also type their own.',
             '- Career Aspirations: dream career, vision statement and long-term goals are their own words; ask for each, and you may offer to tidy their wording.',
             '- Personal Information: phone, date of birth (ask for it as a date) and nationality.',
             '- Projects & Experience and Certifications: ask for the title first, then the other details one by one; any can be skipped.',
-            'Before filling, show a short summary of exactly what will go into the form and offer the choices "Yes, fill them in" and "Change something". Fill only after they say yes.',
-            'To fill, put the values in fill and leave every part you are not filling empty. Competency names must be exactly as in biicf.competencies, and level is the level number as a string. Dates are YYYY-MM-DD. You only add or change; never suggest removing anything. Then tell them the form has been filled in and they must check it and press Save Changes at the bottom of Edit Profile; nothing is saved until they do.',
-            'Leave choices.options empty when there is nothing to pick from, and leave fill empty until the student has confirmed.',
+            'Before filling, show a short summary of exactly what will go into the form and offer "Yes, fill them in" and "Change something" in choice_options. Fill only after they say yes.',
+            'To fill, put a JSON object in fill_json with only the parts you are filling, using these keys: {"competencies":[{"name":"...","level":"3"}],"interests":["..."],"aspirations":{"dream_career":"...","vision_statement":"...","long_term_goals":"..."},"personal":{"phone":"...","date_of_birth":"YYYY-MM-DD","nationality":"..."},"projects":[{"title":"...","role":"...","project_url":"...","description":"...","technologies_used":"...","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","achievements":"..."}],"certifications":[{"certification_name":"...","issuing_organization":"...","issue_date":"YYYY-MM-DD"}]}. Competency names must be exactly as in biicf.competencies, and level is the level number as a string. You only add or change; never suggest removing anything. Then tell them the form has been filled in and they must check it and press Save Changes at the bottom of Edit Profile; nothing is saved until they do.',
+            'Leave choice_options empty when there is nothing to pick from, and fill_json an empty string until the student has confirmed.',
+            '',
+            'REPLY FORMAT',
+            '',
+            'Reply with one JSON object with exactly these keys: schema_version "1.0"; status "completed"; message (your reply); links (array of link objects as described); navigate (one link object, page "" when not navigating); choice_options (array of strings); choices_multiple (true or false); fill_json (string). A link object has page, explorer_section, sub_sector, job_role, tier, competency and proficiency_level, all strings, "" when unused.',
             '',
             'MANNER',
             '',
@@ -157,59 +205,20 @@ class GroqCpbnBotClient implements CpbnBotClient
                         'navigate' => $this->placeSchema(array_merge([''], CpbnBotKnowledge::pageKeys())),
 
                         /* Answers the student can click instead of typing. */
-                        'choices' => [
-                            'type' => 'object',
-                            'properties' => [
-                                'options' => ['type' => 'array', 'items' => ['type' => 'string']],
-                                'multiple' => ['type' => 'boolean'],
-                            ],
-                            'required' => ['options', 'multiple'],
-                            'additionalProperties' => false,
-                        ],
+                        'choice_options' => ['type' => 'array', 'items' => ['type' => 'string']],
+                        'choices_multiple' => ['type' => 'boolean'],
 
-                        /* What to write into the Edit Profile form. */
-                        'fill' => $this->fillSchema(),
+                        /*
+                         * What to write into the Edit Profile form, as
+                         * JSON in a string. Kept flat: a nested schema
+                         * here made the provider stop mid-reply.
+                         */
+                        'fill_json' => ['type' => 'string'],
                     ],
-                    'required' => ['schema_version', 'status', 'message', 'links', 'navigate', 'choices', 'fill'],
+                    'required' => ['schema_version', 'status', 'message', 'links', 'navigate', 'choice_options', 'choices_multiple', 'fill_json'],
                     'additionalProperties' => false,
                 ],
             ],
-        ];
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function fillSchema(): array
-    {
-        $object = fn (array $fields) => [
-            'type' => 'object',
-            'properties' => collect($fields)->mapWithKeys(fn ($field) => [$field => ['type' => 'string']])->all(),
-            'required' => $fields,
-            'additionalProperties' => false,
-        ];
-
-        return [
-            'type' => 'object',
-            'properties' => [
-                'competencies' => [
-                    'type' => 'array',
-                    'items' => $object(['name', 'level']),
-                ],
-                'interests' => ['type' => 'array', 'items' => ['type' => 'string']],
-                'aspirations' => $object(['dream_career', 'vision_statement', 'long_term_goals']),
-                'personal' => $object(['phone', 'date_of_birth', 'nationality']),
-                'projects' => [
-                    'type' => 'array',
-                    'items' => $object(['title', 'role', 'project_url', 'description', 'technologies_used', 'start_date', 'end_date', 'achievements']),
-                ],
-                'certifications' => [
-                    'type' => 'array',
-                    'items' => $object(['certification_name', 'issuing_organization', 'issue_date']),
-                ],
-            ],
-            'required' => ['competencies', 'interests', 'aspirations', 'personal', 'projects', 'certifications'],
-            'additionalProperties' => false,
         ];
     }
 
