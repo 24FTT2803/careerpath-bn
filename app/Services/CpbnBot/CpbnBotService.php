@@ -13,14 +13,17 @@ use Illuminate\Support\Str;
 class CpbnBotService
 {
     /**
-     * How many earlier messages are replayed, so a follow-up such
-     * as "and then?" is understood.
-     *
-     * Enough for a whole profile-filling conversation: at ten, the
-     * project's title had dropped out of view by the time the bot
-     * came to fill it in, and it asked for it again.
+     * Earlier messages replayed outside a profile-filling session:
+     * enough for a follow-up such as "and then?", and no more, so
+     * an ordinary question stays cheap.
      */
-    public const HISTORY_LIMIT = 30;
+    public const HISTORY_LIMIT = 6;
+
+    /**
+     * The most messages a single filling session replays, as a
+     * safeguard. A session normally ends long before this.
+     */
+    public const SESSION_LIMIT = 80;
 
     /**
      * Roughly what the bot's instructions cost, added to an
@@ -48,10 +51,11 @@ class CpbnBotService
         User $student,
         string $message,
         CpbnBotConversation $conversation,
-        ?string $currentPage = null
+        ?string $currentPage = null,
+        ?array $formState = null
     ): array {
         $question = trim($message);
-        $history = $conversation->exists ? $this->recentHistory($conversation) : [];
+        $history = $conversation->exists ? $this->history($conversation) : [];
 
         /*
          * The question and the student's last two messages, so a
@@ -68,6 +72,16 @@ class CpbnBotService
 
         $context = $this->contextBuilder->build($student, $currentPage, $recentText);
 
+        /*
+         * The section being filled in, and what the form on the page
+         * holds for it right now, read from the page rather than
+         * pieced together from the chat.
+         */
+        $context['fill_session'] = [
+            'section' => $conversation->fill_section,
+            'form_now' => $formState,
+        ];
+
         $response = $this->client->ask($context, $history, $question);
 
         $validated = Validator::make($response, [
@@ -77,7 +91,19 @@ class CpbnBotService
             'navigate' => ['nullable'],
             'choices' => ['nullable'],
             'fill' => ['nullable'],
+            'fill_section' => ['nullable', 'string'],
         ])->validate();
+
+        $fillSection = $validated['fill_section'] ?? '';
+
+        /*
+         * Asked outright to fill a section ("Help me fill in my
+         * Projects & Experience", as the '?' guides send), the
+         * session starts even if the bot did not say so.
+         */
+        if ($fillSection === '' && ! $conversation->fill_section) {
+            $fillSection = $this->sectionAskedFor($question) ?? '';
+        }
 
         $choices = $this->choices($validated['choices'] ?? null);
         $fill = $this->profileFill->normalise($validated['fill'] ?? null);
@@ -130,7 +156,7 @@ class CpbnBotService
 
         $tokens = $this->tokensUsed($response, $context, $history, $question, $validated['message']);
 
-        $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens);
+        $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens, $fillSection);
 
         return [
             'message' => $validated['message'],
@@ -138,6 +164,7 @@ class CpbnBotService
             'navigate' => $navigate,
             'choices' => $choices,
             'fill' => $fill,
+            'fill_section' => $conversation->fill_section,
             'tokens' => $tokens,
             'conversation' => $conversation,
         ];
@@ -208,15 +235,27 @@ class CpbnBotService
     }
 
     /**
+     * What the bot is shown of the conversation so far.
+     *
+     * While a profile section is being filled in, everything said
+     * since that began, so no answer is forgotten however long it
+     * takes. Otherwise only the last few messages.
+     *
      * @return array<int, array{role: string, content: string}>
      */
-    private function recentHistory(CpbnBotConversation $conversation): array
+    private function history(CpbnBotConversation $conversation): array
     {
-        return $conversation->messages()
-            ->reorder()
-            ->latest('id')
-            ->limit(self::HISTORY_LIMIT)
-            ->get()
+        $query = $conversation->messages()->reorder();
+
+        if ($conversation->fill_section && $conversation->fill_started_message_id) {
+            $query->where('id', '>=', $conversation->fill_started_message_id)
+                ->orderBy('id')
+                ->limit(self::SESSION_LIMIT);
+        } else {
+            $query->latest('id')->limit(self::HISTORY_LIMIT);
+        }
+
+        return $query->get()
             ->sortBy('id')
             ->map(fn (CpbnBotMessage $message) => [
                 'role' => $message->role,
@@ -258,9 +297,10 @@ class CpbnBotService
         string $question,
         string $answer,
         array $links,
-        int $tokens
+        int $tokens,
+        string $fillSection = ''
     ): void {
-        DB::transaction(function () use ($conversation, $question, $answer, $links, $tokens): void {
+        DB::transaction(function () use ($conversation, $question, $answer, $links, $tokens, $fillSection): void {
             if (! $conversation->exists) {
                 /* Titled after its first question, so a list of past
                  * conversations says what each was about. */
@@ -271,7 +311,7 @@ class CpbnBotService
                 ])->save();
             }
 
-            $conversation->messages()->create([
+            $asked = $conversation->messages()->create([
                 'role' => CpbnBotMessage::ROLE_USER,
                 'content' => $question,
             ]);
@@ -286,7 +326,63 @@ class CpbnBotService
             $conversation->forceFill([
                 'message_count' => $conversation->message_count + 2,
                 'last_message_at' => now(),
-            ])->save();
+            ] + $this->sessionAfter($conversation, $fillSection, $asked->id))->save();
         });
+    }
+
+    /**
+     * The profile section a request to fill one names, if any.
+     */
+    private function sectionAskedFor(string $question): ?string
+    {
+        $text = Str::lower($question);
+
+        if (! Str::contains($text, ['fill', 'complete', 'update', 'edit'])) {
+            return null;
+        }
+
+        $words = [
+            'personal' => ['personal', 'phone', 'date of birth', 'nationality'],
+            'qualifications' => ['qualification'],
+            'skills' => ['skill', 'competenc'],
+            'interests' => ['interest'],
+            'projects' => ['project', 'experience'],
+            'certifications' => ['certification', 'certificate'],
+            'aspirations' => ['aspiration', 'dream career', 'vision', 'long term goal', 'long-term goal'],
+        ];
+
+        foreach ($words as $section => $names) {
+            if (Str::contains($text, $names)) {
+                return $section;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Where the filling session stands after this reply.
+     *
+     * A section the bot says it is working on starts a session at
+     * this question, unless that section's session is already
+     * running. "done", which the bot says only once the student has
+     * confirmed the section is finished, ends it. Anything else,
+     * such as a question about something unrelated partway through,
+     * leaves it as it was.
+     *
+     * @return array<string, mixed>
+     */
+    private function sessionAfter(CpbnBotConversation $conversation, string $fillSection, int $questionId): array
+    {
+        if ($fillSection === 'done') {
+            return ['fill_section' => null, 'fill_started_message_id' => null];
+        }
+
+        if (array_key_exists($fillSection, CpbnBotProfileFill::sections())
+            && $fillSection !== $conversation->fill_section) {
+            return ['fill_section' => $fillSection, 'fill_started_message_id' => $questionId];
+        }
+
+        return [];
     }
 }

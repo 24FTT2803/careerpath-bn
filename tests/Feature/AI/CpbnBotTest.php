@@ -15,6 +15,7 @@ use App\Models\Plan;
 use App\Models\User;
 use App\Services\Business\FeatureUsageService;
 use App\Services\CpbnBot\CpbnBotContextBuilder;
+use App\Services\CpbnBot\CpbnBotService;
 use App\Services\CpbnBot\GroqCpbnBotClient;
 use Database\Seeders\BiicfReferenceDataSeeder;
 use Database\Seeders\FeatureDefinitionSeeder;
@@ -38,8 +39,9 @@ function cpbnClient(
     string|array|null $navigate = null,
     ?array $choices = null,
     ?array $fill = null,
+    string $fillSection = '',
 ): CpbnBotClient {
-    $client = new class($tokens, $links, $navigate, $choices, $fill) implements CpbnBotClient
+    $client = new class($tokens, $links, $navigate, $choices, $fill, $fillSection) implements CpbnBotClient
     {
         public int $calls = 0;
 
@@ -47,7 +49,7 @@ function cpbnClient(
 
         public array $lastHistory = [];
 
-        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, private ?array $fill) {}
+        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, private ?array $fill, public string $fillSection) {}
 
         public function ask(array $context, array $history, string $message): array
         {
@@ -63,6 +65,7 @@ function cpbnClient(
                 'navigate' => $this->navigate,
                 'choices' => $this->choices,
                 'fill' => $this->fill,
+                'fill_section' => $this->fillSection,
                 'usage' => $this->tokens === null ? null : ['total_tokens' => $this->tokens],
             ];
         }
@@ -848,7 +851,8 @@ test('the profile guides offer the bot\'s help where it can fill the section', f
     expect($html)
         ->toContain('data-guide-bot="Help me fill in my Skills &amp; Competencies"')
         ->toContain('data-guide-bot="Help me fill in my Career Aspirations"')
-        ->not->toContain('data-guide-bot="Help me fill in my Qualifications"')
+        ->toContain('data-guide-bot="Help me fill in my Qualifications"')
+        ->toContain('data-guide-section="qualifications"')
         ->toContain('Help me fill in my profile');
 });
 
@@ -929,16 +933,94 @@ test('the form fill arrives as JSON in a string and is read back', function () {
         ->and($reply['choices']['options'])->toBe([]);
 });
 
-test('a long profile-filling conversation still remembers how it began', function () {
+test('a filling session remembers everything since it began', function () {
     $student = cpbnStudent();
     $client = cpbnClient(links: []);
 
-    askCpbn($student, 'We made a game called Dining in Dungeons');
+    askCpbn($student, 'Help me fill in my Projects & Experience');
 
     foreach (range(1, 8) as $turn) {
         askCpbn($student, 'More detail, turn '.$turn);
     }
 
     expect(collect($client->lastHistory)->pluck('content'))
-        ->toContain('We made a game called Dining in Dungeons');
+        ->toContain('Help me fill in my Projects & Experience')
+        ->and(collect($client->lastHistory))->toHaveCount(16)
+        ->and($client->lastContext['fill_session']['section'])->toBe('projects');
+});
+
+test('outside a session only the last few messages are sent', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    foreach (range(1, 6) as $turn) {
+        askCpbn($student, 'Question '.$turn);
+    }
+
+    expect($client->lastHistory)->toHaveCount(CpbnBotService::HISTORY_LIMIT)
+        ->and(collect($client->lastHistory)->pluck('content'))->not->toContain('Question 1');
+});
+
+test('a session ends when the student confirms the section is done', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'aspirations');
+
+    $id = askCpbn($student, 'Help me with my career aspirations')
+        ->assertJsonPath('fill_section', 'aspirations')
+        ->json('conversation_id');
+
+    $client->fillSection = 'done';
+
+    askCpbn($student, "Yes, that's everything")->assertJsonPath('fill_section', null);
+
+    expect(CpbnBotConversation::find($id)->fill_section)->toBeNull();
+
+    $client->fillSection = '';
+
+    askCpbn($student, 'What is BDQF?');
+
+    expect($client->lastContext['fill_session']['section'])->toBeNull()
+        ->and($client->lastHistory)->toHaveCount(4);
+});
+
+test('the form as it stands reaches the bot', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'aspirations');
+
+    askCpbn($student, 'Edit my career aspirations', [
+        'current_page' => 'profile_edit',
+        'form_state' => ['dream_career' => 'Game Developer', 'vision_statement' => '', 'long_term_goals' => ''],
+    ])->assertOk();
+
+    expect($client->lastContext['fill_session']['form_now'])->toBe([
+        'dream_career' => 'Game Developer',
+        'vision_statement' => '',
+        'long_term_goals' => '',
+    ]);
+});
+
+test('qualifications can be filled, never the Politeknik programme', function () {
+    $student = cpbnStudent();
+
+    cpbnClient(links: [], fill: ['qualifications' => [[
+        'programme_name' => 'GCE A Level (Mathematics, Biology, Chemistry)',
+        'institution_name' => 'Maktab Duli',
+        'level' => 'A Level',
+        'bdqf_level' => '99',
+        'field_of_study' => 'Science',
+        'start_date' => '2022-01-10',
+        'end_date' => '2023-11-30',
+        'is_current' => false,
+    ]]]);
+
+    $fill = askCpbn($student, 'Yes', ['current_page' => 'profile_edit'])->assertOk()->json('fill.qualifications.0');
+
+    expect($fill)->toBe([
+        'institution_name' => 'Maktab Duli',
+        'programme_name' => 'GCE A Level (Mathematics, Biology, Chemistry)',
+        'level' => 'A Level',
+        'field_of_study' => 'Science',
+        'start_date' => '2022-01-10',
+        'end_date' => '2023-11-30',
+    ]);
 });

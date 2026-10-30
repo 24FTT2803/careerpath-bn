@@ -3,6 +3,7 @@
 namespace App\Services\CpbnBot;
 
 use App\Http\Controllers\Student\ProfileController;
+use App\Models\BiicfBdqfLevel;
 use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\User;
@@ -35,6 +36,7 @@ class CpbnBotProfileFill
     {
         return [
             'personal' => ['title' => 'Personal Information', 'anchor' => 'ep-personal'],
+            'qualifications' => ['title' => 'Qualifications', 'anchor' => 'ep-qualifications'],
             'skills' => ['title' => 'Skills & Competencies', 'anchor' => 'ep-skills'],
             'interests' => ['title' => 'Interests & Preferences', 'anchor' => 'ep-interests'],
             'projects' => ['title' => 'Projects & Experience', 'anchor' => 'ep-projects'],
@@ -50,6 +52,7 @@ class CpbnBotProfileFill
     {
         return [
             'profile.personal' => 'personal',
+            'profile.qualifications' => 'qualifications',
             'profile.skills' => 'skills',
             'profile.interests' => 'interests',
             'profile.projects' => 'projects',
@@ -83,6 +86,16 @@ class CpbnBotProfileFill
                     'name' => $competency->skill_name,
                     'level' => $competency->proficiency_level,
                 ])
+                ->values()
+                ->all(),
+            'qualifications' => $student->academicRecords()
+                ->get(['programme_name', 'level', 'bdqf_level', 'is_programme_record'])
+                ->map(fn ($record) => array_filter([
+                    'programme' => $record->programme_name,
+                    'award' => $record->level,
+                    'bdqf_level' => $record->bdqf_level,
+                    'is_their_politeknik_programme' => (bool) $record->is_programme_record,
+                ], fn ($value) => $value !== null && $value !== ''))
                 ->values()
                 ->all(),
             'interests' => $student->interests()->pluck('interest_name')->values()->all(),
@@ -132,6 +145,7 @@ class CpbnBotProfileFill
                 'issuing_organization' => 150,
                 'issue_date' => 10,
             ]),
+            'qualifications' => $this->qualifications($fill['qualifications'] ?? []),
         ]);
 
         return $normalised === [] ? null : $normalised;
@@ -286,6 +300,56 @@ class CpbnBotProfileFill
                 return $row;
             })
             ->filter(fn (array $row) => filled($row[$required] ?? null))
+            ->take(3)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Other qualifications, each named by its programme. The
+     * student's own Politeknik programme is never one of these: it
+     * is filled in for them and is not the bot's to change.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function qualifications(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+
+        $levels = BiicfBdqfLevel::query()->pluck('level')->map(fn ($level) => (int) $level)->all();
+
+        return collect($items)
+            ->filter(fn ($item) => is_array($item))
+            ->map(function (array $item) use ($levels) {
+                $row = $this->rows([$item], 'programme_name', [
+                    'institution_name' => 150,
+                    'programme_name' => 150,
+                    'level' => 100,
+                    'field_of_study' => 150,
+                    'start_date' => 10,
+                    'end_date' => 10,
+                ])[0] ?? null;
+
+                if ($row === null) {
+                    return null;
+                }
+
+                $bdqf = (int) ($item['bdqf_level'] ?? 0);
+
+                if (in_array($bdqf, $levels, true)) {
+                    $row['bdqf_level'] = (string) $bdqf;
+                }
+
+                if (filter_var($item['is_current'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                    $row['is_current'] = true;
+                    unset($row['end_date']);
+                }
+
+                return $row;
+            })
+            ->filter()
             ->take(3)
             ->values()
             ->all();

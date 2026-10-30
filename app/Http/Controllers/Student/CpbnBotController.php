@@ -84,6 +84,9 @@ class CpbnBotController extends Controller
             'conversation_id' => ['nullable', 'integer'],
             'new_conversation' => ['nullable', 'boolean'],
             'current_page' => ['nullable', 'string', Rule::in(CpbnBotKnowledge::pageKeys())],
+
+            /* What the Edit Profile form holds for the section being filled. */
+            'form_state' => ['nullable', 'array'],
         ], [
             'message.required' => 'Please type a question for the CPBN Bot.',
             'message.max' => 'Your question may not be longer than 500 characters.',
@@ -129,7 +132,8 @@ class CpbnBotController extends Controller
                 $student,
                 $validated['message'],
                 $conversation,
-                $validated['current_page'] ?? null
+                $validated['current_page'] ?? null,
+                $this->formState($validated['form_state'] ?? null)
             );
         } catch (ConnectionException $exception) {
             report($exception);
@@ -161,6 +165,9 @@ class CpbnBotController extends Controller
             /* Answers to pick from, and what to write into Edit Profile. */
             'choices' => $answer['choices'],
             'fill' => $answer['fill'],
+
+            /* The section being filled in, so the panel sends its form next time. */
+            'fill_section' => $answer['fill_section'],
             'conversation_id' => $answer['conversation']->id,
             'tokens_used' => $answer['tokens'],
             'tokens' => $this->tokenPayload($this->featureUsage->status($student, self::TOKEN_QUOTA)),
@@ -218,6 +225,22 @@ class CpbnBotController extends Controller
         $student->cpbnBotConversations()->findOrFail($conversation)->delete();
 
         return response()->json(['status' => 'deleted']);
+    }
+
+    /**
+     * The form's current values, as the panel read them. Kept only
+     * when small enough to be one section, never a whole page.
+     *
+     * @param  array<string, mixed>|null  $state
+     * @return array<string, mixed>|null
+     */
+    private function formState(?array $state): ?array
+    {
+        if ($state === null || strlen((string) json_encode($state)) > 12000) {
+            return null;
+        }
+
+        return $state;
     }
 
     private function student(): User

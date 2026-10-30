@@ -631,6 +631,7 @@
         historyEnabled: false,
         conversationId: null,
         newConversation: false,
+        fillSection: null,
     };
 
     function remember(patch) {
@@ -1310,7 +1311,11 @@
                 return;
             }
 
-            const key = listId === 'project-list' ? 'title' : 'certification_name';
+            const key = {
+                'project-list': 'title',
+                'certification-list': 'certification_name',
+                'qualification-list': 'programme_name',
+            }[listId];
 
             rows.forEach((row) => {
                 /*
@@ -1332,7 +1337,16 @@
                 }
 
                 Object.entries(row).forEach(([field, value]) => {
-                    set(card?.querySelector('[name$="[' + field + ']"]'), value);
+                    if (field === 'is_current') {
+                        /* Ticked only: never unticked. */
+                        if (value === true) {
+                            tick(card?.querySelector('input[type="checkbox"][name$="[is_current]"]'));
+                        }
+
+                        return;
+                    }
+
+                    set(card?.querySelector('[name$="[' + field + ']"]:not([type="hidden"])'), value);
                 });
 
                 if (card) {
@@ -1343,6 +1357,7 @@
             done.push(label);
         };
 
+        addRows(fill.qualifications, 'qualification-list', 'add-qualification', 'Qualifications');
         addRows(fill.projects, 'project-list', 'add-project', 'Projects & Experience');
         addRows(fill.certifications, 'certification-list', 'add-certification', 'Certifications');
 
@@ -1365,6 +1380,88 @@
                 '<i class="fas fa-pen"></i> Updated on the form: ' + escapeHtml(done.join(', ')),
                 'is-filled-note'
             );
+        }
+    }
+
+    /*
+     * Reads one section of the Edit Profile form as it stands, typed
+     * changes included, so the bot works from what is on the page
+     * rather than from what was said in the chat.
+     */
+    function readSection(section) {
+        const form = document.getElementById('profile-form');
+
+        if (! form) {
+            return null;
+        }
+
+        const value = (name) => form.querySelector('[name="' + name + '"]')?.value || '';
+
+        const cards = (listId, fields) => {
+            const list = document.getElementById(listId);
+
+            return list
+                ? Array.from(list.children)
+                    .filter((card) => card.querySelector('[name$="[' + fields[0] + ']"]'))
+                    .map((card) => {
+                        const item = {};
+
+                        fields.forEach((field) => {
+                            const input = field === 'is_current'
+                                ? card.querySelector('input[type="checkbox"][name$="[is_current]"]')
+                                : card.querySelector('[name$="[' + field + ']"]:not([type="hidden"])');
+
+                            if (input) {
+                                item[field] = input.type === 'checkbox' ? input.checked : input.value;
+                            }
+                        });
+
+                        return item;
+                    })
+                : [];
+        };
+
+        switch (section) {
+            case 'personal':
+                return {
+                    phone: form.querySelector('#phone')?.value || '',
+                    date_of_birth: value('date_of_birth'),
+                    nationality: value('nationality'),
+                };
+            case 'qualifications':
+                return {
+                    qualifications: cards('qualification-list', ['programme_name', 'institution_name', 'level', 'bdqf_level', 'field_of_study', 'start_date', 'end_date', 'is_current']),
+                };
+            case 'skills':
+                return {
+                    competencies: Array.from(form.querySelectorAll('[data-biicf-competency]'))
+                        .filter((item) => item.querySelector('input[type="checkbox"]')?.checked)
+                        .map((item) => ({
+                            name: item.querySelector('.cpbn-competency-choice span')?.textContent.trim(),
+                            level: item.querySelector('select')?.selectedOptions[0]?.textContent.replace(/\s+/g, ' ').trim() || '',
+                        })),
+                };
+            case 'interests':
+                return {
+                    interests: Array.from(form.querySelectorAll('input[name="interests[]"]:checked')).map((input) => input.value)
+                        .concat(Array.from(form.querySelectorAll('input[name="custom_interests[]"]')).map((input) => input.value)),
+                };
+            case 'projects':
+                return {
+                    projects: cards('project-list', ['title', 'role', 'project_url', 'description', 'technologies_used', 'start_date', 'end_date', 'achievements']),
+                };
+            case 'certifications':
+                return {
+                    certifications: cards('certification-list', ['certification_name', 'issuing_organization', 'issue_date']),
+                };
+            case 'aspirations':
+                return {
+                    dream_career: value('career_goals_text'),
+                    vision_statement: value('vision_statement'),
+                    long_term_goals: value('long_term_goals'),
+                };
+            default:
+                return null;
         }
     }
 
@@ -1404,6 +1501,14 @@
             body.new_conversation = true;
         } else if (state.conversationId) {
             body.conversation_id = state.conversationId;
+        }
+
+        /* What the form holds right now for the section being filled. */
+        const section = state.fillSection || recall().fillSection;
+        const formNow = section ? readSection(section) : null;
+
+        if (formNow) {
+            body.form_state = formNow;
         }
 
         try {
@@ -1446,6 +1551,10 @@
             state.newConversation = false;
             remember({ conversationId: state.conversationId, newConversation: false });
             saveSessionMessages();
+
+            /* The section in progress, so its form is sent next time. */
+            state.fillSection = data.fill_section || null;
+            remember({ fillSection: state.fillSection });
 
             if (data.fill) {
                 if (document.getElementById('profile-form')) {
@@ -1511,9 +1620,14 @@
      * Lets the rest of the page hand the bot a question, as the '?'
      * guides on Edit Profile do with "Help me fill this in".
      */
-    window.cpbnBotAsk = async function (text) {
+    window.cpbnBotAsk = async function (text, section) {
         open();
         await load();
+
+        if (section) {
+            state.fillSection = section;
+        }
+
         ask(text);
     };
 

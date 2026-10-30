@@ -54,7 +54,7 @@
         @endif
 
         {{-- Where the CPBN Bot can fill this section in from a chat. --}}
-        @if(\App\Services\CpbnBot\CpbnBotProfileFill::sectionForGuide($guide))
+        @if($fillSection = \App\Services\CpbnBot\CpbnBotProfileFill::sectionForGuide($guide))
             <div class="cpbn-guide-bot">
                 <img
                     src="{{ asset('images/careerpath-badge.png') }}"
@@ -64,7 +64,11 @@
                     <strong>Want a hand?</strong>
                     <span>The CPBN Bot can ask you a few questions and fill this section in for you to check.</span>
                 </div>
-                <button type="button" data-guide-bot="Help me fill in my {{ $sectionGuide->title }}">
+                <button
+                    type="button"
+                    data-guide-bot="Help me fill in my {{ $sectionGuide->title }}"
+                    data-guide-section="{{ $fillSection }}"
+                >
                     Fill it in with the CPBN Bot
                 </button>
             </div>
@@ -311,8 +315,9 @@
                     if (helper && typeof window.cpbnBotAsk === 'function') {
                         event.preventDefault();
                         const question = helper.dataset.guideBot;
+                        const section = helper.dataset.guideSection;
                         close();
-                        window.cpbnBotAsk(question);
+                        window.cpbnBotAsk(question, section);
 
                         return;
                     }
