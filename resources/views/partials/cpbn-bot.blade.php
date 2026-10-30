@@ -442,6 +442,16 @@
         transition: outline-color 0.4s ease;
     }
 
+    .cpbn-bot-msg.is-filled-note {
+        max-width: none;
+        margin: -4px 0 10px;
+        padding: 0 4px;
+        border: none;
+        background: none;
+        color: var(--text-muted, #6b7280);
+        font-size: 11px;
+    }
+
     .cpbn-bot-msg.is-going {
         display: flex;
         align-items: center;
@@ -686,7 +696,7 @@
 
         const saved = [];
 
-        messages.querySelectorAll('.cpbn-bot-msg:not(.is-error):not(.cpbn-bot-typing):not(.is-going)').forEach((node) => {
+        messages.querySelectorAll('.cpbn-bot-msg:not(.is-error):not(.cpbn-bot-typing):not(.is-going):not(.is-filled-note)').forEach((node) => {
             saved.push({
                 role: node.classList.contains('from-student') ? 'user' : 'assistant',
                 html: node.innerHTML,
@@ -1181,6 +1191,11 @@
                 return false;
             }
 
+            /* Already says this: nothing to change or highlight. */
+            if (field.value === String(value)) {
+                return false;
+            }
+
             field.value = value;
             field.dispatchEvent(new Event('input', { bubbles: true }));
             field.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1295,10 +1310,26 @@
                 return;
             }
 
-            rows.forEach((row) => {
-                button.click();
+            const key = listId === 'project-list' ? 'title' : 'certification_name';
 
-                const card = list.lastElementChild;
+            rows.forEach((row) => {
+                /*
+                 * The bot sends the whole item every turn as it learns
+                 * more, so an item already on the form, matched by its
+                 * title, is updated rather than added again.
+                 */
+                const wanted = String(row[key] || '').trim().toLowerCase();
+
+                let card = Array.from(list.children).find((existing) => {
+                    const field = existing.querySelector('[name$="[' + key + ']"]');
+
+                    return field && wanted !== '' && field.value.trim().toLowerCase() === wanted;
+                });
+
+                if (! card) {
+                    button.click();
+                    card = list.lastElementChild;
+                }
 
                 Object.entries(row).forEach(([field, value]) => {
                     set(card?.querySelector('[name$="[' + field + ']"]'), value);
@@ -1327,11 +1358,12 @@
         const first = changed.find((element) => element && element.offsetParent !== null);
         first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        if (done.length) {
+        /* A quiet note of what changed; the bot reminds them to save. */
+        if (done.length && changed.length) {
             addMessage(
                 'assistant',
-                '<strong>Filled in on the form:</strong> ' + escapeHtml(done.join(', ')) + '. Check it, then press <strong>Save Changes</strong> at the bottom of Edit Profile. Nothing is saved until you do.',
-                'is-going'
+                '<i class="fas fa-pen"></i> Updated on the form: ' + escapeHtml(done.join(', ')),
+                'is-filled-note'
             );
         }
     }

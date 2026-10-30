@@ -928,3 +928,17 @@ test('the form fill arrives as JSON in a string and is read back', function () {
         ->and($reply['fill'])->toBe(['interests' => ['Programming']])
         ->and($reply['choices']['options'])->toBe([]);
 });
+
+test('a long profile-filling conversation still remembers how it began', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'We made a game called Dining in Dungeons');
+
+    foreach (range(1, 8) as $turn) {
+        askCpbn($student, 'More detail, turn '.$turn);
+    }
+
+    expect(collect($client->lastHistory)->pluck('content'))
+        ->toContain('We made a game called Dining in Dungeons');
+});

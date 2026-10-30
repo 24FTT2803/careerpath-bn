@@ -15,8 +15,12 @@ class CpbnBotService
     /**
      * How many earlier messages are replayed, so a follow-up such
      * as "and then?" is understood.
+     *
+     * Enough for a whole profile-filling conversation: at ten, the
+     * project's title had dropped out of view by the time the bot
+     * came to fill it in, and it asked for it again.
      */
-    public const HISTORY_LIMIT = 10;
+    public const HISTORY_LIMIT = 30;
 
     /**
      * Roughly what the bot's instructions cost, added to an
