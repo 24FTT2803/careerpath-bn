@@ -425,14 +425,15 @@ class CpbnBotService
     /**
      * Whether the student is saying the section is finished.
      *
-     * A plain yes ("yes", "yes that's good", "ok") counts only as the
-     * answer to the bot's own "are you done with this section?", which
-     * it marks by asking about the field "finish". Anywhere else a
-     * yes is accepting a suggestion, not finishing.
+     * A plain answer counts only as the reply to the bot's own closing
+     * question, "anything else to add or change?", which it marks by
+     * asking about the field "finish": there "no" or "nothing" means
+     * finished, and so does a yes to being happy with it. Anywhere
+     * else a yes is accepting a suggestion and a no is a correction.
      */
     private function saysFinished(string $question, bool $wasAsked): bool
     {
-        if ($wasAsked && preg_match('/^\\s*(yes|yeah|yep|yup|ya|ok|okay|sure|correct|perfect|great|good|done|all good)\\b/iu', $question)) {
+        if ($wasAsked && preg_match("/^\\s*(yes|yeah|yep|yup|ya|ok|okay|sure|correct|perfect|great|good|done|all good|no|nope|nah|nothing|none|that['’]?s all)\\b/iu", $question)) {
             return true;
         }
 

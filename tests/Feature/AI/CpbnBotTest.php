@@ -1202,3 +1202,35 @@ test('the bot is told plainly when the student is happy and wants to move on', f
     askCpbn($student, 'my long term goal is a game company in Brunei');
     expect($client->lastContext['fill_session']['student_is_moving_on'])->toBeFalse();
 });
+
+test('"no" to the closing question finishes the section, and nowhere else', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'Help me fill in my projects');
+
+    /* "No" as a correction, with the bot wrongly saying done. */
+    $client->askingField = 'project.description';
+    $client->fillSection = 'done';
+
+    askCpbn($student, 'No')->assertJsonPath('fill_section', 'projects');
+
+    /* The closing question: anything else to add or change? */
+    $client->askingField = 'finish';
+    $client->fillSection = 'projects';
+
+    askCpbn($student, 'there was no achievement');
+
+    $client->fillSection = 'done';
+
+    askCpbn($student, 'No')
+        ->assertJsonPath('fill_section', null)
+        ->assertJsonPath('memory.after.0.type', 'end');
+});
+
+test('the panel no longer shows rewording buttons', function () {
+    $this->actingAs(cpbnStudent())
+        ->get(route('student.profile.edit'))
+        ->assertOk()
+        ->assertDontSee('function showPolish', false);
+});

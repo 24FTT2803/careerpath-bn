@@ -520,12 +520,6 @@
         font-weight: 600;
     }
 
-    .cpbn-bot-polish span {
-        width: 100%;
-        font-size: 11px;
-        color: var(--text-muted, #6b7280);
-    }
-
     .cpbn-bot-choices [hidden] {
         display: none;
     }
@@ -1368,56 +1362,6 @@
     }
 
     /*
-     * Buttons to rework the wording the bot just wrote. Each sends a
-     * plain request naming the field and quoting its text, so there
-     * is no doubt which one is meant.
-     */
-    function showPolish(bubble, fill) {
-        const texts = [];
-        const aspirations = fill.aspirations || {};
-
-        [['vision_statement', 'vision statement'], ['long_term_goals', 'long-term goals']].forEach(([key, label]) => {
-            if (aspirations[key]) {
-                texts.push({ label, text: aspirations[key] });
-            }
-        });
-
-        (fill.projects || []).forEach((project) => {
-            [['description', 'description'], ['achievements', 'achievements'], ['role', 'role']].forEach(([key, label]) => {
-                if (project[key]) {
-                    texts.push({ label: label + ' for ' + project.title, text: project[key] });
-                }
-            });
-        });
-
-        const latest = texts[texts.length - 1];
-
-        if (! latest) {
-            return;
-        }
-
-        const box = document.createElement('div');
-        box.className = 'cpbn-bot-choices cpbn-bot-polish';
-
-        const heading = document.createElement('span');
-        heading.textContent = 'Reword the ' + latest.label + ':';
-        box.appendChild(heading);
-
-        [['More formal', 'more formal'], ['Shorter', 'shorter'], ['Say it differently', 'worded differently']].forEach(([label, how]) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.textContent = label;
-            button.addEventListener('click', () => ask(
-                'Rewrite my ' + latest.label + ' to be ' + how + '. It currently says: "' + latest.text + '"'
-            ));
-            box.appendChild(button);
-        });
-
-        bubble.appendChild(box);
-        messages.scrollTop = messages.scrollHeight;
-    }
-
-    /*
      * Writes what the bot collected into the Edit Profile form. It
      * only ticks, chooses and adds: nothing is unticked or removed,
      * and nothing is saved. The student checks the form and presses
@@ -1799,10 +1743,6 @@
 
             if (data.choices && data.choices.options && data.choices.options.length) {
                 showChoices(reply, data.choices);
-            }
-
-            if (data.fill) {
-                showPolish(reply, data.fill);
             }
 
             if (data.conversation_id) {
