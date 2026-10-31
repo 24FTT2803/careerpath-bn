@@ -23,10 +23,6 @@
                 <span class="stat-number">{{ $totalSubsectors }}</span>
                 <span class="stat-label">Sub-Sectors</span>
             </div>
-            <div class="header-stat">
-                <span class="stat-number">{{ $totalHighDemand }}</span>
-                <span class="stat-label">High Demand</span>
-            </div>
         </div>
     </div>
 
@@ -50,16 +46,6 @@
                         @endforeach
                     </select>
                 </div>
-                <div class="filter-field">
-                    <i class="fas fa-chart-line"></i>
-                    <select name="demand" onchange="this.form.submit()">
-                        <option value="">All Demand Levels</option>
-                        <option value="Very High" {{ request('demand') == 'Very High' ? 'selected' : '' }}>Very High</option>
-                        <option value="High" {{ request('demand') == 'High' ? 'selected' : '' }}>High</option>
-                        <option value="Medium" {{ request('demand') == 'Medium' ? 'selected' : '' }}>Medium</option>
-                        <option value="Low" {{ request('demand') == 'Low' ? 'selected' : '' }}>Low</option>
-                    </select>
-                </div>
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-filter"></i> Filter
                 </button>
@@ -77,22 +63,6 @@
                 $technicalSkills = is_array($career->technical_skills) ? $career->technical_skills : json_decode($career->technical_skills ?? '[]', true);
                 $softSkills = is_array($career->soft_skills) ? $career->soft_skills : json_decode($career->soft_skills ?? '[]', true);
                 $totalSkills = count($technicalSkills) + count($softSkills);
-
-                $demandColor = match(strtolower($career->demand_level ?? 'medium')) {
-                    'very high' => 'demand-very-high',
-                    'high' => 'demand-high',
-                    'medium' => 'demand-medium',
-                    'low' => 'demand-low',
-                    default => 'demand-medium',
-                };
-
-                $demandIcon = match(strtolower($career->demand_level ?? 'medium')) {
-                    'very high' => 'fa-rocket',
-                    'high' => 'fa-arrow-up',
-                    'medium' => 'fa-minus',
-                    'low' => 'fa-arrow-down',
-                    default => 'fa-minus',
-                };
             @endphp
 
             <div class="career-card">
@@ -108,12 +78,6 @@
                         </h4>
                         <span class="career-subsector">
                             <i class="fas fa-layer-group"></i> {{ $career->subsector ?? 'Uncategorized' }}
-                        </span>
-                    </div>
-                    <div class="career-demand">
-                        <span class="demand-badge {{ $demandColor }}">
-                            <i class="fas {{ $demandIcon }}"></i>
-                            {{ $career->demand_level ?? 'Medium' }}
                         </span>
                     </div>
                 </div>
@@ -438,41 +402,8 @@
         margin-right: 4px;
     }
 
-    .career-demand {
-        flex-shrink: 0;
-    }
 
-    .demand-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 100px;
-        font-size: 11px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
 
-    .demand-very-high {
-        background: #fbeceb;
-        color: #c65b4e;
-    }
-
-    .demand-high {
-        background: #fbf1de;
-        color: #8a6420;
-    }
-
-    .demand-medium {
-        background: #e8f0fe;
-        color: #2a5a8c;
-    }
-
-    .demand-low {
-        background: #e9f3ee;
-        color: #2d8f5c;
-    }
 
     .career-card-body {
         padding: 16px 20px;
@@ -678,9 +609,6 @@
         }
         .career-card-header {
             flex-wrap: wrap;
-        }
-        .career-demand {
-            width: 100%;
         }
     }
 

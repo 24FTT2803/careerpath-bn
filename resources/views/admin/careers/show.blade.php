@@ -74,20 +74,6 @@
         font-size: 14px;
         margin-top: 2px;
     }
-
-    .career-detail-page .header .demand-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 16px;
-        border-radius: 100px;
-        font-size: 13px;
-        font-weight: 600;
-    }
-    .career-detail-page .demand-high { background: #fbf1de; color: #8a6420; }
-    .career-detail-page .demand-very-high { background: #fbeceb; color: #c65b4e; }
-    .career-detail-page .demand-medium { background: #e8f0fe; color: #2a5a8c; }
-    .career-detail-page .demand-low { background: #e9f3ee; color: #2d8f5c; }
     .career-detail-page .grid-2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -218,26 +204,6 @@
                 <i class="fas fa-layer-group"></i> {{ $career->subsector ?? 'Uncategorized' }}
             </p>
         </div>
-        @php
-            $demandColor = match(strtolower($career->demand_level ?? 'medium')) {
-                'very high' => 'demand-very-high',
-                'high' => 'demand-high',
-                'medium' => 'demand-medium',
-                'low' => 'demand-low',
-                default => 'demand-medium',
-            };
-            $demandIcon = match(strtolower($career->demand_level ?? 'medium')) {
-                'very high' => 'fa-rocket',
-                'high' => 'fa-arrow-up',
-                'medium' => 'fa-minus',
-                'low' => 'fa-arrow-down',
-                default => 'fa-minus',
-            };
-        @endphp
-        <span class="demand-badge {{ $demandColor }}">
-            <i class="fas {{ $demandIcon }}"></i>
-            {{ $career->demand_level ?? 'Medium' }} Demand
-        </span>
     </div>
 
     <div class="grid-2">
@@ -253,10 +219,6 @@
             <div class="info-row">
                 <span class="label">Subsector</span>
                 <span class="value">{{ $career->subsector ?? 'Not specified' }}</span>
-            </div>
-            <div class="info-row">
-                <span class="label">Demand Level</span>
-                <span class="value">{{ $career->demand_level ?? 'Medium' }}</span>
             </div>
             <div style="padding-top: 14px; margin-top: 14px; border-top: 1px solid #e5e7eb;">
                 <span style="color: #6b7280; font-size: 13px; font-weight: 500;">Description</span>

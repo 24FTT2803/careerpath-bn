@@ -258,38 +258,75 @@ class AdvertisementController extends Controller
 
     /**
      * Move an advertisement within its placement.
+     *
+     * The placement is renumbered 1..n on every move, so ties in
+     * sort_order (new advertisements used to all start at 0)
+     * can never leave an advertisement without a neighbour. When
+     * a status filter is active the move is relative to what the
+     * administrator can see.
      */
     public function reorder(
         Request $request,
         Advertisement $advertisement
     ) {
         $direction = $request->string('direction')->toString();
+        $filter = $request->string('status')->toString();
 
-        $neighbour = Advertisement::query()
+        $ordered = Advertisement::query()
             ->where('position', $advertisement->position)
-            ->when(
-                $direction === 'up',
-                fn ($query) => $query
-                    ->where('sort_order', '<', $advertisement->sort_order)
-                    ->orderByDesc('sort_order'),
-                fn ($query) => $query
-                    ->where('sort_order', '>', $advertisement->sort_order)
-                    ->orderBy('sort_order')
-            )
-            ->first();
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->values();
 
-        if ($neighbour !== null) {
-            $theirs = $neighbour->sort_order;
+        $visible = in_array(
+            $filter,
+            ['live', 'scheduled', 'ended', 'paused'],
+            true
+        )
+            ? $ordered
+                ->filter(
+                    fn (Advertisement $candidate) => $candidate->status() === $filter
+                )
+                ->values()
+            : $ordered;
 
-            $neighbour->update([
-                'sort_order' => $advertisement->sort_order,
-            ]);
+        $visibleIndex = $visible->search(
+            fn (Advertisement $candidate) => $candidate->is($advertisement)
+        );
 
-            $advertisement->update(['sort_order' => $theirs]);
+        $neighbour = $visibleIndex === false
+            ? null
+            : $visible->get(
+                $direction === 'up' ? $visibleIndex - 1 : $visibleIndex + 1
+            );
+
+        if ($neighbour !== null && $visibleIndex !== false) {
+            $from = $ordered->search(
+                fn (Advertisement $candidate) => $candidate->is($advertisement)
+            );
+            $to = $ordered->search(
+                fn (Advertisement $candidate) => $candidate->is($neighbour)
+            );
+
+            $reordered = $ordered->all();
+            [$reordered[$from], $reordered[$to]] = [$reordered[$to], $reordered[$from]];
+
+            DB::transaction(function () use ($reordered) {
+                foreach ($reordered as $index => $item) {
+                    if ($item->sort_order !== $index + 1) {
+                        $item->update(['sort_order' => $index + 1]);
+                    }
+                }
+            });
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true]);
         }
 
         return redirect()
-            ->route('admin.business.advertisements.index')
+            ->route('admin.business.advertisements.index', array_filter(['status' => $filter]))
             ->with('success', 'Order updated.');
     }
 
@@ -299,6 +336,10 @@ class AdvertisementController extends Controller
 
         $validated['asset_path'] = $this->storeAsset(
             $request
+        );
+
+        $validated['sort_order'] = $this->nextSortOrder(
+            $validated['position']
         );
 
         Advertisement::create(
@@ -339,6 +380,12 @@ class AdvertisementController extends Controller
             $validated['asset_path'] = $uploaded;
         }
 
+        if (($validated['position'] ?? $advertisement->position) !== $advertisement->position) {
+            $validated['sort_order'] = $this->nextSortOrder(
+                $validated['position']
+            );
+        }
+
         $advertisement->update(
             $this->withScheduleWindow($validated)
         );
@@ -349,6 +396,16 @@ class AdvertisementController extends Controller
                 'success',
                 'Advertisement updated.'
             );
+    }
+
+    /**
+     * The sort_order that places an advertisement last in a placement.
+     */
+    private function nextSortOrder(string $position): int
+    {
+        return ((int) Advertisement::query()
+            ->where('position', $position)
+            ->max('sort_order')) + 1;
     }
 
     public function destroy(Advertisement $advertisement)

@@ -218,30 +218,34 @@ describe('writing what a level means', function () {
 });
 
 describe('the competency in one sentence', function () {
-    test('it is saved and shown in the listing', function () {
+    test('it is no longer offered in the admin screens', function () {
         $competency = technicalCompetency();
+
+        foreach ([
+            route('admin.biicf.competencies'),
+            route('admin.biicf.competencies.create'),
+            route('admin.biicf.competencies.edit', $competency),
+            route('admin.biicf.competencies.show', $competency),
+        ] as $url) {
+            $this->actingAs($this->admin)
+                ->get($url)
+                ->assertOk()
+                ->assertDontSee('In one sentence')
+                ->assertDontSee('not written yet');
+        }
+    });
+
+    test('saving a competency leaves a stored short definition alone', function () {
+        $competency = technicalCompetency();
+        $competency->update(['short_definition' => 'Kept as it was.']);
 
         $this->actingAs($this->admin)
             ->put(route('admin.biicf.competencies.update', $competency), [
                 'name' => $competency->name,
                 'type' => 'technical',
-                'short_definition' => 'Running services on infrastructure someone else owns.',
             ])
             ->assertRedirect();
 
-        $this->actingAs($this->admin)
-            ->get(route('admin.biicf.competencies'))
-            ->assertOk()
-            ->assertSee('Running services on infrastructure someone else owns.');
-    });
-
-    test('a competency without one says so instead of showing half a sentence', function () {
-        technicalCompetency();
-
-        $this->actingAs($this->admin)
-            ->get(route('admin.biicf.competencies'))
-            ->assertOk()
-            ->assertSee('not written yet')
-            ->assertDontSee('The ability to design and operate');
+        expect($competency->refresh()->short_definition)->toBe('Kept as it was.');
     });
 });

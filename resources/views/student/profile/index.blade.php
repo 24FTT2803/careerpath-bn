@@ -202,12 +202,17 @@
         white-space: pre-line;
     }
 
-    .info-row.info-row-long .value.is-clamped {
+    [data-clamp-text].is-clamped {
         display: -webkit-box;
         -webkit-box-orient: vertical;
         -webkit-line-clamp: 3;
         line-clamp: 3;
         overflow: hidden;
+    }
+
+    [data-clamp-text] {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
     }
 
     .read-more-toggle {
@@ -444,6 +449,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        text-decoration: none;
     }
 
     .action-buttons {
@@ -1376,12 +1382,12 @@
                                         @endif
 
                                         @if($project->description)
-                                            <p class="desc">
-                                                {{ Str::limit(
-                                                    $project->description,
-                                                    80
-                                                ) }}
-                                            </p>
+                                            <div>
+                                                <p class="desc" id="project-description-{{ $project->id }}" data-clamp-text>{{ $project->description }}</p>
+                                                <button type="button" class="read-more-toggle" data-clamp-toggle aria-controls="project-description-{{ $project->id }}" aria-expanded="false" hidden>
+                                                    Read more
+                                                </button>
+                                            </div>
                                         @endif
 
                                         @if(
@@ -1451,10 +1457,10 @@
                                             @endif
 
                                             @if($cert->certificate_file_path)
-                                                <span class="cert-badge">
+                                                <a class="cert-badge" href="{{ route('student.certifications.evidence', $cert) }}" target="_blank" rel="noopener" title="{{ $cert->certificate_original_name ?: $cert->certification_name }}">
                                                     <i class="fas fa-paperclip"></i>
-                                                    Evidence uploaded
-                                                </span>
+                                                    View evidence
+                                                </a>
                                             @endif
                                         </div>
                                     </div>
@@ -1484,7 +1490,7 @@
                                         $user->aspirations->career_goals
                                     ) > 0
                                 )
-                                    <div class="info-row">
+                                    <div class="info-row info-row-long">
                                         <span class="label">
                                             Dream Career
                                         </span>
@@ -1502,12 +1508,13 @@
                                             Vision Statement
                                         </span>
 
-                                        <span class="value is-clamped" data-clamp-text>{{ $user->aspirations->vision_statement }}</span>
+                                        <span class="value" id="profile-vision-statement" data-clamp-text>{{ $user->aspirations->vision_statement }}</span>
 
                                         <button
                                             type="button"
                                             class="read-more-toggle"
                                             data-clamp-toggle
+                                            aria-controls="profile-vision-statement"
                                             aria-expanded="false"
                                             hidden
                                         >
@@ -1522,12 +1529,13 @@
                                             Long Term Goals
                                         </span>
 
-                                        <span class="value is-clamped" data-clamp-text>{{ $user->aspirations->long_term_goals }}</span>
+                                        <span class="value" id="profile-long-term-goals" data-clamp-text>{{ $user->aspirations->long_term_goals }}</span>
 
                                         <button
                                             type="button"
                                             class="read-more-toggle"
                                             data-clamp-toggle
+                                            aria-controls="profile-long-term-goals"
                                             aria-expanded="false"
                                             hidden
                                         >
@@ -1650,12 +1658,18 @@
                             return;
                         }
 
-                        const needsToggle = function () {
-                            return text.scrollHeight > text.clientHeight + 1;
+                        text.classList.add('is-clamped');
+
+                        const updateToggle = function () {
+                            if (toggle.getAttribute('aria-expanded') !== 'true') {
+                                toggle.hidden = text.scrollHeight <= text.clientHeight + 1;
+                            }
                         };
 
-                        if (needsToggle()) {
-                            toggle.hidden = false;
+                        updateToggle();
+                        window.addEventListener('resize', updateToggle);
+                        if (document.fonts?.ready) {
+                            document.fonts.ready.then(updateToggle);
                         }
 
                         toggle.addEventListener('click', function () {

@@ -185,3 +185,25 @@ test('recommendation links follow detailed analysis access', function (string $r
         }
     }
 })->with(['none', 'plan', 'maintenance', 'parent']);
+
+test('career analysis showcases the job role programming languages in framework order', function () {
+    $role = $this->recommendation->jobRole;
+    $role->update(['title' => 'Application Developer']);
+    $role->programmingLanguages()->createMany([
+        ['name' => 'Python', 'sort_order' => 2],
+        ['name' => 'JavaScript', 'sort_order' => 1],
+    ]);
+
+    $this->actingAs($this->student)
+        ->get(route('student.recommendations.analysis', $this->recommendation))
+        ->assertOk()
+        ->assertSeeText('Application Developer')
+        ->assertSeeInOrder(['Programming Languages', 'JavaScript', 'Python']);
+});
+
+test('career analysis omits the language section for roles with no languages', function () {
+    $this->actingAs($this->student)
+        ->get(route('student.recommendations.analysis', $this->recommendation))
+        ->assertOk()
+        ->assertDontSeeText('Programming Languages');
+});

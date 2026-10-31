@@ -138,6 +138,7 @@ class CareerRecommendationController extends Controller
                 'jobRole.descriptionPoints',
                 'jobRole.entryRequirement',
                 'jobRole.trainings',
+                'jobRole.programmingLanguages',
             ])
             ->findOrFail($recommendation);
 
@@ -232,6 +233,9 @@ class CareerRecommendationController extends Controller
                     ])
                 ),
 
+                'programming_languages' => $jobRole->programmingLanguages
+                    ->pluck('name')->filter()->values()->all(),
+
                 'recommended_training' => $jobRole->trainings
                     ->map(
                         fn ($training) => $training->name
@@ -252,6 +256,8 @@ class CareerRecommendationController extends Controller
                 'entry_requirements' => $this->normaliseList(
                     $legacyCareer?->entry_requirements
                 ),
+
+                'programming_languages' => [],
 
                 'recommended_training' => $this->normaliseList(
                     $legacyCareer?->recommended_training

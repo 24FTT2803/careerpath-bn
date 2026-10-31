@@ -1898,7 +1898,7 @@ document.addEventListener(
                                     </div>
 
                                     <div class="cpbn-field">
-                                        <label>Field of Study</label>
+                                        ${document.getElementById('field-of-study-help-template')?.innerHTML ?? ''}
                                         <input
                                             type="text"
                                             name="qualifications[${qualificationIndex}][field_of_study]"

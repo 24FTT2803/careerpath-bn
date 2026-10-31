@@ -28,9 +28,6 @@
         <div class="card">
             <div class="card-header">Definition</div>
             <div class="card-body">
-                @if($competency->short_definition)
-                    <p class="in-essence">{{ $competency->short_definition }}</p>
-                @endif
 
                 @if($competency->description)
                     <p class="definition">{{ $competency->description }}</p>
@@ -134,7 +131,6 @@
     .badge { padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
     .badge-blue { background: #eaf0f7; color: #1a3a5c; }
     .badge-green { background: #e9f3ee; color: #2d8f5c; }
-    .in-essence { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #1a3a5c; line-height: 1.6; }
     .definition { margin: 0; font-size: 14px; line-height: 1.7; color: #1a1a2e; }
     .nothing { margin: 0; font-size: 13px; color: #6b7280; font-style: italic; }
     .mini-table { width: 100%; border-collapse: collapse; }

@@ -1472,11 +1472,11 @@
                     </a>
                 @endif
                 @if(file_exists(public_path('images/innovation-lab-logo.png')))
-                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-link">
+                    <a href="https://www.instagram.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-link">
                         <img src="{{ asset('images/innovation-lab-logo.png') }}" alt="Brunei Innovation Lab" class="admin-footer-logo is-stacked">
                     </a>
                 @else
-                    <a href="https://www.facebook.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-fallback">
+                    <a href="https://www.instagram.com/innovationlab.bn/" target="_blank" rel="noopener" class="admin-footer-logo-fallback">
                         <i class="fas fa-lightbulb"></i> Brunei Innovation Lab
                     </a>
                 @endif
