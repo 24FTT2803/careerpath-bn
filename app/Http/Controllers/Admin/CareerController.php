@@ -22,7 +22,7 @@ class CareerController extends Controller
         if ($search = $request->get('search')) {
             $query->where(function ($q) use ($search) {
                 $q->where('job_title', 'like', "%{$search}%")
-                  ->orWhere('subsector', 'like', "%{$search}%");
+                    ->orWhere('subsector', 'like', "%{$search}%");
             });
         }
 
@@ -32,25 +32,12 @@ class CareerController extends Controller
             $query->whereRaw('LOWER(subsector) = ?', [strtolower($subsector)]);
         }
 
-        if ($demand = $request->get('demand')) {
-            // Case-insensitive for the same reason - demand_level display
-            // logic elsewhere in this view already normalises with strtolower().
-            $query->whereRaw('LOWER(demand_level) = ?', [strtolower($demand)]);
-        }
-
         // Stats reflect the current filtered result set, not just the
         // 15 rows on the visible page - cloned before paginate() consumes it.
         $totalSubsectors = (clone $query)
             ->whereNotNull('subsector')
             ->distinct()
             ->count('subsector');
-
-        $totalHighDemand = (clone $query)
-            ->where(function ($q) {
-                $q->where('demand_level', 'like', '%high%')
-                  ->orWhere('demand_level', 'like', '%very%');
-            })
-            ->count();
 
         $careers = $query->orderBy('job_title')
             ->paginate(15)
@@ -67,7 +54,6 @@ class CareerController extends Controller
             'careers',
             'isAdmin',
             'totalSubsectors',
-            'totalHighDemand',
             'allSubsectors'
         ));
     }
