@@ -360,13 +360,13 @@ test('the CPBN Bot button uses the CareerPath badge', function () {
         ->assertSee(route('student.cpbn-bot.ask'), false);
 });
 
-test('the Career Adviser keeps its own page', function () {
+test('the CPBN Bot stays on the Career Adviser page too', function () {
     $student = cpbnStudent();
 
     $this->actingAs($student)
         ->get(route('student.career-adviser'))
         ->assertOk()
-        ->assertDontSee('id="cpbnBotToggle"', false);
+        ->assertSee('id="cpbnBotToggle"', false);
 });
 
 test('the mock bot answers from the page a question is about', function () {
@@ -799,7 +799,7 @@ test('a fill is checked against the framework and the form', function () {
             ['name' => 'Robotics', 'listed' => false],
         ])
         ->and($fill['aspirations'])->toBe(['dream_career' => 'Software Engineer'])
-        ->and($fill['personal'])->toBe(['nationality' => 'Bruneian'])
+        ->and($fill['personal'])->toBe(['nationality' => 'Brunei Darussalam'])
         ->and($fill['projects'])->toBe([[
             'title' => 'Hobbee Apps',
             'role' => 'Developer',
@@ -807,6 +807,55 @@ test('a fill is checked against the framework and the form', function () {
             'start_date' => '2025-01-10',
         ]])
         ->and($fill)->not->toHaveKey('certifications');
+});
+
+test('a competency level given by its name still sets the level', function () {
+    $student = cpbnStudent();
+    $this->seed(BiicfReferenceDataSeeder::class);
+    cpbnExplorerFixture();
+
+    $apply = BiicfProficiencyLevel::where('scale', 'technical')->where('level_number', 3)->sole();
+
+    cpbnClient(links: [], fill: ['competencies' => [
+        ['name' => 'Business Agility', 'level' => $apply->name],
+    ]]);
+
+    askCpbn($student, 'Set it to '.$apply->name, ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill.competencies.0.level_id', $apply->id);
+});
+
+test('a nationality is set to an option the form has, or left alone', function () {
+    $student = cpbnStudent();
+
+    cpbnClient(links: [], fill: ['personal' => ['nationality' => 'Malaysian']]);
+
+    askCpbn($student, 'I am Malaysian', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill.personal.nationality', 'Malaysia');
+
+    cpbnClient(links: [], fill: ['personal' => ['nationality' => 'Atlantean']]);
+
+    expect(askCpbn($student, 'I am Atlantean', ['current_page' => 'profile_edit'])->assertOk()->json('fill'))
+        ->not->toHaveKey('personal');
+});
+
+test('changing a project names the one already there, even by its old name only', function () {
+    $student = cpbnStudent();
+
+    cpbnClient(links: [], fill: ['projects' => [
+        ['match_title' => 'Dining in Dungeons', 'title' => 'Dungeon Diner'],
+        ['match_title' => 'Hobbee Apps', 'role' => 'Lead developer'],
+    ]]);
+
+    $projects = askCpbn($student, 'Change Dining in Dungeons to Dungeon Diner', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->json('fill.projects');
+
+    expect($projects)->toBe([
+        ['match_title' => 'Dining in Dungeons', 'title' => 'Dungeon Diner'],
+        ['match_title' => 'Hobbee Apps', 'role' => 'Lead developer'],
+    ]);
 });
 
 test('nothing is saved by a fill: the form is only filled in', function () {

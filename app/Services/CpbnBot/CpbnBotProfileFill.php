@@ -8,6 +8,7 @@ use App\Models\BiicfCompetency;
 use App\Models\BiicfProficiencyLevel;
 use App\Models\User;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use Throwable;
 
@@ -75,6 +76,10 @@ class CpbnBotProfileFill
         return [
             'fillable_sections' => collect(self::sections())->pluck('title')->values()->all(),
             'interest_options' => ProfileController::PREDEFINED_INTERESTS,
+            'nationality_options' => collect(config('nationalities.regional', []))
+                ->merge(config('nationalities.other', []))
+                ->values()
+                ->all(),
             'personal' => [
                 'phone' => filled($profile?->phone),
                 'date_of_birth' => $profile?->date_of_birth !== null,
@@ -131,6 +136,7 @@ class CpbnBotProfileFill
             ]),
             'personal' => $this->personal($fill['personal'] ?? []),
             'projects' => $this->rows($fill['projects'] ?? [], 'title', [
+                'match_title' => 150,
                 'title' => 150,
                 'role' => 100,
                 'project_url' => 255,
@@ -141,6 +147,7 @@ class CpbnBotProfileFill
                 'achievements' => 500,
             ]),
             'certifications' => $this->rows($fill['certifications'] ?? [], 'certification_name', [
+                'match_name' => 150,
                 'certification_name' => 150,
                 'issuing_organization' => 150,
                 'issue_date' => 10,
@@ -176,10 +183,10 @@ class CpbnBotProfileFill
                     return null;
                 }
 
-                $wanted = (int) ($item['level'] ?? 0);
-
-                $level = ($levels[$competency->scale()] ?? collect())
-                    ->firstWhere('level_number', $wanted);
+                $level = $this->levelOnScale(
+                    $levels[$competency->scale()] ?? collect(),
+                    $item['level'] ?? null
+                );
 
                 return [
                     'id' => $competency->id,
@@ -255,6 +262,22 @@ class CpbnBotProfileFill
 
         $personal = $this->texts($values, ['phone' => 20, 'nationality' => 100]);
 
+        /*
+         * The form lists countries ("Brunei Darussalam"); a student
+         * says "Bruneian" or "Brunei". Matched to the form's own
+         * option, or left out rather than written where it would
+         * not show.
+         */
+        if (isset($personal['nationality'])) {
+            $nationality = $this->nationality($personal['nationality']);
+
+            if ($nationality === null) {
+                unset($personal['nationality']);
+            } else {
+                $personal['nationality'] = $nationality;
+            }
+        }
+
         if (isset($personal['phone']) && ! preg_match('/^\+?[0-9 ()-]{6,20}$/', $personal['phone'])) {
             unset($personal['phone']);
         }
@@ -299,10 +322,71 @@ class CpbnBotProfileFill
 
                 return $row;
             })
-            ->filter(fn (array $row) => filled($row[$required] ?? null))
+            /* A change to an item already there may name it only by what it was called. */
+            ->filter(fn (array $row) => filled($row[$required] ?? null)
+                || collect($row)->keys()->contains(fn (string $key) => str_starts_with($key, 'match_')))
             ->take(3)
             ->values()
             ->all();
+    }
+
+    /**
+     * A level as the bot gave it, which may be a number ("3"), a
+     * label ("Level 3 — Apply") or a name ("Apply"), on the
+     * competency's own scale.
+     *
+     * @param  Collection<int, BiicfProficiencyLevel>  $scale
+     */
+    private function levelOnScale($scale, mixed $given): ?BiicfProficiencyLevel
+    {
+        if (is_int($given) || is_float($given)) {
+            return $scale->firstWhere('level_number', (int) $given);
+        }
+
+        if (! is_string($given) || trim($given) === '') {
+            return null;
+        }
+
+        if (preg_match('/\d+/', $given, $number)) {
+            return $scale->firstWhere('level_number', (int) $number[0]);
+        }
+
+        $name = Str::lower(trim($given));
+
+        return $scale->first(fn (BiicfProficiencyLevel $level) => Str::lower($level->name) === $name
+            || Str::contains($name, Str::lower($level->name)));
+    }
+
+    /**
+     * The form's nationality option a student's wording means.
+     */
+    public function nationality(string $given): ?string
+    {
+        $options = collect(config('nationalities.regional', []))
+            ->merge(config('nationalities.other', []));
+
+        $wanted = Str::lower(trim($given));
+
+        $exact = $options->first(fn (string $option) => Str::lower($option) === $wanted);
+
+        if ($exact) {
+            return $exact;
+        }
+
+        /* "Brunei" for "Brunei Darussalam"; "Bruneian" or "Malaysian" with the ending taken off. */
+        foreach ([$wanted, preg_replace('/(ian|ese|ish|an|i|n)$/', '', $wanted)] as $stem) {
+            if (mb_strlen((string) $stem) < 4) {
+                continue;
+            }
+
+            $matches = $options->filter(fn (string $option) => Str::startsWith(Str::lower($option), $stem));
+
+            if ($matches->count() === 1) {
+                return $matches->first();
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -324,6 +408,7 @@ class CpbnBotProfileFill
             ->filter(fn ($item) => is_array($item))
             ->map(function (array $item) use ($levels) {
                 $row = $this->rows([$item], 'programme_name', [
+                    'match_programme' => 150,
                     'institution_name' => 150,
                     'programme_name' => 150,
                     'level' => 100,

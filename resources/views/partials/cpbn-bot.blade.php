@@ -542,6 +542,10 @@
         font-size: 11px;
     }
 
+    .cpbn-bot-msg.is-missed {
+        color: #b45309;
+    }
+
     .cpbn-bot-msg.is-going {
         display: flex;
         align-items: center;
@@ -1376,6 +1380,10 @@
 
         const changed = [];
         const done = [];
+        const missed = [];
+
+        /* Where to take the student afterwards: the most specific thing changed. */
+        let focusOn = null;
 
         const set = (field, value) => {
             if (! field || value === undefined || value === null || value === '') {
@@ -1411,17 +1419,30 @@
             const level = form.querySelector('select[name="biicf_competencies[' + item.id + '][proficiency_level_id]"]');
 
             if (! box) {
+                missed.push(item.name);
+
                 return;
             }
 
             tick(box);
 
             if (level && item.level_id) {
+                /* The checkbox enables the list; make sure before choosing. */
                 level.disabled = false;
-                set(level, String(item.level_id));
+                level.required = true;
+                level.value = String(item.level_id);
+                level.dispatchEvent(new Event('change', { bubbles: true }));
+
+                if (level.value !== String(item.level_id)) {
+                    missed.push('the level for ' + item.name);
+                }
+            } else if (level) {
+                missed.push('the level for ' + item.name);
             }
 
-            changed.push(box.closest('[data-biicf-competency]') || box);
+            const card = box.closest('[data-biicf-competency]') || box;
+            changed.push(card);
+            focusOn = focusOn || card;
         });
 
         if ((fill.competencies || []).length) {
@@ -1486,6 +1507,9 @@
 
             if (option) {
                 personalDone = set(select, option.value) || personalDone;
+                focusOn = focusOn || select;
+            } else {
+                missed.push('nationality');
             }
         }
 
@@ -1507,19 +1531,37 @@
                 'qualification-list': 'programme_name',
             }[listId];
 
+            /* The item's name as it stood, when the bot is changing it, even renaming it. */
+            const matchKey = {
+                'project-list': 'match_title',
+                'certification-list': 'match_name',
+                'qualification-list': 'match_programme',
+            }[listId];
+
             rows.forEach((row) => {
                 /*
                  * The bot sends the whole item every turn as it learns
                  * more, so an item already on the form, matched by its
                  * title, is updated rather than added again.
                  */
-                const wanted = String(row[key] || '').trim().toLowerCase();
+                const named = (name) => {
+                    const wanted = String(name || '').trim().toLowerCase();
 
-                let card = Array.from(list.children).find((existing) => {
-                    const field = existing.querySelector('[name$="[' + key + ']"]');
+                    return wanted === '' ? null : Array.from(list.children).find((existing) => {
+                        const field = existing.querySelector('[name$="[' + key + ']"]');
 
-                    return field && wanted !== '' && field.value.trim().toLowerCase() === wanted;
-                });
+                        return field && field.value.trim().toLowerCase() === wanted;
+                    });
+                };
+
+                let card = named(row[matchKey]) || named(row[key]);
+
+                if (! card && ! String(row[key] || '').trim()) {
+                    /* A change to something that is not on the form: never a blank new item. */
+                    missed.push(row[matchKey] || label);
+
+                    return;
+                }
 
                 if (! card) {
                     button.click();
@@ -1527,6 +1569,10 @@
                 }
 
                 Object.entries(row).forEach(([field, value]) => {
+                    if (field === matchKey) {
+                        return;
+                    }
+
                     if (field === 'is_current') {
                         /* Ticked only: never unticked. */
                         if (value === true) {
@@ -1541,6 +1587,7 @@
 
                 if (card) {
                     changed.push(card);
+                    focusOn = card;
                 }
             });
 
@@ -1560,8 +1607,28 @@
             setTimeout(() => element.classList.remove('cpbn-bot-filled'), 6000);
         });
 
-        const first = changed.find((element) => element && element.offsetParent !== null);
-        first?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        /*
+         * Take the student to what changed. A competency may sit on a
+         * page of the list that is folded away, so that is opened
+         * first; then the change is brought to the middle of the
+         * screen, where the panel does not cover it.
+         */
+        const target = focusOn || changed.find((element) => element && element.isConnected);
+
+        if (target) {
+            const folded = target.closest('.cpbn-competency-item');
+
+            if (folded && folded.hidden) {
+                const grid = folded.closest('.cpbn-competency-grid');
+                const toggle = grid && document.getElementById(grid.id.replace('-grid', '-toggle'));
+
+                if (toggle && toggle.getAttribute('aria-expanded') === 'false') {
+                    toggle.click();
+                }
+            }
+
+            setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
+        }
 
         /* A quiet note of what changed; the bot reminds them to save. */
         if (done.length && changed.length) {
@@ -1569,6 +1636,15 @@
                 'assistant',
                 '<i class="fas fa-pen"></i> Updated on the form: ' + escapeHtml(done.join(', ')),
                 'is-filled-note'
+            );
+        }
+
+        /* Said plainly when something could not be set, rather than claimed. */
+        if (missed.length) {
+            addMessage(
+                'assistant',
+                '<i class="fas fa-circle-exclamation"></i> Could not set ' + escapeHtml(missed.join(', ')) + ' on the form. Please choose it there yourself.',
+                'is-filled-note is-missed'
             );
         }
     }

@@ -1294,10 +1294,8 @@
     @if(
         Auth::check()
         && Auth::user()->role === 'student'
-        && !request()->routeIs('student.career-adviser')
     )
-        {{-- The CPBN Bot, the website guide. Left off the Career
-             Adviser's page so two chats never share one screen. --}}
+        {{-- The CPBN Bot, the website guide, on every student page. --}}
         @include('partials.cpbn-bot')
     @endif
 
