@@ -174,10 +174,12 @@
                                     <form
                                         method="POST"
                                         action="{{ route('admin.business.advertisements.reorder', $advertisement) }}"
+                                        data-reorder
                                     >
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="direction" value="up">
+                                        <input type="hidden" name="status" value="{{ $filter }}">
 
                                         <button
                                             type="submit"
@@ -189,10 +191,12 @@
                                     <form
                                         method="POST"
                                         action="{{ route('admin.business.advertisements.reorder', $advertisement) }}"
+                                        data-reorder
                                     >
                                         @csrf
                                         @method('PUT')
                                         <input type="hidden" name="direction" value="down">
+                                        <input type="hidden" name="status" value="{{ $filter }}">
 
                                         <button
                                             type="submit"
@@ -301,4 +305,78 @@
         </div>
     @endforeach
 </div>
+
+<script>
+    /*
+     * Reordering happens in place: the row swaps and the arrows
+     * update without the page reloading, so the administrator keeps
+     * their scroll position and can keep nudging an advertisement.
+     * If the request fails the form falls back to a normal submit.
+     */
+    document.addEventListener('submit', async function (event) {
+        const form = event.target.closest('form[data-reorder]');
+
+        if (! form) {
+            return;
+        }
+
+        event.preventDefault();
+
+        const row = form.closest('tr');
+        const body = row.parentElement;
+        const direction = form.querySelector('[name="direction"]').value;
+        const swapWith = direction === 'up'
+            ? row.previousElementSibling
+            : row.nextElementSibling;
+
+        if (! swapWith) {
+            return;
+        }
+
+        const buttons = body.querySelectorAll('form[data-reorder] button');
+        buttons.forEach((button) => { button.disabled = true; });
+
+        try {
+            const response = await fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: new FormData(form),
+                credentials: 'same-origin',
+            });
+
+            if (! response.ok) {
+                throw new Error('Reorder failed');
+            }
+
+            if (direction === 'up') {
+                body.insertBefore(row, swapWith);
+            } else {
+                body.insertBefore(swapWith, row);
+            }
+        } catch (error) {
+            form.submit();
+
+            return;
+        }
+
+        const rows = Array.from(body.children);
+
+        rows.forEach((item, index) => {
+            const up = item.querySelector('input[value="up"]')?.closest('form').querySelector('button');
+            const down = item.querySelector('input[value="down"]')?.closest('form').querySelector('button');
+
+            [[up, index === 0], [down, index === rows.length - 1]].forEach(([button, edge]) => {
+                if (! button) {
+                    return;
+                }
+
+                button.disabled = edge;
+                button.classList.toggle('link-disabled', edge);
+            });
+        });
+    });
+</script>
 @endsection

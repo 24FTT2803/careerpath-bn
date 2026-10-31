@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Advertisement;
-use Carbon\Carbon;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -474,5 +474,84 @@ test(
             ->get(route('admin.business.advertisements.index'))
             ->assertOk()
             ->assertSee('2 Jan 2026');
+    }
+);
+
+function placedAdvertisement(string $title, int $sortOrder): Advertisement
+{
+    return Advertisement::create([
+        'title' => $title,
+        'type' => Advertisement::TYPE_IMAGE,
+        'external_url' => 'https://example.com/'.$title.'.png',
+        'position' => Advertisement::POSITION_ONE,
+        'sort_order' => $sortOrder,
+        'is_active' => true,
+    ]);
+}
+
+test(
+    'advertisements sharing a sort order can still be moved one step at a time',
+    function () {
+        $a = placedAdvertisement('a', 0);
+        $b = placedAdvertisement('b', 0);
+        $c = placedAdvertisement('c', 0);
+        $d = placedAdvertisement('d', 0);
+
+        $this->actingAs(adminUser())
+            ->putJson(
+                route('admin.business.advertisements.reorder', $b),
+                ['direction' => 'down']
+            )
+            ->assertOk()
+            ->assertJson(['ok' => true]);
+
+        $order = Advertisement::query()
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->pluck('title')
+            ->all();
+
+        expect($order)->toBe(['a', 'c', 'b', 'd']);
+
+        $this->actingAs(adminUser())
+            ->putJson(
+                route('admin.business.advertisements.reorder', $c),
+                ['direction' => 'up']
+            )
+            ->assertOk();
+
+        expect(
+            Advertisement::query()
+                ->orderBy('sort_order')
+                ->pluck('title')
+                ->all()
+        )->toBe(['c', 'a', 'b', 'd']);
+    }
+);
+
+test(
+    'a new advertisement goes to the end of its placement',
+    function () {
+        Storage::fake('public');
+
+        placedAdvertisement('existing', 3);
+
+        $this->actingAs(adminUser())
+            ->post(
+                route('admin.business.advertisements.store'),
+                [
+                    'title' => 'Newest',
+                    'type' => Advertisement::TYPE_IMAGE,
+                    'position' => Advertisement::POSITION_ONE,
+                    'external_url' => 'https://example.com/n.png',
+                    'click_url' => 'https://example.com/n',
+                    'alt_text' => 'n',
+                    'is_active' => '1',
+                ]
+            )
+            ->assertRedirect();
+
+        expect(Advertisement::where('title', 'Newest')->first()->sort_order)
+            ->toBe(4);
     }
 );
