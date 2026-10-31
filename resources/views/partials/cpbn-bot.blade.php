@@ -1379,8 +1379,25 @@
         }
 
         const changed = [];
-        const done = [];
         const missed = [];
+
+        /*
+         * What the form really shows afterwards, read back from it.
+         * Only these are reported as done: the bot's own reply was
+         * written before anything reached the form.
+         */
+        const confirmed = [];
+
+        /* Sets a field, then reads it back: true only if it now holds the value. */
+        const put = (field, value) => {
+            if (! field) {
+                return false;
+            }
+
+            set(field, value);
+
+            return field.value === String(value);
+        };
 
         /* Where to take the student afterwards: the most specific thing changed. */
         let focusOn = null;
@@ -1426,6 +1443,8 @@
 
             tick(box);
 
+            let levelSet = ! level;
+
             if (level && item.level_id) {
                 /* The checkbox enables the list; make sure before choosing. */
                 level.disabled = false;
@@ -1433,11 +1452,15 @@
                 level.value = String(item.level_id);
                 level.dispatchEvent(new Event('change', { bubbles: true }));
 
-                if (level.value !== String(item.level_id)) {
-                    missed.push('the level for ' + item.name);
-                }
-            } else if (level) {
+                levelSet = level.value === String(item.level_id);
+            }
+
+            if (! box.checked) {
+                missed.push(item.name);
+            } else if (! levelSet) {
                 missed.push('the level for ' + item.name);
+            } else {
+                confirmed.push(item.name + (item.level ? ' at ' + item.level : ''));
             }
 
             const card = box.closest('[data-biicf-competency]') || box;
@@ -1445,14 +1468,12 @@
             focusOn = focusOn || card;
         });
 
-        if ((fill.competencies || []).length) {
-            done.push('Skills & Competencies');
-        }
-
         (fill.interests || []).forEach((item) => {
             if (item.listed) {
                 const box = Array.from(form.querySelectorAll('input[name="interests[]"]')).find((input) => input.value === item.name);
                 tick(box);
+
+                box && box.checked ? confirmed.push(item.name) : missed.push(item.name);
 
                 return;
             }
@@ -1472,11 +1493,11 @@
             input.value = item.name;
             add.click();
             changed.push(input);
-        });
 
-        if ((fill.interests || []).length) {
-            done.push('Interests & Preferences');
-        }
+            /* Added interests are kept as hidden fields once added. */
+            const added = Array.from(form.querySelectorAll('input')).some((field) => field !== input && field.value === item.name);
+            added ? confirmed.push(item.name) : missed.push(item.name);
+        });
 
         const aspirations = fill.aspirations || {};
         const aspirationFields = {
@@ -1485,17 +1506,36 @@
             long_term_goals: 'long_term_goals',
         };
 
-        if (Object.keys(aspirationFields).some((key) => set(form.querySelector('[name="' + aspirationFields[key] + '"]'), aspirations[key]))) {
-            done.push('Career Aspirations');
-        }
+        const aspirationNames = {
+            dream_career: 'Dream career',
+            vision_statement: 'Vision statement',
+            long_term_goals: 'Long-term goals',
+        };
+
+        Object.keys(aspirationFields).forEach((key) => {
+            if (! aspirations[key]) {
+                return;
+            }
+
+            put(form.querySelector('[name="' + aspirationFields[key] + '"]'), aspirations[key])
+                ? confirmed.push(aspirationNames[key])
+                : missed.push(aspirationNames[key].toLowerCase());
+        });
 
         const personal = fill.personal || {};
-        let personalDone = set(form.querySelector('[name="date_of_birth"]'), personal.date_of_birth);
+
+        if (personal.date_of_birth) {
+            put(form.querySelector('[name="date_of_birth"]'), personal.date_of_birth)
+                ? confirmed.push('Date of birth')
+                : missed.push('date of birth');
+        }
 
         if (personal.phone) {
             const phone = form.querySelector('#phone');
-            personalDone = set(phone, personal.phone) || personalDone;
+            const phoneSet = put(phone, personal.phone);
             phone?.dispatchEvent(new Event('blur'));
+
+            phoneSet ? confirmed.push('Phone') : missed.push('phone');
         }
 
         if (personal.nationality) {
@@ -1505,19 +1545,15 @@
                 ? Array.from(select.options).find((o) => o.value.toLowerCase() === wanted || o.text.trim().toLowerCase() === wanted)
                 : null;
 
-            if (option) {
-                personalDone = set(select, option.value) || personalDone;
+            if (option && put(select, option.value)) {
+                confirmed.push('Nationality: ' + option.text.trim());
                 focusOn = focusOn || select;
             } else {
                 missed.push('nationality');
             }
         }
 
-        if (personalDone) {
-            done.push('Personal Information');
-        }
-
-        const addRows = (rows, listId, buttonId, label) => {
+        const addRows = (rows, listId, buttonId, label, itemName) => {
             const list = document.getElementById(listId);
             const button = document.getElementById(buttonId);
 
@@ -1568,6 +1604,8 @@
                     card = list.lastElementChild;
                 }
 
+                const notSet = [];
+
                 Object.entries(row).forEach(([field, value]) => {
                     if (field === matchKey) {
                         return;
@@ -1576,27 +1614,42 @@
                     if (field === 'is_current') {
                         /* Ticked only: never unticked. */
                         if (value === true) {
-                            tick(card?.querySelector('input[type="checkbox"][name$="[is_current]"]'));
+                            const current = card?.querySelector('input[type="checkbox"][name$="[is_current]"]');
+                            tick(current);
+
+                            if (! current?.checked) {
+                                notSet.push('still studying');
+                            }
                         }
 
                         return;
                     }
 
-                    set(card?.querySelector('[name$="[' + field + ']"]:not([type="hidden"])'), value);
+                    if (! put(card?.querySelector('[name$="[' + field + ']"]:not([type="hidden"])'), value)) {
+                        notSet.push(field.replace(/_/g, ' '));
+                    }
                 });
+
+                const name = card?.querySelector('[name$="[' + key + ']"]')?.value.trim() || row[matchKey] || label;
+
+                if (notSet.length) {
+                    missed.push(notSet.join(', ') + ' for "' + name + '"');
+                }
+
+                if (Object.keys(row).length > notSet.length + (row[matchKey] ? 1 : 0)) {
+                    confirmed.push(itemName + ' "' + name + '"');
+                }
 
                 if (card) {
                     changed.push(card);
                     focusOn = card;
                 }
             });
-
-            done.push(label);
         };
 
-        addRows(fill.qualifications, 'qualification-list', 'add-qualification', 'Qualifications');
-        addRows(fill.projects, 'project-list', 'add-project', 'Projects & Experience');
-        addRows(fill.certifications, 'certification-list', 'add-certification', 'Certifications');
+        addRows(fill.qualifications, 'qualification-list', 'add-qualification', 'Qualifications', 'Qualification');
+        addRows(fill.projects, 'project-list', 'add-project', 'Projects & Experience', 'Project');
+        addRows(fill.certifications, 'certification-list', 'add-certification', 'Certifications', 'Certification');
 
         if (typeof window.setFormChanged === 'function') {
             window.setFormChanged(true);
@@ -1630,11 +1683,11 @@
             setTimeout(() => target.scrollIntoView({ behavior: 'smooth', block: 'center' }), 50);
         }
 
-        /* A quiet note of what changed; the bot reminds them to save. */
-        if (done.length && changed.length) {
+        /* Only what the form now shows is reported as done. */
+        if (confirmed.length) {
             addMessage(
                 'assistant',
-                '<i class="fas fa-pen"></i> Updated on the form: ' + escapeHtml(done.join(', ')),
+                '<i class="fas fa-circle-check"></i> Checked on the form: ' + escapeHtml(confirmed.join('; ')) + '. Press Save Changes to keep it.',
                 'is-filled-note'
             );
         }
@@ -1946,6 +1999,8 @@
         remember({ pendingFill: null });
 
         /* After the form's own scripts have set up its baseline. */
+        /* Kept open, so the check of what changed is seen on arrival. */
+        remember({ open: true });
         window.addEventListener('load', () => setTimeout(() => applyFill(pendingFill), 300));
     }
 

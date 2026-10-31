@@ -139,6 +139,9 @@ class CpbnBotService
         $choices = $this->choices($validated['choices'] ?? null);
         $fill = $this->profileFill->normalise($validated['fill'] ?? null);
 
+        /* Never a change claimed before the form has confirmed it. */
+        $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage);
+
         /*
          * Filling happens on Edit Profile. Asked from anywhere else,
          * the student is taken there and the form is filled on
@@ -208,6 +211,52 @@ class CpbnBotService
             'tokens' => $tokens,
             'conversation' => $conversation,
         ];
+    }
+
+    /**
+     * The bot writes its reply before anything reaches the form, so
+     * it cannot know a change worked. When it sent no change at all,
+     * or none that matched the form, a claim to have made one is
+     * replaced with the truth. When it did send one, the claim is
+     * put in the present ("I'm setting ..."): the form itself then
+     * confirms what really changed, or says what could not be set.
+     *
+     * @param  array<string, mixed>|null  $fill
+     */
+    private function honestAboutChanges(string $message, ?array $fill, string $currentPage): string
+    {
+        $claims = '/\b(?:I[\'’]ve|I have|I)\s+(?:now\s+|also\s+|just\s+)?(updated|set|changed|added|filled(?: in)?|put|ticked|selected|edited|entered|replaced|renamed)\b/iu';
+        $passive = '/\b(?:has|have)\s+been\s+(?:updated|set|changed|added|filled|ticked|selected|edited|saved|replaced|renamed)\b/iu';
+
+        if ($fill === null) {
+            if (preg_match($claims, $message) || preg_match($passive, $message)) {
+                return 'I have not changed anything on the form: I could not work out exactly what to change. '
+                    .'Tell me which item it is and what it should be, for example "set Applications Integration to level 1".';
+            }
+
+            return $message;
+        }
+
+        $present = [
+            'updated' => 'updating', 'set' => 'setting', 'changed' => 'changing', 'added' => 'adding',
+            'filled' => 'filling', 'filled in' => 'filling in', 'put' => 'putting', 'ticked' => 'ticking',
+            'selected' => 'selecting', 'edited' => 'editing', 'entered' => 'entering',
+            'replaced' => 'replacing', 'renamed' => 'renaming',
+        ];
+
+        $message = preg_replace_callback(
+            $claims,
+            fn (array $match) => "I'm ".$present[Str::lower($match[1])],
+            $message
+        ) ?? $message;
+
+        $message = preg_replace($passive, 'is being changed', $message) ?? $message;
+
+        if ($currentPage !== 'profile_edit') {
+            $message = 'Taking you to Edit Profile to make this change. '.$message;
+        }
+
+        return $message;
     }
 
     /**

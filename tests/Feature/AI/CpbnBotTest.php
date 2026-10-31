@@ -50,6 +50,8 @@ function cpbnClient(
 
         public string $askingField = '';
 
+        public string $reply = 'Open Edit Profile and fill in Qualifications.';
+
         public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, private ?array $fill, public string $fillSection) {}
 
         public function ask(array $context, array $history, string $message): array
@@ -61,7 +63,7 @@ function cpbnClient(
             return [
                 'schema_version' => '1.0',
                 'status' => 'completed',
-                'message' => 'Open Edit Profile and fill in Qualifications.',
+                'message' => $this->reply,
                 'links' => $this->links,
                 'navigate' => $this->navigate,
                 'choices' => $this->choices,
@@ -875,6 +877,39 @@ test('a fill asked for on another page takes the student to Edit Profile', funct
         ->assertOk()
         ->assertJsonPath('navigate.key', 'profile_edit')
         ->assertJsonPath('fill.interests.0.name', 'Programming');
+});
+
+test('the bot never claims a change it did not send to the form', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: null);
+    $client->reply = "I've set Applications Integration to level 1, Follow.";
+
+    askCpbn($student, 'Change Applications Integration to Follow', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('fill', null)
+        ->assertJsonPath('navigate', null)
+        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
+});
+
+test('a change sent to the form is described, not claimed, and taken to Edit Profile', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: ['interests' => ['Programming']]);
+    $client->reply = 'I have added Programming. It has been updated.';
+
+    askCpbn($student, 'Add Programming to my interests', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('navigate.key', 'profile_edit')
+        ->assertJsonPath('message', 'Taking you to Edit Profile to make this change. I\'m adding Programming. It is being changed.');
+});
+
+test('a reply that claims nothing is left as it is', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: null);
+    $client->reply = 'Which competency would you like to change?';
+
+    askCpbn($student, 'Change my competency', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('message', 'Which competency would you like to change?');
 });
 
 test('an empty fill fills nothing', function () {
