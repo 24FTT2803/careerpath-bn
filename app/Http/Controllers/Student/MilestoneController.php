@@ -2,16 +2,18 @@
 
 namespace App\Http\Controllers\Student;
 
+use App\Helpers\NotificationHelper;
 use App\Http\Controllers\Controller;
 use App\Models\StudentMilestone;
-use App\Helpers\NotificationHelper;
+use App\Models\User;
+use App\Rules\NoProfanity;
+use App\Services\Lecturer\LecturerScopeResolver;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
 use Symfony\Component\HttpFoundation\StreamedResponse;
-use App\Rules\NoProfanity;
-use App\Models\User;
 
 class MilestoneController extends Controller
 {
@@ -147,6 +149,7 @@ class MilestoneController extends Controller
         );
 
         $milestone->delete();
+
         return redirect()->route('student.milestones')
             ->with('success', 'Milestone deleted.');
     }
@@ -154,35 +157,48 @@ class MilestoneController extends Controller
     /**
      * View the proof file for a milestone (Student)
      */
-    public function viewProof(StudentMilestone $milestone): StreamedResponse|\Illuminate\Http\RedirectResponse
+    public function viewProof(StudentMilestone $milestone): StreamedResponse|RedirectResponse
     {
         $user = Auth::user();
-        
+
         // Check if the user owns this milestone OR is admin/lecturer
-        if ($milestone->user_id !== $user->id && !in_array($user->role, ['admin', 'lecturer'])) {
+        if ($milestone->user_id !== $user->id && ! in_array($user->role, ['admin', 'lecturer'])) {
             abort(403, 'Unauthorized access.');
         }
 
-        if (!$milestone->proof_file_path || !Storage::disk('local')->exists($milestone->proof_file_path)) {
+        if (! $milestone->proof_file_path || ! Storage::disk('local')->exists($milestone->proof_file_path)) {
             abort(404, 'Proof file not found.');
         }
 
         $filePath = $milestone->proof_file_path;
         $fileName = basename($filePath);
 
-        return Storage::disk('local')->download($filePath, $fileName);
+        $disk = Storage::disk('local');
+        $canPreview = in_array($disk->mimeType($filePath), [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+        ], true);
+
+        if (request()->boolean('download') || ! $canPreview) {
+            return $disk->download($filePath, $fileName);
+        }
+
+        return $disk->response($filePath, $fileName, [
+            'X-Content-Type-Options' => 'nosniff',
+        ], 'inline');
     }
 
-        /**
+    /**
      * View proof file for admin or lecturer.
      *
      * Admins see every proof. Lecturers see only proofs
      * belonging to students in the classes they teach.
      */
-    public function viewProofAdmin(int $studentId, int $milestoneId): StreamedResponse|\Illuminate\Http\RedirectResponse
+    public function viewProofAdmin(int $studentId, int $milestoneId): StreamedResponse|RedirectResponse
     {
         $user = Auth::user();
-        
+
         if (! in_array($user->role, ['admin', 'lecturer'])) {
             abort(403, 'Unauthorized access.');
         }
@@ -195,7 +211,7 @@ class MilestoneController extends Controller
          */
         if ($user->role === 'lecturer') {
             $scope = app(
-                \App\Services\Lecturer\LecturerScopeResolver::class
+                LecturerScopeResolver::class
             );
 
             $target = User::find($studentId);
@@ -211,7 +227,7 @@ class MilestoneController extends Controller
         $milestone = StudentMilestone::where('user_id', $studentId)
             ->findOrFail($milestoneId);
 
-        if (!$milestone->proof_file_path || !Storage::disk('local')->exists($milestone->proof_file_path)) {
+        if (! $milestone->proof_file_path || ! Storage::disk('local')->exists($milestone->proof_file_path)) {
             abort(404, 'Proof file not found.');
         }
 

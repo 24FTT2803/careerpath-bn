@@ -725,6 +725,17 @@
             </section>
             @endif
 
+            @if(count($careerDetails['programming_languages']) > 0)
+            <section class="cpbn-section">
+                <h2>Programming Languages</h2>
+                <ul class="cpbn-list">
+                    @foreach($careerDetails['programming_languages'] as $language)
+                        <li>{{ $language }}</li>
+                    @endforeach
+                </ul>
+            </section>
+            @endif
+
             @if($analysisSections['training_suggestions'])
             <section class="cpbn-section">
                 <h2>Recommended Training <x-section-guide guide="analysis.training" /></h2>

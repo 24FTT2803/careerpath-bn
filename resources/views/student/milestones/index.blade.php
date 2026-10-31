@@ -107,6 +107,8 @@
         font-weight: 500;
     }
 
+    .btn-view-proof[hidden] { display: none; }
+
     .btn-view-proof:hover {
         background: #2a5a8c;
         color: #fff;
@@ -653,6 +655,7 @@
                     </label>
                     <span class="file-name" id="add-file-name">No file chosen</span>
                 </div>
+                <a id="add-proof-file-preview" class="btn-view-proof" target="_blank" rel="noopener" hidden>Preview selected file</a>
                 <div class="hint">PDF, JPG, JPEG, PNG, DOC, DOCX · Max 10 MB</div>
                 @error('proof_file')
                     <div class="error-text" style="display:block;color:#c0392b;">{{ $message }}</div>
@@ -763,39 +766,21 @@
                             @endif
                         </span>
                     </div>
+                    <a id="proof-{{ $milestone->id }}-preview" class="btn-view-proof" target="_blank" rel="noopener" hidden>Preview selected file</a>
                     <button type="submit" class="btn btn-success btn-sm" data-confirm-update data-item-name="{{ $milestone->title }}">
                         <i class="fas fa-check"></i> {{ $isPast ? 'Mark Done' : 'Complete' }}
                     </button>
                 </form>
             @else
-                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <span class="done-badge"><i class="fas fa-check-circle"></i> Done</span>
-                    @if($milestone->proof_file_path)
-                        @php
-                            $proofFileName = basename($milestone->proof_file_path);
-                            $extension = strtolower(pathinfo($proofFileName, PATHINFO_EXTENSION));
-                            
-                            $fileIcon = 'fa-file-alt';
-                            if (in_array($extension, ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'svg'])) {
-                                $fileIcon = 'fa-file-image';
-                            } elseif ($extension === 'pdf') {
-                                $fileIcon = 'fa-file-pdf';
-                            } elseif (in_array($extension, ['doc', 'docx'])) {
-                                $fileIcon = 'fa-file-word';
-                            } elseif (in_array($extension, ['xls', 'xlsx'])) {
-                                $fileIcon = 'fa-file-excel';
-                            } elseif (in_array($extension, ['zip', 'rar', '7z'])) {
-                                $fileIcon = 'fa-file-archive';
-                            }
-                            
-                            $displayName = strlen($proofFileName) > 20 ? substr($proofFileName, 0, 18) . '…' : $proofFileName;
-                        @endphp
-                        <a href="{{ route('student.milestones.proof', $milestone) }}" target="_blank" class="btn-view-proof" title="Download {{ $proofFileName }}">
-                            <i class="fas {{ $fileIcon }}"></i>
-                            {{ $displayName }}
-                        </a>
-                    @endif
-                </div>
+                <span class="done-badge"><i class="fas fa-check-circle"></i> Done</span>
+            @endif
+            @if($milestone->proof_file_path)
+                <a href="{{ route('student.milestones.proof', $milestone) }}" target="_blank" rel="noopener" class="btn-view-proof" title="View proof of completion">
+                    <i class="fas fa-eye"></i> View proof
+                </a>
+                <a href="{{ route('student.milestones.proof', ['milestone' => $milestone, 'download' => 1]) }}" class="btn-view-proof" title="Download proof of completion">
+                    <i class="fas fa-download"></i> Download
+                </a>
             @endif
             <form action="{{ route('student.milestones.destroy', $milestone) }}" method="POST" style="display:inline;" data-confirm-delete data-item-name="{{ $milestone->title }}">
                 @csrf
@@ -1004,6 +989,25 @@
             return true;
         };
 
+        const updateProofPreview = (input) => {
+            const link = document.getElementById(input.id + '-preview');
+            if (!link) return;
+            if (link.dataset.objectUrl) URL.revokeObjectURL(link.dataset.objectUrl);
+            link.removeAttribute('href');
+            link.removeAttribute('download');
+            delete link.dataset.objectUrl;
+            const file = input.files?.[0];
+            link.hidden = !file;
+            if (!file) return;
+            const url = URL.createObjectURL(file);
+            link.dataset.objectUrl = url;
+            link.href = url;
+            link.title = file.name;
+            const canPreview = ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type);
+            link.textContent = canPreview ? 'Preview selected file' : 'Download selected file';
+            if (!canPreview) link.download = file.name;
+        };
+
         // File name display for add form
         const addFileInput = document.getElementById('add-proof-file');
         const addFileName = document.getElementById('add-file-name');
@@ -1012,8 +1016,10 @@
                 addFileName.style.color = '';
                 if (rejectIfTooLarge(this, addFileName)) {
                     addProofRejected = true;
+                    updateProofPreview(this);
                     return;
                 }
+                updateProofPreview(this);
                 if (this.files && this.files.length > 0) {
                     addProofRejected = false;
                 }
@@ -1033,8 +1039,10 @@
                 const fileNameSpan = document.getElementById('proof-name-' + this.id.replace('proof-', ''));
                 fileNameSpan.style.color = '';
                 if (rejectIfTooLarge(this, fileNameSpan)) {
+                    updateProofPreview(this);
                     return;
                 }
+                updateProofPreview(this);
                 if (this.files && this.files.length > 0) {
                     fileNameSpan.textContent = this.files[0].name;
                     fileNameSpan.classList.add('has-file');
