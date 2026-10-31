@@ -223,13 +223,25 @@ class CpbnBotService
      *
      * @param  array<string, mixed>|null  $fill
      */
-    private function honestAboutChanges(string $message, ?array $fill, string $currentPage): string
+    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage): string
     {
-        $claims = '/\b(?:I[\'’]ve|I have|I)\s+(?:now\s+|also\s+|just\s+)?(updated|set|changed|added|filled(?: in)?|put|ticked|selected|edited|entered|replaced|renamed)\b/iu';
-        $passive = '/\b(?:has|have)\s+been\s+(?:updated|set|changed|added|filled|ticked|selected|edited|saved|replaced|renamed)\b/iu';
+        $verbs = 'updated|set|changed|added|filled(?: in)?|put|ticked|selected|edited|entered|replaced|renamed|saved';
+
+        /* "I've set ...", "I have updated ..." */
+        $claims = '/\b(?:I[\'’]ve|I have|I)\s+(?:now\s+|also\s+|just\s+)?('.$verbs.')\b/iu';
+
+        /* "... has been updated", "... is now set to ..." */
+        $passive = '/\b(is|are|has|have)\s+(?:now\s+been|been|now)\s+(?:'.$verbs.')\b/iu';
+
+        /* "Updated the achievements ..." at the start of a sentence. */
+        $bare = '/(^|[.!?:]\s+|Got it\s*[–—-]\s*)('.$verbs.')\b/iu';
+
+        $claimsChange = fn (string $text) => preg_match($claims, $text)
+            || preg_match($passive, $text)
+            || preg_match($bare, $text);
 
         if ($fill === null) {
-            if (preg_match($claims, $message) || preg_match($passive, $message)) {
+            if ($claimsChange($message)) {
                 return 'I have not changed anything on the form: I could not work out exactly what to change. '
                     .'Tell me which item it is and what it should be, for example "set Applications Integration to level 1".';
             }
@@ -237,20 +249,26 @@ class CpbnBotService
             return $message;
         }
 
-        $present = [
+        $present = fn (string $verb) => [
             'updated' => 'updating', 'set' => 'setting', 'changed' => 'changing', 'added' => 'adding',
             'filled' => 'filling', 'filled in' => 'filling in', 'put' => 'putting', 'ticked' => 'ticking',
             'selected' => 'selecting', 'edited' => 'editing', 'entered' => 'entering',
-            'replaced' => 'replacing', 'renamed' => 'renaming',
-        ];
+            'replaced' => 'replacing', 'renamed' => 'renaming', 'saved' => 'saving',
+        ][Str::lower($verb)];
+
+        $message = preg_replace_callback($claims, fn (array $match) => "I'm ".$present($match[1]), $message) ?? $message;
 
         $message = preg_replace_callback(
-            $claims,
-            fn (array $match) => "I'm ".$present[Str::lower($match[1])],
+            $passive,
+            fn (array $match) => (in_array(Str::lower($match[1]), ['are', 'have'], true) ? 'are' : 'is').' being changed',
             $message
         ) ?? $message;
 
-        $message = preg_replace($passive, 'is being changed', $message) ?? $message;
+        $message = preg_replace_callback(
+            $bare,
+            fn (array $match) => $match[1].Str::ucfirst($present($match[2])),
+            $message
+        ) ?? $message;
 
         if ($currentPage !== 'profile_edit') {
             $message = 'Taking you to Edit Profile to make this change. '.$message;

@@ -827,7 +827,7 @@ test('a competency level given by its name still sets the level', function () {
         ->assertJsonPath('fill.competencies.0.level_id', $apply->id);
 });
 
-test('a nationality is set to an option the form has, or left alone', function () {
+test('a nationality is set to an option the form has', function () {
     $student = cpbnStudent();
 
     cpbnClient(links: [], fill: ['personal' => ['nationality' => 'Malaysian']]);
@@ -835,6 +835,10 @@ test('a nationality is set to an option the form has, or left alone', function (
     askCpbn($student, 'I am Malaysian', ['current_page' => 'profile_edit'])
         ->assertOk()
         ->assertJsonPath('fill.personal.nationality', 'Malaysia');
+});
+
+test('a nationality the form does not have is left alone', function () {
+    $student = cpbnStudent();
 
     cpbnClient(links: [], fill: ['personal' => ['nationality' => 'Atlantean']]);
 
@@ -900,6 +904,22 @@ test('a change sent to the form is described, not claimed, and taken to Edit Pro
         ->assertOk()
         ->assertJsonPath('navigate.key', 'profile_edit')
         ->assertJsonPath('message', 'Taking you to Edit Profile to make this change. I\'m adding Programming. It is being changed.');
+});
+
+test('a change claimed in other words is caught too', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: null);
+    $client->reply = 'Got it – your Applications Integration competency level is now set to Strategise.';
+
+    askCpbn($student, 'Change it to Strategise', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
+
+    $client->reply = 'Updated the achievements for Dining in Dungeons.';
+
+    askCpbn($student, 'Make it more professional', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
 });
 
 test('a reply that claims nothing is left as it is', function () {
