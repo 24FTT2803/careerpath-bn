@@ -9,7 +9,6 @@
         'name' => $competency->name,
         'type' => $competency->type,
         'type_label' => $competency->type === 'technical' ? 'Technical' : 'Soft Skill',
-        'essence' => $competency->inEssence(),
         /*
          * How many rungs the book describes. A competency with
          * none has been named and never described, which is
@@ -37,7 +36,7 @@
 
     <div class="card" x-data="adminTable(@js($rows), {
         sort: 'name',
-        searchable: ['name', 'essence'],
+        searchable: ['name'],
         filters: { type: '' }
     })">
         <div class="card-body">
@@ -73,9 +72,6 @@
                             <th class="sortable" :class="{ 'is-sorted': sort.key === 'type' }" @click="sortBy('type')">
                                 Type <i :class="caret('type')"></i>
                             </th>
-                            <th class="sortable" :class="{ 'is-sorted': sort.key === 'essence' }" @click="sortBy('essence')">
-                                In one sentence <i :class="caret('essence')"></i>
-                            </th>
                             <th class="sortable" :class="{ 'is-sorted': sort.key === 'described' }" @click="sortBy('described')">
                                 Levels described <i :class="caret('described')"></i>
                             </th>
@@ -91,17 +87,6 @@
                                     <span class="badge"
                                           :class="row.type === 'technical' ? 'badge-blue' : 'badge-green'"
                                           x-text="row.type_label"></span>
-                                </td>
-                                {{--
-                                    The written short form, or nothing. The
-                                    book's definition is a paragraph, and cut
-                                    at fifty characters it read as a broken
-                                    sentence that said less than the name
-                                    beside it.
-                                --}}
-                                <td class="essence">
-                                    <span x-show="row.essence" x-text="row.essence"></span>
-                                    <span class="not-written" x-show="!row.essence">not written yet</span>
                                 </td>
                                 <td x-text="row.described"></td>
                                 <td class="actions">
@@ -158,7 +143,6 @@
     .table td { padding: 12px 16px; border-bottom: 1px solid #e5e7eb; }
     .table-responsive { overflow-x: auto; }
     .actions { white-space: nowrap; }
-    .essence { max-width: 420px; font-size: 13px; color: #1a1a2e; line-height: 1.6; }
     .not-written { color: #9ca3af; font-style: italic; }
     .badge { display: inline-block; padding: 4px 12px; border-radius: 100px; font-size: 12px; font-weight: 500; }
     .badge-blue { background: #e8f0fe; color: #2a5a8c; }

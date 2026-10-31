@@ -743,7 +743,6 @@ class BiicfController extends Controller
         $request->validate([
             'name' => 'required|string|max:255|unique:biicf_competencies',
             'type' => 'required|in:technical,soft_skill',
-            'short_definition' => 'nullable|string|max:255',
             'description' => 'nullable|string',
         ]);
 
@@ -751,7 +750,6 @@ class BiicfController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'type' => $request->type,
-            'short_definition' => $request->short_definition,
             'description' => $request->description,
         ]);
 
@@ -798,7 +796,6 @@ class BiicfController extends Controller
         $request->validate([
             'name' => ['required', 'string', 'max:255', Rule::unique('biicf_competencies')->ignore($competency->id)],
             'type' => 'required|in:technical,soft_skill',
-            'short_definition' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'descriptors' => 'nullable|array',
             'descriptors.*.scope' => 'nullable|string|max:255',
@@ -810,7 +807,6 @@ class BiicfController extends Controller
             'name' => $request->name,
             'slug' => Str::slug($request->name),
             'type' => $request->type,
-            'short_definition' => $request->short_definition,
             'description' => $request->description,
         ]);
 

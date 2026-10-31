@@ -51,21 +51,6 @@
                 </div>
 
                 <div class="form-group">
-                    <label>In one sentence</label>
-                    <input type="text" name="short_definition" maxlength="255"
-                           class="form-control @error('short_definition') is-invalid @enderror"
-                           value="{{ old('short_definition', $competency->short_definition) }}"
-                           placeholder="What this competency is, in a line.">
-                    <small class="form-text">
-                        Shown in the competency list and wherever there is no room for the
-                        full definition. Up to 255 characters.
-                    </small>
-                    @error('short_definition')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                    @enderror
-                </div>
-
-                <div class="form-group">
                     <label>Definition</label>
                     <textarea name="description" class="form-control @error('description') is-invalid @enderror"
                               rows="8">{{ old('description', $competency->description) }}</textarea>
