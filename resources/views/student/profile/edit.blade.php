@@ -394,6 +394,46 @@
         font-size: 11px;
     }
 
+    .edit-profile .field-of-study-heading {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+    }
+
+    .edit-profile .field-of-study-heading > label { margin: 0; }
+    .edit-profile .field-of-study-help { position: relative; }
+    .edit-profile .field-of-study-help > summary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border: 1px solid var(--gold);
+        border-radius: 50%;
+        color: var(--ink);
+        font-weight: 600;
+        cursor: pointer;
+        list-style: none;
+    }
+    .edit-profile .field-of-study-help > summary::-webkit-details-marker { display: none; }
+    .edit-profile .field-of-study-help > p {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        z-index: 10;
+        width: min(280px, 55vw);
+        padding: 12px;
+        margin-top: 6px;
+        background: var(--paper);
+        color: var(--ink);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 13px;
+        line-height: 1.6;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    }
+
     .edit-profile .bdqf-help {
         margin: 0 0 16px;
         border: 1px solid var(--line, #e7e2d4);
@@ -2120,8 +2160,11 @@
                         <input
                             type="date"
                             name="date_of_birth"
-                            value="{{ old('date_of_birth', $user->profile->date_of_birth ?? '') }}"
+                            value="{{ old('date_of_birth', $user->profile?->date_of_birth?->format('Y-m-d') ?? '') }}"
+                            max="{{ today(config('app.business_timezone'))->subYearsNoOverflow(15)->toDateString() }}"
                         >
+
+                        <small class="cpbn-file-note">You must be at least 15 years old.</small>
 
                         @error('date_of_birth')
                             <div class="error">{{ $message }}</div>
@@ -2356,6 +2399,8 @@
                         ->all();
                 @endphp
 
+                <template id="field-of-study-help-template"><x-field-of-study-help /></template>
+
                 <div id="removed-qualification-fields">
                     @foreach(old('removed_qualification_ids', []) as $removedQualificationId)
                         <input
@@ -2464,7 +2509,7 @@
                             </div>
 
                             <div class="cpbn-field">
-                                <label>Field of Study</label>
+                                <x-field-of-study-help />
                                 <input
                                     type="text"
                                     name="qualifications[{{ $programmeRowIndex }}][field_of_study]"
@@ -2583,7 +2628,7 @@
                                 </div>
 
                                 <div class="cpbn-field">
-                                    <label>Field of Study</label>
+                                    <x-field-of-study-help />
                                     <input
                                         type="text"
                                         name="qualifications[{{ $index }}][field_of_study]"

@@ -369,7 +369,11 @@ class ProfileController extends Controller
                 'string',
                 'size:2',
             ],
-            'date_of_birth' => ['nullable', 'date', 'before:today'],
+            'date_of_birth' => [
+                'nullable',
+                'date',
+                'before_or_equal:'.today(config('app.business_timezone'))->subYearsNoOverflow(15)->toDateString(),
+            ],
             'nationality' => ['nullable', 'string', 'max:100'],
             'profile_picture' => [
                 'nullable',
@@ -663,6 +667,7 @@ class ProfileController extends Controller
             'vision_statement' => ['nullable', 'string', 'max:500'],
             'long_term_goals' => ['nullable', 'string', 'max:500'],
         ], [
+            'date_of_birth.before_or_equal' => 'You must be at least 15 years old.',
             'phone.phone' => 'Enter a valid phone number for the selected country.',
 
             'phone.max' => 'The phone number is too long.',
