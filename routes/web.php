@@ -851,6 +851,15 @@ Route::middleware(['auth', LecturerMiddleware::class])
         )->name('students.show');
 
         /*
+         * Students choose their own class. A lecturer who teaches
+         * it can take out one who chose it wrongly.
+         */
+        Route::delete(
+            '/students/{student}/classes/{class}',
+            [StudentController::class, 'removeFromClass']
+        )->name('students.class.destroy');
+
+        /*
          * The lecturer's own account settings. The controller
          * refuses anyone who is not a lecturer.
          */

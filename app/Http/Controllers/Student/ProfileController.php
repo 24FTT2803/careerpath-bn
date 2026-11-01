@@ -24,6 +24,7 @@ use App\Services\AI\CareerReportBuilder;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\ProgrammeEnrolmentService;
+use App\Services\Business\StudentClassService;
 use App\Services\Business\StudentPlanSummary;
 use App\Services\Lecturer\LecturerScopeResolver;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -395,6 +396,25 @@ class ProfileController extends Controller
                 'nullable',
                 'string',
                 Rule::exists('organisation_groups', 'name'),
+            ],
+
+            /* Their class, one of those under the programme chosen above. */
+            'class_group_id' => [
+                'nullable',
+                'integer',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request) {
+                    $programme = app(ProgrammeEnrolmentService::class)
+                        ->options()
+                        ->firstWhere('name', $request->input('programme'));
+
+                    $allowed = $programme
+                        ? app(StudentClassService::class)->classesUnder($programme->id)->contains('id', (int) $value)
+                        : false;
+
+                    if (! $allowed) {
+                        $fail('Choose a class from your own programme.');
+                    }
+                },
             ],
             'cgpa' => ['nullable', 'numeric', 'min:0', 'max:4'],
 
@@ -915,6 +935,23 @@ class ProfileController extends Controller
             $user->fresh(),
             $user->programme
         );
+
+        /*
+         * Their class, as they chose it. Counted at once: the
+         * class's lecturer sees them straight away, and can take
+         * them out if it was the wrong one. A class from a
+         * programme they have left goes with it.
+         */
+        $classes = app(StudentClassService::class);
+
+        if ($request->has('class_group_id')) {
+            $classes->choose(
+                $user->fresh(),
+                $request->filled('class_group_id') ? (int) $request->input('class_group_id') : null
+            );
+        } else {
+            $classes->dropOutsideProgramme($user->fresh());
+        }
 
         /*
          * The one step nothing ever pointed at. A finished

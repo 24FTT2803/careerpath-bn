@@ -2486,6 +2486,45 @@
                                 @enderror
                             </div>
 
+                            {{--
+                                Their class, chosen by them: only the
+                                classes under the programme picked
+                                beside it are offered, and the list
+                                follows the programme as it changes.
+                                It counts at once; the class's
+                                lecturer can take them out of it.
+                            --}}
+                            @php
+                                $classService = app(\App\Services\Business\StudentClassService::class);
+                                $classChoices = $classService->allByProgramme();
+                                $currentClassId = old('class_group_id', $classService->current($user)?->id);
+                            @endphp
+
+                            <div class="cpbn-field" data-class-field>
+                                <label for="class_group_id">Class</label>
+
+                                <select name="class_group_id" id="class_group_id" data-class-select>
+                                    <option value="">Not in a class / not sure</option>
+
+                                    @foreach($classChoices as $classChoice)
+                                        <option
+                                            value="{{ $classChoice['id'] }}"
+                                            data-programme="{{ $classChoice['programme'] }}"
+                                            @selected((string) $currentClassId === (string) $classChoice['id'])
+                                        >{{ $classChoice['name'] }}</option>
+                                    @endforeach
+                                </select>
+
+                                <small class="cpbn-file-note" data-class-note>
+                                    Your class's lecturer will see your progress.
+                                    Pick your programme first.
+                                </small>
+
+                                @error('class_group_id')
+                                    <div class="error">{{ $message }}</div>
+                                @enderror
+                            </div>
+
                             <div class="cpbn-field">
                                 <label>Award <span class="req">*</span></label>
                                 <input
@@ -5859,4 +5898,56 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script>
+    /*
+     * The class list follows the programme: only that programme's
+     * classes are offered, and a class from another one is let
+     * go when the programme changes.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        var classSelect = document.querySelector('[data-class-select]');
+        var programmeSelect = classSelect && classSelect.form
+            ? classSelect.form.querySelector('select[name="programme"]')
+            : null;
+        var note = document.querySelector('[data-class-note]');
+
+        if (! classSelect || ! programmeSelect) {
+            return;
+        }
+
+        function follow() {
+            var programme = programmeSelect.value;
+            var offered = 0;
+
+            Array.prototype.forEach.call(classSelect.options, function (option) {
+                if (! option.value) {
+                    return;
+                }
+
+                var fits = option.getAttribute('data-programme') === programme;
+
+                option.hidden = ! fits;
+                option.disabled = ! fits;
+                offered += fits ? 1 : 0;
+
+                if (! fits && option.selected) {
+                    classSelect.value = '';
+                }
+            });
+
+            classSelect.disabled = programme === '' || offered === 0;
+
+            if (note) {
+                note.textContent = programme === ''
+                    ? 'Pick your programme first.'
+                    : offered === 0
+                        ? 'No classes have been set up for this programme yet.'
+                        : 'Your class\'s lecturer will see your progress.';
+            }
+        }
+
+        programmeSelect.addEventListener('change', follow);
+        follow();
+    });
+</script>
 @endsection

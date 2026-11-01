@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Lecturer;
 
 use App\Http\Controllers\Controller;
+use App\Models\OrganisationGroup;
 use App\Models\User;
+use App\Services\Business\StudentClassService;
 use App\Services\Lecturer\LecturerScopeResolver;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -31,6 +34,10 @@ class StudentController extends Controller
                 'competencies',
                 'milestones',
                 'programmeGroup',
+                /* Which of this lecturer's classes each one is in. */
+                'organisationGroups' => fn ($query) => $query
+                    ->whereIn('organisation_groups.id', $classIds)
+                    ->with('type'),
             ])
             ->orderBy('name')
             ->paginate(15);
@@ -52,6 +59,27 @@ class StudentController extends Controller
                 'classIds'
             )
         );
+    }
+
+    /**
+     * Take a student out of one of this lecturer's classes, when
+     * they chose it wrongly. Only a class the lecturer teaches.
+     */
+    public function removeFromClass(User $student, OrganisationGroup $class, StudentClassService $classes): RedirectResponse
+    {
+        /** @var User $lecturer */
+        $lecturer = Auth::user();
+
+        abort_unless(
+            $lecturer->role === 'lecturer'
+                && $student->role === 'student'
+                && $classes->removeByLecturer($lecturer, $student, $class->id),
+            404
+        );
+
+        return redirect()
+            ->route('lecturer.students.index')
+            ->with('success', $student->name.' is no longer in '.$class->name.'.');
     }
 
     /**

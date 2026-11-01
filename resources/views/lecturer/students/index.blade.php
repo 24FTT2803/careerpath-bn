@@ -68,6 +68,7 @@
                             <th>Name</th>
                             <th>Student ID</th>
                             <th>Programme</th>
+                            <th>Class</th>
                             <th>Readiness</th>
                             <th class="text-right">Actions</th>
                         </tr>
@@ -94,6 +95,12 @@
                                 </td>
 
                                 <td>
+                                    @foreach($student->organisationGroups as $class)
+                                        <span class="cell-title">{{ $class->name }}</span>
+                                    @endforeach
+                                </td>
+
+                                <td>
                                     @php $r = $student->readiness_score ?? 0; @endphp
 
                                     <span
@@ -111,6 +118,29 @@
                                     >
                                         View
                                     </a>
+
+                                    {{--
+                                        Students pick their own class. One in
+                                        the wrong class can be taken out here.
+                                    --}}
+                                    @foreach($student->organisationGroups as $class)
+                                        @if($class->type?->name === \App\Services\Business\StudentClassService::CLASS_TYPE)
+                                            <form
+                                                method="POST"
+                                                action="{{ route('lecturer.students.class.destroy', [$student, $class]) }}"
+                                                data-confirm="{{ $student->name }} will be taken out of {{ $class->name }}, and you will no longer see them unless they are in another of your classes."
+                                                data-confirm-title="Remove from {{ $class->name }}?"
+                                                data-confirm-ok="Yes, remove"
+                                                style="display:inline;"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="link link-danger" style="background:none;border:0;padding:0;cursor:pointer;font:inherit;">
+                                                    Remove from {{ $class->name }}
+                                                </button>
+                                            </form>
+                                        @endif
+                                    @endforeach
                                 </div></td>
                             </tr>
                         @endforeach
