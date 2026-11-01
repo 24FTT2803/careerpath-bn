@@ -26,7 +26,8 @@ function specialStudent(array $rules): User
     return $student->fresh();
 }
 
-test('an admin can create a special account; its own role is not listed to switch to', function () {
+test('an admin can create a special account with its own plan, feature values and roles', function () {
+    seedPlansForSpecial();
     $admin = User::factory()->create(['role' => 'admin']);
 
     $this->actingAs($admin)
@@ -38,10 +39,14 @@ test('an admin can create a special account; its own role is not listed to switc
             'password_confirmation' => 'password123',
             'phone' => '712 3456',
             'phone_country' => 'BN',
+            'special_enabled' => '1',
             'special' => [
-                'unlimited_ai' => '1',
-                'premium' => '0',
-                'no_ads' => '1',
+                'plan' => 'premium',
+                'features' => [
+                    'cpbn_bot.token_quota' => ['custom' => '1', 'mode' => 'recurring', 'amount' => '5000', 'period_value' => '1', 'period_unit' => 'day'],
+                    'ads.available' => ['custom' => '1', 'value' => '0'],
+                    'career_adviser.usage_quota' => ['custom' => '0', 'mode' => 'unlimited'],
+                ],
                 'roles' => ['student', 'lecturer'],
             ],
         ])
@@ -49,15 +54,39 @@ test('an admin can create a special account; its own role is not listed to switc
 
     $demo = User::where('email', 'demo.lecturer@pb.edu.bn')->sole();
 
-    expect($demo->special_rules)->toBe(['unlimited_ai' => true, 'no_ads' => true, 'roles' => ['student']])
+    expect($demo->special_rules)->toEqual([
+        'plan' => 'premium',
+        'features' => [
+            'cpbn_bot.token_quota' => ['mode' => 'recurring', 'amount' => 5000, 'period_value' => 1, 'period_unit' => 'day'],
+            'ads.available' => false,
+        ],
+        'roles' => ['student'],
+    ])
         ->and($demo->switchableRoles())->toBe(['student', 'lecturer'])
         ->and($demo->isSpecial())->toBeTrue();
 });
 
-test('an ordinary account saved from the form has no special rules', function () {
+test('a feature set to an amount needs the amount', function () {
+    seedPlansForSpecial();
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->post(route('admin.users.store'), [
+            'name' => 'Demo',
+            'email' => 'demo@pb.edu.bn',
+            'role' => 'lecturer',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'special_enabled' => '1',
+            'special' => ['features' => ['cpbn_bot.token_quota' => ['custom' => '1', 'mode' => 'total', 'amount' => '']]],
+        ])
+        ->assertSessionHasErrors('special.features.cpbn_bot.token_quota.amount');
+});
+
+test('unticking Special account makes it ordinary again', function () {
     $admin = User::factory()->create(['role' => 'admin']);
     $lecturer = User::factory()->create(['role' => 'lecturer', 'email' => 'plain@pb.edu.bn']);
-    $lecturer->forceFill(['special_rules' => ['premium' => true]])->save();
+    $lecturer->forceFill(['special_rules' => ['plan' => 'premium', 'features' => [], 'roles' => []]])->save();
 
     $this->actingAs($admin)
         ->put(route('admin.users.update', $lecturer->id), [
@@ -66,16 +95,17 @@ test('an ordinary account saved from the form has no special rules', function ()
             'role' => 'lecturer',
             'phone' => '712 3457',
             'phone_country' => 'BN',
-            'special' => ['unlimited_ai' => '0', 'premium' => '0', 'no_ads' => '0'],
+            'special_enabled' => '0',
+            'special' => ['plan' => 'premium'],
         ])
         ->assertSessionHasNoErrors();
 
     expect($lecturer->fresh()->special_rules)->toBeNull();
 });
 
-test('a special account with Premium has the Premium plan', function () {
+test('a special account can be put on a plan of its own', function () {
     seedPlansForSpecial();
-    $student = specialStudent(['premium' => true]);
+    $student = specialStudent(['plan' => 'premium']);
 
     $access = app(EntitlementService::class)->accessFor($student);
 
@@ -83,21 +113,35 @@ test('a special account with Premium has the Premium plan', function () {
         ->and($access['plan']->code)->toBe('premium');
 });
 
-test('a special account with unlimited AI has no limit on any allowance', function () {
+test('an allowance set for one account replaces the plan\'s, unlimited or an amount', function () {
     seedPlansForSpecial();
-    $student = specialStudent(['unlimited_ai' => true]);
 
-    $status = app(FeatureUsageService::class)->status($student, 'cpbn_bot.token_quota');
+    $unlimited = specialStudent(['features' => ['cpbn_bot.token_quota' => ['mode' => 'unlimited']]]);
+    $daily = specialStudent(['features' => ['cpbn_bot.token_quota' => ['mode' => 'recurring', 'amount' => 5000, 'period_value' => 1, 'period_unit' => 'day']]]);
 
-    expect($status['allowed'])->toBeTrue()
-        ->and($status['mode'])->toBe('unlimited');
+    $usage = app(FeatureUsageService::class);
+
+    expect($usage->status($unlimited, 'cpbn_bot.token_quota')['mode'])->toBe('unlimited')
+        ->and($usage->status($daily, 'cpbn_bot.token_quota')['amount'])->toBe(5000);
 });
 
-test('a special account with no ads is never shown any', function () {
+test('a feature switched off for one account is off, whatever the plan says', function () {
     seedPlansForSpecial();
-    $student = specialStudent(['no_ads' => true]);
+    $student = specialStudent(['features' => ['ads.available' => false]]);
 
     expect(app(EntitlementService::class)->shouldShowAds($student))->toBeFalse();
+});
+
+test('an admin can set up their own student side, or leave it following the plans', function () {
+    seedPlansForSpecial();
+    $admin = User::factory()->create(['role' => 'admin']);
+
+    $this->actingAs($admin)
+        ->get(route('admin.users.edit', $admin->id))
+        ->assertOk()
+        ->assertSee('Your own student side');
+
+    expect(app(EntitlementService::class)->accessFor($admin)['source'])->not->toBe('special');
 });
 
 test('a special account switches to an allowed role and back, using its own data', function () {
@@ -113,7 +157,7 @@ test('a special account switches to an allowed role and back, using its own data
     expect($student->role)->toBe('lecturer')
         ->and($student->homeRole())->toBe('student');
 
-    $this->actingAs($student)->get(route('lecturer.dashboard'))->assertOk()->assertSee('Viewing as');
+    $this->actingAs($student)->get(route('lecturer.dashboard'))->assertOk()->assertSee('Back to Student');
 
     $this->actingAs($student)
         ->post(route('role.switch'), ['role' => 'student'])
@@ -137,7 +181,7 @@ test('every admin can try the student side as themselves, then return', function
     seedPlansForSpecial();
     $admin = User::factory()->create(['role' => 'admin']);
 
-    $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('Viewing as');
+    $this->actingAs($admin)->get(route('admin.dashboard'))->assertOk()->assertSee('View as Student');
 
     $this->actingAs($admin)->post(route('role.switch'), ['role' => 'student']);
 
@@ -148,7 +192,7 @@ test('every admin can try the student side as themselves, then return', function
         /* Staff trying the student side are never asked to confirm an email. */
         ->and($admin->mustVerifyEmailAddress())->toBeFalse();
 
-    $this->actingAs($admin)->get(route('student.settings'))->assertOk()->assertSee('Viewing as');
+    $this->actingAs($admin)->get(route('student.settings'))->assertOk()->assertSee('Back to Admin');
     $this->actingAs($admin)->get(route('admin.users.index'))->assertForbidden();
 
     $this->actingAs($admin)->post(route('role.switch'), ['role' => 'admin']);
@@ -160,5 +204,5 @@ test('an ordinary student sees no role switcher', function () {
     seedPlansForSpecial();
     $student = User::factory()->create(['role' => 'student']);
 
-    $this->actingAs($student)->get(route('student.settings'))->assertOk()->assertDontSee('Viewing as');
+    $this->actingAs($student)->get(route('student.settings'))->assertOk()->assertDontSee('View as')->assertDontSee('Back to Admin');
 });

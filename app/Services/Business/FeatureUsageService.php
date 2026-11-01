@@ -62,17 +62,11 @@ class FeatureUsageService
             ];
         }
 
-        /*
-         * A special account with unlimited AI use has no limit on
-         * any allowance, though its use is still counted.
-         */
-        $quota = $user->hasSpecialRule('unlimited_ai')
-            ? ['mode' => 'unlimited']
-            : $this->entitlements
-                ->value(
-                    $user,
-                    $featureKey
-                );
+        $quota = $this->entitlements
+            ->value(
+                $user,
+                $featureKey
+            );
 
         if (! is_array($quota)) {
             return $this->invalidQuotaStatus();

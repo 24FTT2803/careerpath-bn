@@ -721,12 +721,28 @@ class User extends Authenticatable implements MustVerifyEmail
     public const ROLES = ['student', 'lecturer', 'admin'];
 
     /**
-     * What a special account may do that its plan would not
-     * allow: 'unlimited_ai', 'premium', 'no_ads'.
+     * The plan a special account is on, by code, whatever else
+     * would apply. Null follows the plans as for anyone.
      */
-    public function hasSpecialRule(string $rule): bool
+    public function specialPlanCode(): ?string
     {
-        return (bool) (($this->special_rules ?? [])[$rule] ?? false);
+        $code = ($this->special_rules ?? [])['plan'] ?? null;
+
+        return is_string($code) && $code !== '' ? $code : null;
+    }
+
+    /**
+     * Feature values set for this account alone, by feature key,
+     * in the same form a plan holds them. Anything not listed
+     * follows the plan.
+     *
+     * @return array<string, mixed>
+     */
+    public function featureOverrides(): array
+    {
+        $features = ($this->special_rules ?? [])['features'] ?? [];
+
+        return is_array($features) ? $features : [];
     }
 
     /**
@@ -783,8 +799,7 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isSpecial(): bool
     {
-        return collect(['unlimited_ai', 'premium', 'no_ads'])->contains(fn (string $rule) => $this->hasSpecialRule($rule))
-            || count((array) (($this->special_rules ?? [])['roles'] ?? [])) > 0;
+        return ! empty($this->special_rules);
     }
 
     public function isAdmin()

@@ -1166,6 +1166,11 @@
                                         <i class="fas fa-crown" style="color:var(--accent);"></i> Admin Panel
                                     </a>
                                 @endif
+                                {{-- Another of this account's roles: a special account, or an admin trying the student side. --}}
+                                @if(Auth::user()->canSwitchRoles())
+                                    <div class="dropdown-divider"></div>
+                                    <x-role-switcher variant="menu" />
+                                @endif
                                 <div class="dropdown-divider"></div>
                                 <button type="button" class="dropdown-item danger" onclick="confirmStudentLogout()" style="width:100%;border:none;background:transparent;cursor:pointer;font-family:inherit;font-size:13px;text-align:left;">
                                 <i class="fas fa-sign-out-alt"></i> Log Out
@@ -1630,7 +1635,5 @@
 <x-cookie-banner />   
     @include('partials.student-polish')
     @include('partials.long-text')
-    {{-- Switching roles, for an account allowed more than one. --}}
-    <x-role-switcher />
 </body>
 </html>

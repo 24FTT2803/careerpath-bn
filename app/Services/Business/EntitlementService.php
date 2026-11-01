@@ -30,25 +30,40 @@ class EntitlementService
         User $user
     ): array {
         /*
-         * A special account set up with Premium has it, whatever
-         * else applies: it is for showing what Premium does.
+         * A special account: on the plan chosen for it, if one was,
+         * and with any feature set for it alone taking precedence
+         * over the plan's.
          */
-        if ($user->hasSpecialRule('premium')) {
-            $premium = Plan::query()
+        $overrides = $user->featureOverrides();
+
+        if ($code = $user->specialPlanCode()) {
+            $special = Plan::query()
                 ->where('is_active', true)
-                ->where('code', 'premium')
+                ->where('code', $code)
                 ->with('features')
                 ->first();
 
-            if ($premium) {
+            if ($special) {
                 return [
-                    'plan' => $premium,
+                    'plan' => $special,
                     'source' => 'special',
                     'grant' => null,
+                    'overrides' => $overrides,
                 ];
             }
         }
 
+        return $this->planAccessFor($user) + ['overrides' => $overrides];
+    }
+
+    /**
+     * Whichever plan applies to a user in the usual way.
+     *
+     * @return array{plan: ?Plan, source: string, grant: UserPlanGrant|SponsoredAccessGrant|null}
+     */
+    private function planAccessFor(
+        User $user
+    ): array {
         $directGrant = UserPlanGrant::query()
             ->currentlyActive()
             ->where(
@@ -437,6 +452,11 @@ class EntitlementService
         string $key,
         mixed $default = null
     ): mixed {
+        /* Set for this account alone: before any plan. */
+        if (array_key_exists($key, $access['overrides'] ?? [])) {
+            return $access['overrides'][$key];
+        }
+
         $plan = $access['plan'];
 
         if (! $plan) {
@@ -690,7 +710,6 @@ class EntitlementService
     public function adsAvailable(User $user): bool
     {
         return $user->isStudent()
-            && ! $user->hasSpecialRule('no_ads')
             && $this->allows($user, 'ads.available');
     }
 

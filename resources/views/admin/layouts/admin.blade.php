@@ -1073,15 +1073,6 @@
             }
         }
 
-        /* The role switcher sits beside the menu, never over its footer. */
-        html .role-switcher {
-            left: calc(var(--sidebar-width, 260px) + 16px);
-        }
-
-        html.sidebar-collapsed .role-switcher {
-            left: 16px;
-        }
-
         @media (prefers-reduced-motion: reduce) {
             .admin-sidebar,
             .admin-main {
@@ -1403,6 +1394,12 @@
                 <i class="fas fa-th-large"></i>
                 <span>Dashboard</span>
             </a>
+
+            {{--
+                Another of this account's roles: every admin's own
+                student side, or a special account's other roles.
+            --}}
+            <x-role-switcher variant="sidebar" />
                         @if(auth()->user()->role === 'lecturer')
                 <a
                     href="{{ route('lecturer.students.index') }}"
@@ -2134,7 +2131,5 @@
     @csrf
 </form>
     @include('partials.long-text')
-    {{-- Switching roles, for an account allowed more than one. --}}
-    <x-role-switcher />
 </body>
 </html>

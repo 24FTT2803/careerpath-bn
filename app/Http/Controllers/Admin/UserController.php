@@ -7,6 +7,7 @@ use App\Models\StudentProfile;
 use App\Models\User;
 use App\Rules\NoProfanity;
 use App\Services\AI\RecommendationStatusService;
+use App\Services\Business\AccountFeatureValues;
 use App\Services\Business\ProgrammeEnrolmentService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -79,7 +80,7 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
-        $rules += $this->specialRules();
+        $rules += app(AccountFeatureValues::class)->rules($request);
 
         $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
 
@@ -124,7 +125,7 @@ class UserController extends Controller
             ])->save();
         }
 
-        $user->forceFill(['special_rules' => $this->special($request)])->save();
+        $user->forceFill(['special_rules' => app(AccountFeatureValues::class)->fromRequest($request)])->save();
 
         app(ProgrammeEnrolmentService::class)->syncFor(
             $user->fresh(),
@@ -187,7 +188,7 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
-        $rules += $this->specialRules();
+        $rules += app(AccountFeatureValues::class)->rules($request);
 
         $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
 
@@ -214,7 +215,7 @@ class UserController extends Controller
          * had switched to is let go: what is chosen here is its
          * own role again.
          */
-        $user->special_rules = $this->special($request);
+        $user->special_rules = app(AccountFeatureValues::class)->fromRequest($request);
         $user->home_role = null;
 
         /*
@@ -261,47 +262,6 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function specialRules(): array
-    {
-        return [
-            'special' => ['nullable', 'array'],
-            'special.unlimited_ai' => ['nullable', 'boolean'],
-            'special.premium' => ['nullable', 'boolean'],
-            'special.no_ads' => ['nullable', 'boolean'],
-            'special.roles' => ['nullable', 'array'],
-            'special.roles.*' => ['string', 'in:student,lecturer,admin'],
-        ];
-    }
-
-    /**
-     * What is special about the account, or null for an ordinary
-     * one. Its own role is never listed among those it may switch
-     * to: it has that one already.
-     *
-     * @return array<string, mixed>|null
-     */
-    private function special(Request $request): ?array
-    {
-        $chosen = (array) $request->input('special', []);
-
-        $rules = [
-            'unlimited_ai' => filter_var($chosen['unlimited_ai'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            'premium' => filter_var($chosen['premium'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            'no_ads' => filter_var($chosen['no_ads'] ?? false, FILTER_VALIDATE_BOOLEAN),
-            'roles' => array_values(array_diff(
-                array_intersect(User::ROLES, (array) ($chosen['roles'] ?? [])),
-                [(string) $request->input('role')]
-            )),
-        ];
-
-        $rules = array_filter($rules);
-
-        return $rules === [] ? null : $rules;
     }
 
     /**
