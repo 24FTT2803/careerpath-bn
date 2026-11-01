@@ -30,6 +30,7 @@ class CpbnBotService
         private CpbnBotContextBuilder $contextBuilder,
         private CpbnBotLinks $linkResolver,
         private CpbnBotProfileFill $profileFill,
+        private CpbnBotSkillLevels $skillLevels,
     ) {}
 
     /**
@@ -103,6 +104,27 @@ class CpbnBotService
             'form_now' => $formState,
         ];
 
+        /*
+         * Rating competencies is done here, not by the AI: the
+         * levels are a fixed list. Whatever the student just gave
+         * for the ones waiting is read now, and the bot is told.
+         */
+        $section = $startsNow ? $asked : $active;
+        $waiting = $section === 'skills' ? $this->skillLevels->waiting($formState) : [];
+        $rated = $this->skillLevels->answers($question, $waiting);
+        $ratedNames = array_map(fn (array $item) => Str::lower($item['name']), $rated);
+
+        if ($section === 'skills') {
+            $context['fill_session']['skills'] = [
+                'levels_set_now' => $rated,
+                'still_to_rate' => array_values(array_filter(
+                    $waiting,
+                    fn (string $name) => ! in_array(Str::lower($name), $ratedNames, true)
+                )),
+                'suggested' => $this->skillLevels->suggestions($student),
+            ];
+        }
+
         $response = $this->client->ask($context, $history, $question);
 
         $validated = Validator::make($response, [
@@ -130,6 +152,11 @@ class CpbnBotService
             $declared = '';
         }
 
+        /* Said outright ("I'm done", "you can stop now"): the part ends, whatever the bot made of it. */
+        if ($active !== null && ! $startsNow && $declared !== 'done' && $this->saysStop($question)) {
+            $declared = 'done';
+        }
+
         $memory = $this->memoryChanges(
             $active,
             $startsNow ? $asked : null,
@@ -137,10 +164,49 @@ class CpbnBotService
         );
 
         $choices = $this->choices($validated['choices'] ?? null);
-        $fill = $this->profileFill->normalise($validated['fill'] ?? null);
+
+        /* The levels read from the student's answer stand, whatever the bot sent for them. */
+        $rawFill = is_array($validated['fill'] ?? null) ? $validated['fill'] : [];
+
+        if ($rated !== []) {
+            $rawFill['competencies'] = collect(is_array($rawFill['competencies'] ?? null) ? $rawFill['competencies'] : [])
+                ->reject(fn ($item) => is_array($item) && in_array(Str::lower((string) ($item['name'] ?? '')), $ratedNames, true))
+                ->merge($rated)
+                ->values()
+                ->all();
+        }
+
+        $fill = $this->profileFill->normalise($rawFill === [] ? ($validated['fill'] ?? null) : $rawFill);
 
         /* Never a change claimed before the form has confirmed it. */
-        $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage);
+        if ($declared !== 'done') {
+            $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage);
+        }
+
+        /*
+         * Then the next competency still without a level, asked
+         * about here with its levels as buttons: those left from
+         * before, and any just ticked.
+         */
+        if ($section === 'skills' && $declared !== 'done') {
+            $stillWaiting = collect($waiting)
+                ->reject(fn (string $name) => in_array(Str::lower($name), $ratedNames, true))
+                ->merge(collect($fill['competencies'] ?? [])
+                    ->whereNull('level_id')
+                    ->pluck('name')
+                    ->reject(fn (string $name) => $this->skillLevels->hasLevel($formState, $name)))
+                ->unique(fn (string $name) => Str::lower($name))
+                ->values()
+                ->all();
+
+            $next = $this->skillLevels->nextQuestion($stillWaiting);
+
+            if ($next !== null) {
+                $validated['message'] = rtrim((string) $validated['message'])."\n\n".$next['message'];
+                $choices = ['options' => $next['options'], 'multiple' => false];
+                $validated['asking_field'] = 'level of '.$next['name'];
+            }
+        }
 
         /*
          * Filling happens on Edit Profile. Asked from anywhere else,
@@ -485,6 +551,21 @@ class CpbnBotService
 
         return mb_strlen($text) <= 60 && (bool) preg_match(
             "/^(i said )?(ok|okay|k|yes|yeah|yep|yup|ya|sure|fine|good|great|perfect|cool|nice|alright|done|next|continue|carry on|go on|move on|(nope|no),? (that['’]?s|it['’]?s|its) (good|fine|ok|okay)|let['’]?s (go|move on|continue|get a move on)|that['’]?s (good|fine|great|ok|okay|it)|looks good|sounds good|use (it|that|this))\\b/iu",
+            $text
+        );
+    }
+
+    /**
+     * A short message that plainly ends the part being filled in
+     * ("I'm done", "ok you can stop now", "that's all"), whatever
+     * the bot made of it.
+     */
+    private function saysStop(string $question): bool
+    {
+        $text = trim($question);
+
+        return mb_strlen($text) <= 40 && (bool) preg_match(
+            "/^(ok(ay)?,? |alright,? |no,? |nope,? |thanks,? )?(i['’]?m done|i am done|all done|we['’]?re done|done|that['’]?s (it|all|everything|enough)|nothing else|no more|(you can )?stop( now| here| there)?|finished|i['’]?m finished)[.,! ]*(thanks|thank you)?[.! ]*$/iu",
             $text
         );
     }

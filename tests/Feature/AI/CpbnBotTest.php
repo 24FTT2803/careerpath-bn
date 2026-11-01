@@ -19,6 +19,7 @@ use App\Services\CpbnBot\GroqCpbnBotClient;
 use Database\Seeders\BiicfReferenceDataSeeder;
 use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\PlanSeeder;
+use Illuminate\Support\Str;
 
 /*
  * The CPBN Bot: the guide to the website, in a panel on every
@@ -1338,3 +1339,154 @@ test('the panel no longer shows rewording buttons', function () {
         ->assertOk()
         ->assertDontSee('function showPolish', false);
 });
+
+/*
+ * Rating competencies: one at a time, with the levels as buttons,
+ * read by the server however the student answers.
+ */
+function skillsFixture(): array
+{
+    test()->seed(BiicfReferenceDataSeeder::class);
+    [, $role, $agility] = cpbnExplorerFixture();
+
+    $teamwork = BiicfCompetency::create(['name' => 'Teamwork', 'slug' => 'teamwork', 'type' => 'soft_skill']);
+
+    return [$role, $agility, $teamwork];
+}
+
+function skillLevel(string $scale, int $number): BiicfProficiencyLevel
+{
+    return BiicfProficiencyLevel::where('scale', $scale)->where('level_number', $number)->sole();
+}
+
+function waitingForm(array $levels = ['Business Agility' => '', 'Teamwork' => '']): array
+{
+    return ['competencies' => collect($levels)
+        ->map(fn (string $level, string $name) => ['name' => $name, 'level' => $level])
+        ->values()
+        ->all()];
+}
+
+test('a ticked competency is followed by a question about its level, with buttons', function () {
+    $student = cpbnStudent();
+    skillsFixture();
+
+    cpbnClient(links: [], fill: ['competencies' => [['name' => 'Business Agility']]], fillSection: 'skills');
+
+    $reply = askCpbn($student, 'Business Agility', ['current_page' => 'profile_edit', 'start_section' => 'skills'])->assertOk();
+
+    expect($reply->json('message'))->toContain('How well can you do **Business Agility**?')
+        ->and($reply->json('choices.multiple'))->toBeFalse()
+        ->and($reply->json('choices.options'))->toHaveCount(5)
+        ->and($reply->json('choices.options.1'))->toBe('Level 2 — '.skillLevel('technical', 2)->name);
+});
+
+test('levels typed in order are set on each waiting competency', function () {
+    $student = cpbnStudent();
+    [, $agility, $teamwork] = skillsFixture();
+
+    cpbnClient(links: [], fillSection: 'skills');
+
+    $assist = skillLevel('technical', 2);
+    $advanced = skillLevel('soft', 3);
+
+    $fill = askCpbn($student, Str::lower($assist->name).', '.Str::lower($advanced->name), [
+        'current_page' => 'profile_edit',
+        'start_section' => 'skills',
+        'form_state' => waitingForm(),
+    ])->assertOk()->json('fill.competencies');
+
+    expect(collect($fill)->pluck('level_id', 'id')->all())->toEqual([
+        $agility->id => $assist->id,
+        $teamwork->id => $advanced->id,
+    ]);
+});
+
+test('levels given by name, number or button are each understood', function (string $answer) {
+    $student = cpbnStudent();
+    [, $agility, $teamwork] = skillsFixture();
+
+    cpbnClient(links: [], fillSection: 'skills');
+
+    $fill = askCpbn($student, $answer, [
+        'current_page' => 'profile_edit',
+        'start_section' => 'skills',
+        'form_state' => waitingForm(),
+    ])->assertOk()->json('fill.competencies');
+
+    expect(collect($fill)->firstWhere('id', $agility->id)['level_id'])->toBe(skillLevel('technical', 2)->id);
+})->with([
+    'named, out of order' => ['Teamwork level 3 and Business Agility to level 2'],
+    'a number' => ['2'],
+    'the button' => ['Level 2 — Assist'],
+]);
+
+test('once a level is given the next competency is asked about', function () {
+    $student = cpbnStudent();
+    skillsFixture();
+
+    cpbnClient(links: [], fillSection: 'skills');
+
+    $reply = askCpbn($student, 'Level 2 — Assist', [
+        'current_page' => 'profile_edit',
+        'start_section' => 'skills',
+        'form_state' => waitingForm(),
+    ])->assertOk();
+
+    expect($reply->json('message'))->toContain('How well can you do **Teamwork**?')
+        ->and($reply->json('choices.options'))->toHaveCount(4);
+});
+
+test('nothing is asked about a competency the form already rates', function () {
+    $student = cpbnStudent();
+    skillsFixture();
+
+    cpbnClient(links: [], fill: ['competencies' => [['name' => 'Business Agility']]], fillSection: 'skills');
+
+    $reply = askCpbn($student, 'Keep Business Agility', [
+        'current_page' => 'profile_edit',
+        'start_section' => 'skills',
+        'form_state' => waitingForm(['Business Agility' => 'Level 2 — Assist']),
+    ])->assertOk();
+
+    expect($reply->json('message'))->not->toContain('How well can you do')
+        ->and($reply->json('choices'))->toBeNull();
+});
+
+test('the competencies the student\'s dream career needs are suggested first', function () {
+    $student = cpbnStudent();
+    [$role, $agility] = skillsFixture();
+
+    $role->tiers()->first()->competencies()->attach($agility->id, [
+        'job_role_id' => $role->id,
+        'proficiency_level_id' => skillLevel('technical', 3)->id,
+        'is_core' => true,
+    ]);
+
+    $student->aspirations()->create(['career_goals' => ['IT Technician']]);
+
+    $client = cpbnClient(links: [], fillSection: 'skills');
+
+    askCpbn($student, 'Help me fill in my Skills & Competencies', ['current_page' => 'profile_edit', 'start_section' => 'skills'])->assertOk();
+
+    expect($client->lastContext['fill_session']['skills']['suggested'])->toBe([
+        'role' => 'IT Technician',
+        'from' => 'their dream career',
+        'competencies' => ['Business Agility'],
+    ]);
+});
+
+test('saying plainly that they are done ends the part, and is never called a failed change', function (string $stop) {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'skills');
+
+    askCpbn($student, 'Help me fill in my Skills & Competencies', ['current_page' => 'profile_edit', 'start_section' => 'skills'])->assertOk();
+
+    $client->fillSection = '';
+    $client->reply = 'All set, your competencies have been updated.';
+
+    $reply = askCpbn($student, $stop, ['current_page' => 'profile_edit'])->assertOk();
+
+    expect($reply->json('fill_section'))->toBeNull()
+        ->and($reply->json('message'))->toBe('All set, your competencies have been updated.');
+})->with(['ok you can stop now', 'im done', "that's all, thanks"]);

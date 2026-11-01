@@ -1451,7 +1451,8 @@
 
             tick(box);
 
-            let levelSet = ! level;
+            /* No level sent: one is asked for next, with buttons. Not a failure. */
+            let levelSet = ! level || ! item.level_id;
 
             if (level && item.level_id) {
                 /* The checkbox enables the list; make sure before choosing. */
@@ -1468,7 +1469,7 @@
             } else if (! levelSet) {
                 missed.push('the level for ' + item.name);
             } else {
-                confirmed.push(item.name + (item.level ? ' at ' + item.level : ''));
+                confirmed.push(item.name + (item.level ? ' at ' + item.level : ' (ticked)'));
             }
 
             const card = box.closest('[data-biicf-competency]') || box;
@@ -1765,7 +1766,10 @@
                         .filter((item) => item.querySelector('input[type="checkbox"]')?.checked)
                         .map((item) => ({
                             name: item.querySelector('.cpbn-competency-choice span')?.textContent.trim(),
-                            level: item.querySelector('select')?.selectedOptions[0]?.textContent.replace(/\s+/g, ' ').trim() || '',
+                            /* Empty while no level is chosen, not the list's "Choose level". */
+                            level: item.querySelector('select')?.value
+                                ? item.querySelector('select').selectedOptions[0].textContent.replace(/\s+/g, ' ').trim()
+                                : '',
                         })),
                 };
             case 'interests':
