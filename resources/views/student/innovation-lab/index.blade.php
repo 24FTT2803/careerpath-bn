@@ -764,23 +764,27 @@
      */
     let pickerLoaded = null;
 
+    /*
+     * Windows has no country flags of its own, and the picker
+     * leaves out any emoji the device cannot draw, so it showed
+     * only the handful of flags that are not countries. The flag
+     * font is put in place, and fully loaded, before the picker
+     * looks at what can be drawn; then every flag is there.
+     */
+    const flagsReady = import('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/index.js')
+        .then((module) => module.polyfillCountryFlagEmojis())
+        .then(() => document.fonts
+            ? document.fonts.load('16px "Twemoji Country Flags"', '\u{1F1E7}\u{1F1F3}')
+            : null)
+        .catch(() => null);
+
     function loadPicker() {
         if (! pickerLoaded) {
-            pickerLoaded = Promise.all([
-                import('https://cdn.jsdelivr.net/npm/emoji-picker-element@1.21.3/index.js'),
-                import('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/index.js')
-                    .then((module) => module.polyfillCountryFlagEmojis())
-                    .catch(() => null),
-            ]);
+            pickerLoaded = flagsReady.then(() => import('https://cdn.jsdelivr.net/npm/emoji-picker-element@1.21.3/index.js'));
         }
 
         return pickerLoaded;
     }
-
-    /* Flags drawn properly in the counts too, on Windows. */
-    import('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/index.js')
-        .then((module) => module.polyfillCountryFlagEmojis())
-        .catch(() => null);
 
     const holder = document.querySelector('[data-lab-picker]');
     let target = null;

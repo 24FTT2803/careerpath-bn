@@ -302,5 +302,8 @@ test('the feed offers every emoji, and shows each picture whole', function () {
         ->assertSee('data-lab-more="'.route('student.innovation-lab.react', $note).'"', false)
         ->assertSee('data-lab-zoom', false)
         ->assertSee('object-fit: contain', false)
-        ->assertSee('emoji-picker-element@1.21.3', false);
+        ->assertSee('emoji-picker-element@1.21.3', false)
+        /* The quick picks are a short list now; the rest are in the picker. */
+        ->assertDontSee('🛠️')
+        ->assertDontSee('⌨️');
 });

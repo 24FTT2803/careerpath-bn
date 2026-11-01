@@ -44,7 +44,6 @@ class InnovationLabNote extends Model
         'Feeling' => ['😀', '😂', '🥳', '😮', '😢', '😬'],
         'Thinking' => ['💡', '🤔', '🧠', '👀', '📌', '❓'],
         'Count me in' => ['🙋', '✋', '🚀', '💪', '🏃', '🫡'],
-        'Building' => ['💻', '⌨️', '🛠️', '📱', '🧪', '📚'],
     ];
 
     /**
@@ -58,7 +57,6 @@ class InnovationLabNote extends Model
         '😀', '😂', '🥳', '😮', '😢', '😬',
         '💡', '🤔', '🧠', '👀', '📌', '❓',
         '🙋', '✋', '🚀', '💪', '🏃', '🫡',
-        '💻', '⌨️', '🛠️', '📱', '🧪', '📚',
     ];
 
     public function author(): BelongsTo
