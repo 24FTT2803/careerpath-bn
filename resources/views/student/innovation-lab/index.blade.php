@@ -195,12 +195,112 @@
         background: #eef0f4;
     }
 
+    /*
+     * The whole picture, never cropped: a tall poster or a screen
+     * capture is shown in full, scaled down to fit, with the
+     * band's colour either side. Pressing it opens it full size.
+     */
     .lab-media img {
         display: block;
         width: 100%;
         height: auto;
         max-height: 620px;
-        object-fit: cover;
+        object-fit: contain;
+        cursor: zoom-in;
+    }
+
+    .lab-viewer {
+        position: fixed;
+        inset: 0;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(10, 20, 32, .88);
+        cursor: zoom-out;
+    }
+
+    .lab-viewer[hidden] {
+        display: none;
+    }
+
+    .lab-viewer img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 6px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, .5);
+    }
+
+    .lab-viewer-close {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 40px;
+        height: 40px;
+        border: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, .15);
+        color: #fff;
+        font-size: 18px;
+        cursor: pointer;
+    }
+
+    /*
+     * Every emoji there is, flags included. Windows draws no flag
+     * emoji of its own (it shows two letters), so a flag font is
+     * used for flags alone, before the system's emoji.
+     */
+    .lab-react-emoji,
+    .lab-palette-key,
+    emoji-picker {
+        font-family: 'Twemoji Country Flags', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+    }
+
+    .lab-more {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        margin-top: 10px;
+        padding: 8px 10px;
+        border: 1px dashed #c9a84c;
+        border-radius: 10px;
+        background: #faf6ea;
+        color: #1a3a5c;
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .lab-more:hover {
+        background: #f4ecd2;
+    }
+
+    .lab-picker {
+        position: fixed;
+        z-index: 1500;
+        border-radius: 14px;
+        box-shadow: 0 24px 60px -24px rgba(13, 31, 51, .6);
+        overflow: hidden;
+    }
+
+    .lab-picker[hidden] {
+        display: none;
+    }
+
+    .lab-picker emoji-picker {
+        --emoji-font-family: 'Twemoji Country Flags', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+        --border-radius: 14px;
+        --border-color: #e5e7eb;
+        --indicator-color: #c9a84c;
+        --input-border-radius: 10px;
+        --outline-color: #c9a84c;
+        width: min(352px, calc(100vw - 24px));
+        height: 400px;
     }
 
     /* The card's own bottom edge, since the bands set their own. */
@@ -512,7 +612,7 @@
 
             @if($note->imageUrl())
                 <span class="lab-media">
-                    <img src="{{ $note->imageUrl() }}" alt="{{ $note->title }}" loading="lazy">
+                    <img src="{{ $note->imageUrl() }}" alt="{{ $note->title }}" loading="lazy" data-lab-zoom>
                 </span>
             @endif
 
@@ -576,6 +676,13 @@
                                     </div>
                                 </div>
                             @endforeach
+
+                            {{-- Every other emoji: searchable, flags and skin tones included. --}}
+                            <button type="button"
+                                    class="lab-more"
+                                    data-lab-more="{{ route('student.innovation-lab.react', $note) }}">
+                                <i class="fas fa-magnifying-glass"></i> All emoji
+                            </button>
                         </div>
                     </details>
                 </div>
@@ -608,6 +715,149 @@
         </p>
     @endforelse
 </div>
+
+{{-- The full-size view of a post's picture, and the one picker every post shares. --}}
+<div class="lab-viewer" data-lab-viewer hidden>
+    <button type="button" class="lab-viewer-close" aria-label="Close">&times;</button>
+    <img src="" alt="">
+</div>
+
+<div class="lab-picker" data-lab-picker hidden></div>
+
+<script type="module">
+    /*
+     * Every emoji, from a picker that knows them all: grouped,
+     * searchable, with skin tones and flags. Loaded only when a
+     * student first asks for it.
+     */
+    let pickerLoaded = null;
+
+    function loadPicker() {
+        if (! pickerLoaded) {
+            pickerLoaded = Promise.all([
+                import('https://cdn.jsdelivr.net/npm/emoji-picker-element@1.21.3/index.js'),
+                import('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/index.js')
+                    .then((module) => module.polyfillCountryFlagEmojis())
+                    .catch(() => null),
+            ]);
+        }
+
+        return pickerLoaded;
+    }
+
+    /* Flags drawn properly in the counts too, on Windows. */
+    import('https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1.8/dist/index.js')
+        .then((module) => module.polyfillCountryFlagEmojis())
+        .catch(() => null);
+
+    const holder = document.querySelector('[data-lab-picker]');
+    let target = null;
+
+    function closePicker() {
+        holder.hidden = true;
+        target = null;
+    }
+
+    document.addEventListener('click', async (event) => {
+        const more = event.target.closest('[data-lab-more]');
+
+        if (more) {
+            event.preventDefault();
+            target = more;
+            more.closest('details')?.removeAttribute('open');
+
+            await loadPicker();
+
+            if (! holder.firstElementChild) {
+                const picker = document.createElement('emoji-picker');
+
+                picker.addEventListener('emoji-click', (pick) => {
+                    if (! target) {
+                        return;
+                    }
+
+                    /*
+                     * Posted through a form in the post's own row,
+                     * so the same code that handles every reaction
+                     * adds it and redraws the counts.
+                     */
+                    const actions = target.closest('[data-lab-actions]');
+                    const token = actions.querySelector('input[name="_token"]').value;
+                    const form = document.createElement('form');
+
+                    form.method = 'POST';
+                    form.action = target.dataset.labMore;
+                    form.hidden = true;
+                    form.innerHTML = '<input type="hidden" name="_token">'
+                        + '<input type="hidden" name="emoji">';
+                    form.querySelector('[name="_token"]').value = token;
+                    form.querySelector('[name="emoji"]').value = pick.detail.unicode;
+
+                    actions.appendChild(form);
+                    form.requestSubmit();
+                    form.remove();
+                    closePicker();
+                });
+
+                holder.appendChild(picker);
+            }
+
+            /* Beside the button, kept on screen. */
+            const box = more.getBoundingClientRect();
+            const width = Math.min(352, window.innerWidth - 24);
+            const height = 400;
+
+            holder.style.left = Math.max(12, Math.min(box.left, window.innerWidth - width - 12)) + 'px';
+            holder.style.top = (box.top > height + 16
+                ? box.top - height - 8
+                : Math.min(box.bottom + 8, window.innerHeight - height - 12)) + 'px';
+            holder.hidden = false;
+
+            return;
+        }
+
+        if (! holder.hidden && ! event.target.closest('[data-lab-picker]')) {
+            closePicker();
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape' && ! holder.hidden) {
+            closePicker();
+        }
+    });
+
+    window.addEventListener('scroll', () => {
+        if (! holder.hidden) {
+            closePicker();
+        }
+    }, { passive: true });
+
+    /* A post's picture, full size. */
+    const viewer = document.querySelector('[data-lab-viewer]');
+
+    document.addEventListener('click', (event) => {
+        const picture = event.target.closest('[data-lab-zoom]');
+
+        if (picture) {
+            viewer.querySelector('img').src = picture.currentSrc || picture.src;
+            viewer.querySelector('img').alt = picture.alt;
+            viewer.hidden = false;
+
+            return;
+        }
+
+        if (event.target.closest('[data-lab-viewer]')) {
+            viewer.hidden = true;
+        }
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            viewer.hidden = true;
+        }
+    });
+</script>
 
 <script>
 /*

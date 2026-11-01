@@ -270,3 +270,37 @@ describe('the feed', function () {
         expect($note->fresh()->reactionTally())->toBe(['🦆' => 1]);
     });
 });
+
+test('a student can put any number of different emoji on one post, flags included', function () {
+    $note = joinableNote();
+    $student = labStudent();
+
+    $emoji = ['👍', '🔥', '🇧🇳', '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '👩🏽‍💻', '🦦', '🧋', '🫶🏾', '🎌', '🌏'];
+
+    foreach ($emoji as $one) {
+        $this->actingAs($student)
+            ->postJson(route('student.innovation-lab.react', $note), ['emoji' => $one])
+            ->assertOk();
+    }
+
+    $mine = $this->actingAs($student)
+        ->postJson(route('student.innovation-lab.react', $note), ['emoji' => '✨'])
+        ->assertOk()
+        ->json('mine');
+
+    expect($mine)->toHaveCount(11)
+        ->and($mine)->toContain('🇧🇳', '🏴󠁧󠁢󠁳󠁣󠁴󠁿', '👩🏽‍💻');
+});
+
+test('the feed offers every emoji, and shows each picture whole', function () {
+    $note = joinableNote();
+    $note->forceFill(['image_path' => 'innovation-lab/poster.png'])->saveQuietly();
+
+    $this->actingAs(labStudent())
+        ->get(route('student.innovation-lab'))
+        ->assertOk()
+        ->assertSee('data-lab-more="'.route('student.innovation-lab.react', $note).'"', false)
+        ->assertSee('data-lab-zoom', false)
+        ->assertSee('object-fit: contain', false)
+        ->assertSee('emoji-picker-element@1.21.3', false);
+});
