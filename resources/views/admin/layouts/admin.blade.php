@@ -12,22 +12,27 @@
         @endif
     </title>
     {{--
-        The side menu's state, set before the page draws so it never
-        opens and then snaps shut. On a wide screen it stays as the
-        admin left it; on a narrow one it starts as a strip of icons.
+        The side menu's size and whether it is hidden, set before the
+        page draws so it never opens and then snaps shut. On a phone
+        it always starts hidden.
     --}}
     <script>
         (function () {
             var root = document.documentElement;
-            var narrow = window.matchMedia('(max-width: 768px)').matches;
-            var collapsed = false;
+            var saved = {};
 
             try {
-                collapsed = localStorage.getItem('cpbn.sidebar.collapsed') === '1';
+                saved = JSON.parse(localStorage.getItem('cpbn.sidebar') || '{}') || {};
             } catch (e) {}
 
-            if (narrow || collapsed) {
-                root.classList.add('sidebar-rail');
+            var width = Number(saved.width) || 260;
+            width = width < 150 ? 64 : Math.min(420, width);
+
+            root.style.setProperty('--sidebar-width', width + 'px');
+            root.classList.toggle('sidebar-rail', width === 64);
+
+            if (window.matchMedia('(max-width: 768px)').matches || saved.collapsed === true) {
+                root.classList.add('sidebar-collapsed');
             }
         })();
     </script>
@@ -813,58 +818,129 @@
             }
         }
 
-        /* ---------- Collapsing the side menu ----------
+        /* ---------- The side menu: resized, narrowed, hidden ----------
          *
-         * Collapsed, the menu is a strip of icons, each keeping its
-         * name as a tooltip. On a phone it always starts that way,
-         * and opening it lays the full menu over the page rather
-         * than squeezing the page into what is left.
+         * Dragged wider or narrower by its right edge. Narrowed far
+         * enough it becomes a strip of icons, each keeping its name
+         * as a tooltip; dragged to the edge, or hidden with its
+         * button, it is gone, and a button at the top left brings
+         * it back. Pointing at that button or the screen's left
+         * edge shows it for a look; clicking opens it again.
          */
-        .admin-sidebar,
-        .admin-main {
-            transition: width 0.2s ease, max-width 0.2s ease;
+        .admin-sidebar {
+            width: var(--sidebar-width, 260px);
+            transition: width 0.2s ease, transform 0.2s ease;
         }
 
-        .sidebar-toggle {
+        .admin-main {
+            max-width: calc(100% - var(--sidebar-width, 260px));
+            transition: max-width 0.2s ease, padding 0.2s ease;
+        }
+
+        .sidebar-dragging .admin-sidebar,
+        .sidebar-dragging .admin-main {
+            transition: none;
+        }
+
+        .sidebar-dragging,
+        .sidebar-dragging * {
+            cursor: col-resize !important;
+            user-select: none !important;
+        }
+
+        .admin-sidebar .sidebar-brand {
+            position: relative;
+            gap: 8px;
+        }
+
+        .admin-sidebar .sidebar-logo-full {
+            max-width: calc(100% - 44px);
+            object-fit: contain;
+        }
+
+        .sidebar-toggle,
+        .sidebar-open-button {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 30px;
-            height: 30px;
-            margin: -4px 14px 4px auto;
+            width: 34px;
+            height: 34px;
             padding: 0;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 6px;
+            border: 0;
+            border-radius: 8px;
             background: transparent;
-            color: rgba(255, 255, 255, 0.7);
             cursor: pointer;
             flex-shrink: 0;
         }
 
+        .sidebar-toggle {
+            color: rgba(255, 255, 255, 0.75);
+        }
+
         .sidebar-toggle:hover,
         .sidebar-toggle:focus-visible {
-            background: rgba(255, 255, 255, 0.08);
+            background: rgba(255, 255, 255, 0.1);
             color: #fff;
         }
 
-        /* A comfortable target for a finger. */
-        @media (max-width: 768px) {
-            .sidebar-toggle {
-                width: 40px;
-                height: 40px;
-            }
+        .sidebar-toggle svg,
+        .sidebar-open-button svg {
+            width: 20px;
+            height: 20px;
         }
 
-        .sidebar-rail .admin-sidebar {
-            width: 60px;
+        /* The edge to drag. */
+        .sidebar-resizer {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 6px;
+            height: 100%;
+            cursor: col-resize;
+            z-index: 5;
         }
 
-        .sidebar-rail .admin-main {
-            max-width: calc(100% - 60px);
+        .sidebar-resizer::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 2px;
+            width: 2px;
+            background: transparent;
+            transition: background 0.15s ease;
         }
 
-        .sidebar-rail .sidebar-toggle {
-            margin: 0 auto 4px;
+        .sidebar-resizer:hover::after,
+        .sidebar-dragging .sidebar-resizer::after {
+            background: var(--accent, #c9a84c);
+        }
+
+        .admin-sidebar {
+            overflow-x: hidden;
+        }
+
+        .admin-sidebar-wrap {
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+
+        /* Icons only. */
+        .sidebar-rail .admin-sidebar .sidebar-brand {
+            flex-direction: column;
+            padding: 14px 6px !important;
+            justify-content: center;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-logo-full {
+            display: none !important;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-logo-badge {
+            display: block;
         }
 
         .sidebar-rail .admin-sidebar .sidebar-link span,
@@ -889,19 +965,6 @@
             width: auto;
         }
 
-        .sidebar-rail .admin-sidebar .sidebar-brand {
-            padding: 14px 6px !important;
-            justify-content: center;
-        }
-
-        .sidebar-rail .admin-sidebar .sidebar-logo-full {
-            display: none !important;
-        }
-
-        .sidebar-rail .admin-sidebar .sidebar-logo-badge {
-            display: block;
-        }
-
         .sidebar-rail .admin-sidebar .sidebar-footer {
             padding: 12px 6px !important;
         }
@@ -918,19 +981,67 @@
             margin-right: 0 !important;
         }
 
-        /* A phone with the menu opened: laid over the page. */
-        .sidebar-overlay .admin-sidebar {
+        /* Hidden. */
+        .sidebar-open-button {
+            display: none;
             position: fixed;
-            left: 0;
-            top: 0;
-            z-index: 1100;
-            width: 240px;
-            box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
+            top: 14px;
+            left: 12px;
+            z-index: 1050;
+            background: var(--primary-dark, #0d1f33);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(13, 31, 51, 0.25);
         }
 
-        .sidebar-overlay .admin-main {
-            margin-left: 60px;
-            max-width: calc(100% - 60px);
+        .sidebar-open-button:hover,
+        .sidebar-open-button:focus-visible {
+            background: var(--primary, #1a3a5c);
+        }
+
+        .sidebar-edge {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 8px;
+            height: 100vh;
+            z-index: 1040;
+            cursor: col-resize;
+        }
+
+        .sidebar-collapsed .admin-sidebar-wrap {
+            width: 0;
+        }
+
+        .sidebar-collapsed .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            z-index: 1060;
+            transform: translateX(-100%);
+            box-shadow: none;
+        }
+
+        .sidebar-collapsed .admin-main {
+            max-width: 100%;
+            padding-left: 64px;
+        }
+
+        .sidebar-collapsed .sidebar-open-button,
+        .sidebar-collapsed .sidebar-edge {
+            display: flex;
+        }
+
+        .sidebar-collapsed .sidebar-resizer {
+            display: none;
+        }
+
+        /* A look while hidden, or opened on a phone: over the page. */
+        .sidebar-collapsed.sidebar-peek .admin-sidebar,
+        .sidebar-collapsed.sidebar-overlay .admin-sidebar {
+            transform: none;
+            box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
         }
 
         .sidebar-backdrop {
@@ -941,8 +1052,25 @@
             display: block;
             position: fixed;
             inset: 0;
-            z-index: 1090;
+            z-index: 1055;
             background: rgba(13, 31, 51, 0.35);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar-resizer,
+            .sidebar-edge {
+                display: none !important;
+            }
+
+            .sidebar-collapsed .admin-main {
+                padding-left: 60px;
+            }
+
+            .sidebar-open-button,
+            .sidebar-toggle {
+                width: 40px;
+                height: 40px;
+            }
         }
 
         @media (prefers-reduced-motion: reduce) {
@@ -1202,7 +1330,25 @@
 </head>
 <body>
 
+    @php
+        /* The panel icon: a window with its side bar marked. */
+        $sidebarIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="15" rx="3"></rect><line x1="9" y1="4.5" x2="9" y2="19.5"></line></svg>';
+    @endphp
+
+    <button
+        type="button"
+        class="sidebar-open-button"
+        id="sidebarOpen"
+        aria-controls="adminSidebar"
+        aria-expanded="false"
+        aria-label="Open menu"
+        title="Open menu"
+    >{!! $sidebarIcon !!}</button>
+
+    <div class="sidebar-edge" id="sidebarEdge" aria-hidden="true"></div>
+
     <!-- Sidebar -->
+    <div class="admin-sidebar-wrap">
     <aside class="admin-sidebar" id="adminSidebar">
                 <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
     <img
@@ -1211,25 +1357,23 @@
         class="sidebar-logo-full"
         style="height: 64px; width: auto; display: block; background: white; padding: 6px 10px; border-radius: 6px;"
     >
-    {{-- On phones the sidebar is a narrow icon strip, so the round badge stands in for the logo. --}}
+    {{-- With the menu narrowed to icons, the round badge stands in for the logo. --}}
     <img
         src="{{ asset('images/careerpath-badge.png') }}"
         alt="CareerPath BN"
         class="sidebar-logo-badge"
     >
-</div>
 
-        <button
-            type="button"
-            class="sidebar-toggle"
-            id="sidebarToggle"
-            aria-controls="adminSidebar"
-            aria-expanded="true"
-            aria-label="Collapse menu"
-            title="Collapse menu"
-        >
-            <i class="fas fa-angles-left" aria-hidden="true"></i>
-        </button>
+    <button
+        type="button"
+        class="sidebar-toggle"
+        id="sidebarToggle"
+        aria-controls="adminSidebar"
+        aria-expanded="true"
+        aria-label="Close menu"
+        title="Close menu"
+    >{!! $sidebarIcon !!}</button>
+</div>
 
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>
@@ -1531,70 +1675,115 @@
         </button>
     </div>
 </div>
+        <div class="sidebar-resizer" id="sidebarResizer" aria-hidden="true"></div>
     </aside>
+    </div>
 
-    <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
     <script>
         /*
-         * Collapsing the side menu: the button at its top, and
-         * Control and B (Command and B on a Mac) for those who know it. On a wide
-         * screen the choice is remembered; on a phone the full menu
-         * opens over the page and closes again with a tap outside
-         * it, or once a page is chosen.
+         * The side menu, worked by its buttons (mouse, finger or
+         * keyboard), by dragging its edge, and by Control and B
+         * (Command and B on a Mac) for those who know it.
+         *
+         * Its width and whether it is hidden are remembered on a
+         * wide screen. On a phone it opens over the page and closes
+         * with a tap outside it.
          */
         (function () {
             var root = document.documentElement;
+            var sidebar = document.getElementById('adminSidebar');
             var toggle = document.getElementById('sidebarToggle');
+            var openButton = document.getElementById('sidebarOpen');
+            var edge = document.getElementById('sidebarEdge');
+            var resizer = document.getElementById('sidebarResizer');
             var backdrop = document.getElementById('sidebarBackdrop');
             var narrowQuery = window.matchMedia('(max-width: 768px)');
+            var canHover = window.matchMedia('(hover: hover)').matches;
 
-            if (! toggle) {
+            var RAIL = 64;
+            var RAIL_BELOW = 150;
+            var HIDE_BELOW = 40;
+            var MAX = 420;
+
+            if (! sidebar || ! toggle || ! openButton) {
                 return;
             }
 
-            function remembered() {
+            function load() {
                 try {
-                    return localStorage.getItem('cpbn.sidebar.collapsed') === '1';
+                    return JSON.parse(localStorage.getItem('cpbn.sidebar') || '{}') || {};
                 } catch (e) {
-                    return false;
+                    return {};
                 }
             }
 
-            function remember(collapsed) {
+            function save(state) {
                 try {
-                    localStorage.setItem('cpbn.sidebar.collapsed', collapsed ? '1' : '0');
+                    localStorage.setItem('cpbn.sidebar', JSON.stringify(state));
                 } catch (e) {}
             }
 
-            function show(rail, overlay) {
-                root.classList.toggle('sidebar-rail', rail);
-                root.classList.toggle('sidebar-overlay', overlay);
-                backdrop.hidden = ! overlay;
+            var saved = load();
+            var width = snapWidth(Number(saved.width) || 260);
 
-                var open = ! rail;
-
-                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-                toggle.setAttribute('aria-label', open ? 'Collapse menu' : 'Expand menu');
-                toggle.title = open ? 'Collapse menu' : 'Expand menu';
-                toggle.querySelector('i').className = open ? 'fas fa-angles-left' : 'fas fa-angles-right';
+            function snapWidth(value) {
+                return value < RAIL_BELOW ? RAIL : Math.min(MAX, Math.round(value));
             }
 
-            function settle() {
-                narrowQuery.matches ? show(true, false) : show(remembered(), false);
+            function setWidth(value) {
+                width = snapWidth(value);
+                root.style.setProperty('--sidebar-width', width + 'px');
+                root.classList.toggle('sidebar-rail', width === RAIL);
+            }
+
+            function isHidden() {
+                return root.classList.contains('sidebar-collapsed');
+            }
+
+            function label() {
+                var open = ! isHidden() || root.classList.contains('sidebar-overlay');
+
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                openButton.setAttribute('aria-expanded', open ? 'true' : 'false');
+            }
+
+            /* Just hidden: no look until the pointer has moved off and back. */
+            var holdPeek = false;
+
+            function hide() {
+                holdPeek = true;
+                root.classList.add('sidebar-collapsed');
+                root.classList.remove('sidebar-peek', 'sidebar-overlay');
+                label();
+            }
+
+            function show() {
+                root.classList.remove('sidebar-collapsed', 'sidebar-peek', 'sidebar-overlay');
+                label();
+            }
+
+            function remember() {
+                if (! narrowQuery.matches) {
+                    save({ width: width, collapsed: isHidden() });
+                }
             }
 
             function flip() {
                 if (narrowQuery.matches) {
-                    var opening = root.classList.contains('sidebar-rail');
-                    show(! opening, opening);
+                    if (root.classList.contains('sidebar-overlay')) {
+                        hide();
+                    } else {
+                        root.classList.add('sidebar-collapsed', 'sidebar-overlay');
+                        label();
+                    }
 
                     return;
                 }
 
-                var collapse = ! root.classList.contains('sidebar-rail');
-                remember(collapse);
-                show(collapse, false);
+                isHidden() ? show() : hide();
+                remember();
             }
 
             /* Each icon keeps its name as a tooltip for when the names are hidden. */
@@ -1607,11 +1796,120 @@
             });
 
             toggle.addEventListener('click', flip);
-            backdrop.addEventListener('click', settle);
+            openButton.addEventListener('click', function () {
+                if (narrowQuery.matches) {
+                    flip();
+
+                    return;
+                }
+
+                show();
+                remember();
+            });
+            backdrop.addEventListener('click', hide);
+
+            /* A look while hidden: pointing at the button or the left edge. */
+            if (canHover) {
+                var leaveTimer = null;
+
+                var peek = function () {
+                    if (isHidden() && ! holdPeek && ! narrowQuery.matches && ! root.classList.contains('sidebar-dragging')) {
+                        clearTimeout(leaveTimer);
+                        root.classList.add('sidebar-peek');
+                    }
+                };
+
+                var unpeek = function () {
+                    clearTimeout(leaveTimer);
+                    leaveTimer = setTimeout(function () {
+                        root.classList.remove('sidebar-peek');
+                    }, 250);
+                };
+
+                openButton.addEventListener('mouseenter', peek);
+                edge.addEventListener('mouseenter', peek);
+                sidebar.addEventListener('mouseenter', function () {
+                    if (root.classList.contains('sidebar-peek')) {
+                        clearTimeout(leaveTimer);
+                    }
+                });
+                sidebar.addEventListener('mouseleave', unpeek);
+
+                openButton.addEventListener('mouseleave', unpeek);
+                edge.addEventListener('mouseleave', unpeek);
+
+                /* Anywhere away from the button and the edge, a look is allowed again. */
+                document.addEventListener('mousemove', function (event) {
+                    if (holdPeek && ! openButton.contains(event.target) && event.target !== edge) {
+                        holdPeek = false;
+                    }
+                });
+            }
+
+            /*
+             * Dragging: by the menu's right edge, or, while it is
+             * hidden, from the screen's left edge to pull it back.
+             * Narrow enough and it becomes icons; to the edge and it
+             * hides.
+             */
+            function startDrag(event) {
+                if (narrowQuery.matches || event.button !== 0) {
+                    return;
+                }
+
+                event.preventDefault();
+
+                var restore = width;
+                var handle = event.currentTarget;
+
+                handle.setPointerCapture && handle.setPointerCapture(event.pointerId);
+                root.classList.add('sidebar-dragging');
+                root.classList.remove('sidebar-peek');
+
+                var move = function (moveEvent) {
+                    var x = moveEvent.clientX;
+
+                    if (x < HIDE_BELOW) {
+                        root.classList.add('sidebar-collapsed');
+                    } else {
+                        root.classList.remove('sidebar-collapsed');
+                        setWidth(x);
+                    }
+                };
+
+                var stop = function () {
+                    handle.removeEventListener('pointermove', move);
+                    handle.removeEventListener('pointerup', stop);
+                    handle.removeEventListener('pointercancel', stop);
+                    root.classList.remove('sidebar-dragging');
+
+                    /* Hidden by dragging: it comes back at the size it had. */
+                    if (isHidden()) {
+                        holdPeek = true;
+                        setWidth(restore);
+                    }
+
+                    label();
+                    remember();
+                };
+
+                handle.addEventListener('pointermove', move);
+                handle.addEventListener('pointerup', stop);
+                handle.addEventListener('pointercancel', stop);
+            }
+
+            resizer.addEventListener('pointerdown', startDrag);
+            edge.addEventListener('pointerdown', startDrag);
+
+            /* Back to the usual width. */
+            resizer.addEventListener('dblclick', function () {
+                setWidth(260);
+                remember();
+            });
 
             document.addEventListener('keydown', function (event) {
                 if (event.key === 'Escape' && root.classList.contains('sidebar-overlay')) {
-                    settle();
+                    hide();
 
                     return;
                 }
@@ -1635,10 +1933,17 @@
             });
 
             if (narrowQuery.addEventListener) {
-                narrowQuery.addEventListener('change', settle);
+                narrowQuery.addEventListener('change', function () {
+                    if (narrowQuery.matches) {
+                        hide();
+                    } else {
+                        load().collapsed === true ? hide() : show();
+                    }
+                });
             }
 
-            settle();
+            setWidth(width);
+            label();
         })();
     </script>
 
