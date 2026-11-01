@@ -33,6 +33,7 @@ class Advertisement extends Model
         'title',
         'type',
         'asset_path',
+        'video_crop',
         'external_url',
         'click_url',
         'alt_text',
@@ -48,6 +49,7 @@ class Advertisement extends Model
     {
         return [
             'is_active' => 'boolean',
+            'video_crop' => 'array',
             'starts_at' => 'datetime',
             'ends_at' => 'datetime',
         ];
@@ -123,6 +125,79 @@ class Advertisement extends Model
     public function isVideo(): bool
     {
         return $this->type === self::TYPE_VIDEO;
+    }
+
+    /**
+     * A chosen part of the picture, as fractions of it, or null
+     * when anything is missing or out of range.
+     *
+     * @return array{x: float, y: float, w: float, h: float}|null
+     */
+    public static function cleanVideoCrop(mixed $crop): ?array
+    {
+        if (is_string($crop)) {
+            $crop = json_decode($crop, true);
+        }
+
+        if (! is_array($crop)) {
+            return null;
+        }
+
+        $values = [];
+
+        foreach (['x', 'y', 'w', 'h'] as $key) {
+            if (! isset($crop[$key]) || ! is_numeric($crop[$key])) {
+                return null;
+            }
+
+            $values[$key] = round((float) $crop[$key], 5);
+        }
+
+        if (
+            $values['x'] < 0
+            || $values['y'] < 0
+            || $values['w'] <= 0.01
+            || $values['h'] <= 0.01
+            || $values['x'] + $values['w'] > 1.001
+            || $values['y'] + $values['h'] > 1.001
+        ) {
+            return null;
+        }
+
+        /* The whole picture is the same as no frame at all. */
+        if ($values['w'] >= 0.999 && $values['h'] >= 0.999) {
+            return null;
+        }
+
+        return $values;
+    }
+
+    /**
+     * Where the video sits inside the banner's window so that
+     * only the chosen part shows: its size and offset, in
+     * percent of the window. Null shows the whole video,
+     * filling the window.
+     *
+     * @return array{width: float, height: float, left: float, top: float}|null
+     */
+    public function videoFrame(): ?array
+    {
+        if (! $this->isVideo()) {
+            return null;
+        }
+
+        $crop = self::cleanVideoCrop($this->video_crop);
+
+        if ($crop === null) {
+            return null;
+        }
+
+        return [
+            'width' => round(100 / $crop['w'], 3),
+            'height' => round(100 / $crop['h'], 3),
+            'left' => round(-100 * $crop['x'] / $crop['w'], 3),
+            'top' => round(-100 * $crop['y'] / $crop['h'], 3),
+        ];
     }
 
     public function isNetworkEmbed(): bool

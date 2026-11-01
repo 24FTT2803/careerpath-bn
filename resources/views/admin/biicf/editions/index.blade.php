@@ -35,7 +35,8 @@
             <p class="hint">{{ $describes }}</p>
 
 
-            <form method="POST" action="{{ route('admin.biicf.editions.store') }}" enctype="multipart/form-data">
+            {{-- Guards itself while reading, so it is left out of the general warning. --}}
+            <form method="POST" action="{{ route('admin.biicf.editions.store') }}" enctype="multipart/form-data" data-unsaved-ignore>
                 @csrf
 
                 <div class="form-grid">

@@ -555,3 +555,114 @@ test(
             ->toBe(4);
     }
 );
+
+function videoAdvertisement(array $overrides = []): Advertisement
+{
+    return Advertisement::create($overrides + [
+        'title' => 'Clip',
+        'type' => Advertisement::TYPE_VIDEO,
+        'asset_path' => 'advertisements/clip.mp4',
+        'position' => Advertisement::POSITION_ONE,
+        'is_active' => true,
+    ]);
+}
+
+function saveVideoFrame(Advertisement $advertisement, ?string $crop, string $type = Advertisement::TYPE_VIDEO): void
+{
+    test()->actingAs(adminUser())
+        ->put(
+            route('admin.business.advertisements.update', $advertisement),
+            [
+                'title' => 'Clip',
+                'type' => $type,
+                'position' => Advertisement::POSITION_ONE,
+                'video_crop' => $crop,
+                'is_active' => '1',
+            ]
+        )
+        ->assertRedirect();
+}
+
+test(
+    'the part of a video students see can be chosen without a new upload',
+    function () {
+        Storage::fake('public');
+
+        $advertisement = videoAdvertisement();
+
+        saveVideoFrame($advertisement, '{"x":0.1,"y":0.35,"w":0.6,"h":0.17778}');
+
+        expect($advertisement->refresh()->video_crop)
+            ->toEqual(['x' => 0.1, 'y' => 0.35, 'w' => 0.6, 'h' => 0.17778])
+            ->and($advertisement->asset_path)
+            ->toBe('advertisements/clip.mp4')
+            ->and($advertisement->videoFrame())
+            ->toBe([
+                'width' => 166.667,
+                'height' => 562.493,
+                'left' => -16.667,
+                'top' => -196.873,
+            ]);
+    }
+);
+
+test(
+    'a frame that is unreadable, out of range or the whole picture shows the whole video',
+    function (string $crop) {
+        Storage::fake('public');
+
+        $advertisement = videoAdvertisement(['video_crop' => ['x' => 0.1, 'y' => 0.1, 'w' => 0.5, 'h' => 0.2]]);
+
+        saveVideoFrame($advertisement, $crop);
+
+        expect($advertisement->refresh()->video_crop)->toBeNull()
+            ->and($advertisement->videoFrame())->toBeNull();
+    }
+)->with([
+    'not JSON' => ['nonsense'],
+    'missing a side' => ['{"x":0.1,"y":0.1,"w":0.5}'],
+    'past the edge' => ['{"x":0.8,"y":0.1,"w":0.5,"h":0.2}'],
+    'the whole picture' => ['{"x":0,"y":0,"w":1,"h":1}'],
+]);
+
+test(
+    'only a video keeps a frame',
+    function () {
+        Storage::fake('public');
+
+        $advertisement = videoAdvertisement(['asset_path' => 'advertisements/banner.png']);
+
+        saveVideoFrame($advertisement, '{"x":0.1,"y":0.35,"w":0.6,"h":0.17778}', Advertisement::TYPE_IMAGE);
+
+        expect($advertisement->refresh()->video_crop)->toBeNull();
+    }
+);
+
+test(
+    'editing a video shows the clip itself, its name and a way to frame it',
+    function () {
+        $advertisement = videoAdvertisement(['video_crop' => ['x' => 0.1, 'y' => 0.35, 'w' => 0.6, 'h' => 0.17778]]);
+
+        $this->actingAs(adminUser())
+            ->get(route('admin.business.advertisements.edit', $advertisement))
+            ->assertOk()
+            ->assertSee('<video', false)
+            ->assertSee('clip.mp4')
+            ->assertSee('showing the part you chose')
+            ->assertSee('id="videoFrameExisting"', false)
+            ->assertSee('width:166.667%', false);
+    }
+);
+
+test(
+    'the advertisement list shows a video through its frame',
+    function () {
+        videoAdvertisement(['video_crop' => ['x' => 0.1, 'y' => 0.35, 'w' => 0.6, 'h' => 0.17778]]);
+
+        $this->actingAs(adminUser())
+            ->get(route('admin.business.advertisements.index'))
+            ->assertOk()
+            ->assertSee('data-ad-video-frame', false)
+            ->assertSee('left:-16.667%', false);
+    }
+);

@@ -14,6 +14,9 @@ import Chart from 'chart.js/auto';
  */
 import './book-source.js';
 
+/* A warning before unsaved changes on any form are lost. */
+import './unsaved-changes.js';
+
 window.Alpine = Alpine;
 window.cpbnLevenshteinDistance = levenshteinDistance;
 window.Chart = Chart;
@@ -2744,8 +2747,9 @@ document.addEventListener(
 
                     event.preventDefault();
 
+                    /* Some browsers only warn when this is not empty. */
                     event.returnValue =
-                        '';
+                        'You have unsaved profile changes.';
                 }
             );
 
@@ -2828,10 +2832,13 @@ document.addEventListener(
 
                     /*
                      * Moving to another anchor on the same
-                     * page does not discard the form.
+                     * page does not discard the form. A plain
+                     * link to this same page reloads it, and
+                     * that does, so it is asked about.
                      */
                     if (
-                        destination.origin
+                        destination.hash
+                        && destination.origin
                             === current.origin
                         && destination.pathname
                             === current.pathname

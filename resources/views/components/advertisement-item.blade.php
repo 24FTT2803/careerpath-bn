@@ -32,26 +32,26 @@
             target="_blank"
             rel="noopener sponsored"
         >
-            <video
-                src="{{ $mediaUrl }}"
+            <x-advertisement-video
+                :advertisement="$advertisement"
                 class="ad-slot-media"
                 muted
                 loop
                 autoplay
                 playsinline
                 aria-label="{{ $label }}"
-            ></video>
+            />
         </a>
     @else
-        <video
-            src="{{ $mediaUrl }}"
+        <x-advertisement-video
+            :advertisement="$advertisement"
             class="ad-slot-media"
             muted
             loop
             autoplay
             playsinline
             aria-label="{{ $label }}"
-        ></video>
+        />
     @endif
 
 @elseif($mediaUrl)

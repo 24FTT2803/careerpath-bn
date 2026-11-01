@@ -162,8 +162,8 @@
             ignored.
         --}}
         <div class="mb-4" data-ad-field="image video">
-            <label class="field-label">
-                Image
+            <label class="field-label" id="assetLabel">
+                {{ old('type', $advertisement->type) === 'video' ? 'Video' : 'Image' }}
             </label>
 
             @if($advertisement->asset_path)
@@ -178,13 +178,30 @@
                         already there.
                     --}}
                     @if($advertisement->isVideo())
-                        <video
-                            src="{{ $advertisement->mediaUrl() }}"
-                            class="current-asset-preview"
-                            controls
-                            muted
-                            playsinline
-                        ></video>
+                        <div id="currentVideo" data-src="{{ $advertisement->mediaUrl() }}">
+                            <x-advertisement-video
+                                :advertisement="$advertisement"
+                                class="current-asset-preview"
+                                muted
+                                loop
+                                autoplay
+                                playsinline
+                            />
+                        </div>
+
+                        <p class="field-hint" style="margin-top:6px;">
+                            {{ basename($advertisement->asset_path) }} &middot;
+                            {{ $advertisement->videoFrame() ? 'showing the part you chose' : 'showing the whole video' }}
+                        </p>
+
+                        <button
+                            type="button"
+                            id="videoFrameExisting"
+                            class="btn btn-subtle btn-sm"
+                            style="margin-top:6px;"
+                        >
+                            <i class="fas fa-crop-simple"></i> Choose the part students see
+                        </button>
                     @else
                         <img
                             src="{{ $advertisement->mediaUrl() }}"
@@ -232,6 +249,75 @@
             <p id="assetError" class="field-hint" style="display:none;color:#c0392b;"></p>
 
             <input type="hidden" name="cropped_asset" id="croppedAsset">
+
+            {{-- The chosen part of a video, as fractions of the picture. --}}
+            <input
+                type="hidden"
+                name="video_crop"
+                id="videoCrop"
+                value="{{ old('video_crop', $advertisement->video_crop ? json_encode($advertisement->video_crop) : '') }}"
+            >
+
+            {{--
+                A video is framed on a still taken from it. The clip
+                itself is kept as uploaded and shown through the
+                chosen frame.
+            --}}
+            <div id="videoFramePanel" style="display:none;margin-top:12px">
+                <p class="field-hint" style="margin-bottom:8px;">
+                    This is a still from the video. Drag the box over
+                    the part students should see, then confirm it.
+                    The video plays inside that box.
+                </p>
+
+                <div style="max-width:728px">
+                    <img id="videoFrameImage" alt="" style="max-width:100%">
+                </div>
+
+                <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+                    <button type="button" id="videoFrameConfirm" class="btn btn-subtle btn-sm">
+                        Use this part
+                    </button>
+
+                    <button type="button" id="videoFrameWhole" class="btn btn-subtle btn-sm">
+                        Use the whole video
+                    </button>
+
+                    <button type="button" id="videoFrameCancel" class="btn btn-subtle btn-sm">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+
+            <div id="videoPreview" style="display:none;margin-top:12px">
+                <p class="field-hint" style="margin-bottom:6px;" id="videoPreviewNote">
+                    This is what will be saved.
+                </p>
+
+                <div
+                    id="videoPreviewFrame"
+                    class="current-asset-preview"
+                    style="position:relative;overflow:hidden;"
+                >
+                    <video
+                        id="videoPreviewPlayer"
+                        muted
+                        loop
+                        autoplay
+                        playsinline
+                        style="position:absolute;display:block;max-width:none;width:100%;height:100%;left:0;top:0;object-fit:cover;"
+                    ></video>
+                </div>
+
+                <button
+                    type="button"
+                    id="videoFrameReopen"
+                    class="btn btn-subtle btn-sm"
+                    style="margin-top:8px;"
+                >
+                    <i class="fas fa-crop-simple"></i> Change the part students see
+                </button>
+            </div>
 
             <div id="cropperPanel" style="display:none;margin-top:12px">
                 <p class="field-hint" style="margin-bottom:8px;">
@@ -520,6 +606,10 @@
                     );
 
                     input.value = '';
+
+                    if (window.adVideoFraming) {
+                        window.adVideoFraming.forget();
+                    }
                 }
             };
 
@@ -560,7 +650,16 @@
             if (isVideo) {
                 checkVideo(file);
 
+                /* Seen straight away, then framed, as an image is cropped. */
+                if (window.adVideoFraming) {
+                    window.adVideoFraming.choose(window.URL.createObjectURL(file), file.name);
+                }
+
                 return;
+            }
+
+            if (window.adVideoFraming) {
+                window.adVideoFraming.forget();
             }
 
             /*
@@ -642,6 +741,248 @@
 
 <script>
     /*
+     * Framing a video. A still is taken from the clip and cropped
+     * like an image; what is kept is where the box sits, as
+     * fractions of the picture. The preview then plays the clip
+     * through that box, exactly as students will see it.
+     */
+    document.addEventListener('DOMContentLoaded', function () {
+        var form = document.getElementById('assetInput') && document.getElementById('assetInput').form;
+        var hidden = document.getElementById('videoCrop');
+        var panel = document.getElementById('videoFramePanel');
+        var still = document.getElementById('videoFrameImage');
+        var preview = document.getElementById('videoPreview');
+        var previewNote = document.getElementById('videoPreviewNote');
+        var previewPlayer = document.getElementById('videoPreviewPlayer');
+        var current = document.getElementById('currentVideo');
+        var error = document.getElementById('assetError');
+
+        if (! form || ! hidden || ! panel) {
+            return;
+        }
+
+        var cropper = null;
+        var source = null;
+        var sourceName = '';
+
+        function readCrop() {
+            try {
+                var crop = JSON.parse(hidden.value || 'null');
+
+                return crop && crop.w > 0 && crop.h > 0 ? crop : null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /* The clip placed behind the 6:1 window so only the chosen part shows. */
+        function placeVideo(video, crop) {
+            if (! crop) {
+                video.style.width = '100%';
+                video.style.height = '100%';
+                video.style.left = '0';
+                video.style.top = '0';
+                video.style.objectFit = 'cover';
+
+                return;
+            }
+
+            video.style.objectFit = 'fill';
+            video.style.width = (100 / crop.w) + '%';
+            video.style.height = (100 / crop.h) + '%';
+            video.style.left = (-100 * crop.x / crop.w) + '%';
+            video.style.top = (-100 * crop.y / crop.h) + '%';
+        }
+
+        function showPreview() {
+            if (! source) {
+                return;
+            }
+
+            if (previewPlayer.getAttribute('src') !== source) {
+                previewPlayer.src = source;
+            }
+
+            placeVideo(previewPlayer, readCrop());
+            previewNote.textContent = (sourceName ? sourceName + ': ' : '')
+                + (readCrop() ? 'this part of the video will be shown.' : 'the whole video will be shown, filling the banner.');
+            preview.style.display = '';
+
+            if (current) {
+                current.style.display = 'none';
+            }
+        }
+
+        function closePanel() {
+            if (cropper) {
+                cropper.destroy();
+                cropper = null;
+            }
+
+            panel.style.display = 'none';
+        }
+
+        /* A still from about half a second in, or the middle of a shorter clip. */
+        function takeStill(url, done) {
+            var probe = document.createElement('video');
+
+            probe.muted = true;
+            probe.playsInline = true;
+            probe.preload = 'auto';
+
+            probe.addEventListener('loadeddata', function () {
+                probe.currentTime = Math.min(0.5, (probe.duration || 1) / 2);
+            }, { once: true });
+
+            probe.addEventListener('seeked', function () {
+                var canvas = document.createElement('canvas');
+
+                canvas.width = probe.videoWidth;
+                canvas.height = probe.videoHeight;
+                canvas.getContext('2d').drawImage(probe, 0, 0);
+
+                try {
+                    done(canvas.toDataURL('image/jpeg', 0.85), probe.videoWidth, probe.videoHeight);
+                } catch (e) {
+                    done(null);
+                }
+            }, { once: true });
+
+            probe.addEventListener('error', function () {
+                done(null);
+            }, { once: true });
+
+            probe.src = url;
+        }
+
+        function openPanel() {
+            if (! source || typeof Cropper === 'undefined') {
+                showPreview();
+
+                return;
+            }
+
+            takeStill(source, function (dataUrl, width, height) {
+                if (! dataUrl) {
+                    if (error) {
+                        error.textContent = 'A still could not be taken from this video, so the whole video will be shown.';
+                        error.style.display = '';
+                    }
+
+                    showPreview();
+
+                    return;
+                }
+
+                preview.style.display = 'none';
+                panel.style.display = '';
+                still.src = dataUrl;
+
+                if (cropper) {
+                    cropper.destroy();
+                }
+
+                var crop = readCrop();
+
+                cropper = new Cropper(still, {
+                    aspectRatio: 6,
+                    viewMode: 1,
+                    autoCropArea: 1,
+                    ready: function () {
+                        if (crop) {
+                            cropper.setData({
+                                x: crop.x * width,
+                                y: crop.y * height,
+                                width: crop.w * width,
+                                height: crop.h * height,
+                            });
+                        }
+                    },
+                });
+            });
+        }
+
+        function changed() {
+            if (typeof window.markUnsaved === 'function') {
+                window.markUnsaved(form);
+            }
+        }
+
+        document.getElementById('videoFrameConfirm').addEventListener('click', function () {
+            if (! cropper) {
+                return;
+            }
+
+            var data = cropper.getData(true);
+            var image = cropper.getImageData();
+            var width = image.naturalWidth;
+            var height = image.naturalHeight;
+
+            var round = function (value) {
+                return Math.round(Math.max(0, Math.min(1, value)) * 100000) / 100000;
+            };
+
+            var crop = {
+                x: round(data.x / width),
+                y: round(data.y / height),
+                w: round(data.width / width),
+                h: round(data.height / height),
+            };
+
+            hidden.value = crop.w >= 0.999 && crop.h >= 0.999 ? '' : JSON.stringify(crop);
+            changed();
+            closePanel();
+            showPreview();
+        });
+
+        document.getElementById('videoFrameWhole').addEventListener('click', function () {
+            hidden.value = '';
+            changed();
+            closePanel();
+            showPreview();
+        });
+
+        document.getElementById('videoFrameCancel').addEventListener('click', function () {
+            closePanel();
+            showPreview();
+        });
+
+        document.getElementById('videoFrameReopen').addEventListener('click', openPanel);
+
+        var existing = document.getElementById('videoFrameExisting');
+
+        if (existing && current) {
+            existing.addEventListener('click', function () {
+                source = current.getAttribute('data-src');
+                sourceName = '';
+                openPanel();
+            });
+        }
+
+        window.adVideoFraming = {
+            /* A new clip: shown at once, and framed from scratch. */
+            choose: function (url, name) {
+                source = url;
+                sourceName = name || '';
+                hidden.value = '';
+                openPanel();
+            },
+
+            /* Not a video any more: no frame to keep. */
+            forget: function () {
+                closePanel();
+                preview.style.display = 'none';
+
+                if (current) {
+                    current.style.display = '';
+                }
+            },
+        };
+    });
+</script>
+
+<script>
+    /*
      * Show only the fields the chosen kind of advertisement
      * actually uses. Hidden fields keep their values, so
      * switching type to look and switching back does not quietly
@@ -656,8 +997,14 @@
 
         var blocks = document.querySelectorAll('[data-ad-field]');
 
+        var assetLabel = document.getElementById('assetLabel');
+
         function applyType() {
             var current = typeSelect.value;
+
+            if (assetLabel) {
+                assetLabel.textContent = current === 'video' ? 'Video' : 'Image';
+            }
 
             blocks.forEach(function (block) {
                 var types = block

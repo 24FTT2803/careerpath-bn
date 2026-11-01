@@ -427,7 +427,7 @@ class AdvertisementController extends Controller
      */
     private function validated(Request $request): array
     {
-        return $request->validate(
+        $validated = $request->validate(
             [
                 'title' => ['required', 'string', 'max:120'],
 
@@ -465,6 +465,16 @@ class AdvertisementController extends Controller
                     'nullable',
                     'string',
                     'starts_with:data:image/',
+                ],
+
+                /*
+                 * The part of a video students see, chosen in the
+                 * browser, as fractions of the picture.
+                 */
+                'video_crop' => [
+                    'nullable',
+                    'string',
+                    'max:200',
                 ],
 
                 'external_url' => [
@@ -530,6 +540,13 @@ class AdvertisementController extends Controller
         ) + [
             'is_active' => $request->boolean('is_active'),
         ];
+
+        /* Only a video has a frame; anything unreadable shows the whole clip. */
+        $validated['video_crop'] = ($validated['type'] ?? null) === Advertisement::TYPE_VIDEO
+            ? Advertisement::cleanVideoCrop($validated['video_crop'] ?? null)
+            : null;
+
+        return $validated;
     }
 
     /**

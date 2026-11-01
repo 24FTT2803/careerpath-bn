@@ -214,13 +214,13 @@
                                     @if($advertisement->isNetworkEmbed())
                                         <span class="cell-sub">Network embed</span>
                                     @elseif($advertisement->isVideo() && $mediaUrl)
-                                        <video
-                                            src="{{ $mediaUrl }}"
+                                        <x-advertisement-video
+                                            :advertisement="$advertisement"
                                             class="ad-thumb"
                                             muted
                                             playsinline
                                             preload="metadata"
-                                        ></video>
+                                        />
                                     @elseif($mediaUrl)
                                         <img
                                             src="{{ $mediaUrl }}"

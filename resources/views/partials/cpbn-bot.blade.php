@@ -1153,6 +1153,11 @@
      * compared with how the page first drew it.
      */
     function hasUnsavedChanges() {
+        /* The site-wide record, when the page has it. */
+        if (typeof window.hasUnsavedChanges === 'function') {
+            return window.hasUnsavedChanges();
+        }
+
         if (window.formChanged === true) {
             return true;
         }
@@ -1213,6 +1218,9 @@
 
         const leave = () => {
             remember({ open: true });
+
+            /* Asked already: no second warning from the browser. */
+            window.leaveWithoutWarning?.();
             window.location.href = target.href;
         };
 
