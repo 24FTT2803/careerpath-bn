@@ -11,6 +11,26 @@
             Admin — CareerPath BN
         @endif
     </title>
+    {{--
+        The side menu's state, set before the page draws so it never
+        opens and then snaps shut. On a wide screen it stays as the
+        admin left it; on a narrow one it starts as a strip of icons.
+    --}}
+    <script>
+        (function () {
+            var root = document.documentElement;
+            var narrow = window.matchMedia('(max-width: 768px)').matches;
+            var collapsed = false;
+
+            try {
+                collapsed = localStorage.getItem('cpbn.sidebar.collapsed') === '1';
+            } catch (e) {}
+
+            if (narrow || collapsed) {
+                root.classList.add('sidebar-rail');
+            }
+        })();
+    </script>
     <link rel="icon" href="{{ asset('favicon.ico') }}?v=2" sizes="any">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}?v=2">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -782,69 +802,153 @@
 
         /* Responsive */
         @media (max-width: 768px) {
-            .admin-sidebar {
-                width: 200px;
-            }
             .admin-main {
                 padding: 20px 16px 40px;
-                max-width: 100%;
-            }
-            .sidebar-brand .brand-sub {
-                display: none;
             }
         }
 
         @media (max-width: 480px) {
-            .admin-sidebar {
-                width: 60px;
-            }
-            .admin-sidebar .brand-text,
-            .admin-sidebar .brand-sub,
-            .admin-sidebar .sidebar-link span,
-            .admin-sidebar .sidebar-footer .nav-user .user-info,
-            .admin-sidebar .sidebar-link .badge,
-            .admin-sidebar .nav-label {
-                display: none;
-            }
-            .admin-sidebar .sidebar-link {
-                justify-content: center;
-                padding: 12px;
-            }
-            .admin-sidebar .sidebar-link i {
-                font-size: 18px;
-                width: auto;
-            }
             .admin-main {
                 padding: 16px 12px 32px;
-                max-width: 100%;
             }
-            .sidebar-brand {
-                padding: 14px 6px !important;
-                justify-content: center;
+        }
+
+        /* ---------- Collapsing the side menu ----------
+         *
+         * Collapsed, the menu is a strip of icons, each keeping its
+         * name as a tooltip. On a phone it always starts that way,
+         * and opening it lays the full menu over the page rather
+         * than squeezing the page into what is left.
+         */
+        .admin-sidebar,
+        .admin-main {
+            transition: width 0.2s ease, max-width 0.2s ease;
+        }
+
+        .sidebar-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 30px;
+            height: 30px;
+            margin: -4px 14px 4px auto;
+            padding: 0;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        .sidebar-toggle:hover,
+        .sidebar-toggle:focus-visible {
+            background: rgba(255, 255, 255, 0.08);
+            color: #fff;
+        }
+
+        /* A comfortable target for a finger. */
+        @media (max-width: 768px) {
+            .sidebar-toggle {
+                width: 40px;
+                height: 40px;
             }
-            .admin-sidebar .sidebar-logo-full {
-                display: none !important;
-            }
-            .admin-sidebar .sidebar-logo-badge {
-                display: block;
-            }
-            .sidebar-footer .nav-user {
-                padding: 6px !important;
-                justify-content: center;
-            }
-            .sidebar-footer .nav-user .avatar {
-                width: 32px;
-                height: 32px;
-                font-size: 13px;
-            }
-            .sidebar-footer .nav-user .chevron {
-                display: none;
-            }
-            .sidebar-footer .nav-user-wrapper .dropdown {
-                right: auto;
-                left: 50%;
-                transform: translateX(-50%);
-                min-width: 160px;
+        }
+
+        .sidebar-rail .admin-sidebar {
+            width: 60px;
+        }
+
+        .sidebar-rail .admin-main {
+            max-width: calc(100% - 60px);
+        }
+
+        .sidebar-rail .sidebar-toggle {
+            margin: 0 auto 4px;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-link span,
+        .sidebar-rail .admin-sidebar .sidebar-link .badge,
+        .sidebar-rail .admin-sidebar .nav-label,
+        .sidebar-rail .admin-sidebar .sidebar-user-info,
+        .sidebar-rail .admin-sidebar .sidebar-logout-text {
+            display: none;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-nav {
+            padding: 12px 6px;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-link {
+            justify-content: center;
+            padding: 12px;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-link i {
+            font-size: 18px;
+            width: auto;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-brand {
+            padding: 14px 6px !important;
+            justify-content: center;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-logo-full {
+            display: none !important;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-logo-badge {
+            display: block;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-footer {
+            padding: 12px 6px !important;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-user {
+            flex-direction: column;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-logout {
+            padding: 8px !important;
+        }
+
+        .sidebar-rail .admin-sidebar .sidebar-logout i {
+            margin-right: 0 !important;
+        }
+
+        /* A phone with the menu opened: laid over the page. */
+        .sidebar-overlay .admin-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1100;
+            width: 240px;
+            box-shadow: 8px 0 24px rgba(0, 0, 0, 0.25);
+        }
+
+        .sidebar-overlay .admin-main {
+            margin-left: 60px;
+            max-width: calc(100% - 60px);
+        }
+
+        .sidebar-backdrop {
+            display: none;
+        }
+
+        .sidebar-overlay .sidebar-backdrop {
+            display: block;
+            position: fixed;
+            inset: 0;
+            z-index: 1090;
+            background: rgba(13, 31, 51, 0.35);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .admin-sidebar,
+            .admin-main {
+                transition: none;
             }
         }
 
@@ -1099,7 +1203,7 @@
 <body>
 
     <!-- Sidebar -->
-    <aside class="admin-sidebar">
+    <aside class="admin-sidebar" id="adminSidebar">
                 <div class="sidebar-brand" style="justify-content: center; padding: 20px 16px;">
     <img
         src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
@@ -1114,6 +1218,18 @@
         class="sidebar-logo-badge"
     >
 </div>
+
+        <button
+            type="button"
+            class="sidebar-toggle"
+            id="sidebarToggle"
+            aria-controls="adminSidebar"
+            aria-expanded="true"
+            aria-label="Collapse menu"
+            title="Collapse menu"
+        >
+            <i class="fas fa-angles-left" aria-hidden="true"></i>
+        </button>
 
         <nav class="sidebar-nav">
             <div class="nav-label">Main</div>
@@ -1393,7 +1509,7 @@
 
         <!-- Footer - Simple Logout Button -->
 <div class="sidebar-footer" style="padding:16px 20px;border-top:1px solid rgba(255,255,255,0.06);">
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div class="sidebar-user" style="display:flex;align-items:center;gap:10px;">
         <!-- Avatar -->
         <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg, #c9a84c, #e8d4a0);color:#0d1f33;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;overflow:hidden;">
             @if(auth()->user()->avatar)
@@ -1404,18 +1520,127 @@
         </div>
         
         <!-- User Info -->
-        <div style="flex:1;min-width:0;">
+        <div class="sidebar-user-info" style="flex:1;min-width:0;">
             <div style="font-size:13px;font-weight:500;color:#ffffff;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="{{ auth()->user()->name }}">{{ auth()->user()->name }}</div>
             <div style="font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.04em;line-height:1.3;">{{ ucfirst(auth()->user()->role) }}</div>
         </div>
         
         <!-- Logout Button -->
-        <button onclick="confirmLogout()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f5f1e6;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.3s ease;font-family:inherit;white-space:nowrap;">
-            <i class="fas fa-sign-out-alt" style="color:#c9a84c;margin-right:4px;"></i> Logout
+        <button onclick="confirmLogout()" class="sidebar-logout" title="Logout" aria-label="Logout" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);color:#f5f1e6;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;transition:all 0.3s ease;font-family:inherit;white-space:nowrap;">
+            <i class="fas fa-sign-out-alt" style="color:#c9a84c;margin-right:4px;"></i><span class="sidebar-logout-text"> Logout</span>
         </button>
     </div>
 </div>
     </aside>
+
+    <div class="sidebar-backdrop" id="sidebarBackdrop" hidden></div>
+
+    <script>
+        /*
+         * Collapsing the side menu: the button at its top, and
+         * Control and B (Command and B on a Mac) for those who know it. On a wide
+         * screen the choice is remembered; on a phone the full menu
+         * opens over the page and closes again with a tap outside
+         * it, or once a page is chosen.
+         */
+        (function () {
+            var root = document.documentElement;
+            var toggle = document.getElementById('sidebarToggle');
+            var backdrop = document.getElementById('sidebarBackdrop');
+            var narrowQuery = window.matchMedia('(max-width: 768px)');
+
+            if (! toggle) {
+                return;
+            }
+
+            function remembered() {
+                try {
+                    return localStorage.getItem('cpbn.sidebar.collapsed') === '1';
+                } catch (e) {
+                    return false;
+                }
+            }
+
+            function remember(collapsed) {
+                try {
+                    localStorage.setItem('cpbn.sidebar.collapsed', collapsed ? '1' : '0');
+                } catch (e) {}
+            }
+
+            function show(rail, overlay) {
+                root.classList.toggle('sidebar-rail', rail);
+                root.classList.toggle('sidebar-overlay', overlay);
+                backdrop.hidden = ! overlay;
+
+                var open = ! rail;
+
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.setAttribute('aria-label', open ? 'Collapse menu' : 'Expand menu');
+                toggle.title = open ? 'Collapse menu' : 'Expand menu';
+                toggle.querySelector('i').className = open ? 'fas fa-angles-left' : 'fas fa-angles-right';
+            }
+
+            function settle() {
+                narrowQuery.matches ? show(true, false) : show(remembered(), false);
+            }
+
+            function flip() {
+                if (narrowQuery.matches) {
+                    var opening = root.classList.contains('sidebar-rail');
+                    show(! opening, opening);
+
+                    return;
+                }
+
+                var collapse = ! root.classList.contains('sidebar-rail');
+                remember(collapse);
+                show(collapse, false);
+            }
+
+            /* Each icon keeps its name as a tooltip for when the names are hidden. */
+            document.querySelectorAll('.admin-sidebar .sidebar-link').forEach(function (link) {
+                var name = link.querySelector('span');
+
+                if (name && ! link.title) {
+                    link.title = name.textContent.trim();
+                }
+            });
+
+            toggle.addEventListener('click', flip);
+            backdrop.addEventListener('click', settle);
+
+            document.addEventListener('keydown', function (event) {
+                if (event.key === 'Escape' && root.classList.contains('sidebar-overlay')) {
+                    settle();
+
+                    return;
+                }
+
+                if (
+                    (event.ctrlKey || event.metaKey)
+                    && ! event.altKey
+                    && ! event.shiftKey
+                    && (event.key === 'b' || event.key === 'B')
+                ) {
+                    /* Left alone while typing, where it may mean bold. */
+                    var target = event.target;
+
+                    if (target && (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName))) {
+                        return;
+                    }
+
+                    event.preventDefault();
+                    flip();
+                }
+            });
+
+            if (narrowQuery.addEventListener) {
+                narrowQuery.addEventListener('change', settle);
+            }
+
+            settle();
+        })();
+    </script>
 
     <!-- Main Content -->
     <main class="admin-main">
