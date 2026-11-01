@@ -64,6 +64,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'last_active_at' => 'datetime',
             'show_ads' => 'boolean',
             'cpbn_bot_auto_navigate' => 'boolean',
+            'special_rules' => 'array',
         ];
     }
 
@@ -425,6 +426,11 @@ class User extends Authenticatable implements MustVerifyEmail
             return false;
         }
 
+        /* Staff, or a special account, trying the student side: nothing was sent to confirm. */
+        if ($this->homeRole() !== 'student') {
+            return false;
+        }
+
         /*
          * An account an administrator excused. They are the ones
          * created rather than signed up — a demonstration
@@ -708,6 +714,79 @@ class User extends Authenticatable implements MustVerifyEmail
     /**
      * Check if user is an admin.
      */
+    /**
+     * The roles a special account can be, in the order the
+     * switcher shows them.
+     */
+    public const ROLES = ['student', 'lecturer', 'admin'];
+
+    /**
+     * What a special account may do that its plan would not
+     * allow: 'unlimited_ai', 'premium', 'no_ads'.
+     */
+    public function hasSpecialRule(string $rule): bool
+    {
+        return (bool) (($this->special_rules ?? [])[$rule] ?? false);
+    }
+
+    /**
+     * The role this account was given, whichever it is using now.
+     */
+    public function homeRole(): string
+    {
+        return $this->home_role ?? (string) $this->role;
+    }
+
+    /**
+     * The roles this account may switch between. Every admin can
+     * also be a student, with its own practice profile, to see
+     * and try what students do. A special account adds the roles
+     * an admin allowed it.
+     *
+     * @return array<int, string>
+     */
+    public function switchableRoles(): array
+    {
+        $roles = array_merge(
+            [$this->homeRole()],
+            (array) (($this->special_rules ?? [])['roles'] ?? []),
+            $this->homeRole() === 'admin' ? ['student'] : []
+        );
+
+        return array_values(array_intersect(self::ROLES, $roles));
+    }
+
+    public function canSwitchRoles(): bool
+    {
+        return count($this->switchableRoles()) > 1;
+    }
+
+    /**
+     * Use another of its roles. Everything then works as for any
+     * account of that role, with this account's own data.
+     */
+    public function switchRole(string $role): bool
+    {
+        if (! in_array($role, $this->switchableRoles(), true)) {
+            return false;
+        }
+
+        $home = $this->homeRole();
+
+        $this->forceFill([
+            'role' => $role,
+            'home_role' => $role === $home ? null : $home,
+        ])->save();
+
+        return true;
+    }
+
+    public function isSpecial(): bool
+    {
+        return collect(['unlimited_ai', 'premium', 'no_ads'])->contains(fn (string $rule) => $this->hasSpecialRule($rule))
+            || count((array) (($this->special_rules ?? [])['roles'] ?? [])) > 0;
+    }
+
     public function isAdmin()
     {
         return $this->role === 'admin';

@@ -71,19 +71,19 @@
             <div class="cpbn-field">
                 <label>Role <span class="req">*</span></label>
                 <select name="role" id="role-select" required onchange="toggleStudentFields()">
-                    <option value="student" {{ old('role', $user->role) == 'student' ? 'selected' : '' }}>Student</option>
-                    <option value="lecturer" {{ old('role', $user->role) == 'lecturer' ? 'selected' : '' }}>Lecturer</option>
-                    <option value="admin" {{ old('role', $user->role) == 'admin' ? 'selected' : '' }}>Admin</option>
+                    <option value="student" {{ old('role', $user->homeRole()) == 'student' ? 'selected' : '' }}>Student</option>
+                    <option value="lecturer" {{ old('role', $user->homeRole()) == 'lecturer' ? 'selected' : '' }}>Lecturer</option>
+                    <option value="admin" {{ old('role', $user->homeRole()) == 'admin' ? 'selected' : '' }}>Admin</option>
                 </select>
                 @error('role')<p class="err">{{ $message }}</p>@enderror
             </div>
 
             <!-- Student-specific fields -->
-            <div id="student-fields" style="{{ old('role', $user->role) == 'student' ? 'display:block' : 'display:none' }}">
+            <div id="student-fields" style="{{ old('role', $user->homeRole()) == 'student' ? 'display:block' : 'display:none' }}">
                 <div class="cpbn-field">
                     <label>Student ID <span class="req">*</span></label>
                     <input type="text" name="student_id" value="{{ old('student_id', $user->student_id) }}" 
-                           {{ old('role', $user->role) == 'student' ? 'required' : '' }}>
+                           {{ old('role', $user->homeRole()) == 'student' ? 'required' : '' }}>
                     <p style="font-size:12px;color:#6b7280;margin-top:4px;">Format: 24FTT2803. IDs you enter here are marked verified.</p>       
                     @error('student_id')<p class="err">{{ $message }}</p>@enderror
                 </div>
@@ -122,6 +122,8 @@
                     </label>
                 </div>
             </div>
+
+            @include('admin.users.partials.special-account', ['user' => $user])
 
             <div class="cpbn-form-actions">
                 <button type="submit" class="cpbn-btn cpbn-btn-primary">

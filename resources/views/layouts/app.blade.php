@@ -1630,5 +1630,7 @@
 <x-cookie-banner />   
     @include('partials.student-polish')
     @include('partials.long-text')
+    {{-- Switching roles, for an account allowed more than one. --}}
+    <x-role-switcher />
 </body>
 </html>

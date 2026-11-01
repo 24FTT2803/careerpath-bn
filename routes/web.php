@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Account\RoleSwitchController;
 use App\Http\Controllers\Admin\AdvertisementController;
 use App\Http\Controllers\Admin\BiicfController;
 use App\Http\Controllers\Admin\BiicfEditionController;
@@ -69,6 +70,14 @@ Route::get('/dashboard', function () {
 })
     ->middleware('auth')
     ->name('dashboard');
+
+/*
+ * A special account, or an admin, using another of its roles.
+ * Reachable from any role, so it can always come back.
+ */
+Route::post('/switch-role', RoleSwitchController::class)
+    ->middleware('auth')
+    ->name('role.switch');
 
 // ============================================
 // AUTHENTICATION ROUTES (Provided by Breeze)

@@ -86,14 +86,18 @@
                     'lecturer' => 'Lecturer',
                     'student' => 'Student',
                 ];
-                $roleColor = $roleColors[$user->role] ?? 'role-student';
-                $roleIcon = $roleIcons[$user->role] ?? 'fa-user';
-                $roleLabel = $roleLabels[$user->role] ?? ucfirst($user->role);
+                /* Listed by the role it was given, even while it uses another. */
+                $homeRole = $user->homeRole();
+                $roleColor = $roleColors[$homeRole] ?? 'role-student';
+                $roleIcon = $roleIcons[$homeRole] ?? 'fa-user';
+                $roleLabel = ($roleLabels[$homeRole] ?? ucfirst($homeRole))
+                    .($user->isSpecial() ? ' · Special' : '')
+                    .($user->role !== $homeRole ? ' (now as '.ucfirst($user->role).')' : '');
 
                 $profileCompletion = $user->profile_completion ?? 0;
-                $isStudent = $user->role === 'student';
-                $isLecturer = $user->role === 'lecturer';
-                $isAdmin = $user->role === 'admin';
+                $isStudent = $homeRole === 'student';
+                $isLecturer = $homeRole === 'lecturer';
+                $isAdmin = $homeRole === 'admin';
             @endphp
 
             <div class="user-card">

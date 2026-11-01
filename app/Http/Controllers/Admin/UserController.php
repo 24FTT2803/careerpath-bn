@@ -79,6 +79,8 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
+        $rules += $this->specialRules();
+
         $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
 
         $phone = User::standardisePhone($request->phone, $request->phone_country);
@@ -121,6 +123,8 @@ class UserController extends Controller
                 'student_id_verified_by' => $request->user()->id,
             ])->save();
         }
+
+        $user->forceFill(['special_rules' => $this->special($request)])->save();
 
         app(ProgrammeEnrolmentService::class)->syncFor(
             $user->fresh(),
@@ -183,6 +187,8 @@ class UserController extends Controller
             $rules['programme'] = 'nullable|string';
         }
 
+        $rules += $this->specialRules();
+
         $request->validate($rules, User::studentIdMessages() + User::phoneWithCountryMessages());
 
         $phone = User::standardisePhone($request->phone, $request->phone_country, $user->id);
@@ -202,6 +208,14 @@ class UserController extends Controller
         }
 
         $user->fill($data);
+
+        /*
+         * Its rules, and the role it was given here. Any role it
+         * had switched to is let go: what is chosen here is its
+         * own role again.
+         */
+        $user->special_rules = $this->special($request);
+        $user->home_role = null;
 
         /*
          * The waiver can be granted and taken back. Taken back,
@@ -247,6 +261,47 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function specialRules(): array
+    {
+        return [
+            'special' => ['nullable', 'array'],
+            'special.unlimited_ai' => ['nullable', 'boolean'],
+            'special.premium' => ['nullable', 'boolean'],
+            'special.no_ads' => ['nullable', 'boolean'],
+            'special.roles' => ['nullable', 'array'],
+            'special.roles.*' => ['string', 'in:student,lecturer,admin'],
+        ];
+    }
+
+    /**
+     * What is special about the account, or null for an ordinary
+     * one. Its own role is never listed among those it may switch
+     * to: it has that one already.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function special(Request $request): ?array
+    {
+        $chosen = (array) $request->input('special', []);
+
+        $rules = [
+            'unlimited_ai' => filter_var($chosen['unlimited_ai'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'premium' => filter_var($chosen['premium'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'no_ads' => filter_var($chosen['no_ads'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'roles' => array_values(array_diff(
+                array_intersect(User::ROLES, (array) ($chosen['roles'] ?? [])),
+                [(string) $request->input('role')]
+            )),
+        ];
+
+        $rules = array_filter($rules);
+
+        return $rules === [] ? null : $rules;
     }
 
     /**

@@ -29,6 +29,26 @@ class EntitlementService
     public function accessFor(
         User $user
     ): array {
+        /*
+         * A special account set up with Premium has it, whatever
+         * else applies: it is for showing what Premium does.
+         */
+        if ($user->hasSpecialRule('premium')) {
+            $premium = Plan::query()
+                ->where('is_active', true)
+                ->where('code', 'premium')
+                ->with('features')
+                ->first();
+
+            if ($premium) {
+                return [
+                    'plan' => $premium,
+                    'source' => 'special',
+                    'grant' => null,
+                ];
+            }
+        }
+
         $directGrant = UserPlanGrant::query()
             ->currentlyActive()
             ->where(
@@ -670,6 +690,7 @@ class EntitlementService
     public function adsAvailable(User $user): bool
     {
         return $user->isStudent()
+            && ! $user->hasSpecialRule('no_ads')
             && $this->allows($user, 'ads.available');
     }
 

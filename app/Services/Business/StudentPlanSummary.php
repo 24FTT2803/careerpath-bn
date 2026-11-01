@@ -56,6 +56,7 @@ class StudentPlanSummary
                 'direct' => $access['grant']?->source === 'trial' ? 'Premium trial' : 'Direct account grant',
                 'sponsored' => 'Organisation sponsorship',
                 'default' => 'Default plan',
+                'special' => 'Special account',
                 default => 'No active plan',
             },
             'features' => $features,
