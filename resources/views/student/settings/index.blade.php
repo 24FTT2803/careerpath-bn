@@ -876,6 +876,64 @@
                 </div>
                 @endif
 
+                <!-- CPBN Bot -->
+                <div class="panel">
+                    <div class="panel-title">
+                        <i class="fas fa-robot"></i> CPBN Bot
+                    </div>
+
+                    <p class="hint" style="margin-bottom:16px;">
+                        When you ask the CPBN Bot to do something that
+                        happens on another page, it takes you there
+                        straight away. Turn this off to get a link
+                        instead. You can also just tell the bot.
+                    </p>
+
+                    <form
+                        method="POST"
+                        action="{{ route('student.settings.cpbn-bot') }}"
+                    >
+                        @csrf
+                        @method('PUT')
+
+                        <input type="hidden" name="cpbn_bot_auto_navigate" value="0">
+
+                        @php
+                            $botAutoNavigates = auth()->user()->cpbn_bot_auto_navigate !== false;
+                        @endphp
+
+                        <div class="field" style="margin-bottom:20px;">
+                            <label class="toggle" for="cpbn_bot_auto_navigate">
+                                <input
+                                    id="cpbn_bot_auto_navigate"
+                                    type="checkbox"
+                                    name="cpbn_bot_auto_navigate"
+                                    value="1"
+                                    @checked($botAutoNavigates)
+                                >
+
+                                <span class="track">
+                                    <span class="thumb"></span>
+                                </span>
+
+                                <span class="toggle-text">
+                                    Let the CPBN Bot take me to pages
+
+                                    <span
+                                        class="toggle-state {{ $botAutoNavigates ? 'on' : 'off' }}"
+                                    >
+                                        {{ $botAutoNavigates ? 'On' : 'Off' }}
+                                    </span>
+                                </span>
+                            </label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Save Preference
+                        </button>
+                    </form>
+                </div>
+
                 {{--
                     Only shown to an account that has not
                     confirmed its address. Accounts from before

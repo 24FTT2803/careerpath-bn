@@ -401,14 +401,24 @@
         margin-bottom: 8px;
     }
 
-    .edit-profile .field-of-study-heading > label { margin: 0; }
-    .edit-profile .field-of-study-help { position: relative; }
+    /*
+     * The label and the '?' share one line, centred on each other:
+     * both are given a plain line height, so neither sits on the
+     * taller line the page's text uses and drops below the other.
+     */
+    .edit-profile .field-of-study-heading > label { margin: 0; line-height: 1.2; }
+    .edit-profile .field-of-study-help { position: relative; display: flex; align-items: center; }
     .edit-profile .field-of-study-help > summary {
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 22px;
-        height: 22px;
+        box-sizing: border-box;
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        padding: 0;
+        font-size: 12px;
+        line-height: 1;
         border: 1px solid var(--gold);
         border-radius: 50%;
         color: var(--ink);
@@ -1591,6 +1601,15 @@
         font-size: 13px;
         font-weight: 600;
         color: #1a3a5c;
+    }
+
+    /*
+     * Beside its '?', a label keeps no space underneath. With the
+     * 7px above, the label sat higher than the circle, so the '?'
+     * looked dropped.
+     */
+    body .edit-profile .ep-layout .cpbn-field .field-of-study-heading > label {
+        margin-bottom: 0;
     }
 
     body .edit-profile .ep-layout .cpbn-field input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),

@@ -268,6 +268,11 @@ Route::middleware([
         )->name('settings.preferences');
 
         Route::put(
+            '/settings/cpbn-bot',
+            [ProfileController::class, 'updateCpbnBot']
+        )->name('settings.cpbn-bot');
+
+        Route::put(
             '/settings/password',
             [ProfileController::class, 'updatePassword']
         )->name('settings.password');

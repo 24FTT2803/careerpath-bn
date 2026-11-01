@@ -1393,6 +1393,33 @@ class ProfileController extends Controller
     }
 
     /**
+     * Whether the CPBN Bot may change the page by itself. Kept on
+     * the account, so it holds on every device and after signing
+     * out.
+     */
+    public function updateCpbnBot(Request $request)
+    {
+        /** @var User $user */
+        $user = Auth::user();
+
+        abort_unless(
+            $user && $user->isStudent(),
+            403
+        );
+
+        $user->update([
+            'cpbn_bot_auto_navigate' => $request->boolean('cpbn_bot_auto_navigate'),
+        ]);
+
+        return redirect()
+            ->route('student.settings')
+            ->with(
+                'success',
+                'Your CPBN Bot preference has been saved.'
+            );
+    }
+
+    /**
      * Update user password.
      */
     public function updatePassword(Request $request)

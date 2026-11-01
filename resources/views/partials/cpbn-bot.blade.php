@@ -1562,6 +1562,48 @@
             }
         }
 
+        /*
+         * Their own Politeknik programme: only its dates, and
+         * whether they are still studying it. Unticking "Still
+         * studying this" is allowed here, unlike anywhere else,
+         * because finishing is exactly what they said.
+         */
+        const programme = fill.programme || {};
+        const programmeCard = form.querySelector('.is-programme-row');
+
+        if (Object.keys(programme).length && ! programmeCard) {
+            missed.push('your programme');
+        } else if (programmeCard) {
+            const still = programmeCard.querySelector('input[type="checkbox"][data-still-studying]');
+
+            if (programme.is_current !== undefined && still) {
+                if (still.checked !== programme.is_current) {
+                    still.checked = programme.is_current;
+                    still.dispatchEvent(new Event('change', { bubbles: true }));
+                    changed.push(still.closest('label') || still);
+                }
+
+                still.checked === programme.is_current
+                    ? confirmed.push(programme.is_current ? 'Programme: still studying' : 'Programme: finished')
+                    : missed.push('"Still studying this" for your programme');
+            }
+
+            [['start_date', 'Programme start'], ['end_date', 'Programme finish']].forEach(([field, label]) => {
+                if (! programme[field]) {
+                    return;
+                }
+
+                put(programmeCard.querySelector('input[name$="[' + field + ']"]'), programme[field])
+                    ? confirmed.push(label + ': ' + programme[field])
+                    : missed.push(label.toLowerCase());
+            });
+
+            if (Object.keys(programme).length) {
+                changed.push(programmeCard);
+                focusOn = focusOn || programmeCard;
+            }
+        }
+
         const addRows = (rows, listId, buttonId, label, itemName) => {
             const list = document.getElementById(listId);
             const button = document.getElementById(buttonId);

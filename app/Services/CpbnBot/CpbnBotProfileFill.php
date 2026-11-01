@@ -153,6 +153,7 @@ class CpbnBotProfileFill
                 'issue_date' => 10,
             ]),
             'qualifications' => $this->qualifications($fill['qualifications'] ?? []),
+            'programme' => $this->programme($fill['programme'] ?? null),
         ]);
 
         return $normalised === [] ? null : $normalised;
@@ -438,6 +439,44 @@ class CpbnBotProfileFill
             ->take(3)
             ->values()
             ->all();
+    }
+
+    /**
+     * The student's own Politeknik programme. Its name comes from
+     * their account, so only its dates can change, and whether
+     * they are still studying it. A finish date means they are
+     * not, unless they say otherwise.
+     *
+     * @return array{start_date?: string, end_date?: string, is_current?: bool}
+     */
+    private function programme(mixed $values): array
+    {
+        if (! is_array($values)) {
+            return [];
+        }
+
+        $programme = [];
+
+        if ($start = $this->pastDate($values['start_date'] ?? null)) {
+            $programme['start_date'] = $start;
+        }
+
+        if ($end = $this->pastDate($values['end_date'] ?? null, allowFuture: true)) {
+            $programme['end_date'] = $end;
+        }
+
+        if (array_key_exists('is_current', $values) && $values['is_current'] !== '' && $values['is_current'] !== null) {
+            $programme['is_current'] = filter_var($values['is_current'], FILTER_VALIDATE_BOOLEAN);
+        } elseif (isset($programme['end_date'])) {
+            $programme['is_current'] = false;
+        }
+
+        /* Still studying has no finish date yet. */
+        if (($programme['is_current'] ?? false) === true) {
+            unset($programme['end_date']);
+        }
+
+        return $programme;
     }
 
     private function pastDate(mixed $value, bool $allowFuture = false): ?string

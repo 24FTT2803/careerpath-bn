@@ -121,11 +121,45 @@ class CpbnBotService
                     $waiting,
                     fn (string $name) => ! in_array(Str::lower($name), $ratedNames, true)
                 )),
-                'suggested' => $this->skillLevels->suggestions($student),
+                'suggested' => $this->skillLevels->suggestions(
+                    $student,
+                    $context['focus']['job_roles'][0]['title'] ?? null
+                ),
             ];
         }
 
-        $response = $this->client->ask($context, $history, $question);
+        /*
+         * Whether the bot may change the page by itself. Saying
+         * so in the chat ("don't take me to pages automatically")
+         * changes it on the account, as the Settings toggle does,
+         * and is answered here without asking the AI.
+         */
+        $autoNavigate = $student->cpbn_bot_auto_navigate !== false;
+        $preference = $this->navigationPreference($question);
+
+        if ($preference !== null && $preference !== $autoNavigate) {
+            $student->forceFill(['cpbn_bot_auto_navigate' => $preference])->save();
+            $autoNavigate = $preference;
+        }
+
+        $context['student']['bot_takes_you_to_pages'] = $autoNavigate;
+
+        $response = $preference !== null
+            ? [
+                'schema_version' => '1.0',
+                'status' => 'completed',
+                'message' => $preference
+                    ? 'Done. When you ask for something that happens on another page, I will take you there straight away.'
+                    : 'Done. I will not change pages by myself any more; I will give you a link instead. You can switch this back in Settings, or just tell me.',
+                'links' => [['page' => 'settings']],
+                'navigate' => null,
+                'choices' => null,
+                'fill' => null,
+                'fill_section' => '',
+                'asking_field' => '',
+                'usage' => ['total_tokens' => 1],
+            ]
+            : $this->client->ask($context, $history, $question);
 
         $validated = Validator::make($response, [
             'status' => ['required', 'in:completed'],
@@ -180,7 +214,7 @@ class CpbnBotService
 
         /* Never a change claimed before the form has confirmed it. */
         if ($declared !== 'done') {
-            $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage);
+            $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage, $autoNavigate);
         }
 
         /*
@@ -206,6 +240,29 @@ class CpbnBotService
                 $choices = ['options' => $next['options'], 'multiple' => false];
                 $validated['asking_field'] = 'level of '.$next['name'];
             }
+
+            /*
+             * Choosing which competencies they have is done here,
+             * with buttons, not in the BIICF Explorer. When the bot
+             * offered none at the start, or when the student names
+             * a role, the ones that role needs are offered.
+             */
+            $suggested = $context['fill_session']['skills']['suggested'] ?? null;
+
+            if ($next === null && $choices === null && $suggested !== null
+                && ($startsNow || $this->namesRole($question, $suggested['role']))) {
+                $offer = collect($suggested['competencies'])
+                    ->reject(fn (string $name) => $this->skillLevels->isTicked($formState, $name))
+                    ->values();
+
+                if ($offer->isNotEmpty()) {
+                    $validated['message'] = 'These are the competencies **'.$suggested['role'].'** needs. '
+                        .'Pick the ones you have done, and I will ask how well for each.';
+                    $choices = ['options' => $offer->push('Something else')->all(), 'multiple' => true];
+                    $validated['links'] = [];
+                    $validated['asking_field'] = 'competencies';
+                }
+            }
         }
 
         /*
@@ -213,7 +270,7 @@ class CpbnBotService
          * the student is taken there and the form is filled on
          * arrival.
          */
-        if ($fill !== null && $currentPage !== 'profile_edit') {
+        if (($fill !== null || ($startsNow && $asked !== null)) && $currentPage !== 'profile_edit') {
             $validated['navigate'] = 'profile_edit';
         }
 
@@ -254,6 +311,11 @@ class CpbnBotService
                 ->all();
         }
 
+        /* Turned off on their account: the way there stays a button, and nothing moves. */
+        if (! $autoNavigate) {
+            $navigate = null;
+        }
+
         $tokens = $this->tokensUsed($response, $context, $history, $question, $validated['message']);
 
         $memory['field'] = $memory['section'] !== null
@@ -289,9 +351,9 @@ class CpbnBotService
      *
      * @param  array<string, mixed>|null  $fill
      */
-    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage): string
+    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage, bool $autoNavigate = true): string
     {
-        $verbs = 'updated|set|changed|added|filled(?: in)?|put|ticked|selected|edited|entered|replaced|renamed|saved';
+        $verbs = 'updated|set|changed|added|filled(?: in)?|put|ticked|unticked|selected|edited|entered|replaced|renamed|saved|marked|recorded|cleared|removed';
 
         /* "I've set ...", "I have updated ..." */
         $claims = '/\b(?:I[\'’]ve|I have|I)\s+(?:now\s+|also\s+|just\s+)?('.$verbs.')\b/iu';
@@ -320,6 +382,8 @@ class CpbnBotService
             'filled' => 'filling', 'filled in' => 'filling in', 'put' => 'putting', 'ticked' => 'ticking',
             'selected' => 'selecting', 'edited' => 'editing', 'entered' => 'entering',
             'replaced' => 'replacing', 'renamed' => 'renaming', 'saved' => 'saving',
+            'unticked' => 'unticking', 'marked' => 'marking', 'recorded' => 'recording',
+            'cleared' => 'clearing', 'removed' => 'removing',
         ][Str::lower($verb)];
 
         $message = preg_replace_callback($claims, fn (array $match) => "I'm ".$present($match[1]), $message) ?? $message;
@@ -337,7 +401,9 @@ class CpbnBotService
         ) ?? $message;
 
         if ($currentPage !== 'profile_edit') {
-            $message = 'Taking you to Edit Profile to make this change. '.$message;
+            $message = ($autoNavigate
+                ? 'Taking you to Edit Profile to make this change. '
+                : 'Open Edit Profile to see this change. ').$message;
         }
 
         return $message;
@@ -553,6 +619,43 @@ class CpbnBotService
             "/^(i said )?(ok|okay|k|yes|yeah|yep|yup|ya|sure|fine|good|great|perfect|cool|nice|alright|done|next|continue|carry on|go on|move on|(nope|no),? (that['’]?s|it['’]?s|its) (good|fine|ok|okay)|let['’]?s (go|move on|continue|get a move on)|that['’]?s (good|fine|great|ok|okay|it)|looks good|sounds good|use (it|that|this))\\b/iu",
             $text
         );
+    }
+
+    /**
+     * Whether the student is turning the bot's page changes off
+     * (false) or back on (true). Null when they are not.
+     */
+    private function navigationPreference(string $question): ?bool
+    {
+        $text = Str::lower(trim($question));
+
+        if (mb_strlen($text) > 160) {
+            return null;
+        }
+
+        $moving = '(tak(e|ing)|send(ing)?|bring(ing)?|mov(e|ing)|navigat\w*|redirect\w*|switch(ing)?|chang(e|ing)|go(ing)?|jump(ing)?)';
+
+        if (preg_match("/\\b(don['’]?t|do not|never|stop|no more)\\b.{0,25}\\b{$moving}\\b.{0,40}\\b(pages?|automatic\\w*|by (it|your)self|on (its|your) own)\\b/u", $text)) {
+            return false;
+        }
+
+        if (preg_match("/\\b(you can|please|go ahead and|start|ok to|okay to|allowed to)\\b.{0,20}\\b{$moving}\\b.{0,40}\\b(pages?|automatic\\w*|again)\\b/u", $text)
+            && ! preg_match("/\\b(don['’]?t|do not|never|stop)\\b/u", $text)) {
+            return true;
+        }
+
+        return null;
+    }
+
+    /** Whether the message names this role, plural or not. */
+    private function namesRole(string $question, string $role): bool
+    {
+        $words = fn (string $text) => collect(preg_split('/[^a-z0-9]+/', Str::lower($text)) ?: [])
+            ->filter()
+            ->map(fn (string $word) => Str::singular($word))
+            ->implode(' ');
+
+        return Str::contains(' '.$words($question).' ', ' '.$words($role).' ');
     }
 
     /**

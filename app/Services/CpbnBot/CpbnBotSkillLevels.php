@@ -42,6 +42,17 @@ class CpbnBotSkillLevels
     }
 
     /**
+     * Whether the form already has this competency ticked.
+     *
+     * @param  array<string, mixed>|null  $formNow
+     */
+    public function isTicked(?array $formNow, string $name): bool
+    {
+        return collect($formNow['competencies'] ?? [])->contains(fn ($item) => is_array($item)
+            && Str::lower(trim((string) ($item['name'] ?? ''))) === Str::lower(trim($name)));
+    }
+
+    /**
      * Whether the form already shows a level for this competency.
      *
      * @param  array<string, mixed>|null  $formNow
@@ -178,9 +189,15 @@ class CpbnBotSkillLevels
      *
      * @return array{role: string, from: string, competencies: array<int, string>}|null
      */
-    public function suggestions(User $student): ?array
+    public function suggestions(User $student, ?string $namedRole = null): ?array
     {
-        [$role, $from] = $this->targetRole($student);
+        $named = $namedRole !== null
+            ? BiicfJobRole::query()->where('title', $namedRole)->first()
+            : null;
+
+        [$role, $from] = $named !== null
+            ? [$named, 'the role you named']
+            : $this->targetRole($student);
 
         if ($role === null) {
             return null;
@@ -224,9 +241,14 @@ class CpbnBotSkillLevels
                         ->filter(fn ($title) => is_string($title) && $title !== '')
                         ->map(fn (string $title) => Str::lower($title));
 
-                    return $titles->contains(fn (string $title) => $title === $goal
-                        || Str::contains($goal, $title)
-                        || Str::contains($title, $goal));
+                    $plain = fn (string $text) => collect(preg_split('/[^a-z0-9]+/', $text) ?: [])
+                        ->filter()
+                        ->map(fn (string $word) => Str::singular($word))
+                        ->implode(' ');
+
+                    return $titles->contains(fn (string $title) => $plain($title) === $plain($goal)
+                        || Str::contains($plain($goal), $plain($title))
+                        || Str::contains($plain($title), $plain($goal)));
                 });
 
                 if ($role !== null) {

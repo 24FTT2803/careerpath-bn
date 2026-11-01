@@ -1490,3 +1490,89 @@ test('saying plainly that they are done ends the part, and is never called a fai
     expect($reply->json('fill_section'))->toBeNull()
         ->and($reply->json('message'))->toBe('All set, your competencies have been updated.');
 })->with(['ok you can stop now', 'im done', "that's all, thanks"]);
+
+test('the Politeknik programme can be marked finished, by its dates alone', function () {
+    $student = cpbnStudent();
+
+    cpbnClient(links: [], fill: ['programme' => ['end_date' => '2026-10-31']]);
+
+    askCpbn($student, 'I just finished studying at poli', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill.programme', ['end_date' => '2026-10-31', 'is_current' => false]);
+});
+
+test('"I\'ve marked it" with nothing sent to the form is not believed', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: null);
+    $client->reply = "Great, I've marked your Politeknik programme as finished.";
+
+    askCpbn($student, 'I finished poli', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
+});
+
+test('a student can tell the bot to stop changing pages, and it stays off', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], navigate: 'milestones');
+
+    askCpbn($student, "Don't take me to pages automatically")
+        ->assertOk()
+        ->assertJsonPath('message', fn (string $message) => str_contains($message, 'I will not change pages by myself'));
+
+    expect($client->calls)->toBe(0)
+        ->and($student->refresh()->cpbn_bot_auto_navigate)->toBeFalse();
+
+    askCpbn($student, 'Take me to my milestones')
+        ->assertOk()
+        ->assertJsonPath('navigate', null)
+        ->assertJsonPath('links.0.key', 'milestones');
+
+    askCpbn($student, 'You can take me to pages again')->assertOk();
+
+    expect($student->refresh()->cpbn_bot_auto_navigate)->toBeTrue();
+});
+
+test('the page changes can be switched off in Settings', function () {
+    $student = cpbnStudent();
+
+    $this->actingAs($student)
+        ->get(route('student.settings'))
+        ->assertOk()
+        ->assertSee('Let the CPBN Bot take me to pages');
+
+    $this->actingAs($student)
+        ->put(route('student.settings.cpbn-bot'), ['cpbn_bot_auto_navigate' => '0'])
+        ->assertRedirect(route('student.settings'));
+
+    expect($student->refresh()->cpbn_bot_auto_navigate)->toBeFalse();
+});
+
+test('filling a section in from another page goes to Edit Profile', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], fillSection: 'skills');
+
+    askCpbn($student, 'Help me fill in my Skills & Competencies', ['current_page' => 'dashboard', 'start_section' => 'skills'])
+        ->assertOk()
+        ->assertJsonPath('navigate.key', 'profile_edit');
+});
+
+test('naming a role in a skills session offers its competencies as buttons, not a trip to the Explorer', function () {
+    $student = cpbnStudent();
+    [$role, $agility] = skillsFixture();
+
+    $role->tiers()->first()->competencies()->attach($agility->id, [
+        'job_role_id' => $role->id,
+        'proficiency_level_id' => skillLevel('technical', 3)->id,
+        'is_core' => true,
+    ]);
+
+    cpbnClient(links: [explorerLink(['explorer_section' => 'competencies', 'job_role' => 'IT Technician'])], fillSection: 'skills');
+
+    askCpbn($student, 'Help me fill in my Skills & Competencies', ['current_page' => 'profile_edit', 'start_section' => 'skills'])->assertOk();
+
+    $reply = askCpbn($student, "let's edit my competencies, for IT Technicians", ['current_page' => 'profile_edit', 'form_state' => ['competencies' => []]])->assertOk();
+
+    expect($reply->json('choices'))->toBe(['options' => ['Business Agility', 'Something else'], 'multiple' => true])
+        ->and($reply->json('links'))->toBe([])
+        ->and($reply->json('message'))->toContain('**IT Technician** needs');
+});

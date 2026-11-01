@@ -46,7 +46,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'first_name', 'last_name', 'name', 'email', 'phone', 'password', 'student_id', 'programme',
         'programme_group_id',
-        'cgpa', 'role', 'avatar', 'show_ads', 'last_login_at',
+        'cgpa', 'role', 'avatar', 'show_ads', 'cpbn_bot_auto_navigate', 'last_login_at',
     ];
 
     protected $hidden = [
@@ -63,6 +63,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_confirmation_waived_at' => 'datetime',
             'last_active_at' => 'datetime',
             'show_ads' => 'boolean',
+            'cpbn_bot_auto_navigate' => 'boolean',
         ];
     }
 
