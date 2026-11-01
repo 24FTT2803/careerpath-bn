@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\FeatureDefinition;
 use App\Models\User;
 use App\Services\Business\EntitlementService;
 use App\Services\Business\FeatureUsageService;
@@ -16,6 +17,11 @@ function seedPlansForSpecial(): void
 {
     test()->seed(FeatureDefinitionSeeder::class);
     test()->seed(PlanSeeder::class);
+}
+
+function featureId(string $key): int
+{
+    return FeatureDefinition::where('key', $key)->sole()->id;
 }
 
 function specialStudent(array $rules): User
@@ -42,10 +48,11 @@ test('an admin can create a special account with its own plan, feature values an
             'special_enabled' => '1',
             'special' => [
                 'plan' => 'premium',
+                /* By id: the keys hold dots, which a form name would split. */
                 'features' => [
-                    'cpbn_bot.token_quota' => ['custom' => '1', 'mode' => 'recurring', 'amount' => '5000', 'period_value' => '1', 'period_unit' => 'day'],
-                    'ads.available' => ['custom' => '1', 'value' => '0'],
-                    'career_adviser.usage_quota' => ['custom' => '0', 'mode' => 'unlimited'],
+                    featureId('cpbn_bot.token_quota') => ['custom' => '1', 'mode' => 'recurring', 'amount' => '5000', 'period_value' => '1', 'period_unit' => 'day'],
+                    featureId('ads.available') => ['custom' => '1', 'value' => '0'],
+                    featureId('career_adviser.usage_quota') => ['custom' => '0', 'mode' => 'unlimited'],
                 ],
                 'roles' => ['student', 'lecturer'],
             ],
@@ -78,9 +85,9 @@ test('a feature set to an amount needs the amount', function () {
             'password' => 'password123',
             'password_confirmation' => 'password123',
             'special_enabled' => '1',
-            'special' => ['features' => ['cpbn_bot.token_quota' => ['custom' => '1', 'mode' => 'total', 'amount' => '']]],
+            'special' => ['features' => [featureId('cpbn_bot.token_quota') => ['custom' => '1', 'mode' => 'total', 'amount' => '']]],
         ])
-        ->assertSessionHasErrors('special.features.cpbn_bot.token_quota.amount');
+        ->assertSessionHasErrors('special.features.'.featureId('cpbn_bot.token_quota').'.amount');
 });
 
 test('unticking Special account makes it ordinary again', function () {
@@ -134,14 +141,35 @@ test('a feature switched off for one account is off, whatever the plan says', fu
 
 test('an admin can set up their own student side, or leave it following the plans', function () {
     seedPlansForSpecial();
-    $admin = User::factory()->create(['role' => 'admin']);
+    $admin = User::factory()->create(['role' => 'admin', 'email' => 'boss@pb.edu.bn']);
 
     $this->actingAs($admin)
         ->get(route('admin.users.edit', $admin->id))
         ->assertOk()
-        ->assertSee('Your own student side');
+        ->assertSee('Set up my own student side');
 
     expect(app(EntitlementService::class)->accessFor($admin)['source'])->not->toBe('special');
+
+    $this->actingAs($admin)
+        ->put(route('admin.users.update', $admin->id), [
+            'name' => $admin->name,
+            'email' => $admin->email,
+            'role' => 'admin',
+            'special_enabled' => '1',
+            'special' => [
+                'plan' => 'premium',
+                'features' => [featureId('cpbn_bot.token_quota') => ['custom' => '1', 'mode' => 'unlimited']],
+            ],
+        ])
+        ->assertSessionHasNoErrors();
+
+    $this->actingAs($admin->fresh())->post(route('role.switch'), ['role' => 'student']);
+
+    $student = $admin->fresh();
+
+    expect($student->role)->toBe('student')
+        ->and(app(EntitlementService::class)->accessFor($student)['plan']->code)->toBe('premium')
+        ->and(app(FeatureUsageService::class)->status($student, 'cpbn_bot.token_quota')['mode'])->toBe('unlimited');
 });
 
 test('a special account switches to an allowed role and back, using its own data', function () {

@@ -27,6 +27,14 @@ class AccountFeatureValues
     {
         $rules = [
             'special_enabled' => ['nullable', 'boolean'],
+        ];
+
+        /* Unticked, nothing inside is read, so nothing inside is checked. */
+        if (! $request->boolean('special_enabled')) {
+            return $rules;
+        }
+
+        $rules += [
             'special' => ['nullable', 'array'],
             'special.plan' => ['nullable', 'string', Rule::exists('plans', 'code')->where('is_active', true)],
             'special.roles' => ['nullable', 'array'],
@@ -34,17 +42,18 @@ class AccountFeatureValues
             'special.features' => ['nullable', 'array'],
         ];
 
-        if (! $request->boolean('special_enabled')) {
-            return $rules;
-        }
-
-        foreach ((array) $request->input('special.features', []) as $key => $input) {
+        /*
+         * Features are sent by their id. Their keys hold dots
+         * ("cpbn_bot.token_quota"), which a form name would read
+         * as levels and lose.
+         */
+        foreach ((array) $request->input('special.features', []) as $id => $input) {
             if (! is_array($input) || ($input['custom'] ?? '0') !== '1') {
                 continue;
             }
 
-            $definition = FeatureDefinition::query()->where('key', $key)->first();
-            $base = 'special.features.'.$key;
+            $definition = FeatureDefinition::query()->find((int) $id);
+            $base = 'special.features.'.$id;
 
             if ($definition === null) {
                 $rules[$base] = ['prohibited'];
@@ -88,15 +97,15 @@ class AccountFeatureValues
 
         $features = [];
 
-        foreach ((array) $request->input('special.features', []) as $key => $input) {
+        foreach ((array) $request->input('special.features', []) as $id => $input) {
             if (! is_array($input) || ($input['custom'] ?? '0') !== '1') {
                 continue;
             }
 
-            $definition = FeatureDefinition::query()->where('key', $key)->first();
+            $definition = FeatureDefinition::query()->find((int) $id);
 
             if ($definition !== null) {
-                $features[$key] = $this->value($definition, $input);
+                $features[$definition->key] = $this->value($definition, $input);
             }
         }
 

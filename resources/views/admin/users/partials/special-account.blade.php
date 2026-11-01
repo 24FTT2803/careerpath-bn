@@ -4,6 +4,9 @@
     until ticked. Inside, the account can be put on a plan of its
     own, and any feature set for it alone, the same way a plan's
     features are; anything left alone follows the plan.
+
+    Features are named by id in the form: their keys hold dots,
+    which a form field name would read as levels.
 --}}
 @php
     $featureValues = app(\App\Services\Business\AccountFeatureValues::class);
@@ -14,18 +17,21 @@
     $savedFeatures = $savedRules['features'] ?? [];
     $oldFeatures = old('special.features');
     $isOwnAccount = $user && $user->id === auth()->id();
+    $setCount = count($savedFeatures);
 @endphp
 
-<div class="cpbn-special" id="special-account">
+<section class="sa" id="special-account">
     <div class="cpbn-field" style="margin-bottom:0">
         <label class="cpbn-waive">
             <input type="hidden" name="special_enabled" value="0">
             <input type="checkbox" name="special_enabled" value="1" data-special-toggle @checked($specialOn)>
             <span>
-                <span class="cpbn-waive-title">Special account</span>
-                <span class="cpbn-hint" style="display:block;margin:2px 0 0;">
+                <span class="cpbn-waive-title">
+                    {{ $isOwnAccount ? 'Set up my own student side' : 'Special account' }}
+                </span>
+                <span class="sa-hint">
                     @if($isOwnAccount)
-                        Your own student side: a plan and features of its own, instead of following the plans.
+                        A plan and features of its own for when you View as Student. Leave unticked to follow the plans.
                     @else
                         Its own plan and feature values, and other roles it can switch to.
                     @endif
@@ -34,172 +40,290 @@
         </label>
     </div>
 
-    <div class="cpbn-special-body" data-special-body @if(! $specialOn) hidden @endif>
-        <div class="cpbn-field">
-            <label for="special-plan">Plan</label>
-            <select name="special[plan]" id="special-plan">
-                <option value="">Follow the plans, as for anyone</option>
-                @foreach($featureValues->plans() as $plan)
-                    <option value="{{ $plan->code }}" @selected($specialPlan === $plan->code)>{{ $plan->name }}</option>
-                @endforeach
-            </select>
-            @error('special.plan')<p class="err">{{ $message }}</p>@enderror
+    <div class="sa-body" data-special-body @if(! $specialOn) hidden @endif>
+        <div class="sa-block">
+            <h3 class="sa-title">Plan</h3>
+            <div class="cpbn-field" style="margin-bottom:0">
+                <select name="special[plan]" id="special-plan" aria-label="Plan">
+                    <option value="">Follow the plans, as for anyone</option>
+                    @foreach($featureValues->plans() as $plan)
+                        <option value="{{ $plan->code }}" @selected($specialPlan === $plan->code)>{{ $plan->name }}</option>
+                    @endforeach
+                </select>
+                @error('special.plan')<p class="err">{{ $message }}</p>@enderror
+            </div>
         </div>
 
-        <details class="cpbn-special-features" @if(! empty($savedFeatures) || $errors->has('special.features.*')) open @endif>
-            <summary>Features for this account <span class="cpbn-hint">(each follows the plan unless set here)</span></summary>
+        <details class="sa-block sa-features" @if($setCount > 0 || $errors->has('special.features.*')) open @endif>
+            <summary>
+                <h3 class="sa-title">Features</h3>
+                <span class="sa-count">{{ $setCount > 0 ? $setCount.' set for this account' : 'All follow the plan' }}</span>
+                <svg class="sa-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+            </summary>
 
             @foreach($featureValues->featuresByCategory() as $category => $definitions)
-                <p class="cpbn-special-sub">{{ $category }}</p>
+                <p class="sa-category">{{ $category }}</p>
 
                 @foreach($definitions as $definition)
                     @php
-                        $key = $definition->key;
-                        $base = 'special[features]['.$key.']';
-                        $input = $oldFeatures[$key] ?? null;
-                        $saved = $savedFeatures[$key] ?? null;
-                        $custom = $input !== null ? (($input['custom'] ?? '0') === '1') : array_key_exists($key, $savedFeatures);
+                        $id = $definition->id;
+                        $base = 'special[features]['.$id.']';
+                        $input = $oldFeatures[$id] ?? null;
+                        $saved = $savedFeatures[$definition->key] ?? null;
+                        $custom = $input !== null
+                            ? (($input['custom'] ?? '0') === '1')
+                            : array_key_exists($definition->key, $savedFeatures);
                         $quota = is_array($saved) ? $saved : [];
                         $mode = $input['mode'] ?? ($quota['mode'] ?? 'unlimited');
                         $onOff = isset($input['value']) ? (string) $input['value'] : ($saved === false ? '0' : '1');
                     @endphp
 
-                    <div class="cpbn-special-feature" data-special-feature>
-                        <span class="cpbn-special-name">{{ $definition->name }}</span>
+                    <div class="sa-feature {{ $custom ? 'is-custom' : '' }}" data-special-feature>
+                        <div class="sa-feature-head">
+                            <span class="sa-name">{{ $definition->name }}</span>
 
-                        <select name="{{ $base }}[custom]" data-special-custom aria-label="{{ $definition->name }}">
-                            <option value="0" @selected(! $custom)>Follow plan</option>
-                            <option value="1" @selected($custom)>Set for this account</option>
-                        </select>
+                            <div class="sa-switch" role="radiogroup" aria-label="{{ $definition->name }}">
+                                <label>
+                                    <input type="radio" name="{{ $base }}[custom]" value="0" data-special-custom @checked(! $custom)>
+                                    <span>Follow plan</span>
+                                </label>
+                                <label>
+                                    <input type="radio" name="{{ $base }}[custom]" value="1" data-special-custom @checked($custom)>
+                                    <span>Custom</span>
+                                </label>
+                            </div>
+                        </div>
 
-                        <span class="cpbn-special-value" data-special-value @if(! $custom) hidden @endif>
+                        <div class="sa-value" data-special-value @if(! $custom) hidden @endif>
                             @if($definition->value_type === 'boolean')
-                                <select name="{{ $base }}[value]">
-                                    <option value="1" @selected($onOff === '1')>On</option>
-                                    <option value="0" @selected($onOff === '0')>Off</option>
-                                </select>
+                                <div class="cpbn-field">
+                                    <select name="{{ $base }}[value]" aria-label="{{ $definition->name }} value">
+                                        <option value="1" @selected($onOff === '1')>On</option>
+                                        <option value="0" @selected($onOff === '0')>Off</option>
+                                    </select>
+                                </div>
                             @elseif($definition->value_type === 'number')
-                                <input type="number" min="1" name="{{ $base }}[value]" value="{{ $input['value'] ?? (is_int($saved) ? $saved : '') }}">
+                                <div class="cpbn-field">
+                                    <input type="number" min="1" name="{{ $base }}[value]" value="{{ $input['value'] ?? (is_int($saved) ? $saved : '') }}" aria-label="{{ $definition->name }} value">
+                                </div>
                             @elseif($definition->value_type === 'quota')
-                                <select name="{{ $base }}[mode]" data-special-mode>
-                                    <option value="unlimited" @selected($mode === 'unlimited')>Unlimited</option>
-                                    <option value="total" @selected($mode === 'total')>A total of</option>
-                                    <option value="recurring" @selected($mode === 'recurring')>Per period</option>
-                                </select>
-                                <input type="number" min="1" placeholder="Amount" name="{{ $base }}[amount]" value="{{ $input['amount'] ?? ($quota['amount'] ?? '') }}" data-special-amount>
-                                <span data-special-period>
-                                    every
-                                    <input type="number" min="1" name="{{ $base }}[period_value]" value="{{ $input['period_value'] ?? ($quota['period_value'] ?? 1) }}" style="width:70px">
-                                    <select name="{{ $base }}[period_unit]">
+                                <div class="cpbn-field">
+                                    <select name="{{ $base }}[mode]" data-special-mode aria-label="{{ $definition->name }} allowance">
+                                        <option value="unlimited" @selected($mode === 'unlimited')>Unlimited</option>
+                                        <option value="total" @selected($mode === 'total')>A total of</option>
+                                        <option value="recurring" @selected($mode === 'recurring')>An amount every…</option>
+                                    </select>
+                                </div>
+                                <div class="cpbn-field" data-special-amount>
+                                    <input type="number" min="1" placeholder="Amount" name="{{ $base }}[amount]" value="{{ $input['amount'] ?? ($quota['amount'] ?? '') }}" aria-label="Amount">
+                                </div>
+                                <div class="cpbn-field sa-period" data-special-period>
+                                    <input type="number" min="1" name="{{ $base }}[period_value]" value="{{ $input['period_value'] ?? ($quota['period_value'] ?? 1) }}" aria-label="Every how many">
+                                    <select name="{{ $base }}[period_unit]" aria-label="Period">
                                         @foreach(\App\Services\Business\AccountFeatureValues::PERIODS as $unit)
-                                            <option value="{{ $unit }}" @selected(($input['period_unit'] ?? ($quota['period_unit'] ?? 'month')) === $unit)>{{ $unit }}</option>
+                                            <option value="{{ $unit }}" @selected(($input['period_unit'] ?? ($quota['period_unit'] ?? 'month')) === $unit)>{{ $unit }}s</option>
                                         @endforeach
                                     </select>
-                                </span>
+                                </div>
                             @endif
-                        </span>
-                    </div>
+                        </div>
 
-                    @foreach(['value', 'mode', 'amount', 'period_value', 'period_unit'] as $part)
-                        @error('special.features.'.$key.'.'.$part)<p class="err">{{ $definition->name }}: {{ $message }}</p>@enderror
-                    @endforeach
+                        @foreach(['value', 'mode', 'amount', 'period_value', 'period_unit'] as $part)
+                            @error('special.features.'.$id.'.'.$part)<p class="err">{{ $message }}</p>@enderror
+                        @endforeach
+                    </div>
                 @endforeach
             @endforeach
         </details>
 
-        <p class="cpbn-special-sub">Can also switch to</p>
-
-        <div class="cpbn-special-grid">
-            @foreach(['student' => 'Student', 'lecturer' => 'Lecturer', 'admin' => 'Admin'] as $role => $title)
-                <div class="cpbn-field" style="margin-bottom:0">
-                    <label class="cpbn-waive">
+        <div class="sa-block">
+            <h3 class="sa-title">Can also switch to</h3>
+            <div class="sa-roles">
+                @foreach(['student' => 'Student', 'lecturer' => 'Lecturer', 'admin' => 'Admin'] as $role => $title)
+                    <label class="sa-role">
                         <input type="checkbox" name="special[roles][]" value="{{ $role }}" @checked(in_array($role, $specialRoles, true))>
-                        <span class="cpbn-waive-title">{{ $title }}</span>
+                        <span>{{ $title }}</span>
                     </label>
-                </div>
-            @endforeach
+                @endforeach
+            </div>
+            <p class="sa-hint">The role chosen above is the one it starts as. Every admin can already view as a student.</p>
+            @error('special.roles')<p class="err">{{ $message }}</p>@enderror
         </div>
-        <p class="cpbn-hint">Every admin can already switch to a student side of their own.</p>
-        @error('special.roles')<p class="err">{{ $message }}</p>@enderror
     </div>
-</div>
+</section>
 
 @once
     <style>
-        .cpbn-special {
-            margin: 20px 0 0;
+        .sa { margin-top: 22px; }
+
+        .sa-hint {
+            display: block;
+            margin-top: 3px;
+            font-size: 12px;
+            font-weight: 400;
+            color: var(--ink-dim, #5b6675);
         }
 
-        .cpbn-special-body {
+        .sa-body {
             margin-top: 12px;
-            padding: 14px 16px 16px;
             border: 1px solid var(--line, #e7e2d4);
             border-radius: 6px;
+            background: #fcfbf7;
         }
 
-        .cpbn-special-body[hidden] {
-            display: none;
+        .sa-body[hidden] { display: none; }
+
+        .sa-block {
+            padding: 16px 18px;
+            border-bottom: 1px solid var(--line, #e7e2d4);
         }
 
-        .cpbn-special-features summary {
+        .sa-block:last-child { border-bottom: 0; }
+
+        .sa-title {
+            margin: 0 0 10px;
+            font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            color: var(--ink-dim, #5b6675);
+        }
+
+        .sa-features summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
             cursor: pointer;
+            list-style: none;
+        }
+
+        .sa-features summary::-webkit-details-marker { display: none; }
+
+        .sa-features summary .sa-title { margin: 0; }
+
+        .sa-count {
+            font-size: 12px;
+            color: var(--gold, #cf9a3d);
+            font-weight: 500;
+        }
+
+        .sa-chevron {
+            width: 16px;
+            height: 16px;
+            margin-left: auto;
+            color: var(--ink-dim, #5b6675);
+            transition: transform .15s ease;
+        }
+
+        .sa-features[open] .sa-chevron { transform: rotate(180deg); }
+
+        .sa-category {
+            margin: 16px 0 6px;
             font-size: 13px;
             font-weight: 600;
-            margin-bottom: 6px;
+            color: var(--ink, #0d1a2b);
         }
 
-        .cpbn-special-feature {
+        .sa-feature {
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            border: 1px solid var(--line, #e7e2d4);
+            border-radius: 6px;
+            background: #fff;
+            transition: border-color .15s ease;
+        }
+
+        .sa-feature.is-custom { border-color: var(--gold, #cf9a3d); }
+
+        .sa-feature-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .sa-name { font-size: 13.5px; }
+
+        /* Follow plan / Custom, as a two-part switch. */
+        .sa-switch {
+            display: inline-flex;
+            padding: 2px;
+            border: 1px solid var(--line, #e7e2d4);
+            border-radius: 999px;
+            background: #f6f3ea;
+        }
+
+        .sa-switch label { margin: 0; cursor: pointer; }
+
+        .sa-switch input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sa-switch span {
+            display: block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--ink-dim, #5b6675);
+            transition: background .15s ease, color .15s ease;
+        }
+
+        .sa-switch input:checked + span {
+            background: var(--gold, #cf9a3d);
+            color: var(--ink, #0d1a2b);
+        }
+
+        .sa-switch input:focus-visible + span {
+            box-shadow: 0 0 0 3px rgba(207, 154, 61, .3);
+        }
+
+        .sa-value {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .sa-value[hidden],
+        .sa-value [hidden] { display: none !important; }
+
+        .sa-value .cpbn-field { margin-bottom: 0; }
+
+        .sa-period {
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 8px;
+        }
+
+        .sa-roles {
             display: flex;
             flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .sa-role {
+            display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 8px 0;
-            border-bottom: 1px solid var(--line, #e7e2d4);
+            padding: 8px 14px;
+            border: 1px solid var(--line, #e7e2d4);
+            border-radius: 999px;
+            background: #fff;
             font-size: 13px;
+            cursor: pointer;
         }
 
-        .cpbn-special-name {
-            flex: 1 1 200px;
+        .sa-role:has(input:checked) {
+            border-color: var(--gold, #cf9a3d);
+            background: rgba(207, 154, 61, .08);
         }
 
-        .cpbn-special-feature select,
-        .cpbn-special-feature input {
-            width: auto !important;
-            padding: 6px 8px !important;
-            font-size: 13px !important;
-        }
-
-        .cpbn-special-feature input[type="number"] {
-            max-width: 110px;
-        }
-
-        .cpbn-special-value {
-            display: inline-flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .cpbn-special-value[hidden],
-        [data-special-period][hidden],
-        [data-special-amount][hidden] {
-            display: none !important;
-        }
-
-        .cpbn-special-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 10px;
-        }
-
-        .cpbn-special-sub {
-            margin: 14px 0 6px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--ink-dim, #5b6675);
-            text-transform: uppercase;
-            letter-spacing: .04em;
-        }
+        .sa-role input { accent-color: var(--gold, #cf9a3d); margin: 0; }
     </style>
 
     <script>
@@ -215,12 +339,15 @@
             }
 
             document.querySelectorAll('[data-special-feature]').forEach(function (row) {
-                var custom = row.querySelector('[data-special-custom]');
                 var value = row.querySelector('[data-special-value]');
                 var mode = row.querySelector('[data-special-mode]');
 
-                custom.addEventListener('change', function () {
-                    value.hidden = custom.value !== '1';
+                row.querySelectorAll('[data-special-custom]').forEach(function (radio) {
+                    radio.addEventListener('change', function () {
+                        var custom = radio.value === '1' && radio.checked;
+                        value.hidden = ! custom;
+                        row.classList.toggle('is-custom', custom);
+                    });
                 });
 
                 if (! mode) {
