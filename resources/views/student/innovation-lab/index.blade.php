@@ -253,38 +253,51 @@
      * used for flags alone, before the system's emoji.
      */
     .lab-react-emoji,
-    .lab-palette-key,
-    emoji-picker {
+    .lab-palette-key {
         font-family: 'Twemoji Country Flags', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
     }
 
+    /* The way to the rest: quiet, like the page's other buttons. */
     .lab-more {
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 6px;
+        gap: 8px;
         width: 100%;
         margin-top: 10px;
-        padding: 8px 10px;
-        border: 1px dashed #c9a84c;
-        border-radius: 10px;
-        background: #faf6ea;
+        padding: 9px 12px;
+        border: 1px solid #e6e8ec;
+        border-radius: 999px;
+        background: #f6f8fb;
         color: #1a3a5c;
-        font: inherit;
+        font-family: 'Inter', -apple-system, sans-serif;
         font-size: 12.5px;
         font-weight: 600;
         cursor: pointer;
+        transition: border-color .2s ease, background .2s ease;
+    }
+
+    .lab-more i {
+        color: #c9a84c;
     }
 
     .lab-more:hover {
-        background: #f4ecd2;
+        border-color: #e8d4a0;
+        background: #faf6ea;
     }
 
+    /*
+     * The full picker, in the site's look: white, soft borders,
+     * rounded, navy and gold, and the page's own font for its
+     * words. Only the emoji themselves use the emoji fonts.
+     */
     .lab-picker {
         position: fixed;
         z-index: 1500;
-        border-radius: 14px;
-        box-shadow: 0 24px 60px -24px rgba(13, 31, 51, .6);
+        border: 1px solid #e6e8ec;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 24px 60px -28px rgba(13, 31, 51, .55);
         overflow: hidden;
     }
 
@@ -293,14 +306,33 @@
     }
 
     .lab-picker emoji-picker {
+        font-family: 'Inter', -apple-system, sans-serif;
         --emoji-font-family: 'Twemoji Country Flags', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
-        --border-radius: 14px;
-        --border-color: #e5e7eb;
+        --background: #ffffff;
+        --border-color: #eef0f3;
+        --border-size: 1px;
+        --border-radius: 0;
+        --button-hover-background: #f4f6f9;
+        --button-active-background: #faf6ea;
+        --category-font-color: #6b7785;
+        --category-font-size: 11.5px;
         --indicator-color: #c9a84c;
-        --input-border-radius: 10px;
+        --indicator-height: 3px;
+        --input-border-color: #dfe3e8;
+        --input-border-radius: 12px;
+        --input-border-size: 1px;
+        --input-font-color: #1a1a2e;
+        --input-font-size: 14px;
+        --input-padding: 10px 14px;
+        --input-placeholder-color: #8a94a1;
         --outline-color: #c9a84c;
-        width: min(352px, calc(100vw - 24px));
-        height: 400px;
+        --outline-size: 2px;
+        --emoji-size: 1.45rem;
+        --emoji-padding: 0.4rem;
+        --num-columns: 8;
+        display: block;
+        width: min(360px, calc(100vw - 24px));
+        height: 420px;
     }
 
     /* The card's own bottom edge, since the bands set their own. */
@@ -771,6 +803,9 @@
             if (! holder.firstElementChild) {
                 const picker = document.createElement('emoji-picker');
 
+                /* Always light, like the page, even when the device is set to dark. */
+                picker.classList.add('light');
+
                 picker.addEventListener('emoji-click', (pick) => {
                     if (! target) {
                         return;
@@ -804,8 +839,8 @@
 
             /* Beside the button, kept on screen. */
             const box = more.getBoundingClientRect();
-            const width = Math.min(352, window.innerWidth - 24);
-            const height = 400;
+            const width = Math.min(360, window.innerWidth - 24);
+            const height = 420;
 
             holder.style.left = Math.max(12, Math.min(box.left, window.innerWidth - width - 12)) + 'px';
             holder.style.top = (box.top > height + 16
