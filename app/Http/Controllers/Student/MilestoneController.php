@@ -75,6 +75,8 @@ class MilestoneController extends Controller
 
     public function complete(Request $request, StudentMilestone $milestone)
     {
+        abort_unless($milestone->user_id === Auth::id(), 403);
+
         // Proof of completion is now always required (not just when past
         // due) - students must attach evidence before a milestone can be
         // marked complete, unless proof was already attached earlier
@@ -138,6 +140,8 @@ class MilestoneController extends Controller
 
     public function destroy(StudentMilestone $milestone)
     {
+        abort_unless($milestone->user_id === Auth::id(), 403);
+
         if ($milestone->proof_file_path) {
             Storage::disk('local')->delete($milestone->proof_file_path);
         }

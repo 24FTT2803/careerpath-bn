@@ -78,3 +78,18 @@ test('new uploads offer preview controls without requiring completion', function
         ->assertSee('id="add-proof-file-preview"', false)
         ->assertSee('id="proof-'.$this->milestone->id.'-preview"', false);
 });
+
+test('another student cannot complete or delete a milestone', function () {
+    $other = User::factory()->create(['role' => 'student']);
+
+    $this->actingAs($other)
+        ->put(route('student.milestones.complete', $this->milestone))
+        ->assertForbidden();
+
+    $this->actingAs($other)
+        ->delete(route('student.milestones.destroy', $this->milestone))
+        ->assertForbidden();
+
+    expect($this->milestone->fresh())->not->toBeNull()
+        ->and((bool) $this->milestone->fresh()->is_completed)->toBeFalse();
+});
