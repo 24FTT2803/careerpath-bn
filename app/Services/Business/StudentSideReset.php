@@ -3,6 +3,7 @@
 namespace App\Services\Business;
 
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
@@ -98,6 +99,32 @@ class StudentSideReset
         foreach ($files as $path) {
             Storage::disk('public')->delete($path);
         }
+
+        /*
+         * Welcomed like a new account on its next visit to the
+         * student dashboard: the first-visit greeting, and the
+         * tips that explain where to start shown again.
+         */
+        Cache::forever(self::firstVisitKey($user), true);
+    }
+
+    /**
+     * Where a reset account's pending welcome is kept until its
+     * student dashboard has shown it.
+     */
+    public static function firstVisitKey(User $user): string
+    {
+        return 'student-first-visit:'.$user->id;
+    }
+
+    /**
+     * Whether this visit to the student dashboard is the first
+     * since the account began or was reset. Read once: the next
+     * visit is an ordinary one.
+     */
+    public static function takeFirstVisit(User $user): bool
+    {
+        return (bool) Cache::pull(self::firstVisitKey($user), false);
     }
 
     private function deleteConversations(User $user, string $conversations, string $messages, string $key): void

@@ -3,7 +3,9 @@
 use App\Models\CpbnBotConversation;
 use App\Models\FeatureUsage;
 use App\Models\User;
+use Database\Seeders\FeatureDefinitionSeeder;
 use Database\Seeders\OrganisationGroupSeeder;
+use Database\Seeders\PlanSeeder;
 
 /*
  * Resetting a demo account's student side, so one account can be
@@ -93,4 +95,26 @@ test('only admins can reset anything', function () {
         ->assertForbidden();
 
     expect($admin->fresh()->interests()->count())->toBe(1);
+});
+
+test('after a reset the student side is welcomed like a new account, once', function () {
+    test()->seed(FeatureDefinitionSeeder::class);
+    test()->seed(PlanSeeder::class);
+
+    $admin = accountWithStudentWork(['role' => 'admin']);
+
+    $this->actingAs($admin)->post(route('admin.users.reset-student-side', $admin->id));
+    $this->actingAs($admin)->post(route('role.switch'), ['role' => 'student']);
+
+    $this->actingAs($admin->fresh())
+        ->get(route('student.dashboard'))
+        ->assertOk()
+        ->assertSee('This is your dashboard.')
+        /* The tips that explain where to start are shown again. */
+        ->assertSee("key.indexOf('cpbn-tip:') === 0", false);
+
+    $this->actingAs($admin->fresh())
+        ->get(route('student.dashboard'))
+        ->assertOk()
+        ->assertDontSee('This is your dashboard.');
 });

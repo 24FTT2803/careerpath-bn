@@ -279,6 +279,59 @@ function startWatching() {
         true
     );
 
+    /*
+     * A form that takes the student away (switching role, say)
+     * asks first, with the site's own box, exactly as a link does,
+     * rather than leaving the browser to show its plain warning.
+     */
+    document.addEventListener(
+        'submit',
+        (event) => {
+            const form = event.target;
+
+            if (! (form instanceof HTMLFormElement) || ! form.hasAttribute('data-leaves-page')) {
+                return;
+            }
+
+            if (form.dataset.leaveApproved === '1' || ! hasUnsavedChanges()) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopImmediatePropagation();
+
+            const go = () => {
+                leaving = true;
+
+                /* Edit Profile keeps its own record; it is let go too. */
+                if (typeof window.setFormChanged === 'function') {
+                    window.setFormChanged(false);
+                }
+
+                form.dataset.leaveApproved = '1';
+                form.submit();
+            };
+
+            if (typeof window.showConfirmModal !== 'function') {
+                if (window.confirm('You have unsaved changes. If you leave this page, they will be lost.')) {
+                    go();
+                }
+
+                return;
+            }
+
+            window.showConfirmModal({
+                title: 'Unsaved Changes',
+                message: 'You have unsaved changes on this page. If you leave it, those changes will be lost.',
+                confirmText: 'Leave Page',
+                cancelText: 'Stay Here',
+                type: 'warning',
+                onConfirm: go,
+            });
+        },
+        true
+    );
+
     /* Returning with Back shows the old page again, still guarded. */
     window.addEventListener('pageshow', () => {
         leaving = false;
