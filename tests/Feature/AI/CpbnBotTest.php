@@ -893,34 +893,28 @@ test('the bot never claims a change it did not send to the form', function () {
         ->assertOk()
         ->assertJsonPath('fill', null)
         ->assertJsonPath('navigate', null)
-        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
+        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, "I haven't put that on the form yet"));
 });
 
-test('a change sent to the form is described, not claimed, and taken to Edit Profile', function () {
+test('a change sent to the form keeps the bot\'s own words, and goes to Edit Profile', function () {
     $student = cpbnStudent();
     $client = cpbnClient(links: [], fill: ['interests' => ['Programming']]);
-    $client->reply = 'I have added Programming. It has been updated.';
+    $client->reply = 'I have added Programming to your interests.';
 
     askCpbn($student, 'Add Programming to my interests', ['current_page' => 'dashboard'])
         ->assertOk()
         ->assertJsonPath('navigate.key', 'profile_edit')
-        ->assertJsonPath('message', 'Taking you to Edit Profile to make this change. I\'m adding Programming. It is being changed.');
+        ->assertJsonPath('message', 'Taking you to Edit Profile for this. I have added Programming to your interests.');
 });
 
-test('a change claimed in other words is caught too', function () {
+test('a summary of earlier changes is left alone when nothing new was asked for', function () {
     $student = cpbnStudent();
     $client = cpbnClient(links: [], fill: null);
-    $client->reply = 'Got it – your Applications Integration competency level is now set to Strategise.';
+    $client->reply = "All set! I've updated your Career Aspirations. Anything else?";
 
-    askCpbn($student, 'Change it to Strategise', ['current_page' => 'profile_edit'])
+    askCpbn($student, 'ok im fine with that', ['current_page' => 'profile_edit'])
         ->assertOk()
-        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
-
-    $client->reply = 'Updated the achievements for Dining in Dungeons.';
-
-    askCpbn($student, 'Make it more professional', ['current_page' => 'profile_edit'])
-        ->assertOk()
-        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
+        ->assertJsonPath('message', "All set! I've updated your Career Aspirations. Anything else?");
 });
 
 test('a reply that claims nothing is left as it is', function () {
@@ -1508,7 +1502,7 @@ test('"I\'ve marked it" with nothing sent to the form is not believed', function
 
     askCpbn($student, 'I finished poli', ['current_page' => 'profile_edit'])
         ->assertOk()
-        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, 'I have not changed anything on the form'));
+        ->assertJsonPath('message', fn (string $message) => str_starts_with($message, "I haven't put that on the form yet"));
 });
 
 test('a student can tell the bot to stop changing pages, and it stays off', function () {
@@ -1575,4 +1569,41 @@ test('naming a role in a skills session offers its competencies as buttons, not 
     expect($reply->json('choices'))->toBe(['options' => ['Business Agility', 'Something else'], 'multiple' => true])
         ->and($reply->json('links'))->toBe([])
         ->and($reply->json('message'))->toContain('**IT Technician** needs');
+});
+
+test('a single role opens on its career path, not the list of roles', function () {
+    $student = cpbnStudent();
+    cpbnExplorerFixture();
+
+    cpbnClient(links: [], navigate: explorerLink(['explorer_section' => 'job-roles', 'job_role' => 'IT Technician']));
+
+    askCpbn($student, 'Take me to IT Technician')
+        ->assertOk()
+        ->assertJsonPath('navigate.url', route('student.biicf-explorer.index', ['section' => 'career-paths', 'role' => 'it-technician']));
+});
+
+test('saying they want to stop, in plain words, ends the part', function (string $stop) {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'projects');
+
+    askCpbn($student, 'Help me fill in my Projects & Experience', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    $client->fillSection = '';
+
+    askCpbn($student, $stop, ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill_section', null);
+})->with(['ok we can stop', 'stop the session', "let's stop", 'end the session']);
+
+test('the long list of countries is only sent while personal details are filled in', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'projects');
+
+    askCpbn($student, 'Help me fill in my Projects & Experience', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    expect($client->lastContext['profile_form'])->not->toHaveKey('nationality_options');
+
+    askCpbn($student, 'Help me fill in my Personal Information', ['current_page' => 'profile_edit', 'start_section' => 'personal'])->assertOk();
+
+    expect($client->lastContext['profile_form'])->toHaveKey('nationality_options');
 });

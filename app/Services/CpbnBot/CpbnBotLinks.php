@@ -77,6 +77,15 @@ class CpbnBotLinks
 
         $section = $link['explorer_section'] ?? null;
 
+        /*
+         * One role's own page is its career path: what it is and
+         * how it progresses. The Job Roles tab lists a sub-sector's
+         * roles, so a role sent there opens that list instead.
+         */
+        if ($section === 'job-roles' && $role) {
+            $section = 'career-paths';
+        }
+
         if (array_key_exists((string) $section, CpbnBotKnowledge::explorerSections())
             && ($role || ! in_array($section, CpbnBotKnowledge::roleSections(), true))) {
             $normalised['section'] = $section;
