@@ -111,7 +111,9 @@ test('after a reset the student side is welcomed like a new account, once', func
         ->assertOk()
         ->assertSee('This is your dashboard.')
         /* The tips that explain where to start are shown again. */
-        ->assertSee("key.indexOf('cpbn-tip:') === 0", false);
+        ->assertSee("key.indexOf('cpbn-tip:') === 0", false)
+        /* And the popup telling them to edit their profile. */
+        ->assertSee("removeItem('cpbn.nextStep.seen')", false);
 
     $this->actingAs($admin->fresh())
         ->get(route('student.dashboard'))
