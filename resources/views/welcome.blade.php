@@ -448,6 +448,95 @@
             margin-top: 30px;
         }
 
+        /* "Meet the Team" image card (BIICF style) */
+        .team-card-link {
+            display: block;
+            position: relative;
+            max-width: 620px;
+            aspect-ratio: 2 / 1;
+            margin: 40px auto 0;
+            border: 3px solid var(--accent);
+            border-radius: var(--radius);
+            overflow: hidden;
+            text-decoration: none;
+            background: var(--primary-dark);
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+        }
+
+        .team-card-link:hover {
+            border-color: var(--accent-light);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .team-card-link img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            display: block;
+            transition: transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+        }
+
+        .team-card-link::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                to top,
+                rgba(13, 31, 51, 0.85) 0%,
+                rgba(13, 31, 51, 0) 30%
+            );
+            transition: var(--transition);
+        }
+
+        .team-card-title {
+            position: absolute;
+            left: 24px;
+            bottom: 18px;
+            z-index: 1;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .team-card-title i {
+            font-size: 16px;
+            color: var(--accent);
+            transition: var(--transition);
+        }
+
+        .team-card-link:hover img {
+            transform: scale(1.04);
+        }
+
+        .team-card-link:hover .team-card-title i {
+            transform: translateX(6px);
+        }
+
+        @media (max-width: 768px) {
+            .team-card-link::after { background: linear-gradient(to top, rgba(13, 31, 51, 0.85) 0%, rgba(13, 31, 51, 0) 38%); }
+            .team-card-title { left: 18px; bottom: 14px; font-size: 18px; gap: 8px; }
+            .team-card-title i { font-size: 14px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .team-card-link,
+            .team-card-link img,
+            .team-card-title i {
+                transition: none;
+            }
+
+            .team-card-link:hover img {
+                transform: none;
+            }
+        }
+
         .feature-card {
             background: var(--card);
             border-radius: var(--radius);
@@ -1550,6 +1639,17 @@
                 <p style="color:var(--text-muted);font-size:11px;margin:4px 0 0;">Student career success</p>
             </div>
         </div>
+
+        <a href="{{ route('team') }}" class="team-card-link reveal">
+            <img
+                src="{{ asset('images/team/team-group.jpg') }}"
+                alt="The CareerPath BN team"
+                loading="lazy"
+            >
+            <span class="team-card-title">
+                Meet the Team <i class="fas fa-arrow-right"></i>
+            </span>
+        </a>
     </div>
 </section>
 

@@ -55,6 +55,13 @@ Route::get('/privacy', function () {
 })->name('privacy');
 
 // ============================================
+// TEAM PAGE
+// ============================================
+Route::get('/team', function () {
+    return view('team');
+})->name('team');
+
+// ============================================
 // DASHBOARD SHORTCUT
 // ============================================
 Route::get('/dashboard', function () {
