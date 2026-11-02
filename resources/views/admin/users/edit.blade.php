@@ -39,7 +39,7 @@
                     <strong>student.pb.edu.bn</strong>
                     <br>
                     <span style="color:var(--rose);font-size:11px;">
-                        Students: gmail.com, student.pb.edu.bn, pb.edu.bn
+                        Students: @student.pb.edu.bn or @pb.edu.bn only
                         <br>
                         Lecturers & Admins: gmail.com, pb.edu.bn
                     </span>
