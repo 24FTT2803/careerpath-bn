@@ -461,6 +461,20 @@
             scrollbar-width: thin;
             scrollbar-color: #c5d1dc transparent;
         }
+        /* School dividers reuse the registration page's navy and gold palette. */
+        .cpbn-programme-picker__group {
+            margin: 11px 2px 6px;
+            padding: 7px 9px;
+            border-left: 3px solid var(--accent);
+            border-radius: 5px;
+            background: #f2f5f9;
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .035em;
+            line-height: 1.5;
+        }
+        .cpbn-programme-picker__group:first-child { margin-top: 2px; }
         .cpbn-programme-picker__option {
             display: flex;
             align-items: center;
@@ -671,7 +685,10 @@
                         value: option.value,
                         code: delimiter >= 0 ? text.slice(0, delimiter) : '',
                         name: delimiter >= 0 ? text.slice(delimiter + 3) : text,
-                        search: text.toLocaleLowerCase(),
+                        group: option.parentElement?.tagName === 'OPTGROUP'
+                            ? option.parentElement.label
+                            : 'Other programmes',
+                        search: [text, option.parentElement?.label || ''].join(' ').toLocaleLowerCase(),
                     };
                 });
             if (!entries.length) return;
@@ -747,7 +764,16 @@
                 count.textContent = String(filtered.length);
                 list.replaceChildren();
                 empty.hidden = filtered.length > 0;
+                let lastGroup = null;
                 for (const entry of filtered) {
+                    if (entry.group !== lastGroup) {
+                        const groupHeading = document.createElement('div');
+                        groupHeading.className = 'cpbn-programme-picker__group';
+                        groupHeading.textContent = entry.group;
+                        groupHeading.setAttribute('role', 'presentation');
+                        list.append(groupHeading);
+                        lastGroup = entry.group;
+                    }
                     const option = document.createElement('button');
                     option.type = 'button';
                     option.className = 'cpbn-programme-picker__option';
