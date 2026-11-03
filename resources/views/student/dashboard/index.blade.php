@@ -823,12 +823,36 @@
     <div class="container">
 
         <!-- Header -->
+        {{--
+            A first visit starts the guidance over: the next-step
+            popup ("edit your profile") and the tips that explain
+            where to begin are shown again, and the CPBN Bot opens
+            with nothing left from before a reset. The popup is
+            remembered by the browser, not the account, so a reset
+            account would otherwise count it as already seen.
+        --}}
+        @if(session('first_visit') === true || \Illuminate\Support\Facades\Cache::has(\App\Services\Business\StudentSideReset::firstVisitKey(Auth::user())))
+            <script>
+                try {
+                    window.localStorage.removeItem('cpbn.nextStep.seen');
+                } catch (error) {}
+
+                try {
+                    Object.keys(sessionStorage)
+                        .filter(function (key) { return key.indexOf('cpbn-tip:') === 0 || key.indexOf('cpbnBot:') === 0; })
+                        .forEach(function (key) { sessionStorage.removeItem(key); });
+                } catch (error) {}
+            </script>
+        @endif
+
         <div class="dashboard-header">
             <div>
                              @php
                 $studentFirstName = Auth::user()->name;
 
-                $isFirstVisit = session('first_visit') === true;
+                /* New, or just reset to a fresh start. */
+                $isFirstVisit = session('first_visit') === true
+                    || \App\Services\Business\StudentSideReset::takeFirstVisit(Auth::user());
             @endphp
 
             <h1 class="dashboard-greeting">

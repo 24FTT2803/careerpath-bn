@@ -9,6 +9,7 @@ use App\Rules\NoProfanity;
 use App\Services\AI\RecommendationStatusService;
 use App\Services\Business\AccountFeatureValues;
 use App\Services\Business\ProgrammeEnrolmentService;
+use App\Services\Business\StudentSideReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 
@@ -262,6 +263,23 @@ class UserController extends Controller
 
         return redirect()->route('admin.users.index')
             ->with('success', 'User updated successfully.');
+    }
+
+    /**
+     * Wipe an admin's or a special account's student side back to
+     * a fresh start, for showing the platform from the beginning
+     * again. A real student's account is refused.
+     */
+    public function resetStudentSide($id, StudentSideReset $reset)
+    {
+        $user = User::findOrFail($id);
+
+        abort_unless($reset->canReset($user), 403, 'Only an admin\'s or a special account\'s student side can be reset.');
+
+        $reset->reset($user);
+
+        return redirect()->route('admin.users.index')
+            ->with('success', $user->name.'\'s student side is fresh again.');
     }
 
     /**

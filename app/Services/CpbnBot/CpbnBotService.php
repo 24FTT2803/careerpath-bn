@@ -110,6 +110,11 @@ class CpbnBotService
          * for the ones waiting is read now, and the bot is told.
          */
         $section = $startsNow ? $asked : $active;
+
+        /* The long list of countries, only while personal details are being filled in. */
+        if ($section !== 'personal') {
+            unset($context['profile_form']['nationality_options']);
+        }
         $waiting = $section === 'skills' ? $this->skillLevels->waiting($formState) : [];
         $rated = $this->skillLevels->answers($question, $waiting);
         $ratedNames = array_map(fn (array $item) => Str::lower($item['name']), $rated);
@@ -214,7 +219,7 @@ class CpbnBotService
 
         /* Never a change claimed before the form has confirmed it. */
         if ($declared !== 'done') {
-            $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage, $autoNavigate);
+            $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage, $autoNavigate, $question);
         }
 
         /*
@@ -256,8 +261,12 @@ class CpbnBotService
                     ->values();
 
                 if ($offer->isNotEmpty()) {
-                    $validated['message'] = 'These are the competencies **'.$suggested['role'].'** needs. '
-                        .'Pick the ones you have done, and I will ask how well for each.';
+                    /* The bot's own words stay; the buttons are added, and said so if it did not. */
+                    if (! Str::contains(Str::lower((string) $validated['message']), Str::lower($suggested['role']))) {
+                        $validated['message'] = rtrim((string) $validated['message'])."\n\n"
+                            .'Here are the competencies **'.$suggested['role'].'** needs. Pick the ones you have done.';
+                    }
+
                     $choices = ['options' => $offer->push('Something else')->all(), 'multiple' => true];
                     $validated['links'] = [];
                     $validated['asking_field'] = 'competencies';
@@ -351,59 +360,43 @@ class CpbnBotService
      *
      * @param  array<string, mixed>|null  $fill
      */
-    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage, bool $autoNavigate = true): string
+    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage, bool $autoNavigate = true, string $question = ''): string
     {
-        $verbs = 'updated|set|changed|added|filled(?: in)?|put|ticked|unticked|selected|edited|entered|replaced|renamed|saved|marked|recorded|cleared|removed';
-
-        /* "I've set ...", "I have updated ..." */
-        $claims = '/\b(?:I[\'’]ve|I have|I)\s+(?:now\s+|also\s+|just\s+)?('.$verbs.')\b/iu';
-
-        /* "... has been updated", "... is now set to ..." */
-        $passive = '/\b(is|are|has|have)\s+(?:now\s+been|been|now)\s+(?:'.$verbs.')\b/iu';
-
-        /* "Updated the achievements ..." at the start of a sentence. */
-        $bare = '/(^|[.!?:]\s+|Got it\s*[–—-]\s*)('.$verbs.')\b/iu';
-
-        $claimsChange = fn (string $text) => preg_match($claims, $text)
-            || preg_match($passive, $text)
-            || preg_match($bare, $text);
-
-        if ($fill === null) {
-            if ($claimsChange($message)) {
-                return 'I have not changed anything on the form: I could not work out exactly what to change. '
-                    .'Tell me which item it is and what it should be, for example "set Applications Integration to level 1".';
+        if ($fill !== null) {
+            /*
+             * Something really is going onto the form, and the form
+             * itself confirms what landed, so the bot's own words
+             * are left as they are. From another page it is taken
+             * to Edit Profile first, and told so if it did not say.
+             */
+            if ($currentPage !== 'profile_edit' && ! Str::contains(Str::lower($message), 'edit profile')) {
+                $message = ($autoNavigate
+                    ? 'Taking you to Edit Profile for this. '
+                    : 'Open Edit Profile to see this. ').$message;
             }
 
             return $message;
         }
 
-        $present = fn (string $verb) => [
-            'updated' => 'updating', 'set' => 'setting', 'changed' => 'changing', 'added' => 'adding',
-            'filled' => 'filling', 'filled in' => 'filling in', 'put' => 'putting', 'ticked' => 'ticking',
-            'selected' => 'selecting', 'edited' => 'editing', 'entered' => 'entering',
-            'replaced' => 'replacing', 'renamed' => 'renaming', 'saved' => 'saving',
-            'unticked' => 'unticking', 'marked' => 'marking', 'recorded' => 'recording',
-            'cleared' => 'clearing', 'removed' => 'removing',
-        ][Str::lower($verb)];
+        /*
+         * Nothing was sent to the form. Only when the student had
+         * asked for a change, and the bot answered as if it had
+         * made it, is the reply replaced: a summary of changes made
+         * earlier, or a reply to anything else, is left alone.
+         */
+        $askedForChange = (bool) preg_match(
+            '/\b(change|set|update|add|make|put|edit|fill|rename|mark|replace|correct|tick|untick|finish(ed)?|graduated?)\b/iu',
+            $question
+        );
 
-        $message = preg_replace_callback($claims, fn (array $match) => "I'm ".$present($match[1]), $message) ?? $message;
-
-        $message = preg_replace_callback(
-            $passive,
-            fn (array $match) => (in_array(Str::lower($match[1]), ['are', 'have'], true) ? 'are' : 'is').' being changed',
+        $claimed = (bool) preg_match(
+            '/\b(?:I[\'’]ve|I have)\s+(?:now\s+|also\s+|just\s+)?(updated|set|changed|added|filled(?: in)?|put|ticked|unticked|selected|edited|entered|replaced|renamed|marked)\b/iu',
             $message
-        ) ?? $message;
+        );
 
-        $message = preg_replace_callback(
-            $bare,
-            fn (array $match) => $match[1].Str::ucfirst($present($match[2])),
-            $message
-        ) ?? $message;
-
-        if ($currentPage !== 'profile_edit') {
-            $message = ($autoNavigate
-                ? 'Taking you to Edit Profile to make this change. '
-                : 'Open Edit Profile to see this change. ').$message;
+        if ($askedForChange && $claimed) {
+            return "I haven't put that on the form yet, as I wasn't sure exactly what to change. "
+                .'Which item is it, and what should it be?';
         }
 
         return $message;
@@ -668,7 +661,7 @@ class CpbnBotService
         $text = trim($question);
 
         return mb_strlen($text) <= 40 && (bool) preg_match(
-            "/^(ok(ay)?,? |alright,? |no,? |nope,? |thanks,? )?(i['’]?m done|i am done|all done|we['’]?re done|done|that['’]?s (it|all|everything|enough)|nothing else|no more|(you can )?stop( now| here| there)?|finished|i['’]?m finished)[.,! ]*(thanks|thank you)?[.! ]*$/iu",
+            "/^(ok(ay)?,? |alright,? |no,? |nope,? |thanks,? |yeah,? )?(i['’]?m done|i am done|all done|we['’]?re done|done|that['’]?s (it|all|everything|enough)|nothing else|no more|((you|we) can |let['’]?s )?stop( now| here| there| the session| this)?|(end|finish|close) (the |this )?session|finished|i['’]?m finished)[.,! ]*(thanks|thank you)?[.! ]*$/iu",
             $text
         );
     }
