@@ -829,6 +829,9 @@ Route::middleware(['auth'])
             Route::get('/users/{id}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
             Route::put('/users/{id}', [AdminUserController::class, 'update'])->name('users.update');
             Route::delete('/users/{id}', [AdminUserController::class, 'destroy'])->name('users.destroy');
+
+            /* A demo account's student side, wiped for the next showing. */
+            Route::post('/users/{id}/reset-student-side', [AdminUserController::class, 'resetStudentSide'])->name('users.reset-student-side');
         });
 
         // Admin ONLY routes - Lecturers

@@ -283,6 +283,22 @@
                             <i class="fas fa-eye"></i> View Profile
                         </a>
                     @endif
+                    {{--
+                        A demo account's student side, wiped for the next
+                        showing. Only an admin's or a special account's.
+                    --}}
+                    @if(app(\App\Services\Business\StudentSideReset::class)->canReset($user))
+                        <form action="{{ route('admin.users.reset-student-side', $user->id) }}" method="POST"
+                              style="display:inline;"
+                              data-confirm="Everything {{ $user->name }} has done as a student will be wiped: profile answers, competencies, projects, certificates, milestones, recommendations, Career Adviser and CPBN Bot chats, AI usage and notifications. The login, role and special rules stay. This cannot be undone."
+                              data-confirm-title="Reset the student side?"
+                              data-confirm-ok="Yes, reset it">
+                            @csrf
+                            <button type="submit" class="btn btn-outline btn-sm" title="Start the student side afresh">
+                                <i class="fas fa-rotate-left"></i> Reset student side
+                            </button>
+                        </form>
+                    @endif
                     @if($user->id !== auth()->id())
                         <form action="{{ route('admin.users.destroy', $user) }}" method="POST"
                               style="display:inline; margin-left: auto;"

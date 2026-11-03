@@ -24,7 +24,8 @@
                 : 'View as '.ucfirst($switchRole);
         @endphp
 
-        <form method="POST" action="{{ route('role.switch') }}" class="role-switch-form" data-unsaved-ignore>
+        {{-- Leaves the page: unsaved work is asked about first, in the site's own box. --}}
+        <form method="POST" action="{{ route('role.switch') }}" class="role-switch-form" data-unsaved-ignore data-leaves-page>
             @csrf
             <input type="hidden" name="role" value="{{ $switchRole }}">
 
