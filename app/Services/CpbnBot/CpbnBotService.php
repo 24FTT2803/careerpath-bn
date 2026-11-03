@@ -110,6 +110,13 @@ class CpbnBotService
              * form: done, or not. So the bot knows whether the job
              * it said it would do was done, and owns up when not.
              */
+            /*
+             * What has been put on the form so far this section,
+             * kept here as well as on the form, so nothing said is
+             * asked for again, even before Edit Profile is open.
+             */
+            'collected' => (! $startsNow && $active !== null) ? $this->collected($conversation, $active) : [],
+
             'last_result' => $formResult ? [
                 'done' => array_values((array) ($formResult['confirmed'] ?? [])),
                 'failed' => array_values((array) ($formResult['missed'] ?? [])),
@@ -241,6 +248,38 @@ class CpbnBotService
 
         $fill = $this->profileFill->normalise($rawFill === [] ? ($validated['fill'] ?? null) : $rawFill);
 
+        /*
+         * During a section, a reply that sent nothing to the form
+         * while the student was telling it things is backed up by a
+         * second, narrow look at what they said, so their words
+         * reach the boxes even when the reply forgot.
+         */
+        $sessionSection = $memory['section'];
+
+        if ($fill === null
+            && $sessionSection !== null
+            && $sessionSection !== 'skills'
+            && $declared !== 'done'
+            && str_word_count($question) >= 3
+            && method_exists($this->client, 'extract')) {
+            $extracted = $this->client->extract(
+                $sessionSection,
+                $startsNow ? [] : $this->collected($conversation, $sessionSection),
+                $history,
+                $question
+            );
+
+            if ($extracted['fill'] !== null) {
+                $fill = $this->profileFill->normalise($this->sameItem($extracted['fill'], $formState, $question, $conversation));
+            }
+
+            $extraTokens = (int) ($extracted['usage']['total_tokens'] ?? 0);
+
+            if ($extraTokens > 0 && is_array($response['usage'] ?? null)) {
+                $response['usage']['total_tokens'] = (int) ($response['usage']['total_tokens'] ?? 0) + $extraTokens;
+            }
+        }
+
         /* Never a change claimed before the form has confirmed it. */
         if ($declared !== 'done') {
             $validated['message'] = $this->honestAboutChanges(
@@ -315,7 +354,8 @@ class CpbnBotService
 
         if ($onlyMilestone && $currentPage !== 'milestones') {
             $validated['navigate'] = ['page' => 'milestones', 'place' => 'add'];
-        } elseif (! $onlyMilestone && ($fill !== null || ($startsNow && $asked !== null)) && $currentPage !== 'profile_edit') {
+        } elseif (! $onlyMilestone && ($fill !== null || $memory['section'] !== null) && $currentPage !== 'profile_edit') {
+            /* A section being filled in is filled in on Edit Profile: the student is taken there. */
             $validated['navigate'] = 'profile_edit';
         }
 
@@ -371,6 +411,7 @@ class CpbnBotService
 
         /* Saved by now, so the item being worked on can be remembered with it. */
         $this->rememberItems($conversation, $fill);
+        $this->collect($conversation, $memory, $fill);
 
         return [
             'message' => $validated['message'],
@@ -767,6 +808,73 @@ class CpbnBotService
         }
 
         Cache::put($this->itemsKey($conversation), $current, now()->addHours(6));
+    }
+
+    /**
+     * What has been sent to the form this section, merged.
+     *
+     * @return array<string, mixed>
+     */
+    private function collected(CpbnBotConversation $conversation, string $section): array
+    {
+        if (! $conversation->exists) {
+            return [];
+        }
+
+        $saved = (array) Cache::get('cpbn-bot-collected:'.$conversation->id, []);
+
+        return ($saved['section'] ?? null) === $section ? (array) ($saved['fill'] ?? []) : [];
+    }
+
+    /**
+     * Adds this reply's fill to what has been collected this
+     * section; a new section starts afresh.
+     *
+     * @param  array<string, mixed>  $memory
+     * @param  array<string, mixed>|null  $fill
+     */
+    private function collect(CpbnBotConversation $conversation, array $memory, ?array $fill): void
+    {
+        $section = $memory['section'] ?? null;
+        $key = 'cpbn-bot-collected:'.$conversation->id;
+
+        if ($section === null) {
+            Cache::forget($key);
+
+            return;
+        }
+
+        $saved = (array) Cache::get($key, []);
+        $collected = ($saved['section'] ?? null) === $section ? (array) ($saved['fill'] ?? []) : [];
+
+        foreach ((array) $fill as $part => $value) {
+            if (! is_array($value)) {
+                continue;
+            }
+
+            if (isset(self::ITEM_KEYS[$part])) {
+                [$name, $match] = self::ITEM_KEYS[$part];
+                $items = collect($collected[$part] ?? [])->keyBy(fn ($item) => Str::lower((string) ($item[$name] ?? '')));
+
+                foreach ($value as $row) {
+                    $old = Str::lower((string) ($row[$match] ?? $row[$name] ?? ''));
+                    $merged = array_merge((array) $items->get($old, []), array_diff_key($row, [$match => true]));
+                    $items->forget($old);
+                    $items->put(Str::lower((string) ($merged[$name] ?? $old)), $merged);
+                }
+
+                $collected[$part] = $items->values()->all();
+            } elseif (array_is_list($value)) {
+                $collected[$part] = array_values(array_unique(array_merge((array) ($collected[$part] ?? []), array_map(
+                    fn ($item) => is_array($item) ? ($item['name'] ?? json_encode($item)) : $item,
+                    $value
+                ))));
+            } else {
+                $collected[$part] = array_merge((array) ($collected[$part] ?? []), $value);
+            }
+        }
+
+        Cache::put($key, ['section' => $section, 'fill' => $collected], now()->addHours(6));
     }
 
     private function itemsKey(CpbnBotConversation $conversation): string

@@ -57,6 +57,68 @@ class GroqCpbnBotClient implements CpbnBotClient
     }
 
     /**
+     * A second, narrow look at what the student just said, used
+     * when the reply sent nothing to the form during a section.
+     * It only pulls out details for the boxes; it writes no reply.
+     *
+     * @param  array<string, mixed>  $collected
+     * @param  array<int, array{role: string, content: string}>  $history
+     * @return array{fill: array<string, mixed>|null, usage: array<string, mixed>|null}
+     */
+    public function extract(string $section, array $collected, array $history, string $message): array
+    {
+        $fields = [
+            'personal' => '{"personal":{"phone":"...","date_of_birth":"YYYY-MM-DD","nationality":"country name"}}',
+            'qualifications' => '{"qualifications":[{"programme_name":"...","institution_name":"...","level":"award","field_of_study":"...","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","is_current":false}]} or, for their own Politeknik programme, {"programme":{"start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","is_current":false}}',
+            'interests' => '{"interests":["..."]}',
+            'projects' => '{"projects":[{"title":"...","role":"...","description":"...","technologies_used":"comma separated","start_date":"YYYY-MM-DD","end_date":"YYYY-MM-DD","project_url":"...","achievements":"..."}]}',
+            'certifications' => '{"certifications":[{"certification_name":"...","issuing_organization":"...","issue_date":"YYYY-MM-DD"}]}',
+            'aspirations' => '{"aspirations":{"dream_career":"...","vision_statement":"...","long_term_goals":"..."}}',
+        ][$section] ?? null;
+
+        if ($fields === null) {
+            return ['fill' => null, 'usage' => null];
+        }
+
+        $messages = [[
+            'role' => 'system',
+            'content' => implode("\n", [
+                'You pull details out of a conversation into a student\'s profile form. You do not chat.',
+                'Section being filled: '.$section.'. Today is '.now()->toDateString().'.',
+                'Already collected this session: '.json_encode($collected, JSON_UNESCAPED_UNICODE).'.',
+                'From the student\'s LATEST message, read with the conversation for context, take every detail it gives for this section, including ones nobody asked for. Use this shape, only the fields you found: '.$fields,
+                'For a list item, always include its title or name (from the latest message, or the one already collected that the student is talking about), so it lands on the right item. Write descriptions, roles and achievements as short professional text keeping their meaning. Leave out anything not stated. If nothing new is given, return {"fill":{}}.',
+                'Reply with JSON only: {"fill": {...}}',
+            ]),
+        ]];
+
+        foreach (array_slice($history, -8) as $earlier) {
+            $messages[] = [
+                'role' => $earlier['role'] === 'user' ? 'user' : 'assistant',
+                'content' => $earlier['content'],
+            ];
+        }
+
+        $messages[] = ['role' => 'user', 'content' => trim($message)];
+
+        try {
+            $result = $this->transport->chat($messages, ['type' => 'json_object'], 0.0);
+            $decoded = $this->decode($result['content'] ?? null);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return ['fill' => null, 'usage' => null];
+        }
+
+        $fill = $decoded['fill'] ?? null;
+
+        return [
+            'fill' => is_array($fill) && $fill !== [] ? $fill : null,
+            'usage' => is_array($result['usage'] ?? null) ? $result['usage'] : null,
+        ];
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function decode(mixed $content): array
@@ -132,6 +194,8 @@ class GroqCpbnBotClient implements CpbnBotClient
             'You can fill in: '.$fillable.' on Edit Profile, through conversation. Files (profile picture, certificate files) are uploaded on the form by the student.',
             '- A section in progress is a session: set fill_section to its key ('.$sectionKeys.') on every reply while working on it. When fill_session.section is set, you are filling that section in with them now: never just explain how to do it on the form, get on with it.',
             '- fill_session.form_now is what that section of the form shows right now, including anything they typed themselves. Do not ask for what it already has, unless they want to change it.',
+            '- fill_session.collected is everything already put on the form this section. Treat all of it as known, even when form_now is empty (for example before Edit Profile has opened), and never ask for any of it again.',
+            '- Optional fields (dates, links, achievements, issue dates) are asked about once at most. If they say they do not have it, skip it, or answer something else, drop it for good. Never ask the same question twice: if your last reply asked it, move on.',
             '- FILL AS YOU GO: whenever you learn or suggest something, put it in fill_json in the same reply. Take every detail out of each message, including ones you did not ask for: "it was Hobbee, a Reddit-like app for Bruneian hobbies" gives the title AND the description. Include everything known so far about the item you are working on.',
             '- Have a conversation, not a form. Never go through the fields one by one (title, then role, then dates…). Ask one open question about the whole thing ("Tell me about the project: what was it, what did you do, and what did you use?"), then put every detail they give into its box yourself. Afterwards ask only about what is still missing, together in one natural question, or not at all if it is optional. Build on what they said ("Hobbee sounds fun. Which parts did you design?"). Say briefly what you caught ("Got it: Hobbee, a social app for hobbies, where you did the UI/UX. I\'ve put those in.").',
             '- A vague answer is still an answer: interpret it and carry on. If they are unsure or ask you to fill something in ("could you fill that in", "idk, help me"), write a sensible suggestion from what they told you, put it in fill_json and show it. Turn dates like "early February" into real dates (use today) and say which date.',

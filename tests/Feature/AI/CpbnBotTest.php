@@ -1739,3 +1739,63 @@ test('more ways of saying stop end the part', function (string $stop) {
         ->assertOk()
         ->assertJsonPath('fill_section', null);
 })->with(['never mind', "ok i'll do the rest myself", "that's enough for now", 'no thanks']);
+
+test('a section the bot takes up from another page goes to Edit Profile', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], fillSection: 'projects');
+
+    askCpbn($student, 'i did a pure java project', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('fill_section', 'projects')
+        ->assertJsonPath('navigate.key', 'profile_edit');
+});
+
+test('what the student says reaches the form even when the reply forgets, and is never asked again', function () {
+    $student = cpbnStudent();
+
+    $client = new class implements CpbnBotClient
+    {
+        public array $lastContext = [];
+
+        public array $extracted = ['projects' => [['title' => 'TyperType', 'description' => 'A typing game.', 'technologies_used' => 'Java, JavaFX']]];
+
+        public function ask(array $context, array $history, string $message): array
+        {
+            $this->lastContext = $context;
+
+            return [
+                'schema_version' => '1.0',
+                'status' => 'completed',
+                'message' => 'Nice. When did you make it?',
+                'links' => [],
+                'navigate' => null,
+                'choices' => null,
+                'fill' => null,
+                'fill_section' => 'projects',
+                'asking_field' => 'project.start_date',
+                'usage' => ['total_tokens' => 100],
+            ];
+        }
+
+        public function extract(string $section, array $collected, array $history, string $message): array
+        {
+            return ['fill' => $this->extracted, 'usage' => ['total_tokens' => 40]];
+        }
+    };
+
+    app()->instance(CpbnBotClient::class, $client);
+
+    askCpbn($student, 'it was a typing game called TyperType, made with java and javafx', ['current_page' => 'profile_edit', 'start_section' => 'projects'])
+        ->assertOk()
+        ->assertJsonPath('fill.projects.0.title', 'TyperType')
+        ->assertJsonPath('fill.projects.0.technologies_used', 'Java, JavaFX');
+
+    $client->extracted = [];
+
+    askCpbn($student, 'no link, sorry about that', ['current_page' => 'profile_edit'])->assertOk();
+
+    expect($client->lastContext['fill_session']['collected']['projects'][0])->toMatchArray([
+        'title' => 'TyperType',
+        'description' => 'A typing game.',
+    ]);
+});

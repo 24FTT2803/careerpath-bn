@@ -2145,8 +2145,20 @@
                     if (document.getElementById('profile-form')) {
                         applyFill(profileFill);
                     } else {
-                        /* Filled in once Edit Profile has opened. */
-                        remember({ pendingFill: profileFill });
+                        /*
+                         * Filled in once Edit Profile has opened. Added to
+                         * anything already waiting, never replacing it, so
+                         * nothing said on the way there is lost.
+                         */
+                        const waiting = recall().pendingFill || {};
+
+                        Object.entries(profileFill).forEach(([part, value]) => {
+                            waiting[part] = Array.isArray(value)
+                                ? (waiting[part] || []).concat(value)
+                                : (value && typeof value === 'object' ? Object.assign(waiting[part] || {}, value) : value);
+                        });
+
+                        remember({ pendingFill: waiting });
                     }
                 }
             }
