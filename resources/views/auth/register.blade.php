@@ -356,6 +356,169 @@
             .auth-card h1 { font-size: 22px; }
             .name-row { grid-template-columns: 1fr; }
         }
+
+        /* Registration only: enhanced programme dropdown (uses the existing select). */
+        .cpbn-programme-picker { position: relative; width: 100%; }
+
+        .cpbn-programme-picker__trigger {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            width: 100%;
+            min-height: 46px;
+            padding: 10px 13px 10px 14px;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: #fff;
+            color: var(--text-muted);
+            text-align: left;
+            font: 500 14px/1.4 'Inter', sans-serif;
+            cursor: pointer;
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .cpbn-programme-picker__trigger:hover { border-color: #b7c7d8; }
+        .cpbn-programme-picker__trigger:focus-visible,
+        .cpbn-programme-picker.is-open .cpbn-programme-picker__trigger {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px rgba(201, 168, 76, .14);
+        }
+        .cpbn-programme-picker__value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        .cpbn-programme-picker__value-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cpbn-programme-picker__trigger.has-value { color: var(--text); }
+        .cpbn-programme-picker__chevron {
+            flex-shrink: 0;
+            color: var(--primary);
+            font-size: 12px;
+            transition: transform .2s ease;
+        }
+        .cpbn-programme-picker.is-open .cpbn-programme-picker__chevron { transform: rotate(180deg); }
+
+        .cpbn-programme-picker__menu {
+            position: absolute;
+            top: calc(100% + 7px);
+            left: 0;
+            right: 0;
+            z-index: 30;
+            overflow: hidden;
+            padding: 10px;
+            border: 1px solid #dae3eb;
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 18px 42px rgba(13, 31, 51, .18), 0 3px 10px rgba(13, 31, 51, .07);
+        }
+        .cpbn-programme-picker__menu[hidden] { display: none; }
+        .cpbn-programme-picker__search-wrap { position: relative; }
+        .cpbn-programme-picker__search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #7b8da0;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .field .input-wrapper .cpbn-programme-picker__search {
+            display: block;
+            width: 100%;
+            height: 40px;
+            padding: 9px 12px 9px 35px;
+            border: 1px solid #dce3ec;
+            border-radius: 8px;
+            background: #f8fafc;
+            font: 400 13px 'Inter', sans-serif;
+            color: var(--text);
+            box-shadow: none;
+        }
+        .field .input-wrapper .cpbn-programme-picker__search:focus {
+            outline: none;
+            border-color: var(--accent);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(201, 168, 76, .12);
+        }
+        .cpbn-programme-picker__heading {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 12px 8px 7px;
+            color: #78889b;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
+        }
+        .cpbn-programme-picker__list {
+            max-height: min(310px, 44vh);
+            overflow-y: auto;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #c5d1dc transparent;
+        }
+        .cpbn-programme-picker__option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            min-height: 43px;
+            margin: 2px 0;
+            padding: 8px 9px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--text);
+            text-align: left;
+            font: 500 12px/1.45 'Inter', sans-serif;
+            cursor: pointer;
+            transition: background-color .15s ease, border-color .15s ease;
+        }
+        .cpbn-programme-picker__option:hover,
+        .cpbn-programme-picker__option:focus-visible {
+            outline: none;
+            background: #edf3f9;
+            border-color: #dce6f1;
+        }
+        .cpbn-programme-picker__option[aria-selected="true"] {
+            color: var(--primary);
+            background: #f6f3e8;
+            border-color: #e7d9b3;
+        }
+        .cpbn-programme-picker__code {
+            flex: 0 0 auto;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 45px;
+            padding: 4px 6px;
+            border-radius: 6px;
+            background: #eaf0f7;
+            color: var(--primary);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: .02em;
+        }
+        .cpbn-programme-picker__option[aria-selected="true"] .cpbn-programme-picker__code {
+            background: #e9d9ac;
+        }
+        .cpbn-programme-picker__option-name { flex: 1; min-width: 0; }
+        .cpbn-programme-picker__check { color: var(--accent-dark); font-size: 12px; }
+        .cpbn-programme-picker__empty {
+            padding: 18px 10px;
+            color: var(--text-muted);
+            font-size: 12px;
+            text-align: center;
+        }
+        @media (max-width: 480px) {
+            .cpbn-programme-picker__menu { padding: 8px; }
+            .cpbn-programme-picker__option { font-size: 11.5px; }
+            .cpbn-programme-picker__list { max-height: min(280px, 42vh); }
+        }
     </style>
     @include('partials.motion', ['reveal' => false])
     @include('partials.auth-theme')
@@ -429,7 +592,9 @@
                     <div class="field">
                         <label>Programme <span class="required">*</span></label>
                         <div class="input-wrapper">
-                            <x-programme-select :selected="null" />
+                            <div class="cpbn-programme-picker" id="cpbn-registration-programme">
+                                <x-programme-select :selected="null" />
+                            </div>
                         </div>
                         @error('programme')
                             <div class="error">{{ $message }}</div>
@@ -489,6 +654,206 @@
     </main>
 
     <script>
+
+        // Visual-only enhancement. The original <select name="programme"> remains
+        // the source of options and the field submitted to Laravel.
+        (() => {
+            const picker = document.getElementById('cpbn-registration-programme');
+            const select = picker?.querySelector('select[name="programme"]');
+            if (!picker || !select) return;
+
+            const entries = Array.from(select.options)
+                .filter(option => option.value !== '')
+                .map(option => {
+                    const text = option.textContent.trim().replace(/\s+/g, ' ');
+                    const delimiter = text.indexOf(' — ');
+                    return {
+                        value: option.value,
+                        code: delimiter >= 0 ? text.slice(0, delimiter) : '',
+                        name: delimiter >= 0 ? text.slice(delimiter + 3) : text,
+                        search: text.toLocaleLowerCase(),
+                    };
+                });
+            if (!entries.length) return;
+
+            const trigger = document.createElement('button');
+            trigger.type = 'button';
+            trigger.className = 'cpbn-programme-picker__trigger';
+            trigger.setAttribute('aria-label', 'Select your programme');
+            trigger.setAttribute('aria-expanded', 'false');
+            trigger.setAttribute('aria-haspopup', 'listbox');
+            trigger.setAttribute('aria-controls', 'cpbn-registration-programme-list');
+
+            const valueBox = document.createElement('span');
+            valueBox.className = 'cpbn-programme-picker__value';
+            const valueName = document.createElement('span');
+            valueName.className = 'cpbn-programme-picker__value-name';
+            valueBox.append(valueName);
+            const chevron = document.createElement('i');
+            chevron.className = 'fas fa-chevron-down cpbn-programme-picker__chevron';
+            chevron.setAttribute('aria-hidden', 'true');
+            trigger.append(valueBox, chevron);
+
+            const menu = document.createElement('div');
+            menu.className = 'cpbn-programme-picker__menu';
+            menu.hidden = true;
+            const searchWrap = document.createElement('div');
+            searchWrap.className = 'cpbn-programme-picker__search-wrap';
+            const searchIcon = document.createElement('i');
+            searchIcon.className = 'fas fa-search cpbn-programme-picker__search-icon';
+            searchIcon.setAttribute('aria-hidden', 'true');
+            const search = document.createElement('input');
+            search.type = 'search';
+            search.className = 'cpbn-programme-picker__search';
+            search.placeholder = 'Search by programme or code...';
+            search.setAttribute('aria-label', 'Search programmes');
+            search.autocomplete = 'off';
+            searchWrap.append(searchIcon, search);
+
+            const heading = document.createElement('div');
+            heading.className = 'cpbn-programme-picker__heading';
+            const headingName = document.createElement('span');
+            headingName.textContent = 'Available programmes';
+            const count = document.createElement('span');
+            heading.append(headingName, count);
+            const list = document.createElement('div');
+            list.className = 'cpbn-programme-picker__list';
+            list.id = 'cpbn-registration-programme-list';
+            list.setAttribute('role', 'listbox');
+            list.setAttribute('aria-label', 'Available programmes');
+            const empty = document.createElement('div');
+            empty.className = 'cpbn-programme-picker__empty';
+            empty.textContent = 'No matching programmes found.';
+            empty.hidden = true;
+            menu.append(searchWrap, heading, list, empty);
+
+            function updateTrigger() {
+                const current = entries.find(entry => entry.value === select.value);
+                valueBox.replaceChildren();
+                if (current?.code) {
+                    const code = document.createElement('span');
+                    code.className = 'cpbn-programme-picker__code';
+                    code.textContent = current.code;
+                    valueBox.append(code);
+                }
+                valueName.textContent = current?.name || select.options[0]?.textContent.trim() || 'Select your programme';
+                valueBox.append(valueName);
+                trigger.classList.toggle('has-value', Boolean(current));
+            }
+
+            function renderOptions() {
+                const term = search.value.trim().toLocaleLowerCase();
+                const filtered = entries.filter(entry => entry.search.includes(term));
+                count.textContent = String(filtered.length);
+                list.replaceChildren();
+                empty.hidden = filtered.length > 0;
+                for (const entry of filtered) {
+                    const option = document.createElement('button');
+                    option.type = 'button';
+                    option.className = 'cpbn-programme-picker__option';
+                    option.setAttribute('role', 'option');
+                    option.setAttribute('aria-selected', String(entry.value === select.value));
+                    if (entry.code) {
+                        const code = document.createElement('span');
+                        code.className = 'cpbn-programme-picker__code';
+                        code.textContent = entry.code;
+                        option.append(code);
+                    }
+                    const name = document.createElement('span');
+                    name.className = 'cpbn-programme-picker__option-name';
+                    name.textContent = entry.name;
+                    option.append(name);
+                    if (entry.value === select.value) {
+                        const check = document.createElement('i');
+                        check.className = 'fas fa-check cpbn-programme-picker__check';
+                        check.setAttribute('aria-hidden', 'true');
+                        option.append(check);
+                    }
+                    option.addEventListener('click', () => {
+                        select.value = entry.value;
+                        select.dispatchEvent(new Event('change', { bubbles: true }));
+                        closeMenu();
+                        trigger.focus();
+                    });
+                    list.append(option);
+                }
+            }
+
+            function openMenu() {
+                menu.hidden = false;
+                picker.classList.add('is-open');
+                trigger.setAttribute('aria-expanded', 'true');
+                search.value = '';
+                renderOptions();
+                search.focus();
+            }
+            function closeMenu() {
+                menu.hidden = true;
+                picker.classList.remove('is-open');
+                trigger.setAttribute('aria-expanded', 'false');
+            }
+
+            trigger.addEventListener('click', () => menu.hidden ? openMenu() : closeMenu());
+            trigger.addEventListener('keydown', event => {
+                if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    openMenu();
+                }
+            });
+            search.addEventListener('input', renderOptions);
+            search.addEventListener('keydown', event => {
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    list.querySelector('.cpbn-programme-picker__option')?.focus();
+                } else if (event.key === 'Enter') {
+                    event.preventDefault();
+                    list.querySelector('.cpbn-programme-picker__option')?.click();
+                }
+            });
+            list.addEventListener('keydown', event => {
+                const options = Array.from(list.querySelectorAll('.cpbn-programme-picker__option'));
+                const index = options.indexOf(document.activeElement);
+                if (event.key === 'ArrowDown') {
+                    event.preventDefault();
+                    options[Math.min(index + 1, options.length - 1)]?.focus();
+                } else if (event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    if (index === 0) search.focus();
+                    else options[Math.max(index - 1, 0)]?.focus();
+                }
+            });
+            picker.addEventListener('keydown', event => {
+                if (event.key === 'Escape' && !menu.hidden) {
+                    event.preventDefault();
+                    closeMenu();
+                    trigger.focus();
+                }
+            });
+            document.addEventListener('pointerdown', event => {
+                if (!picker.contains(event.target)) closeMenu();
+            });
+            document.addEventListener('focusin', event => {
+                if (!picker.contains(event.target)) closeMenu();
+            });
+            select.addEventListener('change', () => {
+                updateTrigger();
+                if (!menu.hidden) renderOptions();
+            });
+            select.form?.addEventListener('reset', () => {
+                window.requestAnimationFrame(() => {
+                    updateTrigger();
+                    closeMenu();
+                });
+            });
+
+            // Hide the original control only after the UI is fully prepared;
+            // the original select still submits the exact same option value.
+            picker.append(trigger, menu);
+            select.hidden = true;
+            select.style.display = 'none';
+            updateTrigger();
+        })();
+
         function togglePasswordVisibility(inputId, button) {
             const input = document.getElementById(inputId);
             const icon = button.querySelector('i');
