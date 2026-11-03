@@ -21,8 +21,28 @@
     </div>
 
     <div class="card">
+        <div class="filter-pills">
+            @foreach([
+                '' => 'All',
+                'live' => 'Live',
+                'expired' => 'Expired',
+                'draft' => 'Drafts',
+            ] as $value => $label)
+                <a
+                    href="{{ route('admin.business.innovation-lab.index', $value === '' ? [] : ['status' => $value]) }}"
+                    class="btn btn-sm {{ $filter === $value ? 'btn-primary' : 'btn-subtle' }}"
+                >
+                    {{ $label }} ({{ $counts[$value === '' ? 'all' : $value] }})
+                </a>
+            @endforeach
+        </div>
+
         @if($notes->isEmpty())
-            <p class="empty-text">No notes yet. Create one to let students know what you're building.</p>
+            <p class="empty-text">
+                {{ $counts['all'] === 0
+                    ? "No notes yet. Create one to let students know what you're building."
+                    : 'No notes match this filter.' }}
+            </p>
         @else
             <div class="table-scroll">
                 <table class="admin-table">
@@ -54,11 +74,33 @@
                                 </td>
                                 <td>{{ $note->author->name ?? 'Unknown' }}</td>
                                 <td>
-                                    @if($note->is_published)
-                                        <span class="status-pill status-pill-green">Published</span>
-                                    @else
-                                        <span class="status-pill status-pill-muted">Draft</span>
-                                    @endif
+                                    @php $daysLeft = $note->daysLeft(); @endphp
+
+                                    @switch($note->status())
+                                        @case('draft')
+                                            <span class="status-pill status-pill-muted">Draft</span>
+                                            @break
+                                        @case('expired')
+                                            <span class="status-pill status-pill-muted" title="Hidden from students">
+                                                <i class="fas fa-eye-slash"></i> Expired
+                                            </span>
+                                            @break
+                                        @default
+                                            <span class="status-pill status-pill-green">Live</span>
+                                    @endswitch
+
+                                    <span class="cell-sub" style="margin-top:4px;">
+                                        @if($daysLeft === null)
+                                            No expiry
+                                        @elseif($daysLeft < 0)
+                                            Ended {{ $note->show_until->format('d M Y') }}
+                                        @elseif($daysLeft === 0)
+                                            Last day today
+                                        @else
+                                            Until {{ $note->show_until->format('d M Y') }}
+                                            ({{ $daysLeft }} {{ \Illuminate\Support\Str::plural('day', $daysLeft) }} left)
+                                        @endif
+                                    </span>
                                 </td>
                                 <td>{{ $note->created_at->format('d M Y') }}</td>
                                 <td>

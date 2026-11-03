@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\InnovationLabNote;
 use App\Services\Student\InnovationLabNotifier;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rules\File;
@@ -18,13 +19,30 @@ class InnovationLabController extends Controller
         private InnovationLabNotifier $notifier
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
+        $all = InnovationLabNote::query()
+            ->with('author')
+            ->latest()
+            ->get();
+
+        $counts = [
+            'all' => $all->count(),
+            'live' => $all->filter(fn ($n) => $n->status() === 'live')->count(),
+            'expired' => $all->filter(fn ($n) => $n->status() === 'expired')->count(),
+            'draft' => $all->filter(fn ($n) => $n->status() === 'draft')->count(),
+        ];
+
+        $filter = $request->string('status')->toString();
+
+        $notes = in_array($filter, ['live', 'expired', 'draft'], true)
+            ? $all->filter(fn ($n) => $n->status() === $filter)
+            : $all;
+
         return view('admin.innovation-lab.index', [
-            'notes' => InnovationLabNote::query()
-                ->with('author')
-                ->latest()
-                ->get(),
+            'notes' => $notes->values(),
+            'counts' => $counts,
+            'filter' => $filter,
         ]);
     }
 
@@ -44,13 +62,16 @@ class InnovationLabController extends Controller
             ]
         );
 
-        $notified = $this->notifier->announce($note);
+        $notified = $this->announceIfLive($note);
 
-        return redirect()
-            ->route('admin.business.innovation-lab.index')
-            ->with('success', $note->is_published
-                ? 'Note published.'.$this->notifiedText($notified)
-                : 'Draft saved. Students will be notified when you publish it.');
+        return $this->withExpiryWarning(
+            redirect()
+                ->route('admin.business.innovation-lab.index')
+                ->with('success', $note->is_published
+                    ? 'Note published.'.$this->notifiedText($notified)
+                    : 'Draft saved. Students will be notified when you publish it.'),
+            $note
+        );
     }
 
     public function edit(InnovationLabNote $innovationLab): View
@@ -76,13 +97,16 @@ class InnovationLabController extends Controller
 
         $innovationLab->update($data);
 
-        $notified = $this->notifier->announce($innovationLab);
+        $notified = $this->announceIfLive($innovationLab);
 
-        return redirect()
-            ->route('admin.business.innovation-lab.index')
-            ->with('success', $notified > 0
-                ? 'Note published.'.$this->notifiedText($notified)
-                : 'Note updated.');
+        return $this->withExpiryWarning(
+            redirect()
+                ->route('admin.business.innovation-lab.index')
+                ->with('success', $notified > 0
+                    ? 'Note published.'.$this->notifiedText($notified)
+                    : 'Note updated.'),
+            $innovationLab
+        );
     }
 
     public function destroy(InnovationLabNote $innovationLab)
@@ -112,6 +136,8 @@ class InnovationLabController extends Controller
             ],
             'is_published' => ['nullable', 'boolean'],
             'accepts_interest' => ['nullable', 'boolean'],
+            // Blank means the post never expires.
+            'show_until' => ['nullable', 'date'],
         ]);
 
         unset($validated['image']);
@@ -120,6 +146,31 @@ class InnovationLabController extends Controller
             'is_published' => $request->boolean('is_published'),
             'accepts_interest' => $request->boolean('accepts_interest'),
         ];
+    }
+
+    /**
+     * A post past its last day is hidden from students, so students
+     * are not told about it either.
+     */
+    private function announceIfLive(InnovationLabNote $note): int
+    {
+        return $note->isExpired() ? 0 : $this->notifier->announce($note);
+    }
+
+    /**
+     * Saving a published post with a date that has already passed
+     * is allowed, but the admin should know it will not show.
+     */
+    private function withExpiryWarning(RedirectResponse $redirect, InnovationLabNote $note): RedirectResponse
+    {
+        if ($note->is_published && $note->isExpired()) {
+            $redirect->with(
+                'warning',
+                'The "show until" date has already passed, so students will not see this post.'
+            );
+        }
+
+        return $redirect;
     }
 
     private function notifiedText(int $notified): string

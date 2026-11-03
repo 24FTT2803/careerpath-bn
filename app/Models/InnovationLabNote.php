@@ -6,6 +6,7 @@ use App\Rules\IsEmoji;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\HtmlString;
 
 class InnovationLabNote extends Model
@@ -17,12 +18,14 @@ class InnovationLabNote extends Model
         'created_by',
         'is_published',
         'accepts_interest',
+        'show_until',
     ];
 
     protected $casts = [
         'is_published' => 'boolean',
         'accepts_interest' => 'boolean',
         'published_at' => 'datetime',
+        'show_until' => 'date',
     ];
 
     /**
@@ -165,6 +168,64 @@ class InnovationLabNote extends Model
         );
 
         return new HtmlString($linked);
+    }
+
+    /**
+     * Whole days left before the post expires, counting today.
+     *
+     * 0 means today is the last day it shows, and negative means
+     * it has already expired. Null means no expiry was set, so
+     * the post stays up until an admin takes it down.
+     */
+    public function daysLeft(): ?int
+    {
+        if ($this->show_until === null) {
+            return null;
+        }
+
+        $today = Carbon::parse(
+            now(config('app.business_timezone'))->toDateString()
+        );
+
+        return (int) $today->diffInDays(
+            $this->show_until->copy()->startOfDay(),
+            false
+        );
+    }
+
+    public function isExpired(): bool
+    {
+        $left = $this->daysLeft();
+
+        return $left !== null && $left < 0;
+    }
+
+    /** draft, expired or live, for the admin list. A draft is a draft even if its date has passed. */
+    public function status(): string
+    {
+        return match (true) {
+            ! $this->is_published => 'draft',
+            $this->isExpired() => 'expired',
+            default => 'live',
+        };
+    }
+
+    /** Posts with no expiry, or whose last day hasn't passed. */
+    public function scopeCurrent($query)
+    {
+        $today = now(config('app.business_timezone'))->toDateString();
+
+        return $query->where(
+            fn ($q) => $q->whereNull('show_until')->orWhere('show_until', '>=', $today)
+        );
+    }
+
+    /** Posts whose last day has passed. */
+    public function scopeExpired($query)
+    {
+        $today = now(config('app.business_timezone'))->toDateString();
+
+        return $query->whereNotNull('show_until')->where('show_until', '<', $today);
     }
 
     public function imageUrl(): ?string

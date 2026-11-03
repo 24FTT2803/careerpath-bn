@@ -95,6 +95,23 @@
                 @enderror
             </div>
 
+            <div style="margin-bottom:16px;">
+                <label class="field-label">Show until (optional)</label>
+                <input
+                    type="date"
+                    name="show_until"
+                    class="field-input"
+                    style="max-width:220px;"
+                    value="{{ old('show_until', $note->show_until?->toDateString()) }}"
+                >
+                <div class="field-hint">
+                    The last day students see this post. After it, only admins can see it. Leave blank to keep it up.
+                </div>
+                @error('show_until')
+                    <div style="color:var(--danger);font-size:12px;margin-top:4px;">{{ $message }}</div>
+                @enderror
+            </div>
+
             {{--
                 Whether students can put their hand up for this.
                 A note about a bug fix is not something to join,

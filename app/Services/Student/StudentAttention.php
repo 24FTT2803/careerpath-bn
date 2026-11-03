@@ -97,6 +97,7 @@ class StudentAttention
 
         return InnovationLabNote::query()
             ->where('is_published', true)
+            ->current()
             ->whereNotNull('published_at')
             ->when($since, fn ($query) => $query->where('published_at', '>', $since))
             ->count();

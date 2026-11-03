@@ -172,3 +172,92 @@ test('students see published notes only', function () {
         ->assertSee('Visible note')
         ->assertDontSee('Hidden draft');
 });
+
+test('expiry follows the show-until date', function () {
+    $today = now(config('app.business_timezone'));
+
+    $open = new InnovationLabNote(['is_published' => true]);
+    $future = new InnovationLabNote(['is_published' => true, 'show_until' => $today->copy()->addDays(3)]);
+    $lastDay = new InnovationLabNote(['is_published' => true, 'show_until' => $today->copy()]);
+    $past = new InnovationLabNote(['is_published' => true, 'show_until' => $today->copy()->subDay()]);
+    $draft = new InnovationLabNote(['is_published' => false, 'show_until' => $today->copy()->subDay()]);
+
+    expect($open->daysLeft())->toBeNull()
+        ->and($open->status())->toBe('live')
+        ->and($future->daysLeft())->toBe(3)
+        ->and($lastDay->daysLeft())->toBe(0)
+        ->and($lastDay->status())->toBe('live')
+        ->and($past->status())->toBe('expired')
+        ->and($draft->status())->toBe('draft');
+});
+
+test('an admin can clear a show-until date', function () {
+    $note = InnovationLabNote::create([
+        'title' => 'Dated',
+        'body' => 'Body',
+        'is_published' => true,
+        'show_until' => now(config('app.business_timezone'))->addDays(2)->toDateString(),
+    ]);
+
+    $this->actingAs(labUser('admin'))
+        ->put(route('admin.business.innovation-lab.update', $note), [
+            'title' => 'Dated',
+            'body' => 'Body',
+            'is_published' => '1',
+            'show_until' => '',
+        ])
+        ->assertRedirect();
+
+    expect($note->fresh()->show_until)->toBeNull();
+});
+
+test('students do not see posts past their show-until date', function () {
+    $today = now(config('app.business_timezone'));
+
+    InnovationLabNote::create([
+        'title' => 'Ends today',
+        'body' => 'Still up',
+        'is_published' => true,
+        'show_until' => $today->toDateString(),
+    ]);
+
+    InnovationLabNote::create([
+        'title' => 'Ended yesterday',
+        'body' => 'Gone',
+        'is_published' => true,
+        'show_until' => $today->copy()->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs(labUser('student'))
+        ->get(route('student.innovation-lab'))
+        ->assertOk()
+        ->assertSee('Ends today')
+        ->assertDontSee('Ended yesterday');
+});
+
+test('admins still see expired posts under the expired filter', function () {
+    InnovationLabNote::create([
+        'title' => 'Ended yesterday',
+        'body' => 'Gone',
+        'is_published' => true,
+        'show_until' => now(config('app.business_timezone'))->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs(labUser('admin'))
+        ->get(route('admin.business.innovation-lab.index', ['status' => 'expired']))
+        ->assertOk()
+        ->assertSee('Ended yesterday');
+});
+
+test('students cannot react to an expired post', function () {
+    $note = InnovationLabNote::create([
+        'title' => 'Ended yesterday',
+        'body' => 'Gone',
+        'is_published' => true,
+        'show_until' => now(config('app.business_timezone'))->subDay()->toDateString(),
+    ]);
+
+    $this->actingAs(labUser('student'))
+        ->post(route('student.innovation-lab.react', $note), ['emoji' => '👍'])
+        ->assertNotFound();
+});

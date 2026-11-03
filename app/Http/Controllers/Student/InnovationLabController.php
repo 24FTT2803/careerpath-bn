@@ -40,6 +40,8 @@ class InnovationLabController extends Controller
                  */
                 ->with(['author.profile', 'reactions', 'interests'])
                 ->where('is_published', true)
+                /* Past their last day, posts are for admins only. */
+                ->current()
                 ->orderByRaw('COALESCE(published_at, created_at) DESC')
                 ->latest('id')
                 ->get(),
@@ -56,7 +58,7 @@ class InnovationLabController extends Controller
      */
     public function react(Request $request, InnovationLabNote $note)
     {
-        abort_unless($note->is_published, 404);
+        abort_unless($note->is_published && ! $note->isExpired(), 404);
 
         /*
          * Any emoji, not only the ones the page offers. The
@@ -97,7 +99,7 @@ class InnovationLabController extends Controller
      */
     public function interest(Request $request, InnovationLabNote $note)
     {
-        abort_unless($note->is_published, 404);
+        abort_unless($note->is_published && ! $note->isExpired(), 404);
 
         /*
          * Only where the post asked for it. Without this the
