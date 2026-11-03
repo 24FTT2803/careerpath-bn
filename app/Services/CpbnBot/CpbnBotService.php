@@ -6,6 +6,7 @@ use App\Contracts\CpbnBotClient;
 use App\Models\CpbnBotConversation;
 use App\Models\CpbnBotMessage;
 use App\Models\User;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
@@ -49,7 +50,8 @@ class CpbnBotService
         ?string $currentPage = null,
         ?array $formState = null,
         ?string $startSection = null,
-        bool $confirmedFinished = false
+        bool $confirmedFinished = false,
+        ?array $formResult = null
     ): array {
         $question = trim($message);
         $active = $conversation->fill_section;
@@ -102,6 +104,16 @@ class CpbnBotService
              */
             'student_is_moving_on' => ! $startsNow && $active !== null && $this->isMovingOn($question),
             'form_now' => $formState,
+
+            /*
+             * What the last change really did, read back from the
+             * form: done, or not. So the bot knows whether the job
+             * it said it would do was done, and owns up when not.
+             */
+            'last_result' => $formResult ? [
+                'done' => array_values((array) ($formResult['confirmed'] ?? [])),
+                'failed' => array_values((array) ($formResult['missed'] ?? [])),
+            ] : null,
         ];
 
         /*
@@ -111,9 +123,18 @@ class CpbnBotService
          */
         $section = $startsNow ? $asked : $active;
 
-        /* The long list of countries, only while personal details are being filled in. */
-        if ($section !== 'personal') {
-            unset($context['profile_form']['nationality_options']);
+        /*
+         * The student's saved profile is not sent by default. While
+         * a section is being filled in, only that section's saved
+         * values go, with its choices (the countries for personal
+         * details, the listed interests for interests). The form
+         * itself, as it stands, comes with every message of the
+         * session as fill_session.form_now.
+         */
+        $context['profile_form'] = $this->savedSection($context['profile_form'] ?? [], $section);
+
+        if ($context['profile_form'] === null) {
+            unset($context['profile_form']);
         }
         $waiting = $section === 'skills' ? $this->skillLevels->waiting($formState) : [];
         $rated = $this->skillLevels->answers($question, $waiting);
@@ -207,6 +228,9 @@ class CpbnBotService
         /* The levels read from the student's answer stand, whatever the bot sent for them. */
         $rawFill = is_array($validated['fill'] ?? null) ? $validated['fill'] : [];
 
+        /* A change to the item being talked about edits it, never adds another. */
+        $rawFill = $this->sameItem($rawFill, $formState, $question, $conversation);
+
         if ($rated !== []) {
             $rawFill['competencies'] = collect(is_array($rawFill['competencies'] ?? null) ? $rawFill['competencies'] : [])
                 ->reject(fn ($item) => is_array($item) && in_array(Str::lower((string) ($item['name'] ?? '')), $ratedNames, true))
@@ -219,7 +243,14 @@ class CpbnBotService
 
         /* Never a change claimed before the form has confirmed it. */
         if ($declared !== 'done') {
-            $validated['message'] = $this->honestAboutChanges((string) $validated['message'], $fill, $currentPage, $autoNavigate, $question);
+            $validated['message'] = $this->honestAboutChanges(
+                (string) $validated['message'],
+                $fill,
+                $currentPage,
+                $autoNavigate,
+                $question,
+                $fill !== null && array_keys($fill) === ['milestone'] ? 'milestones' : 'profile_edit'
+            );
         }
 
         /*
@@ -279,7 +310,12 @@ class CpbnBotService
          * the student is taken there and the form is filled on
          * arrival.
          */
-        if (($fill !== null || ($startsNow && $asked !== null)) && $currentPage !== 'profile_edit') {
+        /* A new milestone is filled in on the Milestones page, the rest on Edit Profile. */
+        $onlyMilestone = $fill !== null && array_keys($fill) === ['milestone'];
+
+        if ($onlyMilestone && $currentPage !== 'milestones') {
+            $validated['navigate'] = ['page' => 'milestones', 'place' => 'add'];
+        } elseif (! $onlyMilestone && ($fill !== null || ($startsNow && $asked !== null)) && $currentPage !== 'profile_edit') {
             $validated['navigate'] = 'profile_edit';
         }
 
@@ -333,6 +369,9 @@ class CpbnBotService
 
         $this->recordExchange($conversation, $question, $validated['message'], $links, $tokens, $memory);
 
+        /* Saved by now, so the item being worked on can be remembered with it. */
+        $this->rememberItems($conversation, $fill);
+
         return [
             'message' => $validated['message'],
             'links' => $links,
@@ -360,8 +399,10 @@ class CpbnBotService
      *
      * @param  array<string, mixed>|null  $fill
      */
-    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage, bool $autoNavigate = true, string $question = ''): string
+    private function honestAboutChanges(string $message, ?array $fill, ?string $currentPage, bool $autoNavigate = true, string $question = '', string $fillPage = 'profile_edit'): string
     {
+        $fillPageName = $fillPage === 'milestones' ? 'Milestones' : 'Edit Profile';
+
         if ($fill !== null) {
             /*
              * Something really is going onto the form, and the form
@@ -369,10 +410,10 @@ class CpbnBotService
              * are left as they are. From another page it is taken
              * to Edit Profile first, and told so if it did not say.
              */
-            if ($currentPage !== 'profile_edit' && ! Str::contains(Str::lower($message), 'edit profile')) {
+            if ($currentPage !== $fillPage && ! Str::contains(Str::lower($message), Str::lower($fillPageName))) {
                 $message = ($autoNavigate
-                    ? 'Taking you to Edit Profile for this. '
-                    : 'Open Edit Profile to see this. ').$message;
+                    ? 'Taking you to '.$fillPageName.' for this. '
+                    : 'Open '.$fillPageName.' to see this. ').$message;
             }
 
             return $message;
@@ -615,6 +656,125 @@ class CpbnBotService
     }
 
     /**
+     * The saved part of the profile the section in progress needs,
+     * or nothing outside a section.
+     *
+     * @param  array<string, mixed>  $saved
+     * @return array<string, mixed>|null
+     */
+    private function savedSection(array $saved, ?string $section): ?array
+    {
+        $parts = [
+            'personal' => ['personal', 'nationality_options'],
+            'qualifications' => ['qualifications'],
+            'skills' => ['competencies'],
+            'interests' => ['interests', 'interest_options'],
+            'projects' => ['projects'],
+            'certifications' => ['certifications'],
+            'aspirations' => ['aspirations'],
+        ][$section] ?? null;
+
+        if ($parts === null) {
+            return null;
+        }
+
+        return ['fillable_sections' => $saved['fillable_sections'] ?? []]
+            + array_intersect_key($saved, array_flip($parts));
+    }
+
+    /**
+     * The list fields an item is known by, and the field that
+     * names an existing one when it is changed.
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    private const ITEM_KEYS = [
+        'projects' => ['title', 'match_title'],
+        'certifications' => ['certification_name', 'match_name'],
+        'qualifications' => ['programme_name', 'match_programme'],
+    ];
+
+    /**
+     * Makes a change to the item being talked about edit that item
+     * rather than add another.
+     *
+     * The bot does not always say which existing item it means.
+     * When it sends a project (say) with no name at all, it is the
+     * one being worked on. When the student is plainly changing
+     * something ("change", "rename", "actually", "should be") and
+     * the name sent is not on the form, it is the one being worked
+     * on, renamed.
+     *
+     * @param  array<string, mixed>  $rawFill
+     * @param  array<string, mixed>|null  $formNow
+     * @return array<string, mixed>
+     */
+    private function sameItem(array $rawFill, ?array $formNow, string $question, CpbnBotConversation $conversation): array
+    {
+        $current = $conversation->exists ? (array) Cache::get($this->itemsKey($conversation), []) : [];
+        $changing = (bool) preg_match('/\b(change|changed|edit|rename|update|fix|correct|actually|instead|wrong|should be|meant|not\s+\S+\s+but)\b/iu', $question);
+
+        foreach (self::ITEM_KEYS as $list => [$key, $match]) {
+            if (! is_array($rawFill[$list] ?? null)) {
+                continue;
+            }
+
+            $onForm = collect($formNow[$list] ?? [])
+                ->map(fn ($item) => is_array($item) ? Str::lower(trim((string) ($item[$key] ?? ''))) : '')
+                ->filter()
+                ->all();
+
+            $rawFill[$list] = collect($rawFill[$list])
+                ->map(function ($row) use ($current, $list, $key, $match, $onForm, $changing) {
+                    if (! is_array($row) || filled($row[$match] ?? null) || ! isset($current[$list])) {
+                        return $row;
+                    }
+
+                    $name = trim((string) ($row[$key] ?? ''));
+                    $known = $name !== '' && in_array(Str::lower($name), $onForm, true);
+
+                    if ($name === '' || ($changing && ! $known && Str::lower($name) !== Str::lower($current[$list]))) {
+                        $row[$match] = $current[$list];
+                    }
+
+                    return $row;
+                })
+                ->all();
+        }
+
+        return $rawFill;
+    }
+
+    /**
+     * The item each list is working on now: the last one filled.
+     *
+     * @param  array<string, mixed>|null  $fill
+     */
+    private function rememberItems(CpbnBotConversation $conversation, ?array $fill): void
+    {
+        if ($fill === null || ! $conversation->exists) {
+            return;
+        }
+
+        $current = (array) Cache::get($this->itemsKey($conversation), []);
+
+        foreach (self::ITEM_KEYS as $list => [$key, $match]) {
+            $last = collect($fill[$list] ?? [])->last();
+
+            if (is_array($last) && filled($last[$key] ?? $last[$match] ?? null)) {
+                $current[$list] = (string) ($last[$key] ?? $last[$match]);
+            }
+        }
+
+        Cache::put($this->itemsKey($conversation), $current, now()->addHours(6));
+    }
+
+    private function itemsKey(CpbnBotConversation $conversation): string
+    {
+        return 'cpbn-bot-items:'.$conversation->id;
+    }
+
+    /**
      * Whether the student is turning the bot's page changes off
      * (false) or back on (true). Null when they are not.
      */
@@ -661,7 +821,7 @@ class CpbnBotService
         $text = trim($question);
 
         return mb_strlen($text) <= 40 && (bool) preg_match(
-            "/^(ok(ay)?,? |alright,? |no,? |nope,? |thanks,? |yeah,? )?(i['’]?m done|i am done|all done|we['’]?re done|done|that['’]?s (it|all|everything|enough)|nothing else|no more|((you|we) can |let['’]?s )?stop( now| here| there| the session| this)?|(end|finish|close) (the |this )?session|finished|i['’]?m finished)[.,! ]*(thanks|thank you)?[.! ]*$/iu",
+            "/^(ok(ay)?,? |alright,? |no,? |nope,? |thanks,? |yeah,? )?(i['’]?m done|i am done|all done|we['’]?re done|done|that['’]?s (it|all|everything|enough)|nothing else|no more|((you|we) can |let['’]?s )?stop( now| here| there| the session| this| for now)?|(end|finish|close) (the |this )?session|finished|i['’]?m finished|never ?mind|no thanks?( you)?|i['’]?m good|that['’]?s enough( for now)?|i['’]?ll do (the rest|it) myself|leave it( there)?)[.,! ]*(thanks|thank you)?[.! ]*$/iu",
             $text
         );
     }

@@ -53,7 +53,7 @@ function cpbnClient(
 
         public string $reply = 'Open Edit Profile and fill in Qualifications.';
 
-        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, private ?array $fill, public string $fillSection) {}
+        public function __construct(private ?int $tokens, private array $links, private string|array|null $navigate, private ?array $choices, public ?array $fill, public string $fillSection) {}
 
         public function ask(array $context, array $history, string $message): array
         {
@@ -1187,6 +1187,8 @@ test('qualifications can be filled, never the Politeknik programme', function ()
         'field_of_study' => 'Science',
         'start_date' => '2022-01-10',
         'end_date' => '2023-11-30',
+        /* Finished: "Still studying this" is unticked. */
+        'is_current' => false,
     ]);
 });
 
@@ -1607,3 +1609,133 @@ test('the long list of countries is only sent while personal details are filled 
 
     expect($client->lastContext['profile_form'])->toHaveKey('nationality_options');
 });
+
+test('the bot can take the student to a part of a page', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], navigate: ['page' => 'profile_edit', 'place' => 'projects']);
+
+    askCpbn($student, 'Take me to my projects', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('navigate.label', 'Edit Profile › Projects & Experience')
+        ->assertJsonPath('navigate.url', route('student.profile.edit').'#ep-projects');
+});
+
+test('a place the page does not have is left out, and the page still opens', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], navigate: ['page' => 'settings', 'place' => 'secret-room']);
+
+    askCpbn($student, 'Take me to settings', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('navigate.url', route('student.settings'));
+});
+
+test('the bot can take items off the form, for the student to save', function () {
+    $student = cpbnStudent();
+    cpbnClient(links: [], fill: ['remove' => ['projects' => ['Hobbee', ''], 'interests' => ['Gaming'], 'nonsense' => ['x']]]);
+
+    askCpbn($student, 'Remove Hobbee and the gaming interest', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill.remove', ['projects' => ['Hobbee'], 'interests' => ['Gaming']]);
+});
+
+test('a new milestone is filled in on the Milestones page', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: ['milestone' => [
+        'title' => 'Finish my AWS certification',
+        'category' => 'skill',
+        'description' => 'Pass the Cloud Practitioner exam.',
+        'target_date' => '2027-01-31',
+    ]]);
+    $client->reply = 'Here is your milestone.';
+
+    askCpbn($student, 'Add a milestone to finish AWS by January', ['current_page' => 'dashboard'])
+        ->assertOk()
+        ->assertJsonPath('fill.milestone.category', 'skill')
+        ->assertJsonPath('fill.milestone.target_date', '2027-01-31')
+        ->assertJsonPath('navigate.url', route('student.milestones').'#addForm')
+        ->assertJsonPath('message', 'Taking you to Milestones for this. Here is your milestone.');
+});
+
+test('changing the project being talked about edits it instead of adding another', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: ['projects' => [['title' => 'Hobbee', 'description' => 'A Reddit-like app for Bruneian hobbies.']]], fillSection: 'projects');
+
+    askCpbn($student, 'Help me fill in my Projects & Experience', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    /* A detail with no name belongs to the project being talked about. */
+    $client->fill = ['projects' => [['role' => 'UI/UX Designer']]];
+
+    askCpbn($student, 'I was the UI/UX designer', ['current_page' => 'profile_edit', 'form_state' => ['projects' => [['title' => 'Hobbee']]]])
+        ->assertOk()
+        ->assertJsonPath('fill.projects.0.match_title', 'Hobbee')
+        ->assertJsonPath('fill.projects.0.role', 'UI/UX Designer');
+
+    /* Renamed, not added. */
+    $client->fill = ['projects' => [['title' => 'Hobbee App']]];
+
+    askCpbn($student, "Actually it's called Hobbee App", ['current_page' => 'profile_edit', 'form_state' => ['projects' => [['title' => 'Hobbee']]]])
+        ->assertOk()
+        ->assertJsonPath('fill.projects.0.match_title', 'Hobbee')
+        ->assertJsonPath('fill.projects.0.title', 'Hobbee App');
+});
+
+test('another project the student clearly adds is added', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fill: ['projects' => [['title' => 'Hobbee']]], fillSection: 'projects');
+
+    askCpbn($student, 'Help me fill in my Projects & Experience', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    $client->fill = ['projects' => [['title' => 'Dining in Dungeons']]];
+
+    $row = askCpbn($student, 'I also did a 2D Java game called Dining in Dungeons', ['current_page' => 'profile_edit', 'form_state' => ['projects' => [['title' => 'Hobbee']]]])
+        ->assertOk()
+        ->json('fill.projects.0');
+
+    expect($row)->not->toHaveKey('match_title');
+});
+
+test('what the last change really did reaches the bot', function () {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'qualifications');
+
+    askCpbn($student, 'Is that done?', [
+        'current_page' => 'profile_edit',
+        'start_section' => 'qualifications',
+        'form_result' => ['confirmed' => ['Programme finish: 2026-10-31'], 'missed' => ['still studying for "GCE A Level"']],
+    ])->assertOk();
+
+    expect($client->lastContext['fill_session']['last_result'])->toBe([
+        'done' => ['Programme finish: 2026-10-31'],
+        'failed' => ['still studying for "GCE A Level"'],
+    ]);
+});
+
+test('the saved profile is not sent outside a section, and only that section within one', function () {
+    $student = cpbnStudent();
+    $student->interests()->create(['interest_name' => 'Teamwork', 'category' => 'career']);
+    $client = cpbnClient(links: []);
+
+    askCpbn($student, 'How do I upgrade?')->assertOk();
+
+    expect($client->lastContext)->not->toHaveKey('profile_form');
+
+    $client->fillSection = 'projects';
+
+    askCpbn($student, 'Help me fill in my Projects & Experience', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    expect($client->lastContext['profile_form'])->toHaveKey('projects')
+        ->and($client->lastContext['profile_form'])->not->toHaveKey('interests');
+});
+
+test('more ways of saying stop end the part', function (string $stop) {
+    $student = cpbnStudent();
+    $client = cpbnClient(links: [], fillSection: 'projects');
+
+    askCpbn($student, 'Help me fill in my Projects & Experience', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    $client->fillSection = 'projects';
+
+    askCpbn($student, $stop, ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill_section', null);
+})->with(['never mind', "ok i'll do the rest myself", "that's enough for now", 'no thanks']);

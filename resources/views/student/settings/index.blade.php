@@ -623,7 +623,7 @@
             <div class="settings-content">
 
                 <!-- Account Information -->
-                <div class="panel">
+                <div class="panel" id="account-information">
                     <div class="panel-title"><i class="fas fa-id-card"></i> Account Information</div>
                     <div class="info-row">
                         <span class="label">Full Name</span>
@@ -805,7 +805,7 @@
 
                 <!-- Advertising -->
                 @if($adsAvailable)
-                <div class="panel">
+                <div class="panel" id="advertising">
                     <div class="panel-title">
                         <i class="fas fa-bullhorn"></i> Advertising
                     </div>
@@ -877,7 +877,7 @@
                 @endif
 
                 <!-- CPBN Bot -->
-                <div class="panel">
+                <div class="panel" id="cpbn-bot-settings">
                     <div class="panel-title">
                         <i class="fas fa-robot"></i> CPBN Bot
                     </div>
@@ -979,7 +979,7 @@
                 @endunless
 
                 <!-- Change Password -->
-                <div class="panel">
+                <div class="panel" id="change-password">
                     <div class="panel-title"><i class="fas fa-lock"></i> Change Password</div>
 
 
@@ -1020,7 +1020,7 @@
 
                 <!-- Delete Account -->
                 <div class="panel danger-zone">
-                    <div class="panel-title"><i class="fas fa-trash-alt"></i> Delete Account</div>
+                    <div class="panel-title" id="delete-account"><i class="fas fa-trash-alt"></i> Delete Account</div>
                     <p class="warning-text">
                         <i class="fas fa-exclamation-triangle" style="color:var(--danger);"></i>
                         Once you delete your account, all your data will be permanently removed from the system.

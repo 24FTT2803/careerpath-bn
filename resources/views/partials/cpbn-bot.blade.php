@@ -1112,6 +1112,9 @@
         const target = new URL(place.url, window.location.origin);
 
         if (target.pathname + target.search === window.location.pathname + window.location.search) {
+            /* A place on this same page: brought into view, nothing reloaded. */
+            showPlace(target.hash);
+
             return;
         }
 
@@ -1657,20 +1660,27 @@
 
                 const notSet = [];
 
-                Object.entries(row).forEach(([field, value]) => {
+                /*
+                 * "Still studying this" first: unticking it is what
+                 * opens the finish date, which is filled after.
+                 */
+                Object.entries(row)
+                    .sort(([a], [b]) => (a === 'is_current' ? -1 : 0) - (b === 'is_current' ? -1 : 0))
+                    .forEach(([field, value]) => {
                     if (field === matchKey) {
                         return;
                     }
 
                     if (field === 'is_current') {
-                        /* Ticked only: never unticked. */
-                        if (value === true) {
-                            const current = card?.querySelector('input[type="checkbox"][name$="[is_current]"]');
-                            tick(current);
+                        const current = card?.querySelector('input[type="checkbox"][name$="[is_current]"]');
 
-                            if (! current?.checked) {
-                                notSet.push('still studying');
-                            }
+                        if (current && current.checked !== value) {
+                            current.checked = value;
+                            current.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+
+                        if (! current || current.checked !== value) {
+                            notSet.push('still studying');
                         }
 
                         return;
@@ -1701,6 +1711,83 @@
         addRows(fill.qualifications, 'qualification-list', 'add-qualification', 'Qualifications', 'Qualification');
         addRows(fill.projects, 'project-list', 'add-project', 'Projects & Experience', 'Project');
         addRows(fill.certifications, 'certification-list', 'add-certification', 'Certifications', 'Certification');
+
+        /*
+         * Taking things off the form, by the name they have there.
+         * The form's own remove buttons do it, their own question
+         * answered, so it is exactly what the student's click would
+         * do; nothing is deleted until they save.
+         */
+        const removal = fill.remove || {};
+
+        const removeCard = (listId, key, removeSelector, names, itemName) => {
+            const list = document.getElementById(listId);
+
+            (names || []).forEach((name) => {
+                const wanted = String(name).trim().toLowerCase();
+                const card = list && Array.from(list.children).find((existing) => {
+                    const field = existing.querySelector('[name$="[' + key + ']"]');
+
+                    return field && field.value.trim().toLowerCase() === wanted;
+                });
+                const button = card?.querySelector(removeSelector);
+
+                if (! button) {
+                    missed.push('removing ' + itemName + ' "' + name + '"');
+
+                    return;
+                }
+
+                button.click();
+                document.getElementById('cpbn-modal-confirm-btn')?.click();
+
+                card.isConnected
+                    ? missed.push('removing ' + itemName + ' "' + name + '"')
+                    : confirmed.push('Removed ' + itemName + ' "' + name + '"');
+            });
+        };
+
+        removeCard('project-list', 'title', '.cpbn-remove-project', removal.projects, 'project');
+        removeCard('certification-list', 'certification_name', '.cpbn-remove-certification', removal.certifications, 'certification');
+        removeCard('qualification-list', 'programme_name', '.cpbn-remove-qualification', removal.qualifications, 'qualification');
+
+        (removal.competencies || []).forEach((name) => {
+            const item = Array.from(form.querySelectorAll('[data-biicf-competency]')).find((candidate) =>
+                candidate.querySelector('.cpbn-competency-choice span')?.textContent.trim().toLowerCase() === String(name).trim().toLowerCase());
+            const box = item?.querySelector('input[type="checkbox"]');
+
+            if (box && box.checked) {
+                box.checked = false;
+                box.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            box && ! box.checked ? confirmed.push('Removed ' + name) : missed.push('removing ' + name);
+        });
+
+        (removal.interests || []).forEach((name) => {
+            const wanted = String(name).trim().toLowerCase();
+            const listed = Array.from(form.querySelectorAll('input[name="interests[]"]')).find((input) => input.value.toLowerCase() === wanted);
+
+            if (listed) {
+                if (listed.checked) {
+                    listed.checked = false;
+                    listed.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+
+                confirmed.push('Removed ' + name);
+
+                return;
+            }
+
+            const hidden = Array.from(form.querySelectorAll('input[name="custom_interests[]"]')).find((input) => input.value.toLowerCase() === wanted);
+            const chipButton = hidden?.closest('.cpbn-custom-chip')?.querySelector('.cpbn-remove-custom-chip');
+
+            if (chipButton) {
+                chipButton.click();
+            }
+
+            hidden && ! hidden.isConnected ? confirmed.push('Removed ' + name) : missed.push('removing ' + name);
+        });
 
         if (typeof window.setFormChanged === 'function') {
             window.setFormChanged(true);
@@ -1747,10 +1834,103 @@
         if (missed.length) {
             addMessage(
                 'assistant',
-                '<i class="fas fa-circle-exclamation"></i> Could not set ' + escapeHtml(missed.join(', ')) + ' on the form. Please choose it there yourself.',
+                '<i class="fas fa-circle-exclamation"></i> Could not set ' + escapeHtml(missed.join(', ')) + ' on the form. Please do that part there yourself.',
                 'is-filled-note is-missed'
             );
         }
+
+        reportResult(confirmed, missed);
+    }
+
+    /*
+     * What really happened on the form goes with the next message,
+     * so the bot knows whether its last change worked and can own
+     * up to what did not.
+     */
+    function reportResult(confirmed, missed) {
+        state.lastResult = { confirmed: confirmed.slice(0, 30), missed: missed.slice(0, 30) };
+        remember({ lastResult: state.lastResult });
+    }
+
+    /*
+     * A new milestone, filled into the Milestones page's form and
+     * opened for the student to check and save.
+     */
+    function applyMilestone(milestone) {
+        const form = document.getElementById('milestone-form');
+
+        if (! form || ! milestone) {
+            return;
+        }
+
+        document.getElementById('addForm')?.classList.add('open');
+
+        const confirmed = [];
+        const missed = [];
+
+        [['title', 'Title'], ['category', 'Category'], ['description', 'Description'], ['target_date', 'Target date']].forEach(([field, label]) => {
+            if (! milestone[field]) {
+                return;
+            }
+
+            const input = form.querySelector('[name="' + field + '"]');
+
+            if (input) {
+                input.value = milestone[field];
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+
+            input && input.value === String(milestone[field])
+                ? confirmed.push(label + ': ' + milestone[field])
+                : missed.push(label.toLowerCase());
+        });
+
+        if (typeof window.markUnsaved === 'function') {
+            window.markUnsaved(form);
+        }
+
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+        if (confirmed.length) {
+            addMessage(
+                'assistant',
+                '<i class="fas fa-circle-check"></i> Checked on the milestone form: ' + escapeHtml(confirmed.join('; ')) + '. Press Add Milestone to keep it.',
+                'is-filled-note'
+            );
+        }
+
+        if (missed.length) {
+            addMessage(
+                'assistant',
+                '<i class="fas fa-circle-exclamation"></i> Could not set ' + escapeHtml(missed.join(', ')) + ' on the milestone form. Please fill that in yourself.',
+                'is-filled-note is-missed'
+            );
+        }
+
+        reportResult(confirmed, missed);
+    }
+
+    /*
+     * A place within the page, by its anchor: opened if it folds
+     * away (the milestone form), then brought into view.
+     */
+    function showPlace(hash) {
+        if (! hash) {
+            return;
+        }
+
+        const element = document.getElementById(decodeURIComponent(hash.slice(1)));
+
+        if (! element) {
+            return;
+        }
+
+        if (element.id === 'addForm') {
+            element.classList.add('open');
+        }
+
+        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
     /*
@@ -1895,6 +2075,15 @@
             body.form_state = formNow;
         }
 
+        /* What the last change really did, once. */
+        const lastResult = state.lastResult || recall().lastResult;
+
+        if (lastResult) {
+            body.form_result = lastResult;
+            state.lastResult = null;
+            remember({ lastResult: null });
+        }
+
         try {
             const response = await fetch(panel.dataset.askUrl, {
                 method: 'POST',
@@ -1944,11 +2133,21 @@
             showSession(data.fill_section, data.memory?.size);
 
             if (data.fill) {
-                if (document.getElementById('profile-form')) {
-                    applyFill(data.fill);
-                } else {
-                    /* Filled in once Edit Profile has opened. */
-                    remember({ pendingFill: data.fill });
+                const { milestone, ...profileFill } = data.fill;
+
+                if (milestone) {
+                    document.getElementById('milestone-form')
+                        ? applyMilestone(milestone)
+                        : remember({ pendingMilestone: milestone });
+                }
+
+                if (Object.keys(profileFill).length) {
+                    if (document.getElementById('profile-form')) {
+                        applyFill(profileFill);
+                    } else {
+                        /* Filled in once Edit Profile has opened. */
+                        remember({ pendingFill: profileFill });
+                    }
                 }
             }
 
@@ -2047,6 +2246,19 @@
     document.body.classList.add('has-cpbn-bot');
 
     /* A fill asked for on another page, now that Edit Profile is open. */
+    /* Arriving at a place the bot sent the student to. */
+    if (window.location.hash) {
+        window.addEventListener('load', () => setTimeout(() => showPlace(window.location.hash), 200));
+    }
+
+    /* A milestone asked for on another page, now that Milestones is open. */
+    const pendingMilestone = recall().pendingMilestone;
+
+    if (pendingMilestone && document.getElementById('milestone-form')) {
+        remember({ pendingMilestone: null, open: true });
+        window.addEventListener('load', () => setTimeout(() => applyMilestone(pendingMilestone), 300));
+    }
+
     const pendingFill = recall().pendingFill;
 
     if (pendingFill && document.getElementById('profile-form')) {

@@ -187,6 +187,39 @@ class CpbnBotKnowledge
     }
 
     /**
+     * Places inside a page that the bot can take a student
+     * straight to, by key: the name it gives them and the anchor
+     * on the page.
+     *
+     * @return array<string, array<string, array{0: string, 1: string}>>
+     */
+    public static function places(): array
+    {
+        return [
+            'profile_edit' => [
+                'personal' => ['Personal Information', 'ep-personal'],
+                'qualifications' => ['Qualifications', 'ep-qualifications'],
+                'skills' => ['Skills & Competencies', 'ep-skills'],
+                'interests' => ['Interests & Preferences', 'ep-interests'],
+                'projects' => ['Projects & Experience', 'ep-projects'],
+                'certifications' => ['Certifications', 'ep-certifications'],
+                'aspirations' => ['Career Aspirations', 'ep-aspirations'],
+            ],
+            'settings' => [
+                'account' => ['Account Information', 'account-information'],
+                'plan' => ['Your Plan', 'your-plan'],
+                'advertising' => ['Advertising', 'advertising'],
+                'cpbn_bot' => ['CPBN Bot', 'cpbn-bot-settings'],
+                'password' => ['Change Password', 'change-password'],
+                'delete' => ['Delete Account', 'delete-account'],
+            ],
+            'milestones' => [
+                'add' => ['Add a milestone', 'addForm'],
+            ],
+        ];
+    }
+
+    /**
      * The BIICF Explorer's tabs, by the key its links use.
      *
      * @return array<string, string>

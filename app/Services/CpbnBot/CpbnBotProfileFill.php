@@ -154,6 +154,8 @@ class CpbnBotProfileFill
             ]),
             'qualifications' => $this->qualifications($fill['qualifications'] ?? []),
             'programme' => $this->programme($fill['programme'] ?? null),
+            'milestone' => $this->milestone($fill['milestone'] ?? null),
+            'remove' => $this->removals($fill['remove'] ?? null),
         ]);
 
         return $normalised === [] ? null : $normalised;
@@ -428,7 +430,15 @@ class CpbnBotProfileFill
                     $row['bdqf_level'] = (string) $bdqf;
                 }
 
-                if (filter_var($item['is_current'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+                /* Finished: "Still studying this" is unticked, as well as ticked. */
+                $current = $item['is_current'] ?? null;
+
+                if (($current === false || $current === 'false' || $current === 0 || $current === '0')
+                    || (! filter_var($current ?? false, FILTER_VALIDATE_BOOLEAN) && isset($row['end_date']))) {
+                    $row['is_current'] = false;
+                }
+
+                if (filter_var($current ?? false, FILTER_VALIDATE_BOOLEAN)) {
                     $row['is_current'] = true;
                     unset($row['end_date']);
                 }
@@ -477,6 +487,56 @@ class CpbnBotProfileFill
         }
 
         return $programme;
+    }
+
+    /**
+     * A new milestone, filled into the Milestones page's form for
+     * the student to save.
+     *
+     * @return array{title?: string, category?: string, description?: string, target_date?: string}
+     */
+    private function milestone(mixed $values): array
+    {
+        if (! is_array($values)) {
+            return [];
+        }
+
+        $milestone = $this->texts($values, ['title' => 255, 'description' => 1000]);
+
+        if (in_array($values['category'] ?? null, ['academic', 'career', 'personal', 'skill'], true)) {
+            $milestone['category'] = $values['category'];
+        }
+
+        if ($date = $this->pastDate($values['target_date'] ?? null, allowFuture: true)) {
+            $milestone['target_date'] = $date;
+        }
+
+        return isset($milestone['title']) ? $milestone : [];
+    }
+
+    /**
+     * Items to take off the form, by the name they have there.
+     * Only taken off the form: nothing is deleted until the
+     * student saves.
+     *
+     * @return array<string, array<int, string>>
+     */
+    private function removals(mixed $values): array
+    {
+        if (! is_array($values)) {
+            return [];
+        }
+
+        return collect(['projects', 'certifications', 'qualifications', 'competencies', 'interests'])
+            ->mapWithKeys(fn (string $list) => [$list => collect((array) ($values[$list] ?? []))
+                ->filter(fn ($name) => is_string($name) && trim($name) !== '')
+                ->map(fn (string $name) => Str::limit(trim($name), 150, ''))
+                ->unique()
+                ->take(10)
+                ->values()
+                ->all()])
+            ->filter()
+            ->all();
     }
 
     private function pastDate(mixed $value, bool $allowFuture = false): ?string

@@ -98,6 +98,13 @@ class CpbnBotController extends Controller
 
             /* Pressed "Yes, that's everything" to finish the section. */
             'confirm_finish' => ['nullable', 'boolean'],
+
+            /* What the last fill really did on the form, read back from it. */
+            'form_result' => ['nullable', 'array'],
+            'form_result.confirmed' => ['nullable', 'array', 'max:30'],
+            'form_result.confirmed.*' => ['string', 'max:200'],
+            'form_result.missed' => ['nullable', 'array', 'max:30'],
+            'form_result.missed.*' => ['string', 'max:200'],
         ], [
             'message.required' => 'Please type a question for the CPBN Bot.',
             'message.max' => 'Your question may not be longer than 500 characters.',
@@ -146,7 +153,8 @@ class CpbnBotController extends Controller
                 $validated['current_page'] ?? null,
                 $this->formState($validated['form_state'] ?? null),
                 $validated['start_section'] ?? null,
-                (bool) ($validated['confirm_finish'] ?? false)
+                (bool) ($validated['confirm_finish'] ?? false),
+                $validated['form_result'] ?? null
             );
         } catch (ConnectionException $exception) {
             report($exception);

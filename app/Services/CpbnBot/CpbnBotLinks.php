@@ -44,7 +44,16 @@ class CpbnBotLinks
         }
 
         if ($page !== 'biicf_explorer') {
-            return ['page' => $page];
+            $normalised = ['page' => $page];
+
+            /* A place inside the page, such as one section of Edit Profile. */
+            $place = $link['place'] ?? null;
+
+            if (is_string($place) && isset(CpbnBotKnowledge::places()[$page][$place])) {
+                $normalised['place'] = $place;
+            }
+
+            return $normalised;
         }
 
         $normalised = ['page' => $page];
@@ -127,7 +136,17 @@ class CpbnBotLinks
             return null;
         }
 
-        if ($link['page'] !== 'biicf_explorer' || count($link) === 1) {
+        if ($link['page'] !== 'biicf_explorer') {
+            $place = CpbnBotKnowledge::places()[$link['page']][$link['place'] ?? ''] ?? null;
+
+            return [
+                'key' => $link['page'],
+                'label' => $place ? $page['name'].' › '.$place[0] : $page['name'],
+                'url' => route($page['route']).($place ? '#'.$place[1] : ''),
+            ];
+        }
+
+        if (count($link) === 1) {
             return ['key' => $link['page'], 'label' => $page['name'], 'url' => route($page['route'])];
         }
 
