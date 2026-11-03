@@ -91,6 +91,36 @@
             text-decoration: none;
         }
 
+        /*
+         * Both images carry their own proportions, so no browser can
+         * stretch or squash them when the header gets tight. Safari
+         * in particular distorts an image sized by height alone
+         * inside a flex row.
+         */
+        .site-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+
+        .site-logo img {
+            display: block;
+            flex-shrink: 0;
+            max-width: none;
+            object-fit: contain;
+        }
+
+        .site-logo-badge {
+            height: 64px;
+            aspect-ratio: 1 / 1;
+        }
+
+        .site-logo-wordmark {
+            height: 56px;
+            aspect-ratio: 1817 / 955;
+        }
+
         .logo-icon {
             width: 40px;
             height: 40px;
@@ -1174,18 +1204,29 @@
 
         /* Phones: smaller logo, buttons kept on one line each. */
         @media (max-width: 600px) {
-            .site-header .logo { gap: 8px !important; }
-            .site-header .logo img:first-child { height: 42px !important; width: 42px !important; }
-            .site-header .logo img + img { height: 38px !important; }
+            .site-header .container { padding: 0 16px; }
+            .header-inner { gap: 10px; padding: 10px 0; }
+            .site-logo { gap: 8px; }
+            .site-logo-badge { height: 42px; }
+            .site-logo-wordmark { height: 38px; }
             .nav-actions { gap: 8px; }
             .nav-actions .btn-sm { padding: 8px 14px; font-size: 12px; white-space: nowrap; }
         }
 
-        @media (max-width: 380px) {
-            .site-header .logo img:first-child { height: 36px !important; width: 36px !important; }
-            .site-header .logo img + img { height: 32px !important; }
+        /*
+         * Most phones: the full header needs about 370px, so the
+         * button icons go first rather than anything being squashed.
+         */
+        @media (max-width: 400px) {
+            .site-logo-badge { height: 38px; }
+            .site-logo-wordmark { height: 34px; }
             .nav-actions .btn-sm { padding: 7px 11px; }
             .nav-actions .btn-sm i { display: none; }
+        }
+
+        /* The smallest phones: the badge alone carries the brand. */
+        @media (max-width: 340px) {
+            .site-logo-wordmark { display: none; }
         }
 
         @media (max-width: 480px) {
@@ -1299,19 +1340,19 @@
     <header class="site-header" id="site-header">
         <div class="container">
             <div class="header-inner">
-                <a href="{{ url('/') }}" class="logo" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
-        <img
-        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
-        alt="CareerPath BN"
-        style="height: 64px; width: 64px; object-fit: contain; display: block; flex-shrink: 0;"
-    >
-    <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
-        alt=""
-        aria-hidden="true"
-        style="height: 56px; width: auto; display: block; flex-shrink: 0;"
-    >
-</a>
+                <a href="{{ url('/') }}" class="logo site-logo">
+                    <img
+                        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
+                        alt="CareerPath BN"
+                        class="site-logo-badge"
+                    >
+                    <img
+                        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
+                        alt=""
+                        aria-hidden="true"
+                        class="site-logo-wordmark"
+                    >
+                </a>
 
                 <nav class="nav-links">
                     <a href="#features">Features</a>
