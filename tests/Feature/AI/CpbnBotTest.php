@@ -904,7 +904,7 @@ test('a change sent to the form keeps the bot\'s own words, and goes to Edit Pro
     askCpbn($student, 'Add Programming to my interests', ['current_page' => 'dashboard'])
         ->assertOk()
         ->assertJsonPath('navigate.key', 'profile_edit')
-        ->assertJsonPath('message', 'Taking you to Edit Profile for this. I have added Programming to your interests.');
+        ->assertJsonPath('message', "I have added Programming to your interests. I'm opening Edit Profile so you can see it fill in.");
 });
 
 test('a summary of earlier changes is left alone when nothing new was asked for', function () {
@@ -980,11 +980,14 @@ function flakyTransport(array $reply, bool $failFirst = true): ChatTransport
     {
         public array $formats = [];
 
+        public string $system = '';
+
         public function __construct(private array $reply, private bool $failFirst) {}
 
         public function chat(array $messages, ?array $responseFormat = null, ?float $temperature = null): array
         {
             $this->formats[] = $responseFormat['type'] ?? null;
+            $this->system = (string) ($messages[0]['content'] ?? '');
 
             if ($this->failFirst && count($this->formats) === 1) {
                 throw new UnexpectedValueException('OpenRouter returned no message content (finish_reason: error).');
@@ -1653,7 +1656,7 @@ test('a new milestone is filled in on the Milestones page', function () {
         ->assertJsonPath('fill.milestone.category', 'skill')
         ->assertJsonPath('fill.milestone.target_date', '2027-01-31')
         ->assertJsonPath('navigate.url', route('student.milestones').'#addForm')
-        ->assertJsonPath('message', 'Taking you to Milestones for this. Here is your milestone.');
+        ->assertJsonPath('message', "Here is your milestone. I'm opening Milestones so you can see it fill in.");
 });
 
 test('changing the project being talked about edits it instead of adding another', function () {
@@ -1750,14 +1753,21 @@ test('a section the bot takes up from another page goes to Edit Profile', functi
         ->assertJsonPath('navigate.key', 'profile_edit');
 });
 
-test('what the student says reaches the form even when the reply forgets, and is never asked again', function () {
-    $student = cpbnStudent();
-
+/*
+ * A bot whose reply forgets to fill anything in, with the backup
+ * look at the student's words set by each test.
+ */
+function cpbnForgetfulClient(string $askingField = 'project.start_date'): CpbnBotClient
+{
     $client = new class implements CpbnBotClient
     {
         public array $lastContext = [];
 
-        public array $extracted = ['projects' => [['title' => 'TyperType', 'description' => 'A typing game.', 'technologies_used' => 'Java, JavaFX']]];
+        public array $extracted = [];
+
+        public string $askingField = '';
+
+        public int $extractCalls = 0;
 
         public function ask(array $context, array $history, string $message): array
         {
@@ -1766,26 +1776,40 @@ test('what the student says reaches the form even when the reply forgets, and is
             return [
                 'schema_version' => '1.0',
                 'status' => 'completed',
-                'message' => 'Nice. When did you make it?',
+                'message' => 'Nice. Tell me more.',
                 'links' => [],
                 'navigate' => null,
                 'choices' => null,
                 'fill' => null,
                 'fill_section' => 'projects',
-                'asking_field' => 'project.start_date',
+                'asking_field' => $this->askingField,
                 'usage' => ['total_tokens' => 100],
             ];
         }
 
         public function extract(string $section, array $collected, array $history, string $message): array
         {
-            return ['fill' => $this->extracted, 'usage' => ['total_tokens' => 40]];
+            $this->extractCalls++;
+
+            return ['fill' => $this->extracted === [] ? null : $this->extracted, 'usage' => ['total_tokens' => 40]];
         }
     };
 
+    $client->askingField = $askingField;
     app()->instance(CpbnBotClient::class, $client);
 
-    askCpbn($student, 'it was a typing game called TyperType, made with java and javafx', ['current_page' => 'profile_edit', 'start_section' => 'projects'])
+    return $client;
+}
+
+test('what the student says reaches the form even when the reply forgets, and is never asked again', function () {
+    $student = cpbnStudent();
+    $client = cpbnForgetfulClient();
+
+    askCpbn($student, 'help me add a project', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    $client->extracted = ['projects' => [['title' => 'TyperType', 'description' => 'A typing game.', 'technologies_used' => 'Java, JavaFX']]];
+
+    askCpbn($student, 'it was a typing game called TyperType, made with java and javafx', ['current_page' => 'profile_edit'])
         ->assertOk()
         ->assertJsonPath('fill.projects.0.title', 'TyperType')
         ->assertJsonPath('fill.projects.0.technologies_used', 'Java, JavaFX');
@@ -1798,4 +1822,60 @@ test('what the student says reaches the form even when the reply forgets, and is
         'title' => 'TyperType',
         'description' => 'A typing game.',
     ]);
+});
+
+test('the message that opens a section is not backed up into the form', function () {
+    $student = cpbnStudent();
+    $client = cpbnForgetfulClient('project.title');
+    $client->extracted = ['projects' => [['title' => 'pure java project']]];
+
+    askCpbn($student, 'i did a pure java project', ['current_page' => 'profile_edit', 'start_section' => 'projects'])
+        ->assertOk()
+        ->assertJsonPath('fill', null);
+
+    expect($client->extractCalls)->toBe(0);
+});
+
+test('the backup never fills the field the reply is asking for', function () {
+    $student = cpbnStudent();
+    $client = cpbnForgetfulClient('project.title');
+
+    askCpbn($student, 'help me add a project', ['current_page' => 'profile_edit', 'start_section' => 'projects'])->assertOk();
+
+    /* Asking for the title: a guessed title is dropped, and the nameless item with it. */
+    $client->extracted = ['projects' => [['title' => 'Java game', 'description' => 'A 2D game in Java.']]];
+
+    askCpbn($student, 'it is a 2d game i made in java', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill', null);
+
+    /* Asking for the dates: the rest of what was said still lands. */
+    $client->askingField = 'project.start_date';
+    $client->extracted = ['projects' => [['title' => 'Dining in Dungeons', 'description' => 'A 2D game in Java.', 'start_date' => '2026-02-01']]];
+
+    askCpbn($student, 'it is called Dining in Dungeons, a 2d game i made in java', ['current_page' => 'profile_edit'])
+        ->assertOk()
+        ->assertJsonPath('fill.projects.0.title', 'Dining in Dungeons')
+        ->assertJsonMissingPath('fill.projects.0.start_date');
+});
+
+test('the bot is told to talk, one thing at a time, and to suggest technologies', function () {
+    $transport = flakyTransport([
+        'schema_version' => '1.0',
+        'status' => 'completed',
+        'message' => 'Tell me about the project.',
+        'links' => [],
+        'navigate' => ['page' => ''],
+        'choice_options' => [],
+        'choices_multiple' => false,
+        'fill_json' => '',
+    ], failFirst: false);
+
+    (new GroqCpbnBotClient($transport))->ask([], [], 'help me add a project');
+
+    expect($transport->system)
+        ->toContain('ask about ONE thing at a time')
+        ->toContain('Show it, check it, carry on')
+        ->toContain('whether they used anything else')
+        ->toContain('Never fill a field and ask for it in the same reply');
 });

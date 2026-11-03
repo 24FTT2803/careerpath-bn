@@ -524,6 +524,24 @@
         display: none;
     }
 
+    /* Their own answers, typed alongside the buttons they picked. */
+    .cpbn-bot-choices .cpbn-bot-choices-own {
+        flex: 1 1 100%;
+        min-width: 0;
+        padding: 7px 12px;
+        border: 1px solid var(--border, #e5e7eb);
+        border-radius: 100px;
+        background: var(--card, #ffffff);
+        color: var(--text, #1a1a2e);
+        font-family: inherit;
+        font-size: 12px;
+    }
+
+    .cpbn-bot-choices .cpbn-bot-choices-own:focus {
+        outline: none;
+        border-color: var(--primary, #1a3a5c);
+    }
+
     /* Fields the bot has just filled in, so the student can check them. */
     .cpbn-bot-filled {
         outline: 3px solid var(--accent, #c9a84c) !important;
@@ -1341,7 +1359,32 @@
 
         const picked = new Set();
 
-        choices.options.forEach((option) => {
+        /*
+         * With several allowed, the student can also type their
+         * own beside the buttons, so "Something else" is a box to
+         * type in rather than a button that sends those words.
+         */
+        const isOther = (option) => /^(something else|other|others|add my own)\b/i.test(String(option).trim());
+        const options = choices.multiple ? choices.options.filter((option) => ! isOther(option)) : choices.options;
+
+        let own = null;
+
+        const refreshSend = () => {
+            send.hidden = picked.size === 0 && ! (own && own.value.trim() !== '');
+        };
+
+        const sendPicked = () => {
+            const typed = own
+                ? own.value.split(/[,;\n]/).map((part) => part.trim()).filter(Boolean)
+                : [];
+            const answer = [...picked, ...typed.filter((part) => ! picked.has(part))];
+
+            if (answer.length) {
+                ask(answer.join(', '));
+            }
+        };
+
+        options.forEach((option) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.textContent = option;
@@ -1356,7 +1399,7 @@
                 picked.has(option) ? picked.delete(option) : picked.add(option);
                 button.classList.toggle('is-picked', picked.has(option));
                 button.setAttribute('aria-pressed', picked.has(option) ? 'true' : 'false');
-                send.hidden = picked.size === 0;
+                refreshSend();
             });
             box.appendChild(button);
         });
@@ -1366,9 +1409,23 @@
         send.className = 'cpbn-bot-choices-send';
         send.textContent = 'Send';
         send.hidden = true;
-        send.addEventListener('click', () => ask(Array.from(picked).join(', ')));
+        send.addEventListener('click', sendPicked);
 
         if (choices.multiple) {
+            own = document.createElement('input');
+            own.type = 'text';
+            own.className = 'cpbn-bot-choices-own';
+            own.placeholder = 'Add your own, separated by commas';
+            own.setAttribute('aria-label', 'Add your own answers');
+            own.addEventListener('input', refreshSend);
+            own.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    sendPicked();
+                }
+            });
+
+            box.appendChild(own);
             box.appendChild(send);
         }
 

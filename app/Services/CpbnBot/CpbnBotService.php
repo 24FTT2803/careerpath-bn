@@ -256,7 +256,14 @@ class CpbnBotService
          */
         $sessionSection = $memory['section'];
 
+        /*
+         * Not on the message that opens a section ("I did a Java
+         * project" is what it is about, not its title), and never
+         * the field the reply itself is asking for: the form and the
+         * reply would disagree.
+         */
         if ($fill === null
+            && ! $startsNow
             && $sessionSection !== null
             && $sessionSection !== 'skills'
             && $declared !== 'done'
@@ -269,8 +276,10 @@ class CpbnBotService
                 $question
             );
 
-            if ($extracted['fill'] !== null) {
-                $fill = $this->profileFill->normalise($this->sameItem($extracted['fill'], $formState, $question, $conversation));
+            $extractedFill = $this->withoutAskedField($extracted['fill'], (string) ($validated['asking_field'] ?? ''));
+
+            if ($extractedFill !== null) {
+                $fill = $this->profileFill->normalise($this->sameItem($extractedFill, $formState, $question, $conversation));
             }
 
             $extraTokens = (int) ($extracted['usage']['total_tokens'] ?? 0);
@@ -431,6 +440,60 @@ class CpbnBotService
     }
 
     /**
+     * A backed-up fill without the field the reply is asking about.
+     * A list item left with no name to land on is dropped whole, so
+     * it cannot turn up on the form as a new, nameless item.
+     *
+     * @param  array<string, mixed>|null  $fill
+     * @return array<string, mixed>|null
+     */
+    private function withoutAskedField(?array $fill, string $askingField): ?array
+    {
+        if ($fill === null) {
+            return null;
+        }
+
+        $field = Str::lower(trim(Str::afterLast(trim($askingField), '.')));
+
+        if ($field !== '' && $field !== 'finish') {
+            foreach ($fill as $part => $value) {
+                if (! is_array($value)) {
+                    continue;
+                }
+
+                if (array_is_list($value)) {
+                    $fill[$part] = array_values(array_filter(array_map(
+                        function ($item) use ($field, $part) {
+                            if (! is_array($item)) {
+                                return $item;
+                            }
+
+                            unset($item[$field]);
+
+                            $names = self::ITEM_KEYS[$part] ?? null;
+
+                            if ($names !== null && trim((string) ($item[$names[0]] ?? '')) === '' && trim((string) ($item[$names[1]] ?? '')) === '') {
+                                return null;
+                            }
+
+                            return $item;
+                        },
+                        $value
+                    ), fn ($item) => $item !== null && $item !== []));
+                } else {
+                    unset($fill[$part][$field]);
+                }
+
+                if ($fill[$part] === []) {
+                    unset($fill[$part]);
+                }
+            }
+        }
+
+        return $fill === [] ? null : $fill;
+    }
+
+    /**
      * The bot writes its reply before anything reaches the form, so
      * it cannot know a change worked. When it sent no change at all,
      * or none that matched the form, a claim to have made one is
@@ -452,9 +515,9 @@ class CpbnBotService
              * to Edit Profile first, and told so if it did not say.
              */
             if ($currentPage !== $fillPage && ! Str::contains(Str::lower($message), Str::lower($fillPageName))) {
-                $message = ($autoNavigate
-                    ? 'Taking you to '.$fillPageName.' for this. '
-                    : 'Open '.$fillPageName.' to see this. ').$message;
+                $message = rtrim($message).' '.($autoNavigate
+                    ? "I'm opening ".$fillPageName.' so you can see it fill in.'
+                    : 'Open '.$fillPageName.' to see it there.');
             }
 
             return $message;
