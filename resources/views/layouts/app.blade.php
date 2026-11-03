@@ -238,6 +238,35 @@
             outline-offset: 2px;
         }
 
+        /*
+         * Each logo image carries its own proportions, so nothing can
+         * squash it when the header gets tight on a phone.
+         */
+        .nav-logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+            text-decoration: none;
+        }
+
+        .nav-logo img {
+            display: block;
+            flex-shrink: 0;
+            max-width: none;
+            object-fit: contain;
+        }
+
+        .nav-logo-badge {
+            height: 64px;
+            aspect-ratio: 1 / 1;
+        }
+
+        .nav-logo-wordmark {
+            height: 56px;
+            aspect-ratio: 1817 / 955;
+        }
+
         @media (max-width: 600px) {
             .nav-brand-group {
                 gap: 8px;
@@ -247,6 +276,48 @@
                 width: 34px;
                 height: 34px;
                 font-size: 14px;
+            }
+
+            .nav-inner {
+                padding: 8px 0;
+            }
+
+            .nav-logo {
+                gap: 8px;
+            }
+
+            .nav-logo-badge {
+                height: 42px;
+            }
+
+            .nav-logo-wordmark {
+                height: 36px;
+            }
+
+            /*
+             * Pages wrap their content in a .container inside the
+             * layout's own .container, which doubled the side padding
+             * and left phones with a narrow column down the middle.
+             */
+            main .container .container {
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            /* Room for the floating bot button below the last card. */
+            main {
+                padding-bottom: 72px;
+            }
+        }
+
+        /* Small phones, where the back arrow also needs room. */
+        @media (max-width: 380px) {
+            .nav-logo-badge {
+                height: 36px;
+            }
+
+            .nav-logo-wordmark {
+                height: 30px;
             }
         }
 
@@ -1001,19 +1072,19 @@
                         </a>
                     @endunless
 
-                <a href="{{ route('dashboard') }}" class="nav-brand" title="Go to dashboard" style="display: inline-flex; align-items: center; gap: 12px; flex-shrink: 0; text-decoration: none;">
-        <img
-        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
-        alt="CareerPath BN"
-        style="height: 64px; width: 64px; object-fit: contain; display: block; flex-shrink: 0;"
-    >
-    <img
-        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
-        alt=""
-        aria-hidden="true"
-        style="height: 56px; width: auto; display: block; flex-shrink: 0;"
-    >
-</a>
+                <a href="{{ route('dashboard') }}" class="nav-brand nav-logo" title="Go to dashboard">
+                    <img
+                        src="{{ asset('images/careerpath-badge.png') }}?v={{ filemtime(public_path('images/careerpath-badge.png')) }}"
+                        alt="CareerPath BN"
+                        class="nav-logo-badge"
+                    >
+                    <img
+                        src="{{ asset('images/careerpath-logo-v2.png') }}?v={{ filemtime(public_path('images/careerpath-logo-v2.png')) }}"
+                        alt=""
+                        aria-hidden="true"
+                        class="nav-logo-wordmark"
+                    >
+                </a>
                 </div>
                 <div class="nav-right">
 

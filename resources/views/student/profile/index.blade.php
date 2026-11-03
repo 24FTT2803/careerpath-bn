@@ -1004,6 +1004,13 @@
             justify-content: center;
         }
     }
+
+    @media (max-width: 480px) {
+        .panel,
+        .completion-card {
+            padding: 18px 16px;
+        }
+    }
 </style>
 
 @php

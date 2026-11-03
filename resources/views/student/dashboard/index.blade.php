@@ -437,6 +437,9 @@
         background: rgba(201, 168, 76, 0.12);
         padding: 4px 12px;
         border-radius: 100px;
+        white-space: nowrap;
+        flex-shrink: 0;
+        margin-left: 10px;
     }
 
     .rec-card .rec-link {
@@ -799,9 +802,17 @@
         }
     }
 
+    /*
+     * Phones keep two columns for the stat cards and quick actions,
+     * so the dashboard is not a long single stack of tall boxes.
+     */
     @media (max-width: 480px) {
         .stats-grid {
-            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .stat-card .stat-number {
+            font-size: 22px;
         }
 
         .dashboard-header .badges {
@@ -809,12 +820,22 @@
         }
 
         .quick-actions {
-            grid-template-columns: 1fr;
+            gap: 10px;
         }
 
         .quick-actions .btn {
             width: 100%;
             justify-content: center;
+            padding: 12px 10px;
+            font-size: 13px;
+        }
+    }
+
+    /* Only the narrowest phones fall back to one column. */
+    @media (max-width: 340px) {
+        .stats-grid,
+        .quick-actions {
+            grid-template-columns: 1fr;
         }
     }
 </style>
